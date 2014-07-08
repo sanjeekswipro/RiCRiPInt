@@ -1,0 +1,179 @@
+%!PS-Adobe
+%%Title: HqnNamedColor
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Feb 17, 1995
+%%VMusage: -1 -1
+% Copyright (C) 1994-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnNamedColor) 1 1
+
+% $HopeName: SWv20!swf:procsets:hqnnmcol(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+ currentglobal false setglobal
+ 10 dict begin
+
+  /globalness exch def
+
+  %% EXPORTED (can only be called in separation colorspace) -
+  %
+  % Must be a colour space, so this must be fixed now, and XYZ-D50
+  % is the most useful.  Any Named Colour files will be installed with
+  % XYZ-D50 colour values
+  /NCcolorspace /XYZ-D50 /ColorSpace findresource def
+
+  % white point info (needed for fractional tint)
+  //NCcolorspace 1 get /WhitePoint get aload pop
+  /Zn exch def
+  /Yn exch def
+  /Xn exch def
+
+   /getoneortother {  % dictb dicta key
+     2 copy known {   % dictb dicta key
+       get            % dictb value
+       exch pop       % value
+     } {              % dictb dicta key
+       exch pop       % dictb key
+       2 copy known { % dictb key
+         get          % value
+       } {            % dictb key
+         pop pop null % null
+       } ifelse       % value
+     } ifelse         % value
+   } bind def
+
+   % These expect: database data; and return: colorspace tinttransform
+
+   /NCcolortypehandlers <<
+
+     /dicttype {                     % database data
+       2 copy /ColorSpace            % database data database data /cs
+       //getoneortother exec         % database data cs
+       3 1 roll                      % cs database data
+       /TintTransform 2 copy known { % cs database data /TT
+         get                         % cs database TT
+       } {                           % cs database data /TT
+         2 index exch get            % cs database data rawTT
+         [                           % cs database data rawTT mark
+           3 1 roll                  % cs database mark data rawTT
+           systemdict /exec get      % cs database mark data rawTT -exec-
+         ] cvx                       % cs database TT
+       } ifelse                      % cs database TT
+       exch                          % cs TT database
+       /Custom 2 copy known {        % cs TT database /Custom
+         get exec                    % cs TT
+       } {                           % cs TT database /Custom
+         pop pop                     % cs TT
+       } ifelse                      % cs TT
+     } bind                          % colorspace tinttransform
+
+     /arraytype {              % database data
+       cvx                     % database data
+       1 index                 % database data database
+       /ColorSpace get         % database data cs
+       3 1 roll                % cs database data
+       1 index                 % cs database data database
+       /TintTransform get      % cs database data rawTT
+       [                       % cs database data rawTT mark
+         3 1 roll              % cs database mark data rawTT
+         systemdict /exec get  % cs database mark data rawTT -exec-
+       ] cvx                   % cs database TT
+       exch                    % cs TT database
+       /Custom 2 copy known {  % cs TT database /Custom
+         get exec              % cs TT
+       } {                     % cs TT database /Custom
+         pop pop               % cs TT
+       } ifelse                % cs TT
+     } bind                    % colorspace tinttransform
+
+   >> def
+
+   /NCdecodeData {                 % intercept name(s) database data
+     //NCcolortypehandlers         % intercept name(s) database data handlers
+     1 index type 2 copy           % intercept name(s) database data handlers type handlers type
+     known {                       % intercept name(s) database data handlers type
+       get                         % intercept name(s) database data handler
+       exec                        % intercept name(s) resultcolorspace tinttransform
+       4 2 roll                    % resultcolorspace tinttransform intercept name(s)
+       2 { pop } repeat true       % resultcolorspace tinttransform true
+     } {                           % intercept colorspace name(s) database data handlers type
+       6 { pop } repeat false      % false
+     } ifelse                      % false | resultcolorspace tinttransform true
+   } bind def
+   
+   % NClookupColor
+   % stack is: interceptNamedColors colorSpace name(s)
+   % result is: colorSpace tinttransform true
+   % error result is: false
+
+   % NClookupData is similar, but returns a dictionary with more information,
+   % rather than just the color. It is called from NClookupColor.
+
+   % We are given the interceptNamedColors colorspace (as given to
+   % setinterceptcolorspace) as that contains the sequence of NamedColor
+   % databases to search (as resource names); and the original colorspace
+   % so the last one of the databases can be a dummy one which uses the
+   % tint transform from the original colorspace.
+
+   % Each NamedColor resource must define at least the entry Lookup, a procedure
+   % taking: name(s) database; on the stack, and returning: value true; or: false;
+
+   % The result from Lookup may be of various types. The result from Lookup is
+   % passed on as the result from NClookupData.
+
+   % The name(s) operand can be in two forms. A single name/string will be the only
+   % acceptable form for most databases. An array of names/strings may be used if
+   % the database explicitly supports DeviceN colorspaces by defining /AcceptDeviceN.
+
+   /NClookupData {
+     1 index {                     % intercept name(s) resourcename
+       {                           % intercept name(s) resourcename
+         /NamedColor findresource  % intercept name(s) database
+       } stopped {                 % intercept name(s) database
+         pop pop                   % intercept name(s)
+       } {                         % intercept name(s) database
+         2 copy                    % intercept name(s) database name(s) database
+         dup /Lookup get           % intercept name(s) database name(s) database lookup
+         3 -1 roll exch            % intercept name(s) database database name(s) lookup
+         exec                      % intercept name(s) database { data true | false }
+         {                         % intercept name(s) database data
+           true                    % intercept name(s) database data true
+           exit                    % intercept name(s) database data true
+         } {                       % intercept name(s) database
+           pop                     % intercept name(s)
+         } ifelse                  % intercept name(s)
+       } ifelse                    % intercept name(s)
+     } forall                      % intercept { name(s) | name(s) database data true }
+     dup true ne {                 % intercept name(s)
+       false                       % intercept name(s) false
+     } if                          % intercept { name(s) false | name(s) database data true }
+   } bind def
+
+   /NClookupColor {
+     //NClookupData exec           % intercept name(s)
+     {                             % intercept name(s) database data
+       //NCdecodeData exec         % false | resultcolorspace tinttransform true
+     } {                           % intercept name(s)
+       pop pop false               % false
+     } ifelse                      % false | resultcolorspace tinttransform true
+   } bind def
+
+
+  % Remove all private variables & procedures
+  [ /Xn /Yn /Zn
+    /NCcolortypehandlers /getoneortother
+    /NCdecodeData /NClookupData
+  ]
+  { currentdict exch undef } forall
+
+  % from the original defined above
+  currentdict
+
+end
+
+/HqnNamedColor exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet

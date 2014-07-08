@@ -1,0 +1,218 @@
+%!PS-Adobe-3.0
+%%Title: FontSetInit
+%%Creator: Global Graphics Software Limited
+%%CreationDate: September 1998
+%{FontSetInit version #1 0
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (FontSetInit) 1 0
+
+% This procset provides routines for handling CFF fonts.
+
+
+currentglobal true setglobal
+
+20 dict begin
+
+/globalness exch def
+
+globaldict /WorkSpace currentdict put
+
+/fontsetdir (%fontset%fonts/) def
+/fontsetciddir (%fontset%CIDFont/) def
+/fontsetstring 2048 string def
+/fontsetfilename 2048 string def
+
+/fontstrings <<
+  /CFF (cff_buildfont)
+  /TTCF (tt_buildfont)
+  /OTTO (otto_buildfont)
+>> def
+
+/fontsetcapture << % Avoid using shadowop in case already shadowed
+  /defineresource { % /key instance category
+    dup /Font eq 1 index /CIDFont eq or {
+      1 index /SubFont known {
+	3 copy pop Directory 3 1 roll put
+      } if
+      InLine {
+	systemdict begin defineresource end % Get original defineresource
+      } {
+	pop exch pop
+      } ifelse
+    } {
+      systemdict begin defineresource end % Get original defineresource
+    } ifelse
+  } bind
+>> def
+
+currentdict 1183615869 internaldict begin begin
+  /fontfiletype dup load def
+  /concattomark dup load def
+end end
+
+5 dict begin
+
+% Dict of font type->procedure to define the font, based upon a file
+/StartData 1 dict def % used by procs below for /FontOffset
+
+/StartData <<
+  /CFF {
+    SourceFile //StartData dup /FontOffset FontOffset put definecfffont pop
+  } bind
+  /OTTO {
+    SourceFile //StartData dup /FontOffset FontOffset put defineotffont pop
+  } bind
+  /TTCF {
+    SourceFile //StartData dup /FontOffset FontOffset put definettfont pop
+  } bind
+>> def
+
+/StartData {
+% (StartData: )print vmstatus pop pop == % pstack (___________)=
+  currentglobal 
+%  vmstatus pop pop 2 lt { true setglobal } if % why?
+  mark {
+    % Chameleon fonts are not supported.
+    2 index type dup /nametype eq exch /stringtype eq or {
+      $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+      /errorinfo [ null (Chameleon font) ] put
+      /StartData errordict /undefinedresult get exec
+    } if
+
+    4 2 roll  % put the mark below the arguments
+
+    8 dict begin  % dict will become new resource
+
+      dup type /integertype ne {
+	/StartData errordict /typecheck get exec
+      } if
+      /GlyphData exch def
+
+      dup type /stringtype eq {cvn} if 
+
+      dup type /nametype ne {
+	/StartData errordict /typecheck get exec
+      } if 
+      /FontSetName exch def 
+
+      % Set CharOffsets to file/filename
+      currentfile 1183615869 internaldict /fileseekable get exec {
+	% Is it a downloaded FontSet?
+	mark
+	currentfile //fontsetfilename statusdict begin filename pop end
+	FontSetName //fontsetstring /FontSet /Category findresource begin
+	  ResourceFileName
+	end
+	% If resource file name matches current filename, modulo a devicename,
+	% then it is an installed fontset.
+	search { % mark post match pre
+	  exch pop exch length 0 eq {
+	    dup length 0 eq { false } { { devstatus not } stopped } ifelse
+	  } { true } ifelse
+	} { true } ifelse
+        { cleartomark true } { cleartomark false } ifelse
+      } { true } ifelse
+
+      {	% Downloaded in-line
+	/InLine true def
+	currentfile GlyphData 
+	() /SubFileDecode filter 
+	<<
+	  /Intent  3
+	  /AsyncRead  false
+	  /CloseSource  false
+	>> /ReusableStreamDecode filter
+	/SourceFile 1 index def
+	/FontOffset 0 def
+	dup 0 setfileposition
+      } {
+	/InLine false def
+	currentfile //fontsetfilename statusdict begin filename pop end
+	dup length string copy
+	/SourceFile currentfile def 
+	/FontOffset currentfile fileposition def
+      } ifelse
+      /CharOffsets exch def
+
+      //StartData SourceFile //fontfiletype exec 2 copy known {
+	/FontSetType 1 index def
+	/Directory 6 dict def % directory to capture fonts in
+	get currentdict //fontsetcapture begin begin exec end end
+      } {
+	% This dict creation should probably be forced to global or local:
+	$error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+	/errorinfo [ null (Unrecognised font set type) ] put
+	/StartData errordict /undefinedresult get exec
+	pop pop .error
+      } ifelse
+
+      % Restrict access to directory
+      /Directory Directory readonly def
+
+      FontOffset dup 0 eq{pop}{
+        currentfile exch GlyphData add setfileposition
+      }ifelse
+      
+      FontSetName currentdict
+    end /FontSet defineresource pop
+    end   % FontSetInit procset
+  } stopped {
+    cleartomark 
+    /StartData errordict $error /errorname get
+    dup null eq {pop /undefined} if 
+    get exec
+  } if
+  pop setglobal
+} bind def
+
+% The rest of these names are internal to the Global Graphics procset
+% implementation and SHOULD NOT be used in PostScript code. They are not
+% guaranteed to retain their existence, names, or semantics between revisions
+% of the Harlequin RIP.
+/FontSetFileName { % name bool -> (%fontset%...). Bool indicates if CID font
+  //fontsetstring mark 4 2 roll
+  { //fontsetciddir } { //fontsetdir } ifelse
+  //concattomark exec
+} bind def
+
+/FontSetInit { % Create (%fontset%) stub files for fontset dict (on stack)
+  begin
+    Directory { % Key font-dict
+      2 copy /CIDFontType known //FontSetFileName exec
+      (w) file % key fontdict file
+      dup (%!PS-Adobe-3.0 Resource-Font\n/) writestring
+      dup 3 index //fontsetstring cvs writestring
+      dup ( /) writestring
+      dup FontSetName //fontsetstring cvs writestring
+      dup ( /FontSet findresource exch\n/FontSetInit /ProcSet findresource\nbegin ) writestring
+      dup //fontstrings FontSetType get writestring
+      dup ( end\n) writestring
+      dup 2 index /CIDFontType known {
+        (dup /CIDFontName get exch /CIDFont defineresource pop\n)
+      } {
+        (dup /FontName get exch definefont pop\n)
+      } ifelse writestring
+      closefile
+      pop pop
+    } forall
+  end
+} bind def
+
+/cff_buildfont { % Stack: fontset Name  DictStack: fontsetinit
+  exch /Directory get exch get
+} bind def
+/otto_buildfont { % Stack: fontset Name  DictStack: fontsetinit
+  exch /Directory get exch get
+} bind def
+/tt_buildfont { % Stack: fontset Name  DictStack: fontsetinit
+  exch /Directory get exch get
+} bind def
+
+currentdict end /FontSetInit exch /ProcSet defineresource pop
+
+globaldict /WorkSpace undef
+
+globalness end setglobal
+
+%%EndProcSet

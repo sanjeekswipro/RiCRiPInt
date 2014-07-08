@@ -1,0 +1,71 @@
+# $HopeName: SWcalibration!make:makefile.jam(EBDSDK_P.1) $
+#
+# Copyright (C) 2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# SWcalibration mappings and files for SW
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant calibration ;
+
+# Custom splint options
+
+AddToVar Inherited Local : SplintOptions :
+  +param-use      # Warn about unused parameters, because some compilers don't
+  -ret-val-other  # Allow return values to be ignored
+;
+
+# Compilation rules
+
+DependsOn all : calibration ;
+
+C-IncludeExportDirectories
+  core
+  fwos
+  $(PluginInterface)
+  rdrevent
+  standard
+  timeline
+: .. ;
+
+AddToVar Local : CFILES :
+  calibration.c
+: Variant calibration ;
+
+AddToVar Local : CFILES :
+  nocalibration.c
+: Variant Non_calibration ;
+
+Library calibration : $(CFILES) ;
+
+
+# SW files
+
+SWF swf : config : Config : : normalclrip normalguirip ;
+
+SWF swf : config press : Press : : normalclrip normalguirip ;
+SWF swf : config press profiles : Profiles : : normalclrip normalguirip ;
+SWF swf : config press profiles cmyk : CMYK : : normalclrip normalguirip ;
+SWF swf : config press profiles cmyk press : Press : : normalclrip normalguirip ;
+SWF swf : config press profiles cmyk press linear : Linear : : normalclrip normalguirip ;
+SWF swf : config press profiles gray : Gray : : normalclrip normalguirip ;
+SWF swf : config press profiles gray press : Press : : normalclrip normalguirip ;
+SWF swf : config press profiles gray press linear : Linear : : normalclrip normalguirip ;
+
+SWF swf : config profiles : Profiles : : normalclrip normalguirip ;
+SWF swf : config profiles cmyk : CMYK : : normalclrip normalguirip ;
+SWF swf : config profiles cmyk linear : Linear : : normalclrip normalguirip ;
+SWF swf : config profiles gray : Gray : : normalclrip normalguirip ;
+SWF swf : config profiles gray linear : Linear : : normalclrip normalguirip ;
+SWF swf : config profiles rgb : RGB : : normalclrip normalguirip ;
+SWF swf : config profiles rgb linear : Linear : : normalclrip normalguirip ;
+
+SWF swf : procsets : procsets : : normalclrip normalguirip ;
+SWF swf : procsets calsel2 : HqnCalibrate : : normalclrip normalguirip ;
+SWF swf : procsets pushcali : HqnPushCalibration : : normalclrip normalguirip ;
+
+# Log stripped

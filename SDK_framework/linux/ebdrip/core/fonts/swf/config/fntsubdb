@@ -1,0 +1,51 @@
+%!PS
+% $HopeName: COREfonts!swf:config:fntsubdb(EBDSDK_P.1) $
+
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+%
+% This file is not intended to be user-editable.
+%
+% See SW/Config/FontSubstitution for user-editable font substitution.
+%
+% This file contains mappings from anonymous font numbers to substitute font
+% names. Anonymous font numbers are allocated by Global Graphics and their
+% formulation is not documented.
+
+%-------------------------------------------------------------------------------
+% Unconditional Font substitution maps to font names.
+
+statusdict /FontSubstitutionDB <<
+
+  % eg /1234567812345678 /Courier
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Unconditional CIDFont substitution maps to CID font names.
+
+statusdict /CIDFontSubstitutionDB <<
+
+  % eg /ABCD1234ABCD1234 /CIDBullet
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional Font substitution maps to arrays of font names
+
+statusdict /ConditionalFontSubstitutionDB <<
+
+  % eg /182736450AFBECD0 [/Times-Roman/Palatino-Roman]
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional CIDFont substitution maps to arrays of CID font names
+
+statusdict /ConditionalCIDFontSubstitutionDB <<
+
+  % eg /A9B8C7D6E5F40123 [/CIDBullet]
+
+>> put
+
+%-------------------------------------------------------------------------------
+%%EOF

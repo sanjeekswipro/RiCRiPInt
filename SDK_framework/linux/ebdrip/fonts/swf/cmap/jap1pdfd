@@ -1,0 +1,119 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%IncludeResource: ProcSet (CIDInit)
+%%BeginResource: CMap (Japan1-PDFDoc)
+%%Title: (Japan1-PDFDoc Adobe Japan1 0)
+%%Version: 1.000
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (Japan1) def
+  /Supplement 0 def
+end def
+
+/CMapName /Japan1-PDFDoc def
+/CMapVersion 1.000 def
+/CMapType 1 def
+
+% /XUID [] def
+
+/WMode 0 def
+
+1 begincodespacerange
+  <00> <FF>
+endcodespacerange
+
+77 begincidrange
+<18>	<18>	130
+<19>	<19>	137
+<1A>	<1A>	128
+<1B>	<1B>	131
+<1C>	<1D>	135
+<1E>	<1E>	155
+<1F>	<1F>	95
+<20>	<5B>	1
+<5C>	<5C>	97
+<5D>	<7B>	62
+<7C>	<7C>	99
+<7D>	<7E>	94
+<7F>	<7F>	119
+<80>	<80>	119
+<81>	<82>	115
+<83>	<83>	124
+<84>	<84>	138
+<85>	<85>	114
+<86>	<86>	105
+<87>	<87>	104
+<88>	<89>	110
+<8A>	<8A>	151
+<8B>	<8B>	125
+<8C>	<8C>	121
+<8D>	<8D>	108
+<8E>	<8E>	122
+<8F>	<8F>	98
+<90>	<90>	96
+<91>	<91>	120
+<92>	<92>	228
+<93>	<94>	112
+<95>	<95>	141
+<96>	<96>	143
+<97>	<99>	223
+<9A>	<9B>	146
+<9C>	<9C>	149
+<9D>	<9D>	227
+<9E>	<9E>	229
+<A1>	<A3>	101
+<A4>	<A4>	107
+<A5>	<A5>	61
+<A6>	<A6>	93
+<A7>	<A7>	106
+<A8>	<A8>	132
+<A9>	<A9>	152
+<AA>	<AA>	140
+<AB>	<AB>	109
+<AC>	<AC>	153
+<AD>	<AD>	14
+<AE>	<AE>	154
+<AF>	<AF>	129
+<B0>	<B3>	155
+<B4>	<B4>	127
+<B5>	<B5>	159
+<B6>	<B6>	118
+<B7>	<B7>	117
+<B8>	<B8>	134
+<B9>	<B9>	160
+<BA>	<BA>	144
+<BB>	<BB>	123
+<BC>	<BE>	161
+<BF>	<BF>	126
+<C0>	<C5>	164
+<C6>	<C6>	139
+<C7>	<D7>	170
+<D8>	<D8>	230
+<D9>	<DE>	187
+<DF>	<DF>	150
+<E0>	<E1>	193
+<E2>	<E2>	212
+<E3>	<E5>	196
+<E6>	<E6>	145
+<E7>	<F3>	199
+<F4>	<F4>	202
+<F5>	<F7>	213
+<F8>	<F8>	148
+<F9>	<FF>	216
+endcidrange
+
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

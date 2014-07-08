@@ -1,0 +1,526 @@
+%!PS-Adobe
+%%Creator: Global Graphics Software Limited
+%%Title: HqnLogo
+%%CreationDate: (February 21, 1990)
+%%BoundingBox: 0 0 56 72
+%%DocumentFonts: Harlequin
+%%DocumentSuppliedFonts: Harlequin
+%%DocumentCustomColors: (PANTONE 319 CV)
+%%+ (PANTONE 549 CV)
+%%Copyright: Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnLogo)" 1 1
+
+% $HopeName: SWv20!swf:procsets:logo(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This file produces a Harlequin logo with the vertical side
+% 1 inch long (including the text), with the bottom left hand
+% corner at the 0, 0 point
+
+currentglobal false setglobal
+
+20 dict begin
+
+  /globalness exch def
+
+  /Defaults 15 dict def 
+  Defaults begin
+    % ------------------------------------------------------------
+    % CHANGE THESE VALUES FOR DIFFERENT VARIATIONS
+    /Color             true def
+        % it still works if this is true and its on a b/w printer, but the 
+        % grays are not so distinct
+    /SolidText         false def
+        % the text and any embellishement borders looks better if
+        % they are not half-toned for smaller logos
+    /BorderAll         false def
+        % puts a rectangle around the whole logo and text if true
+    /BorderPicture     false def
+        % puts a rectangle around the box (not the text) if true
+    /BorderTile        false def
+        % makes the flying tile stand out more
+    /ScriptWorks       false def 
+      % NOTE: if ScriptWorks is true, bounding box should
+      % be 0 0 63 72, and if false 0 0 52 72
+    % ------------------------------------------------------------
+  end
+
+%%BeginFont: Harlequin
+  % Set up Harlequin font.
+  10 dict begin
+    /FontMatrix [ 0.001  0.0  0.0  0.001  0.0  0.0 ] def
+    /FontType 3 def
+    /PaintType 0 def
+    /StrokeWidth 100 def
+    /FontBBox [ 0.0 0.0 1000.0 1000.0 ] def
+    /Encoding 256 array def
+    0 1 255 { Encoding exch /box put } bind for
+    Encoding 97  /a put	Encoding 98  /b put	Encoding 99  /c put
+    Encoding 100 /d put	Encoding 101 /e put	Encoding 102 /f put
+    Encoding 103 /g put	Encoding 104 /h put	Encoding 105 /i put
+    Encoding 106 /j put	Encoding 107 /k put	Encoding 108 /l put
+    Encoding 109 /m put	Encoding 110 /n put	Encoding 111 /o put
+    Encoding 112 /p put	Encoding 113 /q put	Encoding 114 /r put
+    Encoding 115 /s put	Encoding 116 /t put	Encoding 117 /u put
+    Encoding 118 /v put	Encoding 119 /w put	Encoding 120 /x put
+    Encoding 121 /y put	Encoding 122 /z put
+    Encoding 32 /space put  Encoding 46 /period put Encoding 58 /colon put
+    Encoding 61 /equal put  Encoding 95 /underscore put
+    Encoding 72  /H put
+    Encoding 76  /L put     Encoding 87  /W put
+    Encoding 75  /K put
+
+    /CharProcs 60 dict def
+    CharProcs begin
+
+/a { 588 0 0 10 504 542 setcachedevice
+56 514 moveto 56 542 lineto 364 542 lineto 462 542 504 508 504 430 curveto 504
+10 lineto 140 10 lineto 42 10 0 44 0 122 curveto 0 234 lineto 0 312 42 346 140
+346 curveto 364 346 lineto 364 430 lineto 364 489 339 514 280 514 curveto 
+closepath 364 38 moveto 364 318 lineto 224 318 lineto 165 318 140 293 140 234
+curveto 140 122 lineto 140 63 165 38 224 38 curveto closepath eofill
+} bind def
+
+/b { 588 0 0 10 504 766 setcachedevice
+0 10 moveto 364 10 lineto 462 10 504 44 504 122 curveto 504 430 lineto 504 508
+462 542 364 542 curveto 140 542 lineto 140 766 lineto 0 766 lineto closepath
+140 38 moveto 140 514 lineto 280 514 lineto 280 514 lineto 339 514 364 489
+364 430 curveto 364 122 lineto 364 63 339 38 280 38 curveto closepath eofill
+} bind def
+
+/c { 588 0 0 10 504 542 setcachedevice
+504 514 moveto 504 542 lineto 140 542 lineto 42 542 0 508 0 430 curveto 0 122
+lineto 0 44 42 10 140 10 curveto 504 10 lineto 504 38 lineto 224 38 lineto 165
+38 140 63 140 122 curveto 140 430 lineto 140 489 165 514 224 514 curveto
+closepath eofill
+} bind def
+
+/d { 588 0 0 10 504 766 setcachedevice
+504 10 moveto 504 766 lineto 364 766 lineto 364 542 lineto 140 542 lineto 42
+542 0 508 0 430 curveto 0 122 lineto 0 44 42 10 140 10 curveto closepath
+364 38 moveto 224 38 lineto 165 38 140 63 140 122 curveto 140 430 lineto 140
+489 165 514 224 514 curveto 364 514 lineto closepath eofill
+} bind def
+
+/e { 588 0 0 10 504 542 setcachedevice
+448 10 moveto 448 38 lineto 224 38 lineto 165 38 140 63 140 122 curveto 140 290
+lineto 504 290 lineto 504 430 lineto 504 508 462 542 364 542 curveto 140 542
+lineto 42 542 0 508 0 430 curveto 0 122 lineto 0 44 42 10 140 10 curveto
+closepath 140 374 moveto 140 430 lineto 140 489 165 514 224 514 curveto 280 514
+lineto 339 514 364 489 364 430 curveto 364 374 lineto closepath eofill
+} bind def
+
+/f { 504 0 0 10 420 766 setcachedevice
+0 10 moveto 0 654 lineto 0 732 42 766 140 766 curveto 420 766 lineto 420 738
+lineto 224 738 lineto 165 738 140 713 140 654 curveto 140 542 lineto 280 542
+lineto 280 514 lineto 140 514 lineto 140 10 lineto closepath eofill
+} bind def
+
+/g { 588 0 0 -214 504 542 setcachedevice
+56 -186 moveto 56 -214 lineto 364 -214 lineto 462 -214 504 -180 504 -102
+curveto 504 542 lineto 140 542 lineto 42 542 0 508 0 430 curveto 0 122 lineto
+0 44 42 10 140 10 curveto 364 10 lineto 364 -102 lineto 364 -161 339 -186 280
+-186 curveto closepath 364 38 moveto 224 38 lineto 165 38 140 63 140 122
+curveto 140 430 lineto 140 489 165 514 224 514 curveto 364 514 lineto closepath
+eofill
+} bind def
+
+/h { 588 0 0 10 504 766 setcachedevice
+0 10 moveto 140 10 lineto 140 514 lineto 280 514 lineto 339 514 364 489 364 430
+curveto 364 10 lineto 504 10 lineto 504 430 lineto 504 508 462 542 364 542
+curveto 140 542 lineto 140 766 lineto 0 766 lineto closepath eofill
+} bind def
+
+/i { 224 0 0 10 140 794 setcachedevice
+0 10 moveto 140 10 lineto 140 542 lineto 0 542 lineto closepath 0 710 moveto
+70 794 lineto 140 710 lineto 70 626 lineto closepath eofill
+} bind def
+
+/j { 504 0 0 -214 420 794 setcachedevice
+0 -214 moveto 0 -186 lineto 196 -186 lineto 255 -186 280 -161 280 -102 curveto
+280 542 lineto 420 542 lineto 420 -102 lineto 420 -180 378 -214 280 -214 
+curveto closepath 280 710 moveto 350 794 lineto 420 710 lineto 350 626 lineto
+closepath eofill
+} bind def
+
+/k { 588 0 0 10 504 766 setcachedevice
+0 10 moveto 0 766 lineto 140 766 lineto 140 542 lineto 364 542 lineto 462 542
+504 508 504 430 curveto 504 402 lineto 504 324 462 290 364 290 curveto 140 290
+lineto 140 10 lineto closepath 140 514 moveto 140 318 lineto 280 318 lineto 339
+318 364 343 364 402 curveto 364 430 lineto 364 489 339 514 280 514 curveto
+closepath eofill 140 290 moveto 297 290 364 206 364 10 curveto 504 10 lineto
+504 226 395 318 140 318 curveto closepath eofill
+} bind def
+
+/l { 224 0 0 10 140 766 setcachedevice
+0 10 moveto 140 10 lineto 140 766 lineto 0 766 lineto closepath eofill
+} bind def
+
+/m { 840 0 0 10 756 542 setcachedevice
+0 10 moveto 0 542 lineto 308 542 lineto 406 542 448 508 448 430 curveto 448
+10 lineto 308 10 lineto 308 430 lineto 308 489 283 514 224 514 curveto 140
+514 lineto 140 10 lineto closepath eofill 308 10 moveto 308 542 lineto 616 542
+lineto 714 542 756 508 756 430 curveto 756 10 lineto 616 10 lineto 616 430
+lineto 616 489 591 514 532 514 curveto 448 514 lineto 448 10 lineto closepath
+eofill
+} bind def
+
+/n { 588 0 0 10 504 542 setcachedevice
+0 10 moveto 0 542 lineto 364 542 lineto 462 542 504 508 504 430 curveto 504 10
+lineto 364 10 lineto 364 430 lineto 364 489 339 514 280 514 curveto 140 514
+lineto 140 10 lineto closepath eofill
+} bind def
+
+/o { 588 0 0 10 504 542 setcachedevice
+364 10 moveto 462 10 504 44 504 122 curveto 504 430 lineto 504 508 462 542 364
+542 curveto 140 542 lineto 42 542 0 508 0 430 curveto 0 122 lineto 0 44 42 10
+140 10 curveto closepath 224 38 moveto 165 38 140 63 140 122 curveto 140 430
+lineto 140 489 165 514 224 514 curveto 280 514 lineto 339 514 364 489 364 430
+curveto 364 122 lineto 364 53 339 38 280 38 curveto closepath eofill
+} bind def
+
+/p { 588 0 0 -214 504 542 setcachedevice
+0 -214 moveto 140 -214 lineto 140 10 lineto 364 10 lineto 462 10 504 44 504 122
+curveto 504 430 lineto 504 508 462 542 364 542 curveto 0 542 lineto closepath
+140 38 moveto 140 514 lineto 280 514 lineto 339 514 364 489 364 430 curveto 364
+122 lineto 364 63 339 38 280 38 curveto closepath eofill
+} bind def
+
+/q { 588 0 0 -214 504 542 setcachedevice
+364 -214 moveto 504 -214 lineto 504 542 lineto 140 542 lineto 42 542 0 508 0
+430 curveto 0 122 lineto 0 44 42 10 140 10 curveto 364 10 lineto closepath
+364 38 moveto 224 38 lineto 165 38 140 63 140 122 curveto 140 430 lineto 140
+489 165 514 224 514 curveto 364 514 lineto closepath eofill
+} bind def
+
+/r { 504 0 0 10 420 542 setcachedevice
+0 10 moveto 140 10 lineto 140 542 lineto 0 542 lineto closepath eofill 0 346
+moveto 0 483 126 542 420 542 curveto 420 514 lineto 224 514 140 483 140 346
+curveto closepath eofill
+} bind def
+
+/s { 588 0 0 10 504 542 setcachedevice
+0 10 moveto 0 38 lineto 280 38 lineto 339 38 364 63 364 122 curveto 364 206
+lineto 364 265 339 290 280 290 curveto 140 290 lineto 42 290 0 324 0 402
+curveto 0 430 lineto 0 508 42 542 140 542 curveto 504 542 lineto 504 514 lineto
+224 514 lineto 165 514 140 489 140 430 curveto 140 402 lineto 140 343 165 318
+224 318 curveto 364 318 lineto 462 318 504 284 504 206 curveto 504 122 lineto
+504 44 462 10 364 10 curveto closepath eofill
+} bind def
+
+/t { 504 0 0 10 420 766 setcachedevice
+140 766 moveto 0 766 lineto 0 122 lineto 0 44 42 10 140 10 curveto 420 10
+lineto 420 38 lineto 224 38 lineto 165 38 140 63 140 122 curveto 140 514 lineto
+280 514 lineto 280 542 lineto 140 542 lineto closepath eofill
+} bind def
+
+/u { 588 0 0 10 504 542 setcachedevice
+0 542 moveto 140 542 lineto 140 122 lineto 140 63 165 38 224 38 curveto 364 38
+lineto 364 542 lineto 504 542 lineto 504 10 lineto 140 10 lineto 42 10 0 44 0
+122 curveto closepath eofill
+} bind def
+
+/v { 588 0 0 10 504 542 setcachedevice
+0 542 moveto 140 542 lineto 322 10 lineto 182 10 lineto closepath eofill 182 10
+moveto 364 542 lineto 504 542 lineto 322 10 lineto closepath eofill
+} bind def
+
+/w { 840 0 0 10 756 542 setcachedevice
+0 542 moveto 140 542 lineto 294 10 lineto 154 10 lineto closepath eofill 154 10
+moveto 308 542 lineto 448 542 lineto 294 10 lineto closepath eofill 308 542
+moveto 448 542 lineto 602 10 lineto 462 10 lineto closepath eofill 462 10
+moveto 616 542 lineto 756 542 lineto 602 10 lineto closepath eofill
+} bind def
+
+/x { 588 0 0 10 504 542 setcachedevice
+0 10 moveto 364 542 lineto 504 542 lineto 140 10 lineto closepath eofill 0 542
+moveto 140 542 lineto 504 10 lineto 364 10 lineto closepath eofill
+} bind def
+
+/y { 588 0 0 -214 504 542 setcachedevice
+0 542 moveto 140 542 lineto 140 122 lineto 140 63 165 38 224 38 curveto 364 38
+lineto 364 542 lineto 504 542 lineto 504 -102 lineto 504 -180 462 -214 364 -214
+curveto 56 -214 lineto 56 -186 lineto 280 -186 lineto 339 -186 364 -161 364
+-102 curveto 364 10 lineto 140 10 lineto 42 10 0 44 0 122 curveto closepath
+eofill
+} bind def
+
+/z { 588 0 0 10 504 542 setcachedevice
+0 514 moveto 0 542 lineto 504 542 lineto 140 38 lineto 504 38 lineto 504 10
+lineto 0 10 lineto 0 38 lineto 364 514 lineto closepath eofill
+} bind def
+
+/L { 588 0 0 10 504 766 setcachedevice
+0 10 moveto 140 10 lineto 140 766 lineto 0 766 lineto closepath eofill
+0 10 moveto 504 10 lineto 504 38 lineto 0 38 lineto closepath eofill
+} bind def
+
+/H { 588 0 0 10 504 766 setcachedevice
+0 10 moveto 140 10 lineto 140 374 lineto 364 374 lineto 364 10 lineto
+504 10 lineto 504 766 lineto 364 766 lineto 364 402 lineto 140 402 lineto
+140 766 lineto 0 766 lineto closepath eofill
+} bind def
+
+/W { 840 0 0 10 756 766 setcachedevice
+0 766 moveto 140 766 lineto 294 10 lineto 154 10 lineto closepath eofill 154 10
+moveto 308 542 lineto 448 542 lineto 294 10 lineto closepath eofill 308 542
+moveto 448 542 lineto 602 10 lineto 462 10 lineto closepath eofill 462 10
+moveto 616 766 lineto 756 766 lineto 602 10 lineto closepath eofill
+} bind def
+
+/K { 840 0 0 10 756 766 setcachedevice
+0 766 moveto 140 766 lineto 140 0 lineto 0 0 lineto closepath eofill
+140 300 moveto 634 766 lineto 454 766 lineto 140 480 lineto closepath eofill
+140 350 moveto 576 0 lineto 756 0 lineto 250 406 lineto closepath eofill
+} bind def
+
+/box { 588 0 0 10 504 542 setcachedevice
+0 10 moveto 0 542 lineto 504 542 lineto 504 10 lineto closepath
+28 38 moveto 28 514 lineto 476 514 lineto 476 38 lineto closepath eofill
+} bind def
+
+/space { 588 0 0 0 0 0 setcachedevice } bind def
+
+/underscore { 588 0 0 -214 504 -196 setcachedevice
+0 -214 moveto 504 -214 lineto 504 -196 lineto 0 -196 lineto closepath eofill
+} bind def
+
+/period { 214 0 0 10 140 122 setcachedevice
+0 66 moveto 0 105 21 122 70 122 curveto 119 122 140 105 140 66
+curveto 140 26 119 10 70 10 curveto 21 10 0 49 0 66 curveto 140 66 closepath
+eofill
+} bind def
+
+/colon { 214 0 0 21 140 514 setcachedevice
+0 94 moveto 0 133 21 150 70 150 curveto 119 150 140 133 140 94 curveto 140 54
+119 38 70 38 curveto 21 38 0 77 0 94 curveto closepath eofill 0 458 moveto 0
+497 21 514 70 514 curveto 119 514 140 497 140 458 curveto 140 418 119 402 70
+402 curveto 21 402 0 441 0 458 curveto closepath eofill
+} bind def
+
+/equal { 588 0 0 206 504 402 setcachedevice
+0 206 moveto 0 234 lineto 504 234 lineto 504 206 lineto closepath eofill 0 374
+moveto 0 402 lineto 504 402 lineto 504 374 lineto closepath eofill
+} bind bind def
+
+    end
+
+    /BuildChar { 
+      exch begin
+        Encoding exch get
+        CharProcs exch get
+      end
+      0.2 setflat
+      exec
+    } bind def
+    currentdict 
+  end
+  /Harlequin exch definefont pop
+%%EndFont
+
+  % colour separation definitions - incomplete because the file
+  % only needs a subset (e.g. don't define separationimage)
+  /ndf {
+    1 index where { pop pop pop } { dup xcheck { bind } if def } ifelse
+  } bind def
+  /max { 2 copy lt { exch } if pop } bind def
+  /ccmyk { dup 5 -1 roll sub 0 max exch } bind def
+  /setcmykcolor { 1 exch sub ccmyk ccmyk ccmyk pop setrgbcolor } ndf
+  /findcmykcustomcolor { [ 6 1 roll ] } ndf
+  /setcustomcolor{
+    exch aload pop pop 4 { 4 index mul 4 1 roll } repeat setcmykcolor pop
+  } ndf
+  /setoverprint { pop } ndf
+  /currentoverprint false ndf
+
+  /shape {
+    % paint-function array-of-points
+    newpath
+    dup 0 get 1 index 1 get moveto
+    2 1 index length 2 sub getinterval
+    mark exch
+    {
+      counttomark 2 eq {
+        lineto
+      } if
+    } forall
+    closepath 
+    pop % the mark
+    exec
+  } def
+
+  % definition of the shapes: the origin is the lower left of 
+  % the turquoise background, so far as these coordinates are concerned,
+  % measured in millimetres off a 230 x 230 mm paper copy
+  /background [ 0 0  0 230  230 230  230 0 ] def
+  /tile-containing-shadow [ -6 68 60 95 140 62 70 24 ] def
+    % this has projected the imaginary point
+  /tiles [
+    % Far left row (can only see points)
+
+    [ 0 230 8 230 17 227 0 225 ]
+    [ 0 223 14 219.5 0 217 ]
+    [ 0 212 12 209 0 207 ]
+    [ 0 199 12.5 195 0 192 ]
+    [ 0 181 8 178 0 176 ]
+
+    % Next row (main row)
+
+    [ 27 227 41 230 52 230 66 227 46.5 224 ]
+    [ 22 219.5 47 223 73 218.5 48 214.5 ] 
+    [ 19 209 49 213 79 207.5 51 202 ]
+    [ 19 195 51.5 201 87 195 53 187 ]
+    [ 14 178 52 186 92 177 53 168 ]
+    [ 8 155 53.5 167 102 154 57 139 ]
+    [ 0 122 56 138 120 118 59 96 1 120 ]
+    tile-containing-shadow
+    [ 24 0 69 23 111 0 ] 		% This one disappears off the bottom
+
+    % Second row (behind the rectangle)
+
+    [ 77 227 90 230 108 230 123 227 103 223 ]
+    [ 82 219 104 222 133 219 112 214 ]
+    [ 81 208 113 212.5 147 207 121 201.5 ]
+    [ 92 195 122 200.5 160 194 132 188 ]
+    % The rest in this section contain points hidden by the hanging diamond
+    [ 96 177 132 186 178 176 144 166.5 ]
+    [ 104 154 144 165.5 205 151.5 166 137 ]
+    [ 122 119 167 136 230 119 230 107 202 91.5 ]
+
+    % Third row
+
+    [ 133 227 146 230 156 230 177 226 159 222 ]
+    [ 142 218 161 221 192 217 174 213 ]
+    [ 153 208 174 212 212 207 192 202 ]
+    [ 162 194 192 201 230 194 230 191 212 186.5 ]
+    [ 183 176 212 185.5 230 182 230 166 ]
+    [ 210 152 230 159 230 147 ] % Last one - only left point shows
+
+    % Last Row
+
+    [ 187 226 203 230 207 230 230 227 230 225 218 222 ]
+    [ 200 217 218 221 230 220 230 213 ]
+    [ 219 207 230 210 230 205 ]
+  ] def
+
+  /loose-tile [ 82 207 145 173 178 81 107 98 ] def
+  /shadow [ 82 68 160 75 190 38 100 31 ] def
+  /border-including-scriptworks [ -7 -70  -7 237  292 237  292 -70 ] def
+  /border-excluding-scriptworks [ -7 -70  -7 237  237 237  237 -70 ] def
+
+  /hqnlogo {
+    % set up for a 1 inch high logo (including the text) with the bottom
+    % left corner at 0,0 (including any border)
+    //Defaults begin
+
+      save /logosave exch def
+
+        count 1 ge
+        {
+         dup type /dicttype eq {
+          { def } forall
+         } if
+        }
+        if
+
+        /saveoverprint currentoverprint def
+        false setoverprint
+
+        Color {
+          /turquoise .51 .0 .18 .0 (PANTONE 319 CV) findcmykcustomcolor def
+          /blue      .60 .0 .0 .30 (PANTONE 549 CV) findcmykcustomcolor def
+        } {
+          /turquoise 0 0 0 .487 (turquoise) findcmykcustomcolor def
+          /blue      0 0 0 .7   (blue)      findcmykcustomcolor def
+        } ifelse
+
+        BorderAll {
+          72 307 div dup scale
+          0 76 translate
+        }{
+          72 295 div dup scale
+          0 65 translate
+        } ifelse
+
+        % create the shapes
+        turquoise 1 setcustomcolor
+        { fill } background shape
+
+        blue 1 setcustomcolor
+        { fill } shadow shape
+
+        gsave
+          1 setgray
+          { clip } background shape
+          tiles { { fill } exch shape } forall
+          { fill } loose-tile shape
+        grestore
+
+        gsave
+          { clip } tile-containing-shadow shape
+          blue 0.3 setcustomcolor
+          { fill } shadow shape
+        grestore
+
+        % clean up the edge
+        gsave
+          0.5 setlinewidth
+          BorderPicture {
+            SolidText { 0 setgray } { turquoise 1 setcustomcolor } ifelse
+          }{
+            1 setgray
+          } ifelse
+          { stroke } background shape
+        grestore
+
+        % boundary of loose tile
+        BorderTile {
+          1 setlinewidth
+          SolidText { 0 setgray } { turquoise 1 setcustomcolor } ifelse
+          { stroke } loose-tile shape
+        } if
+
+        % swap the following two lines to get grayscale rather than black text
+        SolidText { 0 setgray } { blue 1 setcustomcolor } ifelse
+        2 -51.5 moveto
+        /Harlequin findfont 51.5 scalefont setfont
+        (harlequin) show
+
+        ScriptWorks {
+          gsave
+            250 228 moveto
+            -90 rotate
+            0.90 0.90 scale
+            (scriptworks) show
+          grestore
+        } if
+
+        BorderAll {
+          1 setlinewidth
+          SolidText { 0 setgray } { turquoise 1 setcustomcolor } ifelse
+          { stroke } ScriptWorks {
+            border-including-scriptworks
+          }{ 
+            border-excluding-scriptworks
+          } ifelse
+          shape
+        } if
+
+        saveoverprint setoverprint
+
+      logosave restore
+    end
+    showpage
+  } bind def
+
+  currentdict
+end
+
+/HqnLogo exch /ProcSet defineresource
+
+/globalness get setglobal
+
+%%EndProcSet

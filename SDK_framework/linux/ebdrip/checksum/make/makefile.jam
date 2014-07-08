@@ -1,0 +1,18 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for HQNchecksum
+#
+# $HopeName: HQNchecksum!make:makefile.jam(EBDSDK_P.1) $
+#
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    DependsOn all : checksum ;
+
+    C-IncludeExportDirectories standard : .. ;
+
+    Library checksum : csumrc.c ;
+
+# Log stripped

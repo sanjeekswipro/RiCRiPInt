@@ -1,0 +1,83 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:documentseparatorsheet.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for DocumentSeparatorSheet by setting one of two
+% flags (/PrintStartSheet, /PrintEndSheet) in the PrintTicket procset's
+% InternalState.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+/DoDocumentSeparatorSheet {
+  begin
+    (->DoDocumentSeparatorSheet) PTDebug
+
+    % Handle DocumentSeparatorSheet value by setting state in the
+    % PrintTicket procset.
+    <<
+      /None {
+        InternalState /PrintStartSheet false put
+        InternalState /PrintEndSheet false put
+      } bind
+      
+      /StartSheet {
+        InternalState /PrintStartSheet true put
+        InternalState /PrintEndSheet false put
+      } bind
+      
+      /EndSheet {
+        InternalState /PrintStartSheet false put
+        InternalState /PrintEndSheet true put
+      } bind
+      
+      /BothSheets {
+        InternalState /PrintStartSheet true put
+        InternalState /PrintEndSheet true put
+      } bind
+    >>
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+    2 copy known not {
+      (%%[ Warning: Unknown DocumentSeparatorSheet value.  Using /None. ]%%) =
+      pop /None
+    }if
+    get exec
+
+    (<-DoDocumentSeparatorSheet) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /DocumentSeparatorSheet <<
+    /Action //DoDocumentSeparatorSheet
+    /Default << /Value /None >>
+  >>
+>>
+
+end

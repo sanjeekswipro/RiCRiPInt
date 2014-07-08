@@ -1,0 +1,546 @@
+%!PS-Adobe-3.0
+%%Title: HqnSpots
+%%Creator: Global Graphics Software Limited
+%%CreationDate: May 1998
+%{HqnSpots version #1 0
+% Copyright (C) 1998-2012 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnSpots) 1 0
+
+
+% $HopeName: SWv20!swf:procsets:hqnspots(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+12 dict begin
+
+/SpotWorkspace currentdict def
+
+% Non-recursive check of component from recipe colour
+/recheckspot {
+	% name -> bool
+	dup type /nametype ne { cvn } if
+	false
+	% name false
+	currentpagedevice /Private get /Colorants get {
+		pop
+		% name false this
+		2 index eq {
+			% name false
+			pop true
+			exit
+		} if
+	} forall
+	% name bool
+	exch pop
+} bind def
+
+/InnerTestSpot {
+	% IS THIS CORRECT FOR ALL? IT WILL LEAD TO TWO SPOT VIGNETTES OVERLAID, AND ALL WILL KNOCK OUT ... #############
+	% If None or All or Add is true then it will be generated.
+	dup /None eq 1 index /All eq or {
+		pop true
+	}	{
+		% Nope - see if it's explicitly named in our colorant list
+		true
+		currentpagedevice /Private get /Colorants get {
+			pop
+			2 index eq {
+				pop pop true false
+				exit
+			} if
+		} forall
+			{
+			% Nope - check for separation interception - recipe colours etc.
+			currentinterceptcolorspace /NamedColor 2 copy known {
+				get dup null ne {
+					% Step through all installed NamedColor resources
+					true exch
+						{
+						/NamedColor findresource
+						% spotname true rsrc
+						dup
+						% SpotName true rsrc rsrc
+						3 index 1 index /Lookup get 
+						% SpotName true rsrc rsrc Spotname Lookup
+						exec
+						% SpotName true rsrc false
+						% SpotName true rsrc dict true
+							{
+							% SpotName true rsrc dict
+
+							% Yes, the colour was recognised, now what's it returned? ...
+							exch begin
+							dup type /dicttype eq {
+								/ColorSpace get
+							}	{
+								pop ColorSpace
+							} ifelse
+							end		% resource dict
+
+							% SpotName true colorspace
+
+							% Now, what kind of colorspace is the spot layered on? We're only
+							% Really interested in Separation and DeviceN.
+							dup dup type /nametype ne {
+								0 get
+							} if
+							% SpotName true colorspace colortype
+							dup /Separation eq {
+								pop 1 get //recheckspot exec {
+									% It's a separation which will be generated
+									pop pop true false
+									exit
+								} if
+							}	{
+								/DeviceN eq {
+									1 get	% The colorant array
+									true exch
+									% Spotname true true colorants
+										{
+										% spotname true true componentname
+										//recheckspot exec 
+										% spotname true true bool
+										not {
+											% At least one component won't be produced
+											pop false
+											exit
+										} if
+									} forall
+									% spotname true true
+										{
+										% Yes, we're on a winner here!
+										% spotname true
+										pop pop true false
+										exit
+									} if
+								}	{
+									% Not Separation or DeviceN
+									pop	% colorspace
+									% The NamedColor lookup says this colour should be intercepted,
+									% that may mean it will be emulated in CMYK, or it may mean that
+									% it's just added the spot as an extra colorant anyway. Recheck.
+									1 index //recheckspot exec {
+										% Yes!
+										% spotname true
+										exch pop
+										false 
+										% true false
+										exit
+									} if
+								} ifelse
+							} ifelse
+						}	{
+							% SpotName true rsrc
+							pop
+						} ifelse
+					} forall
+						{
+						% The colour was not picked up by any of the resources
+						pop false
+					} if
+				}	{
+					% Just null ...
+					pop		% null
+					pop false
+				} ifelse
+			}	{
+				% Nothing doing ...
+				pop pop
+				pop false
+			} ifelse
+		} if
+	} ifelse
+} bind def
+
+% lowercase: a utility procedure to convert the argument string to lower case
+/A (A)0 get def
+/Z (Z)0 get def
+/a-A (a)0 get A sub def
+
+/lowercase {
+  dup length 0 exch 1 exch 1 sub {
+    2 copy get
+    dup //A ge 1 index //Z le and {
+      3 copy //a-A add put 
+    } if
+    pop pop
+  } for
+} bind def
+
+% Make sure that (Pantone blah CVC) is equated to (Pantone blah CV)
+/cvcu << (cvc) null (cvu) null >> def
+
+% /colorname -> TrimPantone -> [ /trimmedName true | /colorname false ]
+/TrimPantone (pantone) def
+/TrimPantone {
+	dup length string 
+	% may be name or string
+	1 index type /stringtype eq { copy } { cvs } ifelse
+	//lowercase exec
+	dup //TrimPantone anchorsearch {
+		pop pop
+		dup dup length 3 sub 3 getinterval
+		% fullname, last3
+		//cvcu exch known {
+			0 1 index length 1 sub getinterval
+		} if
+		true
+	} { pop false } ifelse
+} bind def
+
+% Mappings from input color names to the separation that should be used to represent
+% them in different device color families. Using CalibrationColorModel means that all
+% PhotoInk color models should fall through correctly.
+/CalibrationColors <<
+
+	/DeviceCMYK <<
+		/Black	/Black
+		/Cyan	/Cyan
+		/Magenta	/Magenta
+		/Yellow	/Yellow
+	>>
+
+	/DeviceGray <<
+		/Black	/Black
+	>>
+
+>> def
+
+% And some PCMs need an adjustment too.
+/DeviceColors <<
+
+	/DeviceGray <<
+		/Black	/Black
+	>>
+
+>> def
+
+% - CheckAliases -> bool
+% ColorName must be pre-defined and is changed if mapped.
+/CheckAliases {
+	currentpagedevice begin
+	SeparationDetails begin
+	false
+	ColorantFamilies {
+		dup /ColorantFamilyName get DeviceColorantFamily eq {
+			/DeviceTypes get {
+				dup /DeviceType get 
+				PageBufferType eq {
+					/Colorants get {
+						/Names get
+						dup {
+							% false namearray thisname
+							ColorName eq {
+								0 get
+								/ColorName exch def
+								pop
+								true
+								exit
+							} if
+						} forall
+						dup type /booleantype ne { pop } if
+						dup { exit } if
+					} forall
+				} { pop } ifelse
+				dup { exit } if
+			} forall
+		} { pop } ifelse
+		dup { exit } if
+	} forall
+	end end
+} bind def
+
+/CustomColorMap 4 dict def
+
+/TryEntry {
+	false 3 1 roll
+	2 copy known {
+		get
+		% subdict
+		ColorName 2 copy known {
+			get 
+			% replacement
+			/ColorName exch def
+			pop		% the false
+			true
+		}	{ 
+			pop pop 
+		} ifelse
+	}	{ 
+		pop pop 
+	} ifelse
+} bind def
+ 
+% The procset ==========================================================
+
+/HqnSpots 5 dict dup begin 
+
+% /colorname -> TestSpot -> [ false | true ]
+/TestSpot {
+	count 1 lt {
+		/TestSpot errordict /stackunderflow get exec
+	} if
+	dup type dup /nametype ne exch /stringtype ne and {
+		/TestSpot errordict /typecheck get exec
+	} if
+	dup type /nametype ne { cvn } if
+
+	% We are able to render the spot correctly if auto-separations is on.
+	false
+	currentpagedevice /SeparationDetails get /Add 2 copy known {
+		get true eq
+		exch pop	% false
+	} {
+		pop pop
+	} ifelse
+
+	dup not {
+		1183615869 internaldict /autoseparationstatus get exec
+		exch pop	% false
+	} if
+
+	% |- colorantname autoseps
+	{
+		pop true
+	} {
+		//InnerTestSpot exec
+	} ifelse
+} bind def
+
+% /colorname -> FullTestSpot -> [ false | /realcolorname true ]
+/FullTestSpot << /Name null >> def
+/FullTestSpot {
+	count 1 lt {
+		/FullTestSpot errordict /stackunderflow get exec
+	} if
+	dup type dup /nametype ne exch /stringtype ne and {
+		/FullTestSpot errordict /typecheck get exec
+	} if
+	dup type /nametype ne { cvn } if
+
+	//SpotWorkspace begin
+
+	/ColorName exch def
+
+	1	{	% repeat to allow easy early break-out
+	
+		% ---------- does the name match something already to be produced?
+		false
+		//FullTestSpot
+		1183615869 internaldict /currentseparationorder get exec
+		% [sepsarray]
+			{	% outer array
+				{	% inner array
+				% dict on stack
+				/Name get
+				ColorName eq {
+					pop
+					true
+					exit
+				} if
+			} forall
+			dup { exit } if
+		} forall
+			{ 
+			true exit 
+		} if		% This spot will be produced.
+
+		% ------------ Is the name in the custom color mapping list?
+		//CustomColorMap ColorName known {
+			//CustomColorMap ColorName get
+			true
+			exit
+		} if
+
+		% ------------ Is this a color with a clean mapping to a real device colorant?
+		//DeviceColors currentpagedevice /ProcessColorModel get
+		//TryEntry exec { true exit } if
+
+		//CalibrationColors currentpagedevice /CalibrationColorModel get
+		dup null eq { pop pop }{
+			//TryEntry exec { true exit } if
+		} ifelse
+
+		% ------------- Check for colour name aliases
+		//CheckAliases exec
+			{ 
+			true exit 
+		} if
+
+		% ----------- does the name match except for case, and with 
+		% Pantone xxx CVU/CVC equated to Pantone xxx CV?
+		ColorName //TrimPantone exec pop
+		false
+		% spotname false
+
+		currentpagedevice /Private get /Colorants get {
+			pop
+			% spotname false tryname
+			dup
+			//TrimPantone exec pop
+			% spotname false tryname trimmedname
+			3 index eq {
+				% spotname false tryname
+				/ColorName exch def
+				pop pop
+				true 
+				exit
+			} if
+			% spotname false tryname
+			pop
+		} forall
+			{ 
+			true exit 
+		} if
+		pop	% spotname
+
+		false
+	} repeat		% just for the exits
+
+	dup {
+		ColorName exch
+	}	{
+		pop	% false
+		ColorName //TestSpot exec
+		dup { ColorName exch } if
+	} ifelse
+
+	end		% SpotWorkspace
+} bind def
+
+% color1 color2 -> CompareSpots -> IsMatch
+/CompareSpots {
+	//SpotWorkspace begin
+
+	1	{
+		2 copy eq {
+			pop pop 
+			true exit
+		} if
+
+		% ------------ Is the name in the custom color mapping list?
+		2	{
+			//CustomColorMap 2 index 2 copy known {
+				% c1 c2 //cc c1, then % c1 c2 c1 //cc c2
+				get
+			} { exch pop } ifelse
+			dup type /nametype ne { cvn } if
+		} repeat
+		eq {
+			true exit
+		} if
+
+		% ------------- Check for colour name aliases
+		/ColorName 1 index def
+		//CheckAliases exec pop
+		/C2 ColorName def
+
+		/ColorName 2 index def
+		//CheckAliases exec pop
+		/C1 ColorName def
+
+		C1 C2 eq {
+			pop pop
+			true exit
+		} if
+
+		% ----------- does the name match except for case, and with 
+		% Pantone xxx CVU/CVC equated to Pantone xxx CV?
+		//TrimPantone exec pop
+		exch
+		//TrimPantone exec pop
+		eq
+	} repeat
+	end
+} bind def
+
+/TestSpots {
+	count 1 lt {
+		/TestSpots errordict /stackunderflow get exec
+	} if
+	dup type dup /arraytype ne exch /dicttype ne and {
+		/TestSpots errordict /typecheck get exec
+	} if
+	dup type /dicttype eq { [ exch { pop } forall ] } if
+
+	currentpagedevice
+        /SeparationDetails get /Add 2 copy known {
+	  get
+          true eq {
+            pop true
+          } {
+            true exch {
+             //InnerTestSpot exec not {
+               pop false
+               exit
+             } if
+            } forall
+          } ifelse
+	} {
+          pop pop
+	  true exch {
+	   //InnerTestSpot exec not {
+	     pop false
+	     exit
+	   } if
+	  } forall
+	} ifelse
+
+} bind def
+
+% SetCustomColorMap - update custom color name look-up.
+% null -> SetCustomColorMap -
+%	remove all current mappings
+% <<  
+%   /InputColor1 /OutputColor1
+%   /InputColor2 (OutputColor2)
+%   /InputColor3 null
+% >> -> SetCustomColorMap -
+%	Add two new color mappings (1 and 2). Remove a third (3).
+/SetCustomColorMap {
+	count 1 lt {
+		/SetCustomColorMap errordict /stackunderflow get exec
+	} if
+	dup type dup /dicttype ne exch /nulltype ne and {
+		/SetCustomColorMap errordict /typecheck get exec
+	} if
+
+	dup null eq {
+		% null value to proc - clear whole dictionary
+		pop
+		//CustomColorMap {
+			pop
+			//CustomColorMap exch undef
+		} forall
+	}	{
+		//CustomColorMap begin
+
+			{
+			% fromColor [ toColor | null ]
+			dup null eq {
+				% null value in dict - delete this key
+				pop
+				//CustomColorMap exch undef
+			}	{
+				% none null - insert into dictionary.
+				dup type dup /nametype ne exch /stringtype ne and {
+					/SetCustomColorMap errordict /typecheck get exec
+				} if
+				def
+			} ifelse
+		} forall
+
+		end		% CustomColorMap
+	} ifelse
+} bind def
+
+end /ProcSet defineresource pop
+
+end		% SpotWorkspace
+setglobal
+
+%%EOF

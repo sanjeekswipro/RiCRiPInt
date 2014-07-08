@@ -1,0 +1,69 @@
+# Copyright (C) 2007-2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# =============================================================================
+# $HopeName: HQNlibexpat!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.14.4.1.1.1 2013/12/19 11:24:22 anon Exp $
+# 
+# Modification history at end of file.
+# ============================================================================
+
+    DependsOn all : libexpat ;
+
+    # Turn down warning - causes too many warnings from public domain code.
+    RequiresVariant warning_level : low ;
+
+    # Turn off all SPLINT warnings in public domain code. Ideally there would
+    # be a way to turn off splint for certain compounds when the SPLINT option
+    # is set.
+    AddToVar Local : SplintOptions :
+        -syntax
+        -retvalother
+        -ifempty
+    ;
+
+    local LIBFILES =
+        xmlparse.c
+        xmlrole.c
+        xmltok.c
+        # xmltok_impl.c
+        # xmltok_ns.c
+    ;
+
+    if $(C-Compiler-Family) = msvc 
+    {
+        CompilerVar C-Defines : COMPILED_FROM_DSP ;
+        CompilerVar C-Defines : WIN32 ;
+        CompilerVar C-Defines : _WINDOWS ;
+        CompilerVar C-Defines : _MBCS ;
+    }
+
+    if $(UNIX) || $(MACOSX) || $(C-Compiler-Family) = gcc-x-ppc || $(C-Compiler-Family) = ghs-x-arm || $(C-Compiler-Family) = rvds-x-arm {
+        CompilerVar C-Defines : HAVE_EXPAT_CONFIG_H ;
+    }
+
+    if $(MACOSX) {
+        CompilerVar C-Defines : XMLCALL= ;
+    }
+
+    # These two need switching when we get the DynamicLibrary working
+    # CompilerVar C-Defines : _USRDLL ;
+    CompilerVar C-Defines : XML_STATIC ;
+
+    CompilerVar C-Defines : XML_NS ;
+
+    CompilerVar C-Defines : _DEBUG : Build DEBUG ;
+    CompilerVar C-Defines : NDEBUG : Build Non_DEBUG ;
+
+    # DynamicLibrary libexpat : $(LIBFILES) ;
+    Library libexpat : $(LIBFILES) ;
+
+
+    # Note any #included .c files explicitly for WDK build
+    NoteWDKExtraSources libexpat :
+      xmltok_impl.c
+      xmltok_ns.c
+    ;
+
+
+# =============================================================================
+# Log stripped

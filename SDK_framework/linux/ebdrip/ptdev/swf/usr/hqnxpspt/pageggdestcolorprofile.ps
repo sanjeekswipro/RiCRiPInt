@@ -1,0 +1,138 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pageggdestcolorprofile.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for output profile selection.
+% Note: Color management must be enabled for this code to take effect.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+/DefaultProfileFilename (%os%iccreg/ISOcoated.icc) def
+
+% Dictionary of mapping profile names that can be specified
+% PageGGDestinationColorProfile to ICC profile filenames.
+% Add more as necessary.
+/ProfileOptionNameMap <<
+  /GGDefaultProfile  //DefaultProfileFilename
+>> def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% name SetDestinationProfileFilename -
+%
+% Set the output profile based on 'name', and stores the result in
+% DestinationProfileFilename.
+% 'name' can be an entry in ProfileOptionNameMap, a PostScript filename
+% (including device prefix), or a URI referencing a profile in the XPS package.
+/SetDestinationProfileFilename {
+  /ptvalue exch def
+  /DestinationProfileFilename null def
+
+  ptvalue type /stringtype eq {
+    % Handle profile specified as a PostScript filename
+    ptvalue length 0 gt {
+      /PercentChar 37 def
+      ptvalue 0 get PercentChar eq {
+        /DestinationProfileFilename ptvalue def
+      }if
+    }if
+
+    DestinationProfileFilename null eq {
+      % Handle profile specified as a URI
+      ptvalue 1183615869 internaldict /xpsurifilename get exec
+      dup status {
+        pop pop pop pop
+        /DestinationProfileFilename exch def
+      }{
+        pop
+      }ifelse
+    }if
+  }{
+    % Lookup profile
+    /DestinationProfileFilename
+    //ProfileOptionNameMap ptvalue null GetDictValueWithDefault
+    def
+  }ifelse
+
+  DestinationProfileFilename null ne {
+    DestinationProfileFilename status { pop pop pop pop false }{ true }ifelse
+  }{
+    true
+  }ifelse
+  {
+    (%%[ Warning: PageGGDestinationColorProfile cannot reference ) print ptvalue 64 string cvs print (; Using default. ]%%) =
+     /DestinationProfileFilename //DefaultProfileFilename def
+  }if
+} bind def
+
+% Determines which PageColorManagement values allow color management to be applied in the RIP.
+/PageColorManagementLookup <<
+  /None   false
+  /Device false
+  /Driver true
+  /System false
+>> def
+
+/DoPageGGDestinationColorProfile {
+  begin
+    (->DoPageGGDestinationColorProfile) PTDebug
+
+    % Only enable if PageColorManagement allows it
+    //PageColorManagementLookup
+    RIPPrintTicket /PageColorManagement << /Value /Driver >> GetDictValueWithDefault
+    /Value /Driver GetDictValueWithDefault
+    true GetDictValueWithDefault
+    {
+      RequiresOverprintPreview
+
+      % Color management should be applied - Get setting from PrintTicket
+      pt_value [/Value] /GGDefaultProfile GetPTValueWithDefault exch pop
+
+      % Find the PostScript ICC filename to use
+      //SetDestinationProfileFilename exec
+
+      % Apply the profile setting
+      <<
+         /Profile << /Default DestinationProfileFilename (r) file >>
+      >> setreproduction
+    }{
+      % Color management should not be applied - set output profile to null
+      << >> setreproduction
+    }ifelse
+
+    (<-DoPageGGDestinationColorProfile) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageGGDestinationColorProfile << /PostAction //DoPageGGDestinationColorProfile >>
+>>
+
+end

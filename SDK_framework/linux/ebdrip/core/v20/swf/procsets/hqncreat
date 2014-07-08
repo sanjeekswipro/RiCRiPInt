@@ -1,0 +1,233 @@
+%!PS-Adobe
+%%Title: "HqnCreator"
+%%Creator: Global Graphics Software Limited
+%%CreationDate: April 8 1993
+%%VMusage: -1 -1
+% Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnCreator)" 1 0
+
+% $HopeName: SWv20!swf:procsets:hqncreat(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This file adds routines to be called on the %%Creator line in a file.
+% When the Creator comment is found the text of the comment is searched for each 
+% of the keys for procedures in HqnCreatorDict in turn. When a matching key is 
+% found the procedure is executed.
+
+% Standard procedures are provided here to correct known problems with FreeHand and PhotoShop
+% and to enable those patches to work when used in conjunction with SuperLaserSpool.
+
+% To add new patches use the routine HqnAddCreator (in userdict):
+%	{ procedure } (text from Creator line) HqnAddCreator
+% The text used should be sufficiently unique to be sure that the procedure will not be
+% called needlessly, but need not be the whole creator line (see the PhotoShop patch
+% below for an example of switching on the rest of the line).
+
+% Please be careful when selecting names - adding a routine called /Aldus may well disable
+% patches for FreeHand, or may itself be disabled by the FreeHand patch.
+
+% Procedures should expect the text of the Creator line to be passed to them from the end of the 
+% key name, e.g. if the key name is /Aldus and the Creator line reads:
+%	%%Creator: Aldus Application
+% then the string ( Application) will be passed through.
+
+% In order for multiple procedures to be stacked this string must *NOT* be popped - 
+% HqnAddCreator will concatenate procedures as necessary and the string must still be available.
+
+% Sample routines are supplied in Page features:Smooth grads.
+
+
+currentglobal false setglobal
+
+userdict /HqnCreatorDict 4 dict put
+
+userdict /HqnAddCreator {
+	% Expects { procedure } (name) on stack.
+	//userdict /HqnCreatorDict known not {
+		//userdict /HqnCreatorDict 4 dict put
+	} if
+	
+	cvn
+	//userdict /HqnCreatorDict get dup begin
+	1 index known {
+		% name is already known - concatenate
+		[ 1 index load /exec load 5 -1 roll /exec load ] cvx
+	} {
+		% New Creator reference
+		exch
+	} ifelse
+	bind def
+	end			% HqnCreatorDict
+} bind put
+
+% *********************************************************** SuperLaserSpool
+{
+%(>>> /SuperLaserSpool) print dup =
+	% SuperLaserSpool is impolite enough to put itself as the creator, and copy 
+	% the real creator into the start of the Title field. Let's get recursive, man!
+	% NOTE: This technique means that it is possible to falsely use a patch when not
+	% required, if the user runs a FreeHand etc job outside the server loop, but
+	% a) this is pretty safe and b) They deserve what they get if they do that ...
+	
+	% NOTE: Do NOT pop the supplied string. It does not matter that it may be changed
+	%	since it will only be popped when we finally get back to the right place in
+	%	/Creator.
+	//userdict /TitleString known {
+		//userdict /TitleString get 
+		(%%dict) cvn load (%%actions) cvn get /Creator get 
+		exec
+	} if
+} (SuperLaserSpool) HqnAddCreator
+
+% *********************************************************** FreeHand
+{
+%(>>> /FreeHand) print dup =
+	% reads: 	Creator: FreeHand				for earlier versions, and
+	% 			Creator: Aldus FreeHand n.m		for later versions
+	dup		% Must leave the original string on the stack to allow concatenating ***
+	
+	systemdict /languagelevel known {
+		systemdict /languagelevel get exec 2 ge {
+			token {
+				exch pop
+				dup type /nametype eq {
+					dup length string cvs
+					{ (:) }		% Extend this array to match on other separators
+					{
+						1 index exch
+						search {
+							exch pop exch pop
+							token {
+								exch pop exch pop
+							} if
+							exit
+						}{
+							pop
+						} ifelse
+					} forall
+				} if
+				dup type /stringtype ne { =string cvs } if
+
+				% On the stack is a string representing the version in a form n.m
+				% If the first 2 characters match "1." or "2." as in very early
+				% versions of this application then we'll apply the patch.
+				dup length 2 ge {
+					dup 0 get dup 16#31 eq exch 16#32 eq or
+					exch 1 get 16#2e eq and
+				}
+					{pop false} ifelse
+			}{
+				true
+			} ifelse
+			  
+				{
+				% (%stderr)(w)file dup
+				% (Using correction for FreeHand "setcolor" problem ...!\n) 
+				% writestring flushfile
+				
+				% Remove dr procedure; does nothing but harm...
+				1183615869 internaldict begin
+				  << /dr { } bind >> shadowop
+				end
+
+				% This prevents the setcolor operator replying 'true' for where,
+				% so that Freehand doesn't get confused between its definition 
+				% of setcolor and level2's (which is quite different). The 
+				% problem is that setcolor in Freehand is defined conditionally
+				% depending on whether or not it already exists; if it does it
+				% is assumed to be Freehands own definition of it defined for
+				% color separation, not the level2 definition.
+				//userdict /where { 
+					{ mark 1 index /setcolor eq 2 index where
+					    { 3 index get /FreeHand eq }
+						{ false }
+					  ifelse
+					  and
+					} stopped 
+					{ false } if
+					{ 
+						cleartomark pop false 
+					}{ 
+						cleartomark //systemdict /where get exec 
+					} ifelse
+				} bind put
+				//userdict /setcolor /FreeHand put
+			} if
+		}{
+			pop
+		} ifelse	% locked to level 1
+	}{
+		pop
+	} ifelse		% only a level 1 RIP
+} (FreeHand) HqnAddCreator
+
+% *********************************************************** SuperATM
+{
+	% Suppress 'font not found' message when using SuperATM
+	% Note this is tied firmly to version number because Adobe may change
+	% this code radically and break lots of things ...
+	% The technique is basically to check manually whether the font is pre-installed
+	% and if it isn't to manually load Courier instead.
+	2 dict begin
+	/findfont
+		{
+		dup //FontDirectory exch known {
+			systemdict /findfont get exec
+		}{
+			/tmpstr 255 string def
+			(fonts/) tmpstr cvs pop
+			tmpstr 6
+			tmpstr length 6 sub
+			getinterval                % leaves remaining space of tmpstring on stack
+			cvs                        % puts font name into it
+			length                     % length of font name as copied
+			6 add
+			tmpstr 0 3 -1 roll
+			getinterval
+			status {
+				% Real font does exist - load it
+				pop pop pop pop
+				dup systemdict /findfont get exec
+			}{
+				% Real font not found - kick in substitution
+				/Courier systemdict /findfont get exec
+			} ifelse
+		} ifelse
+		end		% temp dictionary created in Creator line and holding this findfont definition
+	} bind def
+} (ATM\/Macintosh 4.0 \(Font Substitution\)) HqnAddCreator
+
+
+% ************************************************************ Photoshop
+% If we detect photoshop input, set a userparam so we can deal with it in
+% the C world.
+
+1 dict begin
+  /phototrue << /PhotoshopInput true >> def
+  {
+    //phototrue  setuserparams
+  } (Photoshop) HqnAddCreator
+  currentdict /phototrue undef
+end
+
+% ************************************************************ Photoshop
+% detect whether a job is imposed or not. These, and others, save data
+% used by the impositionstatus procedure in statusdict.
+
+	{
+	//globaldict /DynaStripJob true put
+} (DynaStrip) HqnAddCreator
+
+	{
+	//globaldict /ImpositionPublisherJob true put
+} (ImpositionPublisher) HqnAddCreator
+
+
+/HqnCreator <<>> /ProcSet defineresource pop
+
+setglobal % to what it was originally
+
+%%EndProcSet

@@ -1,0 +1,37 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core rip TIFF core
+#
+# $HopeName: tiffcore!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant tiffcore ;
+
+# Compilation rules
+
+    DependsOn all : tiffcore ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        objects
+        tables
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        ifdreadr.c
+        tifffile.c
+        tiffmem.c
+    ;
+
+
+    Library tiffcore : $(CFILES) ;
+
+# Log stripped

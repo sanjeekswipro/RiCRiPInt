@@ -1,0 +1,1300 @@
+%!PS-Adobe-3.0
+%%Title: HqnCalibrate
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sep 09, 1992
+%{HqnCalibrate version #5 5
+% Copyright (c) Harlequin Limited, 1995-2013 All Rights Reserved.
+%%EndComments
+%%BeginProcSet: (HqnCalibrate) 5 5
+
+% This procset provides the selection and installation of calibration sets. 
+%
+% It is level 2 code so cannot be run when level 2 is turned off. A typical
+% job that uses it looks like this (assuming you are worried about the 
+% level2ness):
+%         {
+%           /HqnCalibrate /ProcSet findresource begin
+%             color-profile-is-press calibration-is-gray device-colorant-family escaped-device
+%             device-group tone-curves-group intended-press-group actual-press-group
+%             color-profile-name abort-on-no-match cal-job
+%             calibrate
+%           end
+%         } serverdict /execlevel2 get exec
+%
+% color-profile-is-press
+%   is a boolean which is true if the color-profile-name is a press profile rather
+%   than for the primary device
+%
+% calibration-is-gray
+%   is a boolean, true if the primary device is using a gray calibration (relevant
+%   for Press when the press calibration will most likely be cmyk)
+%
+% device-colorant-family
+%   is the colorant family of the primary device
+%
+% escaped-device
+%   is the device name (must have had it's name munged by escapePSPathElement in HqnConfigProvider)
+%
+% device-group is one of
+%   1) null
+%   2) an array containing the group filename and a specific calset name.
+%   3) a dictionary containing the calset to be used.
+%
+%  tone-curves-group has same possible formats as device-group
+%
+%  intended-press-group has same possible formats as device-group
+%
+%  actual-press-group has same possible formats as device-group
+%
+%  color-profile-name is one of
+%    1) null, which causes it to ignore profile information
+%       (i.e. to match whatever the calibration specifies).
+%    2) A string, the name of the profile selected in the color setup for the job.
+%
+%  abort-on-no-match
+%    Is a boolean, which says whether or not to abort if a suitable calibration
+%    set cannot be found
+%
+%  cal-job
+%    Is a boolean, true if the current job is printing a calibration target
+
+
+% a version 5 calibration file looks like this:
+%    /CalibrationGroup               % initial keyword
+%    [                               % array of dicts
+%     <<
+%       /Name                        (example only)
+% 
+%       /Enabled                     true               % don't ignore
+%       /MatchResolution             true               % match specific values
+%       /MatchScreenName             true               % ditto
+%       /MatchScreenFrequency        true               % ditto
+%       /MatchExposure               false              % ignore /Exposure
+%       /MatchSign                   true
+%    
+%       /HWResolution                [1200 1200]        % horz vert
+%       /ScreenName                  (Elliptical)
+%       /ScreenFrequencyRange        [100 150]
+%       /Exposure                    -1
+%       /Profile                     (Bond Paper)
+%    
+%       /EditStatus                  0                  % for CalMgr dialog
+%       /ScreenFreqUnits             0                  % ditto
+%       /Smoothed                    false              % ditto
+%    
+%       /NumberOfChannels            4
+%       /ChannelColors               [ (Cyan) (Magenta) (Yellow) (Black) ]
+%                               % or [ (Cyan) (Magenta) (Yellow) ]
+%                               % or [ (Gray) ]
+%
+%       /ColorSpace                  (DeviceCMYK)
+%       /MeasurementParams           [ ... ]
+%       /ChannelType                 [ ... ]
+%       /WhitePoint                  [ ... ]
+%       /ProfileTimestamp            973704882
+%       /CalibrationDataType         1 
+%       /ViewingChannelName          (Cyan)
+%       /ForceSolids                 true
+%       /ResolutionUnits             (dpi)
+%       /NegativeMedia               false
+%       /MeasurementSystems          [(% Dot) () () ()]
+% 
+%       /CalibrationData
+%       [
+%        [0 0 .11 .1 .22 .2 ... 1 .98 1 .99 1 1]   % cyan
+%        [ ... ]                                   % magenta
+%        [ ... ]                                   % yellow
+%        [ ... ]                                   % black
+%       ] % or an array of numbers only for DeviceGray
+%
+%       /MeasurementData
+%       [
+%        [0 100 .05 95 ... 0.98 1.5 1 0] % cyan
+%        [ ... ]                         % magenta
+%        [ ... ]                         % yellow
+%        [ ... ]                         % black
+%       ] % or an array of numbers only for DeviceGray
+%       
+%       /DotgainData
+%       [ 
+%        [ ... ] % cyan
+%        [ ... ] % magenta
+%        [ ... ] % yellow
+%        [ ... ] % black
+%       ] % or an array of numbers only for DeviceGray
+%
+%     >>
+%    
+%     ...            % other calsets as dicts
+%    ]
+
+
+currentglobal false setglobal
+
+%<< >> /HqnErrorHandler /ProcSet findresource /LoadErrorHandler get exec
+
+% the resource:
+40 dict begin
+  /globalness exch def
+  /WorkSpace 10 dict def
+
+  /LinearCalName (Linear) def
+
+  /CalPrint= serverdict /altout 2 copy known {
+    get dup type /filetype eq {
+      dup status not dup { exch pop } if
+    } { pop true } ifelse
+  } { pop pop true } ifelse
+  {
+    (%stderr)(w)file 
+  } if
+  def
+  /CalPrint= {
+    //CalPrint= exch 
+    dup type /stringtype 
+    ne { =string cvs} if
+    writestring
+  } bind def
+
+  % ----------------------------------------------------------------------
+  /GUIrip true def
+
+  % external items from HqnPageSetupConf procset.
+
+  /LoadProfileCommon {} def
+  /LoadColorProfile  {} def
+
+  { /HqnPageSetupConf /ProcSet findresource } stopped not
+
+  % If we found this we must have a GUI rip.
+  % Otherwise it is not an error as we should not need these.
+  % N.B. At the moment it should be possible to define but not
+  % run this procset under HHR.
+
+  {
+    /HqnCalibrateExports get [
+      /LoadProfileCommon
+      /LoadColorProfile
+    ]
+    {2 copy get def} forall
+    pop       % HqnCalibrateExports dict
+  } {
+    pop pop
+    $error /newerror false put
+    /GUIrip false def
+  } ifelse
+
+  % ----------------------------------------------------------------------
+  % convert %dot's values in calibration curves to SNV form
+
+  /ConvertDotToSNV {
+    % |- [%dot ndc %dot ndc ...] -> [snv ndc snv ndc ...]
+    % NB. SNV = 1 - %dot/100
+
+    0 2  2 index length 1 sub {
+      1 index exch
+      2 copy get 100 div 1 exch sub put
+    } for
+  } bind def
+
+  % ----------------------------------------------------------------------
+  /LoadProfileCommonWorkSpace 2 dict def
+
+  % This is the bit of LoadProfileCommon that actually loads the profile
+  % Load profile onto stack
+  % |- warnMissingProfile ProfileFileName -> dict/null
+  /LoadProfileCommonDoLoad {
+    //WorkSpace begin
+
+      dup /ProfileFileName exch def
+
+      % give sensible error messages if profile doesnt exist or is corrupt
+      status {
+
+        pop pop pop pop
+        pop % warnMissingProfile
+        % file exists, now catch errors when running it
+        % (based on /RunExtraFileOrString)
+        //LoadProfileCommonWorkSpace /StackSize count put
+        //LoadProfileCommonWorkSpace /DictStackSize countdictstack put
+        { % avoid reading large color tables from profiles
+          ProfileFileName (r) file dup
+          0 (### Color data follows (do not edit this line) ###)
+          /SubFileDecode filter cvx exec % -> <handle> /Profile dict
+          3 -1 roll closefile
+        } stopped    % execute the file
+        {
+          % UVM(Warning: %s contained an error)
+          (Warning: ) //CalPrint= exec ProfileFileName //CalPrint= exec
+          ( contained an error\n) //CalPrint= exec
+          % clean up after error; should just be garbage on stacks
+          //LoadProfileCommonWorkSpace begin
+            count StackSize
+            gt {
+              count StackSize sub {pop} repeat
+            } if
+            countdictstack DictStackSize
+            gt {
+              countdictstack DictStackSize sub {end} repeat
+            } if
+          end % LoadProfileCommonWorkSpace
+          null
+        } {
+          % should have /Profile <<...>> on the stack
+          exch pop
+        } ifelse
+      } {
+        {
+          % UVM(Warning: %s does not exist)
+          (Warning: ) //CalPrint= exec
+          ProfileFileName //CalPrint= exec ( does not exist\n) //CalPrint= exec
+        } if % warnMissingProfile
+        null
+      }
+      ifelse
+    end % WorkSpace
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Read in the calibration group and extract the named calset.
+  % The operand must be an array, the corresponding psio file is read and the
+  % named calset is extracted.
+
+  /FindCalset {
+    % |- [calgroup-name calset-name] -> calset / null
+
+    //WorkSpace begin
+      % save name of requested calset
+      dup 1 get /calset-name exch def
+      0 get
+      {run} stopped not {
+        % |- /CalibrationGroup group-array
+        exch pop
+        [
+          exch {
+            % |- calset
+            begin
+              % only keep named calset if specific name requested
+              calset-name Name eq Enabled and {
+
+                % leave this calset on the stack
+                currentdict
+
+              } if
+
+            end         % calset
+          } forall
+        ]
+      } {
+        % calibration group not found. This should not happen
+        pop     % clear the file name
+        []
+      } ifelse
+
+      dup length 0 ne {
+        % Normal case, leave the single calset on the stack
+        0 get
+      } {
+        % calset not found, leave null
+        pop null
+      } ifelse
+
+      % |- calset or null
+      dup null eq {
+        % calset not found, leave null and give a warning
+
+        //WorkSpace /missing-calset true put
+
+        % UVM(Warning: device calibration set `%s' not found\n)
+        % UVM(Warning: tone curves calibration set `%s' not found\n)
+        % UVM(Warning: intended press calibration set `%s' not found\n)
+        % UVM(Warning: actual press calibration set `%s' not found\n)
+        (Warning: ) //CalPrint= exec
+        <<
+          /DeviceCurve                (device)
+          /ToneCurve                  (tone curves)
+          /IntendedPressCurve         (intended press)
+          /ActualPressCurve           (actual press)
+        >>      
+        curve-type get //CalPrint= exec
+        ( calibration set `) //CalPrint= exec
+        calset-name //CalPrint= exec
+        (' not found\n) //CalPrint= exec
+      } if
+
+      % |- calset or null
+    end   % WorkSpace
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Returns the named calset.
+  % Also ensures the use of the dot gain curve rather than the calibration
+  % data for press with no color management.
+
+  /GetCalset {
+    % |- [calgroup-name calset-name] / calset / null curve-type -> calset / null
+
+    //WorkSpace begin
+      /curve-type exch def
+
+      % Convert an array type operand to a calset dictionary.
+      dup type /arraytype eq {
+        //FindCalset exec
+      } if
+
+      % |- calset|null
+      % We currently do not do anything with dot gain data for HHR
+      GUIrip {
+        dup null ne {
+          dup begin
+            % Normal case, leave the single calset on the stack
+
+            curve-type dup /IntendedPressCurve eq exch /ActualPressCurve eq or
+            cal-job not and
+            color-profile-name null eq  and {
+              % Use dot gain data for Press curves when hcms is inactive and we
+              % are not printing a calibration target.
+              % If the dot gain curve is empty we will use the calibration curve
+              % NB. An empty dot gain data could be '[]' or '[ [] ... ]'
+              DotgainData length 0 ne {
+
+                  DotgainData
+                  dup 0 get type dup /arraytype eq exch /packedarraytype eq or {
+                    dup length CalibrationData length ne {
+                      (***** dot gain calibration data is inconsistent\n) //CalPrint= exec
+                    } if
+
+                    0           % initialise a loop count
+                    exch {
+                      dup length 0 ne {
+                        % the dot gain data exists for this channel, replace
+                        % the CalibrationData with it and convert the %dots to SNV's
+                        //ConvertDotToSNV exec
+                        CalibrationData 2 index  3 -1 roll put
+                      } {pop} ifelse
+                      1 add     % increment the loop count
+                    } forall
+                    pop         % the loop count
+                  } {
+                    % the dot gain data exists for the single channel data, replace
+                    % the CalibrationData with it and convert the %dots to SNV's
+                    //ConvertDotToSNV exec
+                    /CalibrationData exch def
+                  } ifelse
+
+              } if
+            } if
+
+          end
+        } if
+      } if % GUIrip
+
+      % |- calset or null
+      % store the relevant calset in the WorkSpace
+      <<
+        /DeviceCurve            /device-calset
+        /ToneCurve              /tone-curves-calset
+        /IntendedPressCurve     /intended-press-calset
+        /ActualPressCurve       /actual-press-calset
+      >>
+      curve-type get exch def
+
+      //WorkSpace /curve-type undef
+    end   % WorkSpace
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Truncate a cal curve to exclude all segments with an SNV range completely
+  % outside of > 0. This deliberately excludes segments with 2 zero values
+  % for SNV as happens with %dot measurements where the device saturates
+  % at some point below 100%. The calibration would otherwise force solid colors
+  % even if that wasn't asked for.
+  % In all other cases, there is no need to truncate because setcalibration can
+  % cope with segments with SNV's outside the range of 0 to 1. But it is simplest
+  % to do it anyway.
+  % The same considerations don't apply to the white end because if the job asks
+  % for a zero tint, we probably want to render zero, which wouldn't be the case
+  % if we truncated the curve.
+  % We must have either zero or a minimum of 2 pairs in a cal array.
+  % Don't do this for Tone Curves. These curves are applied forwards and the user
+  % asked for it!
+  %
+  % When we have neither a tone nor a press curve but a true device curve the 
+  % ndc values referred to below are really sgv values, i.e. these values will 
+  % later be used as inputs to the default curve, which will be used to obtain 
+  % the ndc values.
+  %
+  % N.B. All the above refers to the situation for positive media.  If we are
+  % using NegativeMedia, the situation is reversed, and we want to exclude
+  % segments with two 1 values for SNV, or with an SNV range completely 
+  % outside of < 1.
+ 
+
+  /TruncateToRange {
+    % |- curve-key [snv ndc snv ndc ...] NegativeMedia -> curve-key [snv ndc snv ndc ...]
+
+    {{1 ge}} {{0 le}} ifelse   % use the opposite comparison for NegativeMedia
+    /Comparison exch def
+
+    /ToneCurve 2 index ne 1 index length 4 gt and {
+      % replace the array with the truncated one.
+      [
+        exch aload pop
+
+        % Eliminate all head snv/ndc pairs that are part of segments with snv's <= 0
+        {
+          1 index Comparison 4 index Comparison and {
+            pop pop
+            counttomark 4 le {exit} if
+          } { exit} ifelse
+        } loop
+
+        counttomark 4 gt {
+          % Eliminate all tail snv/ndc pairs that are part of segments with snv's <= 0
+          % This case is a little more complex.
+          counttomark -2 roll
+          {
+            counttomark -2 roll
+            1 index Comparison 4 index Comparison and {
+              4 2 roll  pop pop
+              counttomark 4 le {exit} if
+            } {counttomark 2 roll  exit} ifelse
+          } loop
+          counttomark 2 roll
+        } if
+      ]
+    } if
+
+    currentdict /Comparison undef   %tidy up the dict
+
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Munge the calibration curve from one of the calibration sets (device,
+  % tone-curve or press sets into the composite dictionary which is in a form
+  % suitable for passing to setcalibration
+  % The WorkSpace and calset dictionaries are expected to be on the dictionary stack
+
+  /MungeCurveIntoDict {
+    % |- composite-dict curve-key -> composite-dict
+
+    //WorkSpace exch /curve-key exch put
+    //WorkSpace /cal-index 0 put
+
+    dup       % |- composite-dict
+    begin
+      ChannelColors {
+        cvn
+
+        % change 'Other Colors in Job' to Default
+        ChannelType cal-index get  4 and 0 ne {        % 4 == CHANNEL_IS_OTHER_COLORS
+          pop /Default
+        } if
+
+        dup currentdict exch known {
+          currentdict 1 index get
+        } {
+          5 dict
+          dup /CalibrationType 1 put
+          2 copy def              % eg. /Cyan << >>, /Positive << >>
+        } ifelse
+        begin
+          pop     % ChannelColor element
+          CalibrationData length 0 ne {
+            CalibrationData 0 get type dup /arraytype eq exch /packedarraytype eq or {
+              % colored calsets are an array of arrays
+              CalibrationData cal-index get
+            } {
+              % gray calsets are a single array
+              CalibrationData
+            } ifelse
+
+            % knock off flat end bits for device curve - leaves truncated array
+            % in practice almost certainly unnecessary for default curve
+            curve-key exch NegativeMedia //TruncateToRange exec
+
+            currentdict curve-key known {
+              % GetDefaultCurve should have set up /DeviceCurve [[] [DefaultCurve]]
+              % Now want to replace the [] with the truncated CalibrationData array
+                       
+              exch currentdict exch get   % get the [[] [DefaultCurve]] array
+              0   % index
+              3 -1 roll
+              put      
+          
+            } {
+                % e.g. /DeviceCurve [CalibrationData] def
+                def
+            } ifelse
+
+          } if
+        end
+
+        //WorkSpace /cal-index cal-index 1 add put
+      } forall
+    end
+
+    //WorkSpace /curve-key undef
+    //WorkSpace /cal-index undef
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Munge the warning criteria from one of the calibration sets (device,
+  % tone-curve or press sets into the WarningsCriteria sub-dictionary of the
+  % composite dictionary.
+  % The WorkSpace and calset dictionaries are expected to be on the dictionary stack
+
+  /MungeWarningsCriteriaIntoDict {
+    % |- composite-dict warnings-criteria-key -> composite-dict
+
+    % add a sub-dictionary to the WarningsCriteria dict
+    1 index /WarningsCriteria get exch
+    <<
+      MatchResolution {
+        /HWResolution HWResolution
+
+        % The GUIrip will warn when we create the page setup
+        GUIrip not {
+          currentpagedevice /HWResolution get
+          dup
+          0 get cvr HWResolution 0 get cvr ne exch
+          1 get cvr HWResolution 1 get cvr ne or
+          
+          {
+            % UVM(Warning: HWResolution ['%s'] does not match calibration for ['%s']\n)
+            (Warning: HWResolution [) //CalPrint= exec
+            currentpagedevice /HWResolution get dup
+            0 get //CalPrint= exec ( ) //CalPrint= exec 1 get //CalPrint= exec
+            (] does not match calibration for [) //CalPrint= exec
+            HWResolution dup
+            0 get //CalPrint= exec ( ) //CalPrint= exec 1 get //CalPrint= exec
+            (]\n) //CalPrint= exec
+          } if
+        } if
+      } if
+
+      % a negative exposure is equivalent to turning off matching
+      MatchExposure Exposure -1 ne and { 
+        /Exposure Exposure
+      } if
+
+      % ignore Negative setting for color calsets
+      MatchSign {
+        /NegativePrint NegativeMedia
+      } if
+
+      MatchScreenName {
+        /HalftoneName ScreenName cvn
+      } if
+
+      MatchScreenFrequency {
+        /Frequency ScreenFrequencyRange
+      } if
+
+      % Add some extra info required by the target procset. The measurement
+      % system takes the first non-empty string from the list.
+      /CalibrationName Name
+      /ColorantFamily ColorSpace
+      /Profile Profile
+      /DefaultMeasurementSystem () MeasurementSystems {dup () ne {exch} if pop} forall
+    >>
+
+    % |- warnings-criteria-dict warnings-criteria-key dict
+    put
+
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Actually install the supplied calibration sets, combining the device
+  % and press calibration sets .
+
+  /MungeDict {
+    % |- -> composite-dict
+    //WorkSpace begin
+      % Initialise the composite dictionary for munging and eventual
+      % passing to setcalibration
+      device-calset null eq {
+        default-device-calibration dup null eq {
+          % create an empty composite dictionary
+          pop
+          5 dict
+          dup /CalibrationType 5 put
+          UVS(Using no device calibration\n) //CalPrint= exec
+        } {
+          LoadedLinearizationProfileName //LinearCalName ne {
+            % UVM(Using device calibration from profile `%s'\n)
+            (Using device calibration from profile `) //CalPrint= exec
+            LoadedLinearizationProfileName //CalPrint= exec
+            ('\n) //CalPrint= exec
+          } {
+            UVS(Using default device calibration\n) //CalPrint= exec
+          } ifelse
+        } ifelse
+      } {
+        % If we have a non-null default-device-calibration it should already
+        % be in the form <<DefaultCalibDict>>.  (Otherwise if the calset 
+        % has CalibrationDataType 1 the default-device-calibration will be null).
+
+        default-device-calibration dup null eq {
+
+          % create an empty composite dictionary
+          pop
+          device-calset /ChannelColors get length dict
+          dup /CalibrationType 5 put
+        } if
+      } ifelse
+
+      % intialise the WarningsCriteria dictionary
+      % |- composite-dict
+      dup /WarningsCriteria << /MissingCalibrationAbort abort-on-no-match >> put
+
+      % device
+      % |- composite-dict
+      device-calset null ne {
+        device-calset begin
+          % UVM(Calibrating for device `%s'\n)
+          (Calibrating for device with `) //CalPrint= exec
+          Name //CalPrint= exec ('\n) //CalPrint= exec
+
+          % convert the CalibrationData to the composite dictionary form
+          /DeviceCurve //MungeCurveIntoDict exec
+          /DeviceCurve //MungeWarningsCriteriaIntoDict exec
+
+          ForceSolids { dup /ForceSolids true put } if
+          NegativeMedia { dup /NegativePrint true put } if
+
+        end % device-calset
+      } {
+        % Add info for the profile + colorant family for the default calibration
+        % where it exists
+        default-device-calibration null ne {
+          dup /WarningsCriteria get
+          begin
+            /DeviceCurve <<
+              /CalibrationName /Default
+              /Profile LoadedLinearizationProfileName
+              /ColorantFamily device-colorant-family
+            >> def
+          end
+        } if
+      } ifelse
+
+      % tone-curves
+      % |- composite-dict
+      tone-curves-calset null ne {
+        tone-curves-calset begin
+          % UVM(Calibrating for tone curves `%s'\n)
+          (Calibrating for tone curves with `) //CalPrint= exec
+          Name //CalPrint= exec ('\n) //CalPrint= exec
+
+          % convert the CalibrationData to the composite dictionary form
+          /ToneCurve //MungeCurveIntoDict exec
+          /ToneCurve //MungeWarningsCriteriaIntoDict exec
+
+          ForceSolids { dup /ForceSolids true put } if
+        end
+      } if
+
+      % intended-press
+      % |- composite-dict
+      intended-press-calset null ne {
+        intended-press-calset begin
+          % UVM(Calibrating for intended press with `%s'\n)
+          (Calibrating for intended press `) //CalPrint= exec
+          Name //CalPrint= exec ('\n) //CalPrint= exec
+
+          % convert the CalibrationData to the composite dictionary form
+          /IntendedPressCurve //MungeCurveIntoDict exec
+          /IntendedPressCurve //MungeWarningsCriteriaIntoDict exec
+
+          ForceSolids { dup /ForceSolids true put } if
+        end % intended
+      } if
+
+      % actual-press
+      % |- composite-dict
+      actual-press-calset null ne {
+        actual-press-calset begin
+          % UVM(Calibrating for actual press with `%s'\n)
+          (Calibrating for actual press `) //CalPrint= exec
+          Name //CalPrint= exec ('\n) //CalPrint= exec
+
+          % convert the CalibrationData to the composite dictionary form
+          /ActualPressCurve //MungeCurveIntoDict exec
+          /ActualPressCurve //MungeWarningsCriteriaIntoDict exec
+
+          ForceSolids { dup /ForceSolids true put } if
+        end % actual
+      } if
+
+% print the calibration dictionary recursively
+% /print-object {dup type /dicttype eq {(<<)== {exch == print-object} forall (>>)==} {==} ifelse} def  dup print-object
+
+    end % WorkSpace
+  } bind def
+
+
+  % ----------------------------------------------------------------------
+  % This procedure compares the linearization name from the hcms color 
+  % profile with that from the calset profile, and issues a warning if
+  % they differ.  (If abort-on-no-match is set, it aborts the job).  
+  % If the linearization name is absent from either profile the profile 
+  % name is used instead.  It consumes the calset which it expects on 
+  % the stack.
+
+  /WarnCompareLinearizationNames {
+    % |- calset (in dict form)
+
+    GUIrip not {
+      % We do not currently support LoadProfileCommon or
+      % WarnCompareLinearizationNames for HHR rip and should not be here
+      % as we expect color-profile-name to be null.
+      UVS(Error: Should not be comparing linearization names in HHR rip\n)
+      //CalPrint= exec
+      stop
+    } if
+
+    % Get profile for color setup
+    color-profile-name //LoadColorProfile exec
+
+    % |- calset color-setup-profile
+
+    % Get any LinearizationName for color profile, profile name if absent
+    dup /LinearizationName known {
+      /LinearizationName get
+    } {
+        pop                 % color-setup-profile
+        color-profile-name
+    } ifelse
+    % |- calset lin-name-for-color-profile
+
+    % Get profile for calset
+    true                                % warnMissingProfile
+    calibration-is-gray                 % profile-is-gray
+    3 index /Profile get                % profile-name (from calset)
+    escaped-device                      % profile-device
+    //LoadProfileCommon exec            % N.B. This is not supported for HHR rip
+
+    % |- calset lin-name-for-color-profile calset-profile
+
+    % Get any LinearizationName for calset profile, profile name if absent
+    dup /LinearizationName known {
+      /LinearizationName get
+    } {
+        pop                    % calset-profile
+        1 index /Profile get   % calset profile name
+    } ifelse
+    % |- calset lin-name-for-color-profile lin-name-for-calset-profile
+
+    ne {
+          UVS(Warning: Profile in Color Setup does not match the calibration\n) //CalPrint= exec
+
+		  % Abort the job as the profile in the color setup does not 
+		  % adequately match the profile in the calset.
+		  abort-on-no-match { 
+            stop
+          } if
+    } if
+
+    pop  % calset
+
+  } bind def
+
+
+  % ----------------------------------------------------------------------
+  % Load profile for linearization info into WorkSpace if not already present
+  /LoadLinearizationProfile {       % -> dict/null
+    //WorkSpace begin
+
+      device-calset null ne {
+        device-calset /Profile get
+      } {
+        % No explicit calibration is being used, but if color management is on
+        % we will still use the color management profile.
+        color-profile-name null eq color-profile-is-press or {
+          //LinearCalName
+        } {
+          color-profile-name
+        } ifelse
+      } ifelse
+
+      % Do we already have the profile?
+      false
+      currentdict /LinearizationProfile known {
+        1 index LoadedLinearizationProfileName eq {
+          LinearizationProfile
+          exch pop true
+        } if
+      } if
+
+      % |- profile-name get-new-profile
+      not {
+        color-profile-name null eq color-profile-is-press or {
+
+          % Take the default profile if no color setup profile or the color
+          % device is not the primary device (must be Press if true)
+
+          % For a composite device, we have (None) calibration explicitly selected,
+          % otherwise we wouldn't be here. For the Press device, the linearisation
+          % profile may not be null, so use the one supplied.
+          /LoadedLinearizationProfileName 1 index def
+          true  % warnMissingProfile
+
+          GUIrip {
+            calibration-is-gray
+            LoadedLinearizationProfileName escaped-device
+            //LoadProfileCommon exec  % N.B. this is not supported for HHR rip
+          } {
+            % Load the profile for HHR rip
+            256 string mark
+            LoadedLinearizationProfileName (/)
+            device-colorant-family  % e.g. (DeviceCMYK)
+          
+            % If (Device) is not found the string will be pushed on the stack untouched
+            (Device) anchorsearch {
+              pop % (Device) leaving e.g. (CMYK)
+            } if
+          
+            (%os%Config/Profiles/)
+            1183615869 internaldict /concattomark get exec
+            (ProfileFileName= ) =print dup ==
+            //LoadProfileCommonDoLoad exec
+          } ifelse
+        } {
+          % We have color management on a composite device. Use the color profile.
+          % N.B. We currently should not be here for HHR
+          color-profile-name
+          //LoadColorProfile exec
+          /LoadedLinearizationProfileName color-profile-name def
+        }
+        ifelse
+        dup /LinearizationProfile exch def
+      } if
+
+      exch pop    % profile-name
+
+    end % WorkSpace
+  } bind def
+
+  % Produce the default-device-calibration for the primary device
+  /GetDefaultCalibration {
+    % profile (in dict form) -> default-device-calibration (a dict) or null
+    //WorkSpace begin
+      % |- LinearizationProfile
+      dup null ne {
+        dup /Linearization known {
+          % Create a dictionary for passing to setcalibration
+          /DefaultCalibDict where {
+            % Copy the top level dictionary otherwise set calibration will think
+            % it's the same and take no action.
+            /DefaultCalibDict DefaultCalibDict dup length dict copy def
+            pop   % containing dict
+          } {
+            /DefaultCalibDict 5 dict def
+            DefaultCalibDict /CalibrationType 5 put
+          } ifelse
+
+           % |- profile
+          /Linearization get {
+            % |- one color component of an array of dictionaries
+            begin   % The current channel of the Linearization array
+              DefaultCalibDict begin
+                currentdict ChannelColor known {
+                  % munge new DeviceCurve into existing sub-dict
+                  currentdict ChannelColor get
+                } {
+                  % Create entry for each colorant,
+                  % eg. /Cyan <</CalibrationType 1 /DeviceCurve [...]>>
+                  2 dict ChannelColor 1 index def
+                } ifelse
+                begin
+                  /CalibrationType 1 def
+                  /DeviceCurve [ [ ] DefaultCurve ] def   % from Linearizations
+                end
+              end
+            end
+          } forall % elements in Linearization array
+
+          DefaultCalibDict
+        } {
+          % The profile has no Linearization -> doesn't support calibration.
+          pop     % profile
+          null    % default-device-calibration
+        } ifelse
+      } {
+        pop     % null profile
+        null    % default-device-calibration
+      } ifelse
+
+    end % WorkSpace
+  } bind def
+
+  % ---------------------------------------------------------------------- 
+  /GetLinearizationProfile {
+    //WorkSpace /LinearizationProfile get
+  } bind def 
+
+  % ---------------------------------------------------------------------- 
+  /ClearWorkSpace {
+    //WorkSpace dup {pop 1 index exch undef} forall pop
+  } bind def 
+
+  % ---------------------------------------------------------------------- 
+  % This procedure is the main entry point for the resource
+  /calibrate {
+    % |- color-profile-is-press calibration-is-gray device-colorant-family escaped-device
+    %    device-group tone-curves-group intended-press-group actual-press-group
+    %    color-profile-name abort-on-no-match cal-job
+
+    % pick up the parameters - first the abort flag
+    //WorkSpace begin
+      /cal-job                    exch def
+      /abort-on-no-match          exch def
+      /color-profile-name         exch def
+      /actual-press-group         exch def
+      /intended-press-group       exch def
+      /tone-curves-group          exch def
+      /device-group               exch def
+      /escaped-device             exch def
+      /device-colorant-family     exch def
+      /calibration-is-gray        exch def
+      /color-profile-is-press     exch def
+
+      % missing-calset may be set to true in GetCalset
+      /missing-calset false def
+
+      actual-press-group    /ActualPressCurve   //GetCalset exec
+      intended-press-group  /IntendedPressCurve //GetCalset exec
+      tone-curves-group     /ToneCurve          //GetCalset exec
+      device-group          /DeviceCurve        //GetCalset exec
+
+      % Get the LinearizationProfile, primarily for the DefaultCurve. However,
+      % other parts of the system need it, so we get that unconditionally.
+      //LoadLinearizationProfile exec
+
+      % We now need to extract the default curve from the profile.
+      % The exception is for calsets containing CalibrationDataType 1, in which
+      % case the default calibration data is effectively already munged into
+      % the CalibrationData.
+      % |- profile
+      device-calset null ne {device-calset /CalibrationDataType get 1 ne} {true} ifelse
+      {//GetDefaultCalibration exec}
+      {pop null}
+      ifelse
+
+      % |- default-device-calibration-dict (dict/null)
+      /default-device-calibration exch def
+
+
+      % Does the profile match the calset?
+      % a color-profile-name of null says ignore
+      % N.B. For HHR rip we currently enforce a color-profile-name of null so
+      % should not call WarnCompareLinearizationNames.  It should not be
+      % be relevant given the ICC based color management model used in HHR rip.
+      color-profile-name null ne {
+        color-profile-is-press {actual-press-calset} {device-calset} ifelse
+        % |- calset|null
+
+        true    % default of profile matches
+        1 index null ne {pop dup /Profile get color-profile-name eq} if
+
+        not {
+          % The color setup profile name does not match the calset profile name
+          % so compare the (possibly absent) LinearizationName tags in the profiles.
+		      % If abort-on-no-match is set, and a warning is necessary, the job is 
+		      % aborted.
+
+          //WarnCompareLinearizationNames exec    
+        } {
+          pop   % calset
+        } ifelse
+      } if
+
+      % --- any errors so far? ---
+
+      % |- profile doesn't match calset
+      missing-calset {
+        abort-on-no-match { 
+          stop
+        } if
+
+        % continue with calibration for missing calibrations disabled
+      } if
+
+      % Munge the calibration dictionary from the calsets
+      //MungeDict exec
+
+    end % WorkSpace
+
+    1183615869 internaldict /setcalibration get exec
+
+  } bind def
+  
+% ----------------------------------------------------------------------
+  % A dictionary which will contain the values to be pushed on the stack
+  % for the /calibrate procedure.
+  /HHRCalibrateDict 11 dict def
+
+  % AssembleCalibGroup
+  % This expects a calset string and a device (folder) string on the stack.
+  % It consumes these and leaves a calibration group on the stack.
+  %
+  % The second parameter should be provided as (Press) when using this for
+  % the ActualPressCalset or the IntendedPressCalset, and as (Curves) when
+  % using this for tone curves.
+  %
+  % N.B. A ColorSpace of DeviceCMYK will end up as CMYK in the path.
+  %
+  % It expects the WorkSpace dict and the parameter dict supplied to
+  % /HHRCalibrate to be on the dictionary stack.
+  %
+  % (My Calset) (MyPrinter) |-> 
+  % [(Config/Calibration/MyPrinter/CMYK/Default) (My Calset)]
+
+  /AssembleCalibGroup {
+    /temp-device exch def
+    /temp-calset exch def
+
+    256 string mark
+    (/Default)
+        
+    % If (Device) is not found the string will be pushed on the stack untouched
+    ColorSpace (Device) anchorsearch {
+      pop % (Device) leaving e.g. (CMYK)
+    } if
+         
+    (/)
+    temp-device
+    (Config/Calibration/)
+    1183615869 internaldict /concattomark get exec  % the 1st string
+
+    temp-calset                                    % the 2nd string
+    2 array astore                                 % make the array
+
+    % tidy up
+    currentdict temp-device undef
+    currentdict temp-calset undef
+  } bind def
+
+
+  % This is an alternative entry point for the resource and is the recommended way to use
+  % the resource for HHR.
+  %
+  % It is essentially a wrapper for /calibrate which takes a dictionary on the stack, containing
+  % only the keys which are relevant for calibration in HHR, (which uses an ICC rather than a
+  % Harlequin profile approach to color management).
+  %
+  % (See also the DoCalibration procedure in the HqnPageSetupConf procset for the equivalent
+  % intended for the GUI rip).
+  %
+  % The dictionary on the stack (which is consumed) should be of the following form:
+  %
+  % <<
+  %   /DeviceCalset            (My Calset)            % calset name for primary device calset - optional
+  %   /ColorSpace              (DeviceCMYK)           % colorspace for primary device - required
+  %
+  %   /DeviceName              (MyPrinter)            % used to find the calset folder for primary device
+  %                                                     e.g. (Config/Calibration/DeviceName/CMYK)
+  %                                                     this should not be Press or Curves
+  %                                                     required if /DeviceCalset is provided
+  %
+  %   /ToneCalset              (MyToneCalset)         % tone curves calset name - optional
+  %   /ToneColorSpace          (DeviceCMYK)             used to find calset folder for tone curves
+  %                                                     e.g. (Config/Calibration/Curves/CMYK)
+  %                                                     required if /ToneCalset is provided                               
+  %
+  %   /IntendedPressCalset     (MyIPCalset)           % intended press calset name - optional
+  %   /ActualPressCalset       (MyPressCalset)        % actual press calset name - optional
+  %
+  %   /PressColorSpace         (DeviceCMYK)           % used to find calset folder for presses
+  %                                                     e.g. (Config/Calibration/Press/CMYK)
+  %                                                     required if a press calset is provided
+  %
+  %   /AbortOnNoMatch          false                  % abort job if no suitable calset
+  %                                                     optional - default false
+  % >>
+
+  /HHRCalibrate {
+    //WorkSpace begin
+      begin % the dict supplied on the stack
+
+        % Validate the keys
+        currentdict /ColorSpace known not {
+          UVS(Error: No ColorSpace in dictionary supplied to HHRCalibrate\n)
+          //CalPrint= exec
+          stop
+        } if
+
+        currentdict /DeviceCalset known currentdict /DeviceName known not and {
+          UVS(Error: No DeviceName in dictionary supplied to HHRCalibrate\n)
+          //CalPrint= exec
+          stop
+        } if
+
+        currentdict /ToneCalset known currentdict /ToneColorSpace known not and {
+          UVS(Error: No ToneColorSpace in dictionary supplied to HHRCalibrate\n)
+          //CalPrint= exec
+          stop
+        } if
+
+        currentdict /IntendedPressCalset known currentdict /ActualPressCalset known or
+        currentdict /PressColorSpace known not and {
+          UVS(Error: No PressColorSpace in dictionary supplied to HHRCalibrate\n)
+          //CalPrint= exec
+          stop
+        } if
+
+        % Check the primary device name is not Press or Curves
+        currentdict /DeviceName known {
+          DeviceName (Press) eq {
+            UVS(Error: DeviceName should not be Press - for press use ActualPressCalset\n)
+            //CalPrint= exec
+            stop
+          } {
+            DeviceName (Curves) eq {
+              UVS(Error: DeviceName should not be Curves - for curves use ToneCalset\n)
+              //CalPrint= exec
+              stop
+            } if
+          } ifelse
+        } if
+
+        % Check the colorspaces seem reasonable
+        ColorSpace /DeviceGray ne ColorSpace /DeviceRGB ne ColorSpace /DeviceCMYK ne and and {
+          UVS(Error: Invalid ColorSpace in dictionary supplied to HHRCalibrate\n)
+          //CalPrint= exec
+          stop
+        } if
+
+        currentdict /ToneColorSpace known {
+          ToneColorSpace /DeviceGray ne ToneColorSpace /DeviceRGB ne ToneColorSpace /DeviceCMYK ne and and {
+            UVS(Error: Invalid ToneColorSpace in dictionary supplied to HHRCalibrate\n)
+            //CalPrint= exec
+            stop
+          } if
+        } if
+
+        currentdict /PressColorSpace known {
+          PressColorSpace /DeviceGray ne PressColorSpace /DeviceCMYK ne and {
+            UVS(Error: Invalid PressColorSpace in dictionary supplied to HHRCalibrate\n)
+            //CalPrint= exec
+            stop
+          } if
+        } if
+
+        //HHRCalibrateDict /color-profile-is-press false put  % currently not relevant for HHR
+        //HHRCalibrateDict /calibration-is-gray ColorSpace (DeviceGray) eq put
+        //HHRCalibrateDict /device-colorant-family ColorSpace put
+        //HHRCalibrateDict /escaped-device null put           % not relevant for HHR
+
+        % Now assemble the arrays containing e.g.
+        % [(Config/Calibration/MyPrinter/CMYK/Default) (My Calset)]
+        //HHRCalibrateDict /device-group null put
+        //HHRCalibrateDict /tone-curves-group null put
+        //HHRCalibrateDict /intended-press-group null put
+        //HHRCalibrateDict /actual-press-group null put
+
+        currentdict /DeviceCalset known {
+          //HHRCalibrateDict
+          /device-group DeviceCalset DeviceName
+          //AssembleCalibGroup exec put
+        } if
+
+        currentdict /ToneCalset known {
+          //HHRCalibrateDict
+          /tone-curves-group ToneCalset (Curves)
+          //AssembleCalibGroup exec put
+        } if
+
+        currentdict /IntendedPressCalset known {
+          //HHRCalibrateDict
+          /intended-press-group IntendedPressCalset (Press)
+          //AssembleCalibGroup exec put
+        } if
+
+        currentdict /ActualPressCalset known {
+          //HHRCalibrateDict
+          /actual-press-group ActualPressCalset (Press)
+          //AssembleCalibGroup exec put
+        } if
+
+        % The color-profile-name is currently not relevant for HHR
+        //HHRCalibrateDict /color-profile-name null put
+
+        % Now for a couple of bools
+        //HHRCalibrateDict /abort-on-no-match false put  % the default
+
+        currentdict /AbortOnNoMatch known {
+          //HHRCalibrateDict /abort-on-no-match AbortOnNoMatch put
+        } if
+
+        //HHRCalibrateDict /cal-job false put  % currently not relevant for HHR
+      end % the supplied dict
+
+      % Now we have assembled the HHRCalibrateDict put the values on the stack
+      % in the right order and call the /calibrate procedure
+
+      //HHRCalibrateDict begin
+        color-profile-is-press calibration-is-gray device-colorant-family escaped-device
+        device-group tone-curves-group intended-press-group actual-press-group
+        color-profile-name abort-on-no-match cal-job
+      end %  the HHRCalibrateDict
+
+      %//HHRCalibrateDict {exch == == } forall
+
+      //calibrate exec
+
+    end % WorkSpace
+  } bind def
+%-----------------------------------------------------------------------
+% Tidyup procedures
+
+  % Declare procedures exported to other procsets
+
+  /HqnTargetExports <<
+    [
+      /GetDefaultCalibration
+    ]
+    {dup load} forall
+  >> def
+
+  /HqnPushCalibrationExports <<
+    [
+      /LoadProfileCommonDoLoad
+    ]
+    {dup load} forall
+  >> def
+
+  % get rid of utility names from the dictionary
+  {
+    /AssembleCalibGroup
+    /CalPrint=
+    /ConvertDotToSNV
+    /FindCalset
+    /GetCalset
+    /GetDefaultCalibration
+    /HHRCalibrateDict
+    /LinearCalName
+    /LoadLinearizationProfile
+    /LoadColorProfile
+    /LoadProfileCommon
+    /LoadProfileCommonDoLoad
+    /MungeCurveIntoDict
+    /MungeDict
+    /MungeWarningsCriteriaIntoDict
+    /TruncateToRange
+    /WarnCompareLinearizationNames
+    /WorkSpace
+  } { currentdict exch undef } forall
+
+  currentdict
+end
+
+% (HqnCalibrate symbols) ==
+% dup {pop ==} forall
+
+/HqnCalibrate exch /ProcSet defineresource
+
+/globalness get setglobal
+
+%%EndProcSet

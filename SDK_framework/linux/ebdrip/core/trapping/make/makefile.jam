@@ -1,0 +1,103 @@
+# Copyright (C) 2001-2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP Trapping subsystem
+#
+# $HopeName: COREtrapping!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant trapping metrics ;
+
+# Custom (pretty tight) Splint checking for this compound
+
+AddToVar Inherited Local : SplintOptions :
+  +checks                 # The highest useful level of checking, probably
+                          
+  +partial                # +checks turns this back off
+  +bool-int               # Effectively our Boolean type _is_ int32
+  -bool-ops               # Similarly we don't have a problem with using
+                          # non-Boolean types for Boolean operators, since
+                          # we don't actually use a Boolean type.
+  -no-effect              # Don't complain about EMPTY_STATEMENT etc.
+  -name-checks            # Our protection of headers from multiple includes
+                          # uses names e.g. __TRAP_H__ which are reserved in C99
+  -string-literal-smaller # I pull stunts with string storage in debug code
+  -redecl                 # Benign redefinitions are OK with me
+  -comp-destroy           # It's difficult to make Splint believe that loops
+                          # freeing composite objects are executed at least
+                          # once.
+  -predboolptr            # It seems -bool-ops doesn't cut it with Splint 3.1.1
+  -predboolint            # Ditto
+  +enumindex              # Allow Angus' use of a non-integer type
+                          # as an array index.
+;
+
+# Compilation rules
+
+DependsOn all : trapping ;
+
+IncludeExportDirectories Inherited Local :
+  devices
+  errors
+  fonts
+  halftone
+  mm
+  multi
+  objects
+  render
+  tables
+  v20
+  gstate
+  recombine
+  backdrop
+  : ..
+;
+
+# For including the unit tests C source.
+
+AddToVar Inherited Local : C-IncludeDirectories : $(CurrentPath)$/testsrc ;
+
+ReplaceVar Local : CFILES :
+  trapbbox.c
+  trapcell.c
+  trapcolor.c
+  trapmain.c
+  traprule.c
+  trapshape.c
+  trapzone.c
+: Variant trapping=yes ;
+
+AddToVar Local : CFILES : notrap.c : Variant trapping=no ;
+
+Library trapping : $(CFILES) ;
+
+SWF swf : pagefeat : "Page Features" : : trapping trappingebd ;
+SWF swf : pagefeat examples : Examples : : trapping trappingebd ;
+SWF swf : pagefeat examples no_trap : "Disable Trapping" : : trapping trappingebd ;
+SWF swf : procsets : procsets : : trapping trappingebd ;
+SWF swf : procsets trapping : Trapping_ebd : TRAPEBD : trappingebd ;
+SWF swf : procsets trapping : Trapping : : trapping ;
+
+# N.B. Don't use AddToVar with conditions, because we want this to propagate
+# to the SW folder without having to make the product implement the trapping
+# variant.
+if $(Variant_trapping) = yes {
+  if $(ProductName) = ebd {
+    AddUnique SW-Folder-Variants : trappingebd ;
+  } else {
+    AddUnique SW-Folder-Variants : trapping ;
+  }
+}
+
+if $(Variant_trapping) = yes {
+  # So that exported source can be built without trapping if required
+  ExportSource $(CurrentPath)$/src$/notrap.c : C ;
+}
+
+
+# Log stripped

@@ -1,0 +1,141 @@
+%!PS-Adobe-3.0
+%%Title: HqnHiFi
+%%Creation Date: May 1999
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%BeginProcSet: (HqnHiFi)
+
+% $HopeName: SWv20!swf:procsets:hqnhifi(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% sethificolor is used by PageMaker 6.0 and 6.5.
+%
+% a 'hifi' color in PageMaker's terms is of the form
+%   [ c m y k [ (cn0) cv0 ] [ (cn1) cv1 ] ... (CN) ]
+% where
+% - CN is the name of the color represented by the rest of the
+%   fields.
+% - c, m, y and k make up the cmyk equivalent of CN
+% - cn0, 1, etc are the names of the color components
+%   making up a DeviceN color space,
+% - cv0, 1, etc are the proportions of those colorants making up
+%   the color
+% This needs to be converted into a form that Level 3 can
+% understand, namely
+%   [/Separation (CN) [/DeviceN [(cn0) (cn1) ...]
+%      /DeviceCMYK { <suitable function of c,m,y and k> } ]
+%         { <suitable function of cv0, cv1, ...> } ]
+% An optimisation allows cni to be omitted if cvi is 0.
+%
+%      hificolor tint sethificolor -
+
+currentglobal
+false setglobal
+1 dict begin
+
+/sethificolor 4 dict def
+
+/sethificolor {
+	//sethificolor begin
+	/Hificolor 3 -1 roll def
+	/Colorants [
+		Hificolor 4 Hificolor length 5 sub getinterval {
+			dup 1 get 0 gt { 0 get } { pop } ifelse
+		} forall
+	] def
+	/ColorValues [
+		Hificolor 4 Hificolor length 5 sub getinterval {
+			dup 1 get 0 gt { 1 get } { pop } ifelse
+		} forall
+	] def
+	% (sethificolor: )print dup =print (  )print 
+	%	Hificolor dup length 1 sub get ==
+
+		[
+		/Separation
+		Hificolor dup length 1 sub get	% spot name
+			[		% start of alternate (HiFi) colorspace
+			/DeviceN 
+			Colorants 
+			/DeviceCMYK
+				[	% tint transform from alternate (HiFi) space to CMYK
+				% { (in DN->CMYK) == } /exec load
+
+				% just pop the DeviceN colorants off the stack
+				Colorants length dup 1 eq {
+					pop /pop load
+				}	{
+					{ pop } /repeat load
+				} ifelse
+
+				% And build a CMYK transform from scratch ...
+				% The Tint value was saved in the separation to DeviceN tint
+				% transform (below).
+				currentdict /Tint /get load
+				Hificolor 0 4 getinterval {
+					/dup load exch
+					/mul load /exch load
+				} forall
+				pop 3 -1 roll pop
+				% get rid of dup and exch last time round
+				% ->   dup c mul exch dup m mul exch dup y mul exch k mul
+			] cvx
+		]	% end of alternate (hifi) colorspace.
+
+		% Separation to DeviceN tint transform:
+			[
+			% { (in S->DN) == } /exec load
+
+			% save Tint for use in HiFi->CMYK transform if required
+			currentdict /Tint 2 /index load /put load
+
+			ColorValues {
+				/dup load exch
+				/mul load /exch load
+			} forall
+			pop 3 -1 roll pop
+		] cvx
+	] setcolorspace
+
+  end	% sethificolor
+
+  setcolor
+} bind def
+
+/HqnHiFi <<
+
+	/InstallHiFi {
+		userdict /sethificolor //sethificolor put
+	} bind
+
+	/OmitBlanks {
+			<<
+			/SeparationDetails <<
+				/Omit 
+					currentpagedevice /SeparationDetails get /Omit get
+					dup type /dicttype eq {
+						dup length dict copy
+					}	{
+						pop 1 dict
+					} ifelse
+					dup /ExtraSpot true put
+				/Ignore
+					currentpagedevice /SeparationDetails get /Ignore get
+					dup type /nulltype eq {
+						pop 1 dict
+					}	{
+						dup length 1 add dict copy
+					} ifelse
+					dup /RegisterMarks true put
+			>>
+		>> setpagedevice
+	} bind
+
+>> /ProcSet defineresource pop
+
+end
+setglobal
+
+%%EndProcSet

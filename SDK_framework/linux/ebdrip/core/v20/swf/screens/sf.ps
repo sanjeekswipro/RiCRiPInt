@@ -1,0 +1,490 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% $HopeName: SWv20!swf:screens:sf.ps(EBDSDK_P.1) $
+%
+
+%==============================%
+%                              %
+% Screens for 4-color printing %
+%                              %
+%==============================%
+
+% The older versions of the HDS screens can be reinstated by copying the Screen Caches into
+% the Screens directory, commenting out the Type 5 definitions below and uncommenting the following
+% lines.
+
+%/HDS-A { /HDS /A { 160 164 168 172 } pop pop pop pop } bind def
+%/HDS-B { /HDS /B { 216 228 240 252 } pop pop pop pop } bind def
+%/HDS-C { /HDS /C { 216 228 240 252 } pop pop pop pop } bind def
+%/HDS-D { /HDS /D { 208 225 242 259 } pop pop pop pop } bind def
+%/HDS-E { /HDS /E { 206 221 236 251 } pop pop pop pop } bind def
+
+% Harlequin Chain Screens
+
+/HCS { /HCS /HCS { } pop pop pop pop } bind def
+
+
+
+% Harlequin Micro Screens
+
+(HMS Elliptical1) cvn { /HMS /Elliptical1 { //true  0     -0.75 0   0.75     0.25     0.10  0.12  0.15  0.19   } pop pop pop pop } bind def
+
+(HMS Euclidean) cvn  { /HMS  /Euclidean { //true  0     -0.75 0   0.75     0.25     0.05  0.12  0.18  0.25   } pop pop pop pop } bind def
+
+
+%===================%
+%                   %
+% HDS Based Screens %
+%                   %
+%===================%
+
+% This first set of screens is the generic set onto which all the others are mapped
+% using the screen names aliasing mechanism for HalftoneType 199
+
+/Hds-a-gen <<
+    /HalftoneType 5
+    /HalftoneName /Hds-a-gen
+    /A  <</HalftoneType 16 /ScreenExtraGrays true /Width 160 /Height 160 /Thresholds (%invalidfile) (r) file >>
+    /Ai <</HalftoneType 16 /ScreenExtraGrays true /Width 160 /Height 160 /Thresholds (%invalidfile) (r) file >>
+    /B  <</HalftoneType 16 /ScreenExtraGrays true /Width 164 /Height 164 /Thresholds (%invalidfile) (r) file >>
+    /Bi <</HalftoneType 16 /ScreenExtraGrays true /Width 164 /Height 164 /Thresholds (%invalidfile) (r) file >>
+    /C  <</HalftoneType 16 /ScreenExtraGrays true /Width 168 /Height 168 /Thresholds (%invalidfile) (r) file >>
+    /D  <</HalftoneType 16 /ScreenExtraGrays true /Width 172 /Height 172 /Thresholds (%invalidfile) (r) file >>
+    /E  <</HalftoneType 16 /ScreenExtraGrays true /Width 176 /Height 176 /Thresholds (%invalidfile) (r) file >>
+    /F  <</HalftoneType 16 /ScreenExtraGrays true /Width 180 /Height 180 /Thresholds (%invalidfile) (r) file >>
+    /Default <</HalftoneType 16 /ScreenExtraGrays true /Width 172 /Height 172 /Thresholds (%invalidfile) (r) file >>
+>> def
+/Hds-b-gen <<
+    /HalftoneType 5
+    /HalftoneName /Hds-b-gen
+    /A  <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /Ai <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /B  <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /Bi <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /C  <</HalftoneType 16 /ScreenExtraGrays true /Width 248 /Height 248 /Thresholds (%invalidfile) (r) file >>
+    /D  <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+    /E  <</HalftoneType 16 /ScreenExtraGrays true /Width 256 /Height 256 /Thresholds (%invalidfile) (r) file >>
+    /F  <</HalftoneType 16 /ScreenExtraGrays true /Width 260 /Height 260 /Thresholds (%invalidfile) (r) file >>
+    /Default <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+>> def
+/Hds-c-gen <<
+    /HalftoneType 5
+    /HalftoneName /Hds-c-gen
+    /A  <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /Ai <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /B  <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /Bi <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /C  <</HalftoneType 16 /ScreenExtraGrays true /Width 248 /Height 248 /Thresholds (%invalidfile) (r) file >>
+    /D  <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+    /E  <</HalftoneType 16 /ScreenExtraGrays true /Width 256 /Height 256 /Thresholds (%invalidfile) (r) file >>
+    /F  <</HalftoneType 16 /ScreenExtraGrays true /Width 260 /Height 260 /Thresholds (%invalidfile) (r) file >>
+    /Default <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+>> def
+/Hds-d-gen <<
+    /HalftoneType 5
+    /HalftoneName /Hds-d-gen
+    /A  <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /Ai <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /B  <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /Bi <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /C  <</HalftoneType 16 /ScreenExtraGrays true /Width 248 /Height 248 /Thresholds (%invalidfile) (r) file >>
+    /D  <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+    /E  <</HalftoneType 16 /ScreenExtraGrays true /Width 256 /Height 256 /Thresholds (%invalidfile) (r) file >>
+    /F  <</HalftoneType 16 /ScreenExtraGrays true /Width 260 /Height 260 /Thresholds (%invalidfile) (r) file >>
+    /Default <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+>> def
+/Hds-e-gen <<
+    /HalftoneType 5
+    /HalftoneName /Hds-e-gen
+    /A  <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /Ai <</HalftoneType 16 /ScreenExtraGrays true /Width 240 /Height 240 /Thresholds (%invalidfile) (r) file >>
+    /B  <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /Bi <</HalftoneType 16 /ScreenExtraGrays true /Width 244 /Height 244 /Thresholds (%invalidfile) (r) file >>
+    /C  <</HalftoneType 16 /ScreenExtraGrays true /Width 248 /Height 248 /Thresholds (%invalidfile) (r) file >>
+    /D  <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+    /E  <</HalftoneType 16 /ScreenExtraGrays true /Width 256 /Height 256 /Thresholds (%invalidfile) (r) file >>
+    /F  <</HalftoneType 16 /ScreenExtraGrays true /Width 260 /Height 260 /Thresholds (%invalidfile) (r) file >>
+    /Default <</HalftoneType 16 /ScreenExtraGrays true /Width 252 /Height 252 /Thresholds (%invalidfile) (r) file >>
+>> def
+
+
+% Standard 4-color HDS screens
+
+/HDS-A << 
+  /HalftoneType 5
+  /HalftoneName /HDS-A
+  /Cyan    << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /A >>
+  /Magenta << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /B >>
+  /Yellow  << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /C >>
+  /Black   << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /D >>
+  /Default << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /Default >>
+>> def
+
+/HDS-B << 
+  /HalftoneType 5
+  /HalftoneName /HDS-B
+  /Cyan    << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /A >>
+  /Magenta << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /B >>
+  /Yellow  << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /C >>
+  /Black   << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /D >>
+  /Default << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /Default >>
+>> def
+
+/HDS-C << 
+  /HalftoneType 5
+  /HalftoneName /HDS-C
+  /Cyan    << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /A >>
+  /Magenta << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /B >>
+  /Yellow  << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /C >>
+  /Black   << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /D >>
+  /Default << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /Default >>
+>> def
+
+/HDS-D << 
+  /HalftoneType 5
+  /HalftoneName /HDS-D
+  /Cyan    << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /A >>
+  /Magenta << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /B >>
+  /Yellow  << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /C >>
+  /Black   << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /D >>
+  /Default << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /Default >>
+>> def
+
+/HDS-E << 
+  /HalftoneType 5
+  /HalftoneName /HDS-E
+  /Cyan    << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /A >>
+  /Magenta << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /B >>
+  /Yellow  << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /C >>
+  /Black   << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /D >>
+  /Default << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /Default >>
+>> def
+
+
+%==============================%
+%                              %
+% Screens for 6-color printing %
+%                              %
+%==============================%
+
+% Screen definitions for Type 16 Hex HDS screens
+% Hds-a6 to Hds-e6.
+
+/Hds-a6 << 
+  /HalftoneType 5
+  /HalftoneName /Hds-a6
+  (Hex Cyan) cvn    << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /A >>
+  (Hex Magenta) cvn << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /B >>
+  (Hex Yellow) cvn  << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /C >>
+  (Hex Black) cvn   << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /D >>
+  (Hex Orange) cvn  << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /E >>
+  (Hex Green) cvn   << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /F >>
+  /Default          << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-b6 << 
+  /HalftoneType 5
+  /HalftoneName /Hds-b6
+  (Hex Cyan) cvn    << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /A >>
+  (Hex Magenta) cvn << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /B >>
+  (Hex Yellow) cvn  << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /C >>
+  (Hex Black) cvn   << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /D >>
+  (Hex Orange) cvn  << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /E >>
+  (Hex Green) cvn   << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /F >>
+  /Default          << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-c6 << 
+  /HalftoneType 5
+  /HalftoneName /Hds-c6
+  (Hex Cyan) cvn    << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /A >>
+  (Hex Magenta) cvn << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /B >>
+  (Hex Yellow) cvn  << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /C >>
+  (Hex Black) cvn   << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /D >>
+  (Hex Orange) cvn  << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /E >>
+  (Hex Green) cvn   << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /F >>
+  /Default          << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-d6 << 
+  /HalftoneType 5
+  /HalftoneName /Hds-d6
+  (Hex Cyan) cvn    << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /A >>
+  (Hex Magenta) cvn << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /B >>
+  (Hex Yellow) cvn  << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /C >>
+  (Hex Black) cvn   << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /D >>
+  (Hex Orange) cvn  << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /E >>
+  (Hex Green) cvn   << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /F >>
+  /Default          << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-e6 << 
+  /HalftoneType 5
+  /HalftoneName /Hds-e6
+  (Hex Cyan) cvn    << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /A >>
+  (Hex Magenta) cvn << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /B >>
+  (Hex Yellow) cvn  << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /C >>
+  (Hex Black) cvn   << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /D >>
+  (Hex Orange) cvn  << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /E >>
+  (Hex Green) cvn   << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /F >>
+  /Default          << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /Default >>
+>> def
+
+
+% Chain screen suitable for 6-color printing
+
+/HexChain <<
+  /HalftoneType 5
+  /HalftoneName /HexChain
+  /OverrideAngle false
+  /InheritAngle false
+
+  (Hex Cyan) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle -63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  (Hex Magenta) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle 63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  (Hex Yellow) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle 0
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  (Hex Black) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle 26.56505117708
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  /Default <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle 26.56505117708
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  (Hex Orange) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle 90
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+
+  (Hex Green) cvn <<
+    /HalftoneType 1
+    /Frequency 127
+    /Angle -26.56505117708
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1 exch sub}
+  >>
+>> def
+
+
+%===============================%
+%                               %
+% Screens for PhotoInk printing %
+%                               %
+%===============================%
+
+% Chain screen for PhotoInk printing
+
+/PhotoChain <<
+  /HalftoneType 5
+  /HalftoneName /PhotoChain
+  /OverrideAngle false
+  /InheritAngle false
+
+  (Photo Cyan) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle -63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div} bind
+  >>
+
+  (Photo Magenta) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div} bind
+  >>
+
+  (Photo Yellow) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 0
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div} bind
+  >>
+
+  (Photo Black) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 26.56505117708
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div} bind
+  >>
+
+  /Default <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 26.56505117708
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div} bind
+  >>
+
+  (Photo Cyan Light) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle -63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div 1 exch sub} bind
+  >>
+
+  (Photo Magenta Light) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 63.43494882292
+    /ScreenChanges { exch 1.11803398875 mul exch } bind
+    /SpotFunction {dup mul exch dup mul 0.05 mul add 1.1 div 1 exch sub} bind
+  >>
+>> def
+
+
+% PhotoInk Euclidean screen set
+
+/PhotoEuclidean <<
+  /HalftoneType 5
+  /HalftoneName /PhotoEuclidean
+  /OverrideAngle false
+  /InheritAngle false
+
+  (Photo Cyan) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 15
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+  >> 
+
+  (Photo Magenta) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 75
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+  >> 
+
+  (Photo Yellow) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 0
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+  >>
+
+  (Photo Black) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 45
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+  >> 
+
+  /Default <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 45
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+  >>
+
+  (Photo Cyan Light) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 15
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse -1 mul} bind
+  >> 
+
+  (Photo Magenta Light) cvn <<
+    /HalftoneType 1
+    /Frequency 80
+    /Angle 75
+    /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse -1 mul} bind
+  >>
+>> def
+
+
+% HDS-a6p screen set for PhotoInk printing
+
+/Hds-a6p <<
+  /HalftoneType 5
+  /HalftoneName /Hds-a6p
+  (Photo Cyan) cvn            << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /A >>
+  (Photo Magenta) cvn         << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /B >>
+  (Photo Yellow) cvn          << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /C >>
+  (Photo Black) cvn           << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /D >>
+  (Photo Cyan Light)    cvn << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /Ai >>
+  (Photo Magenta Light) cvn << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /Bi >>
+  /Default                  << /HalftoneType 199 /Halftone /Hds-a-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-b6p <<
+  /HalftoneType 5
+  /HalftoneName /Hds-b6p
+  (Photo Cyan) cvn            << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /A >>
+  (Photo Magenta) cvn         << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /B >>
+  (Photo Yellow) cvn          << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /C >>
+  (Photo Black) cvn           << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /D >>
+  (Photo Cyan Light)    cvn << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /Ai >>
+  (Photo Magenta Light) cvn << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /Bi >>
+  /Default                  << /HalftoneType 199 /Halftone /Hds-b-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-c6p <<
+  /HalftoneType 5
+  /HalftoneName /Hds-c6p
+  (Photo Cyan) cvn            << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /A >>
+  (Photo Magenta) cvn         << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /B >>
+  (Photo Yellow) cvn          << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /C >>
+  (Photo Black) cvn           << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /D >>
+  (Photo Cyan Light)    cvn << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /Ai >>
+  (Photo Magenta Light) cvn << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /Bi >>
+  /Default                  << /HalftoneType 199 /Halftone /Hds-c-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-d6p <<
+  /HalftoneType 5
+  /HalftoneName /Hds-d6p
+  (Photo Cyan) cvn            << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /A >>
+  (Photo Magenta) cvn         << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /B >>
+  (Photo Yellow) cvn          << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /C >>
+  (Photo Black) cvn           << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /D >>
+  (Photo Cyan Light)    cvn << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /Ai >>
+  (Photo Magenta Light) cvn << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /Bi >>
+  /Default                  << /HalftoneType 199 /Halftone /Hds-d-gen /HalftoneColor /Default >>
+>> def
+
+/Hds-e6p <<
+  /HalftoneType 5
+  /HalftoneName /Hds-e6p
+  (Photo Cyan) cvn            << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /A >>
+  (Photo Magenta) cvn         << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /B >>
+  (Photo Yellow) cvn          << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /C >>
+  (Photo Black) cvn           << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /D >>
+  (Photo Cyan Light)    cvn << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /Ai >>
+  (Photo Magenta Light) cvn << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /Bi >>
+  /Default                  << /HalftoneType 199 /Halftone /Hds-e-gen /HalftoneColor /Default >>
+>> def
+

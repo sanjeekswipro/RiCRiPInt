@@ -1,0 +1,103 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for BitStream TrueType interpreter
+#
+# $HopeName: SWTrueType!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant thirdparty ;
+
+# Compilation rules
+    if $(Variant_thirdparty)
+    {
+         Library tt ;
+         Search tt$(C-Lib-Suffix) : $(CurrentPath)$/$(C-TPB-Directory) ;
+    }
+    else
+    {
+        AddToVar Local : C-Defines : NOSCCS ;
+
+        DependsOn all : tt ;
+
+        IncludeExportDirectories Inherited Local :
+            fonts
+        : .. ;
+
+        local SourceFiles =
+            fixed_pt.c
+            fnt.c
+            fontscal.c
+            fsglue.c
+            mapstrng.c
+            newscan.c
+            out_outl.c
+            sfntd.c
+            truetype.c
+            tt_iface.c
+            tt_specs.c
+            tt_sw.c
+        ;
+
+        Library tt :
+            $(SourceFiles)
+        ;
+
+        ExportSource tt : ThirdPartyBinary : : : $(CurrentPath)$/$(C-TPB-Directory) ;
+
+        local s ; for s in $(SourceFiles)
+        {
+            local T ; MakeGristed T : $(s) : $(CurrentPath) ;
+            DontExportSource $(T) ;
+        }
+
+        local HeaderFiles =
+            btstypes.h
+            csp_api.h
+            csp_dbg.h
+            csp_int.h
+            csp_opt.h
+            errcodes.h
+            finfotbl.h
+            fino.h
+            fixed.h
+            fnt.h
+            fnt_a.h
+            fontmath.h
+            fontscal.h
+            fscdefs.h
+            fserror.h
+            fsglue.h
+            hp_readr.h
+            hpf.h
+            keys.h
+            mapstrng.h
+            pcl5fnt.h
+            pclhdrs.h
+            privfosc.h
+            privsfnt.h
+            sc.h
+            sfnt.h
+            sfntenum.h
+            spdo_prv.h
+            speedo.h
+            tr_fdata.h
+            truetype.h
+            type1.h
+            ufe.h
+            useropt.h
+        ;
+
+        local h ; for h in $(HeaderFiles)
+        {
+            DontExportSource $(CurrentPath)$/src$/$(h) ;
+        }
+    }
+
+
+# Log stripped

@@ -1,0 +1,13 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!linux-386:all-all:all.jam(trunk.4) $
+#
+
+# Prebuilt tools and libraries are prefixed with this path
+PrebuiltPathPrefix = prebuilt$/linux-386 ;
+
+# Prebuilt tools are suffixed with this
+PrebuiltExecSuffix = "" ;
+
+# Log stripped

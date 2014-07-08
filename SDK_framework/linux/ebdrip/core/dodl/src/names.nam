@@ -1,0 +1,10 @@
+% Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: COREdodl!src:names.nam(EBDSDK_P.1) $
+
+/* Names table for COREdodl. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+% Log stripped

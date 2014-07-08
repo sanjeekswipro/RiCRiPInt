@@ -1,0 +1,36 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP CCITT image filter
+#
+# $HopeName: COREccitt!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# ccitt is not variant because PS and PDF use it, and XPS TIFF can use G4 and
+# G6 compression.
+
+# Compilation rules
+
+    DependsOn all : ccitt ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        objects
+        tables
+    : .. .. ;
+
+    ReplaceVar Local : LIB_CFILES :
+        ccittdat.c
+        ccittfax.c
+    ;
+
+    Library ccitt : $(LIB_CFILES) ;
+
+# Log stripped

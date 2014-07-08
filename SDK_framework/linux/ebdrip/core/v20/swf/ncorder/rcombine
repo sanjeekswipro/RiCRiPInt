@@ -1,0 +1,34 @@
+%!PS-Adobe-3.0
+%%Title: Recombine
+%%Creator: Global Graphics Software Limited
+%%CreationDate: February 1999
+% Copyright (C) 1999-2013 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:ncorder:rcombine(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This resource defines the order in which NamedColor resource databases should
+% be searched during recombine when looking for CMYK equivalents.
+
+/Recombine
+[
+  /KnownColors
+  /IllustratorColors
+
+  /PantoneU
+  /PantoneV
+  /PantoneCoated
+  /PantoneUncoated
+  /PantoneMatte
+  /PantonePLUSCoated
+  /PantonePLUSUncoated
+
+  /PantoneGoeCoated
+  /PantoneGoeUncoated
+]
+/NamedColorOrder defineresource
+
+%%EOF

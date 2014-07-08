@@ -1,0 +1,12 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!unix-all:all-all:zip_all.jam(trunk.4) $
+#
+
+    FatalIfNotSet CompilerVariable ; # complain if CV_ZIP_?_?_? isn't set
+
+    CompilerVar UNZIP : $(CompilerVariable)/unzip ;
+    CompilerVar ZIP : $(CompilerVariable)/zip ;
+
+# Log stripped

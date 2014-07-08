@@ -1,0 +1,531 @@
+%!PS-Adobe-3.0
+%%Title: PDF Out Enable
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Aug 8 1997
+%%Copyright (C) 1997-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWpdf_out!testsrc:pagefeat:pdfout(EBDSDK_P.1) $
+% Global Graphics Software Ltd. Confidential Information.
+% -----------------------------------------------------------------------------
+
+% Use this as a Page Feature or other job prefix to enable PDF output from
+% ScriptWorks. Use this password with global, eval or demo dongles:
+<< /PDFOutPassword 3803906 >> setsystemparams
+
+2 dict begin
+  /fstring 1024 string def
+
+  % a useful ditty for joining two procedures and stuffing the new one in the
+  % dictionary pass it 3 names newprocname oldprocname2 oldprocname1
+  % newprocname is defined as => {{oldproc1} exec {oldproc2} exec}
+  /PDFjoinprocedures {
+    load
+    exch load
+
+    % proc1 proc2 => proc3
+    /exec load exch 1 index
+    4 array astore cvx
+
+    bind def        % define newproc as newprocname 
+  } bind def
+
+  % Register start/end hooks for PDF Out using setpagedevice
+  <<
+    /PDFOut false % Force register of RIPvar for debugging
+
+    % Turn on PDF Output when starting job
+    /StartJob <<
+      /PDFOut {
+	//globaldict /PDFOutTime usertime put
+
+	% Debugging code. Combine following flags in debug_pdfout for debug
+	% tracing (see SWpdf_out!src/pdfout.h for details).
+	% Flag	Effect
+	%    1	Trace PDF out entry points
+	%    2	Prettyprint PDF output (indent and whitespace for readability)
+	%    4	Trace colour contexts and colours
+	%    8	Omit image output
+	%   16	Omit text output
+	%   32	Omit fill output
+	%   64	Omit stroke output
+	%  128	Omit shfill output
+	%  256	Omit ExtGState output
+	%  512	Omit clip output
+	% 1024	Track spot function name translation
+	mark {
+	  /debug_pdfout 0 1183615869 internaldict /setripvar get exec
+	} stopped cleartomark
+
+	% Output filename is PDFOutFilename if known and a string, jobname or
+	% basename of file if PDFOutFilename is known and not a string, and
+	% basename if PDFOutFilename is not known and file is not
+	% (%console%). Jobname detection is deferred until OutputProc, so job
+	% has a chance to set it.
+	userdict /PDFOutFilename known not {
+	  userdict /PDFOutFilename
+	    (%stdin) (r) file //fstring statusdict /filename get exec pop
+	    { (/) search { pop pop } { exit } ifelse } loop % basename only
+	  put
+	} if
+
+	% Do not output if filename is %console%; this happens in the SW LE
+	% rip when running sub-jobs to mount drives. The config file to drive
+	% PDFOut has an explicit /PDFOutFilename in it to make the real file
+	% work.
+	userdict /PDFOutFilename get (%console%) ne {
+	  % Uncomment this line to get longer error messages with PDF out:
+	  %/HqnErrorHandler /ProcSet findresource /FullErrorHandler get exec
+
+	  % Do not render the page as well:
+	  << /NeverRender true >> setuserparams
+
+	  % It is necessary for AdobeCIETransfer to be set and Photoshop
+	  % intercepts to be disabled for CIE colorspaces to be dealt with
+	  % correctly
+	  << /AdobeCIETransfers true >> setuserparams
+	  <<
+	    /PhotoshopRGB  null
+	    /PhotoshopCMYK null
+	    /PhotoshopGray null
+	  >> setinterceptcolorspace
+
+	  % Configure and turn on PDF Out:
+	  <<
+	    /PDFOut true
+
+	    /PDFOutDetails <<
+	      /OutputFileProc {
+		% Routine to create an output file for PDF out. Expects the
+		% page number on the stack - page number will be zero if
+		% splitting is off.
+
+		currentglobal false setglobal
+
+		1 dict begin % temporary dict
+		  /globalness exch def
+
+		  % Convert page number to zero-padded string
+		  dup 0 gt {
+		    5 % number of zero places to pad
+
+		    % num, numplaces -> zero-padded string representing num
+		    % rangecheck error (from cvs) if num has more digits than
+		    % numplaces
+		    dup dup string exch 0 1 3 -1 roll 1 sub { 1 index exch 48 put } for
+		    % num, places, zerostring
+		    3 -1 roll 2 index string cvs dup length
+		    % places, zerostring, zerostring, numstring, numstringlen
+		    4 -1 roll exch sub exch 2 index 4 1 roll putinterval
+		  } {
+		    pop ()
+		  } ifelse
+
+		  % Put suffix under page number on stack, ready for concattomark
+		  (.pdf) exch
+
+		  userdict /PDFOutFilename get dup type /stringtype ne {
+		    pop statusdict /jobname get dup type /stringtype eq {
+		      % Strip Macintosh PS driver document leaders
+		      { (document: ) search { pop pop } { exit } ifelse } loop
+		      { (:) search { pop pop } { exit } ifelse } loop
+
+		      % Sanitise name by removing awkward characters
+		      { dup (:) search { pop 0 32 put pop } { pop exit } ifelse } loop
+		      { dup (/) search { pop 0 32 put pop } { pop exit } ifelse } loop
+		      { dup (%) search { pop 0 32 put pop } { pop exit } ifelse } loop
+
+		      % Strip leading spaces - Acrobat barfs on them
+		      { ( ) anchorsearch { pop } { exit } ifelse } loop
+		    } {
+		      pop currentfile //fstring statusdict /filename get exec pop
+		      { (/) search { pop pop } { exit } ifelse } loop % basename only
+		    } ifelse
+		    userdict /PDFOutFilename 2 index put
+		  } if
+
+		  % Set default jobname
+		  statusdict /jobname 2 copy get type /stringtype ne {
+		    2 index put
+		  } {
+		    pop pop
+		  } ifelse
+
+		  % We now have suffix and page number, followed by jobname
+
+		  % Strip suffixes from filename
+		  [ (.ps) (.pdf) (.jpg) (.ct) (.lw) (.fp) (.tiff) (.tif)
+		    (.PS) (.PDF) (.JPG) (.CT) (.LW) (.FP) (.TIFF) (.TIF) ] {
+		    1 index exch search { % string post match pre
+		      3 -1 roll () eq {   % Nothing after suffix
+			3 -1 roll pop exch               % pre match
+			1 get dup (A) 0 get ge exch (Z) 0 get le and {
+			  3 -1 roll pop (.PDF) 3 1 roll  % Matched uppercase suffix
+			} if
+			exit   % Leave 'pre' on stack
+		      } { % string match pre
+			pop pop
+		      } ifelse
+		    } { % string string
+		      pop
+		    } ifelse
+		  } forall
+
+		  % Got the stem, now add new suffixes.
+		  dup length 2 index length add 3 index length add
+		  string mark 5 2 roll 1183615869 internaldict /concattomark get exec
+
+		  % (Create and) open the file in global VM.
+		  dup (Creating PDF file: ) print =
+
+		  (w+) true setglobal { file } stopped globalness setglobal
+		  {
+		    (Unable to create PDF output file. Possibly in use!\n) print stop
+		  } if
+
+		end %temporary dict
+	      } bind
+
+
+	      % Specify PDF output filters configuration
+	      /Filters <<
+		% - Filter restrictions -
+		%
+		% DCTEncode
+		% 1. If specified, a /EncodeParams will be created
+		%    dynamically to specify the Columns, Rows and Colors.
+		% 2. Only allowed on /ImageC and /ImageG filter definitions
+		%    but can be specified as a pass through filter.
+		%
+		% CCITTFaxEncode
+		% 1. Only allowed on the /ImageB filter definition but can be
+		%    specified as a pass through filter.
+		%
+		% FlateEncode
+		% 1. If you specify a predictor, the stream being compressed
+		%    MUST be an image. Otherwise FlateEncoding can be used on
+		%    any type of data stream. i.e. Only use FlateEncode with
+		%    a /Predictor EncodeParms in something like ImageC. Its
+		%    not recommended on /Default and is not allowed on things
+		%    like /Contents.
+		% 2. /Effort in the EncodeParms is recognised. For maximum
+		%    compression, use a value of 9.
+		%
+		% - Specific filters types -
+		%
+		% Specific filter types specify what filters to apply to
+		% specific types of stream data.
+		%
+		% Specific filter type dictionaries have the key /Filter
+		% which can either be the name of a single encode filter or
+		% an array of encode filter names. Specify multiple encode
+		% filters in the order they ought to be applied to encode the
+		% data.
+		%
+		% The filter dictionaries can also contain and an optional
+		% key /EncodeParams which correspond to the encode parameters
+		% for each filter specified with the /Filter key. The value
+		% for /EncodeParams is a dictionary if the value of the
+		% /Filter key is a name. The value is an array of
+		% dictionaries if the value of the /Filter key is an array of
+		% filter names. These keys have the opposite effect to the
+		% /Filter & /DecodeParams in normal PDF. See PDF 1.3
+		% specification.
+		%
+		% Examples:
+		%
+		%   /ImageC << /Filter /FlateEncode >>
+		%   /ImageC << /Filter [ /FlateEncode /ASCII85Encode ] >>
+		%
+		%   /ImageC << /Filter [ /LZWEncode /ASCII85Encode ]
+		%              /EncodeParams [ << /EarlyChange 0 >> << >> ]
+		%           >>
+		%
+		% When arrays are used, the length of the /EncodeParams array
+		% must match the length of the /Filter array.
+		%
+
+		% 2-4 component color images
+		/ImageC <<
+		  /Filter [ /DCTEncode ]
+		>>
+		% bi-level monochrome images
+		/ImageB <<
+		  /Filter /CCITTFaxEncode
+		>>
+		% indexed images
+		/ImageI << >>
+		% grayscale (1 component, non monochrome images)
+		/ImageG <<
+		  /Filter [ /DCTEncode /ASCII85Encode ]
+		>>
+		% >4 color images
+		/ImageN <<
+		  /Filter /FlateEncode
+		  /EncodeParms <<
+		    /Predictor 11  % do differencing
+		    /Effort 9      % maximum compression
+		  >>
+		>>
+		% PDF contents stream
+		/Contents <<
+			  >>
+		% Exists in code, document or remove?
+		/Font     <<
+			  >>
+		% Exists in code, document or remove?
+		/Halftone <<
+			  >>
+
+		%- The default filter -
+		%
+		% Same syntax as specific filter types. Anything that is not
+		% caught above falls through to the default filter.
+		%
+
+		% everything unspecified and non-lossy stream data
+		/Default  <<
+			  >>
+
+		% - Pass through filter matching -
+		%
+		% Pass through filter matching allows input streams to be
+		% passed directly through to the output PDF purely for
+		% optimization reasons. This optimization avoids decoding
+		% then re-encoding data streams from the source to the PDF
+		% out destination which can improve performance greatly.
+		%
+		% Acceptable values are either the specific name /All, an
+		% array of filter names or an array (of array of filter
+		% names). These array of filter names specify filter chains
+		% to pass through where applicable. The value, therefore, can
+		% be used to specify a matching filter chain (or chains) to
+		% pass through for optimisation.
+		%
+		% Acceptable values:
+		%
+		%   /All - pass all filter chains through where applicable -or-
+		%   [ <FilterName>+ | [<FilterName>+]+ ]
+		%
+		% <FilterName> must always be a valid filter name.
+		%
+		% A match is done precisely on the source /Filter key. Any
+		% /DecodeParams will be copied through to the PDF out stream.
+		%
+		% Examples:
+		%   [ /DCTDecode ] - pass DCT encoded data streams directly
+		%		     through.
+		%
+		%   [ /ASCII85Decode /FlateDecode ] - pass flate encoded data
+		%                                     streams which have then
+		%                                     been encoded into
+		%                                     ASCII85 directly
+		%                                     through.
+		%   
+		%   [ [ /FlateDecode ] [ LZWDecode ] ] - pass both flate
+		%					 encoded data and
+		%                                        LZW encoded data
+		%                                        directly through.
+		%
+
+		/Passthrough [ [ /ASCII85Decode /DCTDecode ]
+			       [ /ASCIIHexDecode /DCTDecode ] 
+			       [ /DCTDecode ] ]
+
+		% - Filter precedence -
+		%
+		% Any /Passthrough filter match will always override the
+		% /Default key and any specific filter types (such as
+		% /ImageC). Specific filter types *always* override /Default.
+		%
+		% Example:
+		%
+		%   Lets say an LZWEncoded RGB image appears in the source
+		%   and we have the following filter entries:
+		%
+		%   /ImageC      << /Filter /FlateEncode >>
+		%   /Default     << /Filter /ASCII85Encode >>
+		%   /Passthrough [ /LZWDecode ]
+		%
+		%   In this instance, the color image would passed through as
+		%   an LZW encoded stream because of the /Passthrough value.
+		%
+		%   If a flate encoded monochrome image were then to appear,
+		%   it would be decoded and re-encoded with ASCII85 because
+		%   of the /Default value.
+		%
+		%   If an ASCII85 encoded RGB image where then to appear, it
+		%   would be decoded and then re-encoded using FlateEncode
+		%   because of the /ImageC value.
+		%
+	      >>
+
+	      % - Font Embedding -
+	      %
+	      % There are two dictionaries controlling font embedding;
+	      % /EmbedFonts and /SubsetFonts. Each may contain the keys
+	      % /Embedded, /Installed, and /Exclude. Embedded determines the
+	      % disposition of fonts which were embedded in the job;
+	      % Installed determines the disposition of fonts which were
+	      % installed on the RIP and not present in the job. Exclude
+	      % provides a mechanism to override the matching on Embedded and
+	      % Installed; fonts matched by Exclude are removed from the
+	      % Embedded and Installed lists.
+	      %
+	      % The values for the Embedded, Installed, and Exclude keys may
+	      % be either the name /All, the name /None, or an array of font
+	      % names. The value /All will match all fonts, /None will match
+	      % no fonts. If any of the names in the array of font names
+	      % matches, then the font is included in the list. Note that the
+	      % font names in the array form are the original font names
+	      % under which the font is defined, not the FontName entry in
+	      % the font dictionary nor the name under which a derived font
+	      % (through re-encoding or other manipulation) is defined.
+	      %
+	      % Fonts which match the EmbedFonts criteria will be embedded in
+	      % the PDF output. Fonts which match both the EmbedFonts and
+	      % SubsetFonts criteria will be subsetted (only the characters
+	      % used will be encoded in the embedded font).
+
+	      /EmbedFonts <<
+		/Embedded /All
+		/Installed /All
+	  %     /Exclude [ /font... ] % No exclusions.
+	      >>
+
+	      /SubsetFonts << % NYI
+		/Embedded /All
+		/Installed /All
+	  %     /Exclude [ /font... ] % No exclusions
+	      >>
+
+	      % Turn PDF out splitting on/off. This generates a separate PDF
+	      % file for each page of the job.
+	      /Split false
+	    >>
+	  >> setpagedevice
+
+	  % ============= now a bit of comment parsing extension
+	  currentglobal false setglobal
+	  (%%dict) load begin
+	    (%%actions) load begin
+
+	      % some comments to pass through to PDFout some reformatting is
+	      % done to remove brackets etc.
+
+	      %  I've commented out the creation date and moddate for the
+	      %  moment as These will most likely be produced by pdfout
+	      %  directly (i.e. current realtime) Besides, the string format
+	      %  is all wrong :-)
+	      %
+	      % /CreationDate: {
+	      %  	vmstatus pop pop 
+	      %  	2 eq {
+	      %  		% lose the space and brackets
+	      %  		dup length -3 add 
+	      %  		2 exch getinterval
+	      %  		% pass into pdfout if required
+	      %  		[ exch /CreationDate exch /HQN pdfmark
+	      %  	}{pop}ifelse
+	      %  } bind def
+	      %  
+	      %  /ModDate: {
+	      %  	vmstatus pop pop 
+	      %  	2 eq {
+	      %  		% lose the space and brackets
+	      %  		dup length -3 add 
+	      %  		2 exch getinterval
+	      %  		% pass into pdfout if required
+	      %  		[ exch /ModDate exch /HQN pdfmark
+	      %  	}{pop}ifelse
+	      %  } bind def
+
+	      /PDFAuthor: {
+		vmstatus pop pop 
+		2 eq {
+		  dup
+		  % lose the space and brackets
+		  dup length -3 add 
+		  2 exch getinterval
+		  % pass into pdfout if required
+		  [ exch /Author exch /HQN pdfmark
+		} if
+	      } bind def
+
+	      /PDFSubject: {
+		vmstatus pop pop 
+		2 eq {
+		  dup
+		  % lose the space and brackets
+		  dup length -3 add 
+		  2 exch getinterval
+		  % pass into pdfout if required
+		  [ exch /Subject exch /HQN pdfmark
+		} if
+	      } bind def
+
+	      /PDFCreator {
+		% the ': creatorname' line
+		% if at document level then try passing to pdfout
+		vmstatus pop pop 
+		2 eq {
+		  dup
+		  % lose the colon, space and brackets
+		  dup length -4 add 
+		  3 exch getinterval
+		  [ exch /Creator exch /HQN pdfmark
+		} if
+	      } bind def
+
+	      /PDFTitle: {
+		% this function is appended to the front of Title:
+		% note that it does not change the final stack
+		vmstatus pop pop 
+		2 eq {
+		  dup
+		  % lose the space and brackets
+		  dup length -3 add 
+		  2 exch getinterval
+		  % pass into pdfout if required
+		  [ exch /Title exch /HQN pdfmark
+		} if
+	      } bind def
+
+	    end 
+	  end 
+	  setglobal % to g, what it was originally
+
+	  currentglobal false setglobal
+	  (%%dict) load begin
+	    (%%actions) load begin
+	      %append PDF<func> to the START of <func>
+	      /Author: /Author: /PDFAuthor: //PDFjoinprocedures exec
+	      /Subject: /Subject: /PDFSubject: //PDFjoinprocedures exec
+	      /Title: /Title: /PDFTitle: //PDFjoinprocedures exec
+	      /Creator /Creator /PDFCreator //PDFjoinprocedures exec
+	    end 
+	  end
+	  setglobal % to g, what it was originally
+
+	  % End of comment parsing
+	} if
+      } bind
+    >>
+
+     % Deactivate PDF Out in EndJob hook, before end of job stats reporting
+    /EndJob <<
+      /PDFOut {
+	<< /PDFOut false >> setpagedevice
+	userdict /PDFOutFilename get (%console%) ne {
+	  (\nPDF creation time: ) print
+	  usertime //globaldict /PDFOutTime get sub cvi
+	  dup 3600000 idiv dup 0 ne { dup =print ( hours )print } if 3600000 mul sub
+	  dup 60000 idiv dup 0 ne { dup =print ( minutes )print } if 60000 mul sub
+	  1000 div =print ( seconds\n)print
+	} if
+      } bind
+    >>
+  >> setpagedevice
+end % working dict
+
+% -----------------------------------------------------------------------------

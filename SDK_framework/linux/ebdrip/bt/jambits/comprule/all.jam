@@ -1,0 +1,695 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Generic compilation rules.
+#
+# $HopeName: HQNjambits!comprule:all.jam(EBDSDK_P.1) $
+#
+
+#################
+# Utility rules #
+#################
+
+#* $(1) gristedtarget ...
+#* There are some dependencies which all targets should pick up
+#* automatically.  For example, we make all targets depend on the
+#* makefile that describes them.  Instead of adding all these
+#* dependencies by hand, which may change in the future, this rule makes
+#* all those <em>floating</em> dependencies for you.
+#*section rulecons
+    rule FloatingDepends {
+        CheckGristed $(1) ;
+        DEPENDS $(1) : $(CurrentMakefile) ;
+    }
+
+#* $(1) target
+#* $(2) path ...
+#* Make the location of $(1) be $(2) (assembled using @MakePath).
+#* Create the $(2) and make $(1) depend on it.  If $(1) has no grist, it
+#* will be gristed using $(CurrentPath).
+#*eg DirectoryFor foo$(C-Object-Suffix) : $(CurrentPath) $(C-Object-Directory) ;
+#*section rulecons
+#*seerule Locate MakeDirectory
+    rule DirectoryFor {
+        local G ; MakeGristed G : $(1) : $(CurrentPath) ;
+        local Dir = $(2:/) ;
+        LOCATE on $(G) ?= $(Dir) ;
+        if $(G:D) { Dir = $(Dir)$/$(G:D) ; }
+        MakeDirectory $(Dir) ;
+        DEPENDS $(G) : $(Dir) ;
+    }
+
+#* $(1) gristedtarget
+#* $(2) gristedresponsefile
+#* [$(3) sources ...]
+#* [$(4)] prefix
+#* [$(5)] suffix
+#* A response file is a text file containing a list of source files.
+#* When a compiler can accept its list of sources in this way, it can
+#* dramatically reduce the length of the command-line, which may avoid
+#* problems when products grow.  This rule adds the $(3) to a $(2) (for
+#* use when producing $(1)).  You must ensure that $(1) and $(2)
+#* are gristed (see @MakeGristed), and their destination or source
+#* directories are set up (see @DirectoryFor and @Search).
+#*
+#* This rule will handle truncating the $(2) before starting to create
+#* the list, and will arrange for the $(1) and $(2) to be cleaned away
+#* when making <code>clean</code> (see @CleanFile and @CleanDir).  The
+#* full path of the response file will be available in the actions for
+#* the $(1) in the variable <code>ResponseFile</code> (be sure to specify
+#* <code>bind ResponseFile</code> on the actions.
+#*
+#* Arguments $(4) and $(5) are optional, and each default to the empty string.
+#* They will be put immediately before and after each $(3) in the $(2).
+#*eg ResponseFile $(Target) : $(Target:S=.rs1) : $(Sources) : + : \\ ;
+#*
+#* A blank line is written to the file after the lines of $(3). If $(3) is
+#* empty or not specified, just a blank line is written (useful for initialising
+#* an empty response file).
+#*
+#*seerule ResponseAppend
+#*section rulecons
+    actions quietly piecemeal together _ResponseAddLine {
+$(HqmakePerl) -e $(ShellQuote)foreach(@ARGV){print qq($(Prefix));print;print qq($(Suffix)\n)}$(ShellQuote) $(>) >>$(<)
+    }
+    actions quietly _ResponseAddBlankLine {
+$(HqmakePerl) -e $(ShellQuote)print qq(\n)$(ShellQuote) >>$(<)
+    }
+    rule ResponseFile {
+        CleanFile $(1) $(2) ;
+        FileStartsEmpty $(2) ;
+        local i ; for i in $(3) { _ResponseAddLine $(2) : $(i) ; }
+        Prefix on $(2) ?= "" ; Suffix on $(2) ?= "" ;
+        if nonemptylist$(4) { Prefix on $(2) = $(4) ; }
+        if nonemptylist$(5) { Suffix on $(2) = $(5) ; }
+        ResponseFile on $(1) = $(2) ;
+        DEPENDS $(2) : $(3) ;
+        DEPENDS $(1) : $(2) ;
+        _ResponseAddBlankLine $(2) ;
+    }
+
+#* $(1) gristedtarget
+#* $(2) gristedresponsefile
+#* $(3) gristedresponsesources ...
+#* This rule is identical in operation to @ResponseFile, except that
+#* instead of adding the names of $(3) to the $(2), it simply appends
+#* their contents.
+#*seerule ResponseFile
+#*section rulecons
+if $(MAC)  {
+  actions quietly _ResponseAppend {
+    Catenate $(>) >> $(<)
+  }
+}
+if $(NT) {
+  actions quietly _ResponseAppend { type $(>) >> $(<) }
+}
+if $(UNIX) || $(MACOSX) {
+  actions quietly piecemeal _ResponseAppend { cat $(>) >> $(<) }
+}
+    rule ResponseAppend { CheckGristed $(3) ; CleanFile $(1) $(2) ;
+        FileStartsEmpty $(2) ;
+        local i ; for i in $(3) { _ResponseAppend $(2) : $(i) ; }
+        ResponseFile on $(1) = $(2) ;
+        DEPENDS $(2) : $(3) ;
+        DEPENDS $(1) : $(2) ;
+    }
+
+#* $(1) target
+#* [$(2)] subdir ...
+#* If $(1) is not gristed, then first grists it with $(CurrentPath)
+#* (optionally followed by $(2)).  If this gristed target appears in the
+#* dependency graph of those targets requested on the command line,
+#* always rebuild it regardless of whether its sources have changed or
+#* not.  Unless this target is meant to somehow reflect the last time a
+#* build was done (eg a source file containing the build date and time),
+#* this is probably not what you want to do, as it will also cause all
+#* the targets that depend on it to be rebuilt as well.
+#*eg if $(RELEASE) = 1 { Force makedate.c ; }
+#*section rulecons
+    rule Force {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) $(2) ;
+        ALWAYS $(Target) ;
+    }
+
+#* $(1) targets ...
+#* $(2) location
+#* [$(3)] subdir ...
+#* Unless already gristed, grists $(1) with $(CurrentPath) (optionally
+#* followed by $(3)).  Make the location of the gristed targets be $(2)
+#* (typically an absolute path constructed using $(CurrentPath) or
+#* $(BUILDROOT)).  This rule does <em>not</em> make sure that the
+#* directory already exists before the $(1) are built.  If you want it
+#* to make the directory first, you probably want @DirectoryFor instead.
+#*seerule DirectoryFor
+#*section rulecons
+    rule Locate {
+        local G ; MakeGristed G : $(1:*) : $(CurrentPath:*) $(3:*) ;
+        LOCATE on $(G) = $(2:*) ;
+    }
+#* $(1) targets ...
+#* $(2) location
+#* [$(3)] subdir ...
+#* Unless already gristed, grists $(1) with $(CurrentPath) (optionally
+#* followed by $(3)).  Add $(2) to the list of directories to search for
+#* in order to find the gristed targets.
+#* (typically an absolute path constructed using $(CurrentPath) or
+#* $(BUILDROOT)).
+#*seerule Locate
+#*section rulecons
+    rule Search {
+        local G ; MakeGristed G : $(1:*) : $(CurrentPath:*) $(3:*) ;
+        SEARCH on $(G) += $(2:*) ;
+    }
+
+#* rule for gristing a target and LOCATEing it.
+#*
+#* $(1) variable name
+#* $(2) targetno suffix
+#* [$(3)] path
+#* $(4) type
+#* [$(5)] LOCATE|SEARCH
+#*
+#*eg. LocateGeneric <variable> : <targetnosuffix> : [ <path> ... ] : <type> : (LOCATE|SEARCH) ;
+#*
+#*section internal
+    rule LocateGeneric {
+        # LocateGeneric <VarName> : <RawTarget> : <OptionalSubDir> : <FileType> : (LOCATE|SEARCH) ;
+        local Path = $(CurrentPath) $(3) ;
+
+        local __Suffix__ = $(4)-Suffix ;
+        MustBeSet $(__Suffix__) : $(__Suffix__) is not defined ;
+
+        local __Directory__ = $(4)-Directory ;
+        MustBeSet $(__Directory__) : $(__Directory__) is not defined ;
+
+        local __LocateGeneric__ ;
+        MakeGristed __LocateGeneric__ : $(>)$($(__Suffix__)) : $(Path:/) ;
+
+        local __LocateGeneric__Search = $(Path:/)$/$($(__Directory__)) ;
+        switch $(5) {
+            case LOCATE :
+                DirectoryFor $(__LocateGeneric__) : $(__LocateGeneric__Search) ;
+            case SEARCH :
+                SEARCH on $(__LocateGeneric__) += $(__LocateGeneric__Search) ;
+        }
+
+        $(<) = $(__LocateGeneric__) ;
+    }
+
+#* $(1) variablename
+#* $(2) targets
+#* [$(3)] rooted path ...
+#* [$(4)] DirectoryFor | Locate | Search | Distribute ...
+#* For each of the targets listed in $(2), look to see if they already
+#* have a grist. If not, then concatenate $(3) with them to create a path,
+#* and grist the basename of the path with the directory component of the
+#* path. Assign the list of now-gristed targets to $(1).  Note that the path
+#* must be rooted (eg. using $(CurrentPath) or $(BUILDROOT)).
+#*
+#* If optional argument $(4) contains DirectoryFor, Locate or Search,
+#* respectively create and locate, locate, or search for the resulting target
+#* using the directory component $(3) of the path for ungristed $(1). If the
+#* optional argument $(4) contains Distribute, override the distribution
+#* rule for the ungristed path to depend on the gristed target.
+#*eg MakeLeafTarget targets : export$/foo.h src$/bar.c : $(CurrentPath) subdir : Search ;
+#*seevar BUILDROOT CurrentPath
+#*seerule MakeGristed Seach Locate DirectoryFor Distribute
+#*section rulecons
+    rule MakeLeafTarget {
+        local Path = $(3:/) ;
+        local _MakeLeafTarget_ ;
+        local i ; for i in $(2) {
+            if ! $(i:G) {
+                local iPath ; MakePath iPath : $(Path) $(i) ;
+                i = $(iPath:BSG=$(iPath:D)) ;
+                # Make top-level targets visible
+                if $(i:G) in . ":" { DEPENDS $(i:BS) : $(i) ; }
+
+                local opt ; for opt in $(4) {
+                    switch $(opt) {
+                    case Search : Search $(i) : $(iPath:D) ;
+                    case Locate : Locate $(i) : $(iPath:D) ;
+                    case DirectoryFor : DirectoryFor $(i) : $(iPath:D) ;
+                    case Distribute : TargetFile-$(iPath) = $(i) ;
+                    case ?* : Error "MakeLeafTarget rule 4th argument must be Search, Locate, DirectoryFor, or Distribute" ;
+                    }
+                }
+            }
+
+            _MakeLeafTarget_ += $(i) ;
+        }
+        $(1) = $(_MakeLeafTarget_) ;
+    }
+
+# General erasure action
+#
+#   _Erase <gristedtarget> : <locatedgristedfile> ;
+#
+    actions existing quietly together piecemeal _Erase {
+$(Erase) $(2)
+    }
+
+#* $(1) targetfile ...
+#* [$(2)] subdir ...
+#* Unless already gristed, grists $(1) with $(CurrentPath) (optionally
+#* followed by $(2)).  Erases the $(1) as the first stage in the
+#* updating actions for $(1).  There is no actual guarantee that the
+#* erasure will come before the other updating actions unless you ensure
+#* that this rule is called before Jam encounters any other updating
+#* actions for $(1).
+#*seerule EraseFile
+#*section rulecons
+    rule FileStartsEmpty {
+        local G ; MakeGristed G : $(1) : $(CurrentPath) $(2) ;
+        FloatingDepends $(G) ;
+        local i ; for i in $(G) { _Erase $(i) : $(i) ; }
+    }
+
+# Rules for deleting files and directories
+#
+#   EraseDir <dir> ... ;
+#   EraseFile <file> ... [ : <subcompound> ... ] ;
+#
+
+#* $(1) dir ...
+#* For each $(1), adds a new target by prefixing the original with
+#* <code>Erase-</code>, whose updating actions cause the directory to be
+#* erased, along with any contents.
+#*section rulecons
+#*seerule CleanDir EraseFile
+    rule EraseDir {
+        NOTFILE Erase-$(1) ;
+        local i ; for i in $(1) { _Erase Erase-$(i) : $(i) ; }
+    }
+#* $(1) targetfile ...
+#* [$(2)] subdir ...
+#* Except for those already gristed, grists each $(1) with
+#* $(CurrentPath) (optionally followed by $(2)).  Adds a new target by
+#* prefixing the original with <code>Erase-</code>, whose updating
+#* actions cuase the targets to be erased.
+#*seerule CleanFile EraseDir FileStartsEmpty
+#*section rulecons
+    rule EraseFile {
+        local G ; MakeGristed G : $(1) : $(CurrentPath) $(2) ;
+        NOTFILE Erase-$(G) ;
+        local i ; for i in $(G) { _Erase Erase-$(i) : $(i) ; }
+    }
+
+    DEPENDS clean : cleanfiles ;
+    NOTFILE clean cleanfiles ;
+    ALWAYS  clean cleanfiles ;
+#* $(1) targetfile ...
+#* [$(2)] subdir ...
+#* Except for those already gristed, grists each $(1) with
+#* $(CurrentPath) (optionally followed by $(2)).  Adds $(1) to the list
+#* of files to be removed when building the <code>clean</code> target.
+#*section rulecons
+#*seerule CleanDir EraseFile FileStartsEmpty
+    rule CleanFile {
+        local G ; MakeGristed G : $(1) : $(CurrentPath) $(2) ;
+        FloatingDepends $(G) ;
+        _Erase cleanfiles : $(G) ;
+    }
+#* $(1) directory
+#* Adds $(1) to the list of directories to be removed when building the
+#* <code>clean</code> target.
+#*section rulecons
+#*seerule CleanFile EraseDir
+    rule CleanDir  {
+        # Don't go through all this a second time.
+        if ! $(__CleanDir__$(1)) {
+            __CleanDir__$(1) = 1 ;
+            _Erase clean : $(1) ;
+        }
+    }
+
+    actions quietly together _Message {
+echo $(Message)
+    }
+# A rule for simply printing a message.  This is for printing progress messages
+# during the updating action phase.
+#
+#   Message <gristedtarget> : <message> ;
+#
+
+#* $(1) gristedtarget
+#* $(2) message ...
+#* Adds an <code>echo $(2)</code> to the updating actions for $(1), for
+#* printing progress information during the updating action phase.  It
+#* is conventional for the message to start <code>...</code> and be in
+#* uppercase.
+#*section rulecons
+#*seerule Error Warning
+    rule Message { CheckGristed $(<) ;
+        Message on $(<) = $(>) ;
+        _Message $(<) ;
+    }
+
+
+###################################
+# Include other compilation rules #
+###################################
+
+# Include miscellaneous compilation rules
+    JamBits comprule misc.jam ;
+# Include Browse compilation rules
+    JamBits comprule browse.jam ;
+# Include C compilation rules
+    JamBits comprule c.jam ;
+# Include IDL compilation rules
+    JamBits comprule idl.jam ;
+# Include Java compilation rules
+    JamBits comprule java.jam ;
+# Include Splint compilation rules
+    JamBits comprule splint.jam ;
+# Include PREfast compilation rules
+    JamBits comprule prefast.jam ;
+# Include CxxTest compilation rules
+    JamBits comprule cxxtest.jam ;
+# Include SW folder compilation rules
+    JamBits comprule swf.jam ;
+# Include GCov compilation rules
+    JamBits comprule gcov.jam ;
+# Include Doxygen compilation rules
+    JamBits comprule doxygen.jam ;
+# Include Localisation message compilation rules
+    JamBits comprule localise.jam ;
+# Include source exporting compilation rules
+    JamBits comprule exportsrc.jam ;
+# Include WDK build compilation rules
+    JamBits comprule wdkbuild.jam ;
+
+# Include distribution rules (come last, since they might steal some information
+# from the above compilation rules files).
+    JamBits comprule distrib.jam ;
+
+
+#################
+# Generic rules #
+#################
+
+#* A rule for compiling from a number of source files identified on all
+#* platforms by the same suffix (eg .c .java files) by bunching together a
+#* bunch of gristing rules from elsewhere.
+#*
+#* $(1) target
+#* $(2) source ...
+#* [$(3)] path ...
+#* [$(4)] target type
+#* [$(5)] object grist
+#*
+#*eg. JamCompileNLink <target> : <source> ... [ : <path> ... [ : <targettype> [ : <object grist> ] ] ] ;
+#*
+#*section internal
+    rule JamCompileNLink {
+        local Target ; MakeGristed Target : $(<) : $(CurrentPath) ;
+        local sources ; AddUnique sources : $(2) ;
+        LinkType-$(Target) ?= $(4) ;
+        local objgrist = $(5) ; objgrist ?= $(CurrentPath) ;
+
+        local .c-files .cpp-files .idl-files .midl-files .rc-files ;
+
+        local i ; for i in $(sources) {
+            switch $(i:S) {
+                case .c    : .c-files += $(i) ;
+                case .cpp  : .cpp-files += $(i) ;
+                case .cc   : .cpp-files += $(i) ;
+                case .idl  : .idl-files += $(i) ;
+                case .midl : .midl-files += $(i) ;
+                case * :
+                    if $(i:S) in .rc .r {
+                        if $(i:S) = $(C-ResourceDescription-Suffix) && RC in $(EnabledCompilers) {
+                            .rc-files += $(i) ;
+                        }
+                    }
+                    else {
+                        Error No rule defined for compiling source files of type $(i:S) ;
+                    }
+            }
+        }
+
+        if $(.midl-files) {
+        ECHO "MIDL Files " $(.midl-files) " : " $(3) ;
+            Idl-Midl-Compile $(.midl-files) : $(3) ;
+            .cpp-files += $(.midl-files:S=$(Idl2CppOutput-Suffix)) ;
+        }
+
+        if $(.idl-files) {
+            Idl-Idl2Cpp-Compile $(.idl-files) : $(3) ;
+            .cpp-files += $(.idl-files:S=$(Idl2CppOutput-Suffix)) ;
+        }
+
+        if ! $(.idl-files) || Idl2Cpp in $(EnabledCompilers) {
+            if $(.rc-files) {
+                Resource-Compile $(.rc-files) : $(3) : $(objgrist) ;
+                C-LinkWithResources $(1) : $(.rc-files:S=:G=$(objgrist)) : : $(4) ;
+            }
+            if $(.c-files) {
+                C-Compile $(.c-files) : $(3) : $(objgrist) ;
+                C-LinkWithObjects $(1) : $(.c-files:S=:G=$(objgrist)) : : $(4) ;
+            }
+            if $(.cpp-files) {
+                C++-Compile $(.cpp-files) : $(3) : $(objgrist) ;
+                C++-LinkWithObjects $(1) : $(.cpp-files:S=:G=$(objgrist)) : : $(4) ;
+            }
+        }
+
+        NoteWDKTarget $(Target) : $(sources) : $(3) ;
+    }
+
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] object grist
+#* [$(5)] Dll sub-type
+#* Compile the $(2) appropriately, depending on their filename suffix,
+#* linking them together to produce a dynamic library named $(1) (with
+#* suffix appropriate for the platform and sub-type $(5)).  If $(3) is
+#* specified, the $(2) are to be found in subdirectories of the compound in
+#* directory $(3), rather that in the current compound.
+#*seerule C-Compile C-LinkWithObjects Executable Library
+#*seevar C-SourceDirectories
+#*section c
+    rule DynamicLibrary {
+        local DllType = $(5) ; DllType ?= Dll ;
+        JamCompileNLink $(<) : $(>) : $(3) : $(DllType) : $(4) ;
+    }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] object grist
+#* Compile the $(2) appropriately, depending on their filename suffix,
+#* linking them together to produce an executable named $(1) (with
+#* suffix appropriate for the platform).  If $(3) is specified, the $(2)
+#* are to be found in subdirectories of the compound in directory $(3),
+#* rather that in the current compound.
+#*seerule C-Compile C-LinkWithObjects DynamicLibrary Library
+#*seevar C-SourceDirectories
+#*section c
+    rule Executable     { JamCompileNLink $(<) : $(>) : $(3) : Exec : $(4) ; }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] object grist
+#* Compile the $(2) appropriately, depending on their filename suffix,
+#* linking them together to produce a static library named $(1) (with
+#* suffix appropriate for the platform).  If $(3) is specified, the $(2)
+#* are to be found in subdirectories of the compound in directory $(3),
+#* rather that in the current compound.
+#*seerule C-Compile C-LinkWithObjects DynamicLibrary Executable
+#*seevar C-SourceDirectories
+#*section c
+    rule Library        { JamCompileNLink $(<) : $(>) : $(3) : Lib : $(4) ; }
+
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] source-dir ...
+#* Parameter $(1) is a prebuilt executable name, or a target for a prebuilt
+#* executable.
+#* If the variable INSTALL_PREBUILT is set, then compile $(2) appropriately,
+#* depending on their filename suffixes, linking them together to produce an
+#* executable named $(1) (with suffix appropriate for the platform), and
+#* install this in the prebuilt executable path appropriate to the platform.
+#* If the variable INSTALL_PREBUILT is NOT specified in the Jam command line
+#* targets, then compare the Hope checkin times of $(1) and $(2), issuing a
+#* warning if the checkin time of the prebuilt executable $(1) is before any
+#* of the sources $(3).
+#* If $(3) is specified, the $(2) are to be found in subdirectories of the
+#* compound in directory $(3), rather that in the current compound.
+#*seerule Executable
+#*seevar C-Object-Directory PrebuiltPathPrefix
+    # Don't use CopyFile because we don't want cleaning
+    actions quietly _InstallPrebuilt {
+        echo ...Installing prebuilt tool "$(<)" from "$(>)"
+        $(CopyFile) "$(>)" "$(<)"
+    }
+
+    actions quietly _Later {
+        $(HqmakePerl) -e $(ShellQuote)$exe = shift(@ARGV);map {print qq(# WARNING : Prebuilt tool $exe checked in before source file $_\n) if (stat qq($exe.ci))[9]<(stat qq($_.ci))[9]} @ARGV;$(ShellQuote) $(<:DBS=) $(>:DBS=)
+    }
+
+    actions quietly _HopeCheckinTime {
+        $(FileutilRune) -e "Fileutil::Touch" -- -c -d -i $(>) $(<)
+    }
+
+    rule PrebuiltExecutable {
+        local Prebuilt ;
+        local PrebuiltDir = $(CurrentPath)$/$(PrebuiltPathPrefix) ;
+        MakeGristed Prebuilt : $(1) : $(PrebuiltDir) ;
+        LOCATE on $(Prebuilt) = $(PrebuiltDir) ;
+
+        local Source ;
+        local SourceDir = $(3) ;
+        MakeGristed Source : $(2) : $(SourceDir) ;
+        SEARCH on $(Source) = $(SourceDir) ;
+
+        # Prebuilt tools are built when specifying the "make-tools" target.
+        DependsOn make-tools : $(Prebuilt) ;
+
+        # Prevent dependencies on erroneously out-of-date prebuilt tools
+        # triggering mass recompilation in every thirdparty build.
+        # No point in checking for installing tools in thirdparty build either.
+        if ! thirdparty in $(JAM_VARIANTS) {
+            if $(INSTALL_PREBUILT) {
+                local Tool = $(Prebuilt:BG=$(CurrentPath)-Tool) ;
+                DirectoryFor $(Tool) : $(CurrentPath)$/$(C-Object-Directory) ;
+                Executable $(Tool) : $(Source) : $(SourceDir) : $(CurrentPath) ;
+
+                DependsOn $(Prebuilt) : $(Tool) ;
+
+                if $(RELEASE) = 0 {
+                    Warning "Prebuilt tool $(PrebuiltDir)$/$(Prebuilt:BS) is only installed for release build" ;
+                } else {
+                    # Yuck, this is bizarre. This is required because the
+                    # Executable rule makes $(Tool) depend on
+                    # $(Tool)$(C-Exec-Suffix) if the exec suffix is not empty.
+                    # The $(Tool) target doesn't have a locate associated with
+                    # it, because it's not a file target, so we have to use the
+                    # implicit intermediate target.
+                    _InstallPrebuilt $(Prebuilt) : $(Tool)$(C-Exec-Suffix) ;
+                }
+            } else {
+                ExportSource $(Prebuilt) : Binary ;
+                DEPENDS exportsrc : $(Prebuilt) ;     # Squash "using independent target" warning for unused tools
+                DEPENDS wdkbuild : $(Prebuilt) ;      # Squash "using independent target" warning for unused tools
+
+                local j ; for j in $(Source) {
+                    ExportSource $(j) : C ;
+                    DEPENDS exportsrc : $(j) ;        # Squash "using independent target" warning for unused tools
+                    DEPENDS wdkbuild : $(j) ;         # Squash "using independent target" warning for unused tools
+                }
+
+                # Targets to generate Hope checkin timestamp files for the source
+                # and executables
+                local i ; for i in $(Prebuilt) $(Source) {
+                    DirectoryFor $(i).ci : $(CurrentPath)$/$(C-Object-Directory) ;
+                    _HopeCheckinTime $(i).ci : $(i) ;
+                    # Anything that depends on the source or executable also
+                    # depends on their timestamps (so we don't get "independent
+                    # target" warnings).
+                    INCLUDES $(i) : $(i).ci ;
+                    if toolstamps in $(Variant_rebuild) {
+                        # If using the "-va rebuild=toolstamps" variant, force
+                        # updating of the checkin timestamp files
+                        ALWAYS $(i).ci ;
+                    }
+                }
+                # The executable's timestamp depends on the source timestamps:
+                DEPENDS $(Prebuilt).ci : $(Source).ci ;
+
+                # Anything that depends on the executable also depends on the
+                # source:
+                INCLUDES $(Prebuilt) : $(Source) ;
+
+                # The updating action for the executable timestamp also checks
+                # the file times:
+                _Later $(Prebuilt).ci : $(Source).ci ;
+            }
+        }
+    }
+
+#* $(1) inheritance
+#* $(2) subdirs ...
+#* [$(3)] path to subdirs parent ...
+#* [$(4)] conditions ...
+#* For those compounds with the appropriate $(1) (See @AddToVar), add
+#* the export directories for the $(2) specified in the second argument
+#* to the appropriate include paths (for C, IDL and resource
+#* compilation).  If $(3) is specified, it is the path to take to find
+#* the parent directory that contains $(2).  For example, if you want to
+#* add the export directories of a sibling compound, you would specify
+#* <code>..</code> for $(3).  If $(4) is specified, it is a list of
+#* conditions (as for @AddToVar) for which the export inclusion should
+#* take place.
+#*eg IncludeExportDirectories Local : standard : .. ;
+#*seerule AddToVar
+#*seevar Meta-IncludedExportDirectories
+    rule IncludeExportDirectories {
+        local Path ; MakePath Path : $(CurrentPath) $(3) ;
+        Path = $(Path)$/$(2) ;
+        local i Dirs ; for i in $(Path) {
+            if ! $($(i)-C-ExportDirectories) {
+                Dirs = $(i)$/$(C-ExportDirectories) ;
+                $(i)-C-ExportDirectories = $(Dirs:E) ;
+            }
+            if ! $($(i)-Idl-ExportDirectories) {
+                Dirs = $(i)$/$(Idl-ExportDirectories) ;
+                $(i)-Idl-ExportDirectories = $(Dirs:E) ;
+            }
+            if ! $($(i)-Resource-ExportDirectories) {
+                Dirs = $(i)$/$(Resource-ExportDirectories) ;
+                $(i)-Resource-ExportDirectories = $(Dirs:E) ;
+            }
+        }
+        AddToVar $(1) : Meta-IncludedExportDirectories : $(Path) : $(4) : Unique ;
+    }
+
+# Rule for exporting information about the current compound
+#
+#   DeclareExport <type> ... : <value> ... ;
+#
+
+#* $(1) exporttype
+#* $(2) directories ...
+#* Add $(2) to the list of $(1) for the current compound.
+#*eg DeclareExport C-ExportDirectories : $(CurrentPath)$/src ;
+#*seerule IncludeExportDirectories AddExportDirectories
+#*section rulecons
+    rule DeclareExport {
+        AddUnique $(CurrentPath)-$(1) : $(2) ;
+        if $($(CurrentPath)-$(1)-Meta-ExportDirectories) {
+            AddUnique $($(CurrentPath)-$(1)-Meta-ExportDirectories)-$(1) : $(2) ;
+        }
+    }
+
+# Rule for adding export information gathered from a sub-compound to the
+# current compound.
+#
+#   AddExportDirectories <directory> ... ;
+#
+
+#* $(1) subdirs...
+#* [$(2)] path to subdirs parent...
+#* [$(3)] export types...
+#* Add declared exports of types $(3) in compounds $(1) to the exports for
+#* the current compound. If $(2) is specified, it is the path to take to find
+#* the parent directory that contains $(1).  For example, if you want to
+#* add the export directories of a sibling compound, you would specify
+#* <code>..</code> for $(2).
+#*eg AddExportDirectories sibling : .. : C-ExportDirectories ;
+#*seerule IncludeExportDirectories DeclareExport
+#*section rulecons
+    rule AddExportDirectories {
+        local Path ; MakePath Path : $(CurrentPath) $(2) ;
+        Path = $(Path)$/$(1) ;
+        local Exports = $(3) ;
+        Exports ?= C-ExportDirectories Resource-ExportDirectories Idl-ExportDirectories ;
+        AddUnique $(Path)-$(Exports)-Meta-ExportDirectories : $(CurrentPath) ;
+        local i ; for i in $(Exports) {
+            AddUnique $(CurrentPath)-$(i) : $($(Path)-$(i)) ;
+        }
+    }
+
+
+# Log stripped

@@ -1,0 +1,313 @@
+/* -*- Mode: PostScript -*-
+ * $HopeName: COREhdlt!src:names.nam(EBDSDK_P.1) $
+ * Copyright (C) 2005-2011 Global Graphics Software Ltd. All rights reserved.
+ * Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREhdlt. See SWv20!src/names.nam for documentation on
+ * the file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ */
+
+% HDLT classes (must be in order of enum in idlom.h - DO NOT MOVE OR REORDER)
+Fill NEXT(Character)
+Character NEXT(Image)
+Image NEXT(Clip)
+Clip NEXT(Rectangle)
+Rectangle NEXT(Stroke)
+Stroke NEXT(Vignette)
+Vignette NEXT(Path)
+Path NEXT(Shfill)
+Shfill NEXT(Gouraud)
+Gouraud
+% the above names are presumed to be ordered, see cvtNameToClass in idlom.h
+
+% HDLT targets
+Page
+Character
+UserPath
+Clip
+Pattern
+Form
+Group
+Text
+
+% HDLT return codes
+Accept
+Equivalent
+RetryTarget
+Ignore
+Add
+Discard
+RetryClass
+Replace
+Recache
+
+% HDLT dlhooks dictionary entries
+Options
+Targets
+Objects
+
+% HDLT Targets and Objects dictionaries
+Begin
+End
+Data
+Callback
+
+% HDLT Options
+PathForm
+CoordinateSpace
+CoordinateShift
+FlatPaths
+InputColor
+OutputColor
+CoalesceClips % Unsupported!
+ClippedOut
+SeeClippedOut
+Prealloc
+PathsAsNeeded
+ClipsAsNeeded
+ImageMultipleDataSources
+ImageInterleaveType
+ImageBitsPerComponent
+
+% HDLT Option values for PathForm, CoordinateSpace, CoordinatePositioning,
+% ImageInterleaveType
+ASCII
+Binary
+User
+Default
+Device
+Original
+Absolute
+Relative
+Sample
+Row
+Separate
+
+% HDLT data dictionary entries
+Class
+Target
+Matrix
+InvertMatrix
+CTM
+BoundingBox
+PathMatrix
+Path
+UserPath
+Rule
+Color
+GroupColor
+Pen
+Clipping
+Position
+CacheID
+FormDict
+PatternDict
+PatternMatrix
+CharacterName
+CharacterCode
+FontDict
+Count
+FontSize
+Operator
+Success
+Image
+VignetteKind
+ColorCurve
+ShadingDict
+Smoothness
+Coords
+Alpha
+BlendMode
+SoftMask
+AlphaIsShape
+Isolated
+Knockout
+SoftMaskType
+
+% HDLT Image callback filters
+InputFilter
+OutputFilter
+MaskFilter
+
+% HDLT Target subdict
+First
+Actual
+
+% HDLT Color subdict
+ColorSpace
+ColorValue
+Screening
+ScreeningId
+TransferFunction
+TransferFunctionId
+UnderColorRemoval
+UnderColorRemovalId
+BlackGeneration
+BlackGenerationId
+PatternDict
+PatternId
+
+% HDLT Pen subdict
+linewidth
+linecap
+dash
+dashoffset
+join
+miterlimit
+
+% HDLT VignetteKind and ColourCurve values
+Rectangle
+Round
+Unknown
+Linear
+Logarithmic
+
+% HDLT Image subdict
+NumInputComponents
+NumOutputComponents
+NumOutputLevels
+% plus everything in regular image dict except datasource
+BitsPerComponent
+ContoneMask
+DataDict
+Decode
+Height
+ImageMatrix
+ImageType
+InterleaveType
+Interpolate
+IsSoftMask
+MaskColor
+MaskDict
+Matte
+Matted
+MultipleDataSources
+Width
+
+% HDLT Text target operator names
+BT
+Glyphs
+% plus all of the show operators...
+ashow
+awidthshow
+cshow
+glyphshow
+kshow
+show
+stringwidth
+widthshow
+xshow
+xyshow
+yshow
+
+% screening sub-dict
+Angle
+Frequency
+BlueAngle
+BlueFrequency
+BlueSpotFunction
+GrayAngle
+GrayFrequency
+GraySpotFunction
+GreenAngle
+GreenFrequency
+GreenSpotFunction
+HalftoneType
+RedAngle
+RedFrequency
+RedSpotFunction
+SpotFunction
+
+% color sub-dict
+BlackGeneration
+BlackGenerationId
+ColorCurve
+ColorSpace
+ColorValue
+Overprint
+PatternDict
+PatternId
+Screening
+ScreeningId
+TransferFunction
+TransferFunctionId
+UnderColorRemoval
+UnderColorRemovalId
+
+% Prealloc option dict
+arraytype
+stringtype
+
+% Data dictionary values
+
+% image operators
+colorimage
+image
+imagemask
+
+% clip operators
+clip
+eoclip
+iclip
+
+% fill operators
+eofill
+fill
+stroke
+
+% page operators
+copypage
+erasepage
+showpage
+
+% metrics
+setcachedevice
+setcachedevice2
+setcharwidth
+
+false
+true
+
+% SoftMaskTypes
+Alpha
+Luminosity
+
+% BlendModes
+Normal
+
+% names used in setting parameters on the FONTDecode filter
+FONTDecodeParams
+Strategy
+
+% other
+Implementation
+PaintType
+Private
+undefined
+
+% InterleaveDecode setup
+BitsAfter
+BitsBefore
+DataSource
+InputAlignRepeat
+InputBits
+OutputAlignRepeat
+OutputBits
+Repeat
+Samples
+SeekSource
+
+debug_hdlt % Debug display-list
+
+% HDLT operators
+setdlhooks OPERATOR
+currentdlhooks OPERATOR
+dlclearcaches OPERATOR DICT(1183615869 internaldict)
+% mergedicts     % NOT USED in internaldict, this recursively merges dictionaries
+savedlhooks % internaldict procedure
+emptydldata % internaldict dictionary
+
+/*
+Log stripped */

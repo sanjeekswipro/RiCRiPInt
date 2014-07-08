@@ -1,0 +1,24 @@
+%!PS-Adobe-3.0
+%%Title: PantoneStandard
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2011-2011 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:ncorder:panstd(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+/PantoneStandard
+[
+    /PantoneU
+    /PantoneV
+    /PantoneCoated
+    /PantoneUncoated
+    /PantoneMatte
+    /PantoneGoeCoated
+    /PantoneGoeUncoated
+]
+/NamedColorOrder defineresource
+
+%%EOF

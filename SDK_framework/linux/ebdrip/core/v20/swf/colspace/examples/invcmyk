@@ -1,0 +1,34 @@
+%!PS-Adobe-3.0
+%%Title: DeviceCMYK/Invert CMYK
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu Nov 28 13:15:52 1996
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% $HopeName: SWv20!swf:colspace:examples:invcmyk(EBDSDK_P.1) $
+%
+% This colorspace resource just inverts the CMYK input data.
+% Useful for testing but probably not much else.
+%
+% To install this colorspace copy the file into the folder
+%
+%               SW:Colorspaces:DeviceCMYK
+%
+% this can then be selected in the Color Setup dialog for
+% any of the color options.
+%
+%%EndComments
+
+%%BeginResource: colorspace DeviceCMYK/Invert CMYK
+
+currentglobal false setglobal
+
+[   /DeviceN
+    [/Unknown /Unknown /Unknown /Unknown]
+    /DeviceCMYK
+    {4 {1 exch sub 4 1 roll} repeat}
+]
+
+(DeviceCMYK/Invert CMYK) cvn exch /ColorSpace defineresource pop setglobal
+
+%%EndResource

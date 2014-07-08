@@ -1,0 +1,52 @@
+%!PS
+%%Title: AGMCORE_Patch
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2001-2007 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWv20!swf:sys:extstart:agmcore(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% A number of Adobe applications use a common PostScript library when
+% generating EPS or PostScript. The code in that library makes some
+% assumptions about the separation abilities of a RIP within which it
+% will be run.
+%
+% Unfortunately the Harlequin ScriptWorks RIP is rather more flexible
+% and powerful than the code can handle, especially as follows:
+%
+% *  ScriptWorks can be set to 'separate' a pre-separated job. It will
+%    automatically detect the blank separations and omit them. 
+%
+% * ScriptWorks can dynamically add new spot color separations when objects
+%   using them are found in a job file.
+%
+% * ScriptWorks can recombine, and even re-separate pre-separated jobs.
+%
+% The code below overrides some of the assumptions made by the Adobe code,
+% leading to correct output.
+
+(%%dict) load (%%actions) get begin
+
+/BeginResource: { 
+	dup null exec 
+	( Adobe_AGM_Core ) search { 
+		pop pop pop 
+			<<
+			/AGMCORE_host_sep { AGMCORE_composite_job not } bind
+			/AGMCORE_producing_seps { AGMCORE_composite_job not } bind
+			/AGM_preserve_spots { true } bind
+		>> 1183615869 internaldict /shadowop get exec
+		<< /ExcludedSeparations << /_cyan_ true /_magenta_ true /_yellow_ true /_black_ true >> >> setuserparams
+	} { pop } ifelse 
+} dup 1 
+currentdict /BeginResource: 2 copy known { 
+	get 
+} { 
+	pop pop { pop } 
+} ifelse put bind def
+
+end % %%actions
+
+%%EOF

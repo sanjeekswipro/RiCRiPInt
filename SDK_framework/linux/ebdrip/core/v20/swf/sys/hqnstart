@@ -1,0 +1,288 @@
+%! Hqn-2.3
+%%Title: BootStrap Code
+%%Creator: Global Graphics Software Limited
+%%CreationDate: 4/6/90
+% LastModificationDate: 19/Mar/10
+%{boot code version #2 3
+% (C) Copyright (C) 1989-2010 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (Harlequin BootStrap Code) 2 3
+
+% $HopeName: SWv20!swf:sys:hqnstart(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Load up setpageparams from internalpageparams. 
+% Comment out the following line to use
+% the RIP with applications that do not use setpageparams correctly
+% statusdict /setpageparams undef
+
+% Make checksum map to hqnchecksum for backward compatibilty.
+statusdict /checksum known not {
+  statusdict begin
+    /checksum /hqnchecksum load def
+    end
+} if
+
+% Write version to file for other rips to read.
+(%os%version) (w) file dup
+userdict /hqnversion 2 copy known {
+  get
+  writestring
+  closefile
+}
+{pop pop pop closefile}
+ifelse
+
+% some composite fonts use this file name munging procedure
+/PrependRoot {} def
+
+% Uncomment this (and change the name DefaultFont) for your favourite
+% font to be defaulted.
+% $error /SubstituteFont { pop /DefaultFont } bind put
+% NOTE that this would be better done in SW/Config/FontSubstitution
+% in ScriptWorks Classic or Enterprise Edition.
+
+/HQNloadfont {
+  currentglobal mark 3 -1 roll
+
+  dup /Font resourcestatus {
+    % Font found - Load it
+    pop pop
+    { findfont } stopped
+  }{
+    % Font not found
+    pop
+  }ifelse
+
+  cleartomark cleardictstack
+  setglobal
+} bind def
+
+% Some composite fonts stuff - load all encodings present
+(*) {
+  % Don't load encoding vectors that look like BitStream ones.
+  % Their encoding vectors are badly defined and produce errors
+  % if not loaded with the BitStream specific Font Dictionary.
+  % If an OEM want's to load them, load the BitStream specific
+  % Font Dictionary followed by the encoding vectors in Sys/HqnOEM.
+  (BT) anchorsearch {
+    pop pop
+  } {
+    cvn /Encoding { findresource } stopped clear
+  } ifelse
+} =string /Encoding resourceforall
+
+% Load font substitution tables.
+mark {
+  [(%os%Config/FontSubstitution)(%os%Config/FontSubstitutionDB)] {
+    { run } stopped {
+      (%stderr%)(w)file UVS (Error: loading font substitution tables\n) writestring
+      defaulthandleerror
+    } if
+  } forall
+} stopped
+cleartomark
+
+/globalness currentglobal def true setglobal
+% These fonts must always be present and loaded on startup or the RIP
+% will not function correctly
+/Courier HQNloadfont
+/Helvetica HQNloadfont
+/Symbol HQNloadfont
+/Times-Roman HQNloadfont
+
+% The remaining fonts are also loaded up on startup but need not be.
+/AvantGarde-Book HQNloadfont
+/AvantGarde-BookOblique HQNloadfont
+/AvantGarde-Demi HQNloadfont
+/AvantGarde-DemiOblique HQNloadfont
+/Bookman-Demi HQNloadfont
+/Bookman-DemiItalic HQNloadfont
+/Bookman-Light HQNloadfont
+/Bookman-LightItalic HQNloadfont
+/Courier-Bold HQNloadfont
+/Courier-BoldOblique HQNloadfont
+/Courier-Oblique HQNloadfont
+/Helvetica-Bold HQNloadfont
+/Helvetica-BoldOblique HQNloadfont
+/Helvetica-Narrow HQNloadfont
+/Helvetica-Narrow-Bold HQNloadfont
+/Helvetica-Narrow-BoldOblique HQNloadfont
+/Helvetica-Narrow-Oblique HQNloadfont
+/Helvetica-Oblique HQNloadfont
+/NewCenturySchlbk-Bold HQNloadfont
+/NewCenturySchlbk-BoldItalic HQNloadfont
+/NewCenturySchlbk-Italic HQNloadfont
+/NewCenturySchlbk-Roman HQNloadfont
+/Palatino-Bold HQNloadfont
+/Palatino-BoldItalic HQNloadfont
+/Palatino-Italic HQNloadfont
+/Palatino-Roman HQNloadfont
+/Times-Bold HQNloadfont
+/Times-BoldItalic HQNloadfont
+/Times-Italic HQNloadfont
+/ZapfChancery-MediumItalic HQNloadfont
+/ZapfDingbats HQNloadfont
+/NotDefFont HQNloadfont
+% (Not loading any other fonts\n) print
+
+% Put the apple character into the encoding of the Symbol font
+FontDirectory /Symbol known {
+  /Symbol
+  dup findfont begin
+  currentdict dup length dict begin
+  {1 index/FID ne{def}{pop pop}ifelse
+  }forall
+  /Encoding Encoding 256 array copy def
+  Encoding 240/apple put
+  currentdict end end
+  definefont pop
+} if
+globalness setglobal currentdict /globalness undef
+
+% Store standard fonts away for PDF forms
+1183615869 internaldict /storestandardfonts get exec
+
+% This is used in the definition of the ColorantDetails in TrappingDetails below
+% The neutral densities are in the right ballpark, and are only intended as defaults
+% so that applications like Preps 4.0 that expect to see neutrals in a 
+% ColorantDetails dictionary won't fall over in a heap.
+/DefaultCMYK <<
+  /ColorantSetName /DefaultCMYK
+  /Cyan <<
+    /ColorantName /Cyan
+    /ColorantType /Normal
+    /NeutralDensity 0.54
+  >>
+  /Magenta <<
+    /ColorantName /Magenta
+    /ColorantType /Normal
+    /NeutralDensity 0.65
+  >>
+  /Yellow <<
+    /ColorantName /Yellow
+    /ColorantType /Normal
+    /NeutralDensity 0.12
+  >>
+  /Black <<
+    /ColorantName /Black
+    /ColorantType /Normal
+    /NeutralDensity 1.72
+  >>
+  /Gray 1 index
+>> /InkParams defineresource pop
+
+% The composite merging of ColorantDetails can't work on the first call, so
+% do a separate one.
+<<
+  /TrappingDetails <<
+    /Type 1001
+    /ColorantDetails <<
+      /DefaultCMYK /InkParams findresource {} forall
+    >>
+  >>
+>> setpagedevice
+
+% Install Asserts
+/HqnAssert /ProcSet resourcestatus {
+  pop pop /HqnAssert /ProcSet findresource /Initialize get exec
+} if
+
+% load appropriate chunks of PostScript
+{
+  /HqnParseComments
+  /HqnCreator
+  /HqnBeginProcset
+  /HqnKodakPrecision
+  /GGFontEmulation
+  /HqnMissingFonts
+  /DCSCommentParser
+  /HqnIllusPatch
+  /HqnDuotones
+  /HqnNamedColor
+  /HqnXPressPatch
+  /CIDInit
+  /HqnFilterPipeline
+}{
+  dup /ProcSet resourcestatus {
+    pop pop 
+    userdict /HqnBootProcsetName 2 index put
+    { /ProcSet findresource pop } stopped 
+    { (Problem loading ProcSet ) print userdict /HqnBootProcsetName get = }
+      if clear
+  } { pop } ifelse
+} forall
+userdict /HqnBootProcsetName undef
+
+% NOTE: There is no longer any need to uncomment a line here to load the
+%       HqnFontSubstitution procset - substitution is always enabled.
+%       Font lists for substitution may be edited in 
+%       SW/Config/FontSubstitution in ScriptWorks Classic or Enterprise 
+%       Edition. See the Extensions Manual for configuration details for
+%   ScriptWorks LE and core RIP.
+
+/HQNsubfindfont /ProcSet resourcestatus {
+   pop pop
+   /HQNsubfindfont /ProcSet findresource begin
+      userdict /HQNsubfindfont dup load put
+   end
+} if
+
+% Load all IdiomSet resources which should be installed at boot time.
+1183615869 internaldict /idiomRecogInit get exec
+
+% centralised method of determining if the current job is imposed or not.
+% Uses values set by HqnParseComments, HqnCreator and HqnPageCounter procsets
+% NOTE: HqnPageCounter is not initialized by default.
+statusdict begin
+
+/impositionstatus {
+  2 copy known { get }{ pop pop false } ifelse
+} bind def
+/impositionstatus {
+  userdict /PrepsDict known     % ScenicSoft Preps
+  userdict /LinoMontageDict known   % Heidelberg Signastation
+  or
+  userdict /DSsv1 known  % Dynagram Dynastrip
+  or
+  userdict /FSLProcs known  % Farrukh Systems Ltd. Imposition Publisher
+  or
+  % Catch no globaldict in L1 mode - such jobs would fail in their own right
+  mark {
+    globaldict /DynaStripJob //impositionstatus exec     % Dynagram Dynastrip
+    globaldict /ImpoStripJob //impositionstatus exec or  % Ultimate ImpoStrip
+    globaldict /ImpositionPublisherJob //impositionstatus exec or 
+                      % Farrukh Systems Ltd. Imposition Publisher
+    globaldict /HqnPageCountDict 2 copy known {
+      % multiple XPress pages on one sheet - HqnPageCounter procset
+      get /QRKMultiplePageBeginSeen get
+    } { pop pop false } ifelse
+    or
+  } stopped { cleartomark false }{ exch pop } ifelse
+  or
+} bind def
+
+end   % statusdict
+
+% Preload page numbering code
+/HqnPageCounter /ProcSet resourcestatus {
+  pop pop /HqnPageCounter /ProcSet findresource /Initialize get exec
+} if
+
+% Always need the PJL routines present
+/HqnPJL /ProcSet resourcestatus {
+  pop pop /HqnPJL /ProcSet findresource pop
+} if
+
+% Load font UID blacklist.
+mark {
+  (%os%Config/FontUIDBlackList) { run } stopped
+  { (%stderr%)(w)file UVS (Error: loading font UID blacklist \n) writestring
+    defaulthandleerror
+  } if
+} stopped
+cleartomark
+
+%%EndProcSet

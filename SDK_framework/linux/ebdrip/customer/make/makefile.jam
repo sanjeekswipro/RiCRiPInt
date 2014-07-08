@@ -1,0 +1,88 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for customer
+#
+# $HopeName: SWcustomer!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant custiface customised gui morisawa product ;
+
+# Compilation rules
+
+    DependsOn all : customer ;
+
+    if $(C-Compiler-Family) = gcc-x-ppc
+    {
+        if $(C-Compiler-Version) = 2.9.6 || $(C-Compiler-Version) = 3.4.3 || $(C-Compiler-Version) = 4.1.2 || $(C-Compiler-Version) = 4.5.3
+        {
+            CUSTOMISATION_NAME = $(Variant_customised) ;
+        }
+        else
+        {
+            CUSTOMISATION_NAME = $(Variant_customised)\\\\\\\ ;
+        }
+    }
+    else { CUSTOMISATION_NAME = \\\"$(Variant_customised)\\\" ; }
+
+    if $(C-Compiler-Family) = gcc-x-ppc 
+    { 
+        if $(C-Compiler-Version) = 2.9.6 || $(C-Compiler-Version) = 3.4.3 || $(C-Compiler-Version) = 4.1.2 || $(C-Compiler-Version) = 4.5.3
+        {
+            AddToVar Local : C-Defines : CUSTOMISATION_NAME=\"\\\"$(CUSTOMISATION_NAME)\\\"\" ;
+        }
+        else
+        {
+            AddToVar Local : C-Defines : CUSTOMISATION_NAME=\\\\\\\"$(CUSTOMISATION_NAME)\" ;
+        }
+    }
+    else      
+    {     
+       AddToVar Local : C-Defines : CUSTOMISATION_NAME=\"$(CUSTOMISATION_NAME)\" ;
+    }
+    C-IncludeExportDirectories
+        coreskin
+        coreutil
+        fwos
+        standard
+        core
+    : .. ;
+
+    # C code is replaced by code in SWcustomer_interface when
+    # building the custiface variant
+    if $(Variant_custiface) in 0 {
+        Library customer : custlib.c ;
+    
+        if $(C-Compiler-Family) = msvc   { Library customer : custlibp.c ; }
+    
+        if $(UNIX) { Library customer : motifres.c ; }
+    }
+    else {
+        if $(MACOSX) {
+            # Include some dummy code to keep the linker happy
+            Library customer : dummy.c ;
+
+            GenerateFile dummy.c : echo 'int dummy;' ">" ;
+        }
+    }
+
+    if $(MACOSX) {
+        if $(Variant_gui) {
+            # Gui RIP
+            FILECREATORSUFFIX = Hq ;
+            EXECUTABLENAME = gui ;
+
+            Include $(BUILDROOT)$/customer$/make$/filecreator.jam ;
+
+            Library customer : custres.r ;
+            Search custres.r : $(CurrentPath)$/mac ;
+        }
+    }
+
+
+# Log stripped

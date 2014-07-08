@@ -1,0 +1,113 @@
+# Copyright (C) 2004-2008 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# =============================================================================
+# $HopeName: COREedoc!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.51.1.1.1.1 2013/12/19 11:24:47 anon Exp $
+#
+# Modification history at end of file.
+# ============================================================================
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant xps ;
+
+    # We are not ready for this yet.
+    #
+    #AddToVar Inherited Local : SplintOptions :
+    #    +checks                 # The highest useful level of checking, probably
+    #    +partial                # Only part of the source code - i.e. just 1 file
+    #    -no-effect              # Don't complain about EMPTY_STATEMENT etc.
+    #    +bool-int               # SW uses various int types as bool type
+    #;
+
+    DependsOn all : xps ;
+
+    IncludeExportDirectories Local :
+        fixedpage
+        package
+    ;
+
+    # Add XPS private includes to path
+    local Com = C C++ mixed-C ;
+
+    AddToVar Inherited Local : $(Com)-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    IncludeExportDirectories Inherited Local :
+        devices
+        fileio
+        fonts
+        gstate
+        hdlt
+        mm
+        objects
+        render
+        tables
+        v20
+        xml
+        zipdev
+    : .. ;
+
+    IncludeExportDirectories Inherited Local :
+        unicode
+    : .. .. ;
+
+    ReplaceVar Local : LIBFILES :
+        commit.c
+        discardStream.c
+        obfont.c
+        parts.c
+        pt.c
+        relsblock.c
+        resblock.c
+        scan.c
+        typestream.c
+        xps.c
+        xpsfonts.c
+        xpsiccbased.c
+        xpsparams.c
+    : Variant xps=yes ;
+
+    AddToVar Local : LIBFILES : noxps.c : Variant xps=no ;
+
+    Library xps : $(LIBFILES) ;
+
+    ReplaceVar Local : Libraries :
+        fixedpage
+        package
+    : Variant xps=yes ;
+
+    Makefile fixedpage package ;
+
+    local i ;
+    for i in $(Libraries) {
+         C-LinkWithLibraries xps : $(i) : $(i) ;
+    }
+
+    SWF swf : sys : Sys : : xps ;
+    SWF swf : sys extstart : ExtraStart : : xps ;
+    SWF swf : sys extstart xps : XPS : : xps ;
+    SWF swf : sys extstart alias : XPSAlias : : xps : Build DEBUG ;
+
+    if $(DEBUG) = 1 {
+        # Export debug aids to source list for shipping to third party - have to be added explicitly
+        ExportSource $(CurrentPath)$/swf$/sys$/extstart$/alias : Swf ;
+    }
+
+    # N.B. Don't use AddToVar with conditions, because we want this to propagate
+    # to the SW folder without having to make the product implement the xps
+    # variant.
+    if $(Variant_xps) = yes {
+        AddUnique SW-Folder-Variants : xps ;
+        if ! $(Variant_minimal) {
+            AddUnique SW-Folder-Variants : xpsnonminimal ;
+        }
+    }
+
+    if $(Variant_xps) = yes {
+      # So that exported source can be built without XPS if required
+      ExportSource $(CurrentPath)$/src$/noxps.c : C ;
+    }
+
+# =============================================================================
+# Log stripped

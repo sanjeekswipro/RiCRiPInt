@@ -1,0 +1,12 @@
+%!PS Font Specification
+
+
+/NotDefFont 9 dict begin
+	/FontMatrix [ 1.0 0.0 0.0 1.0 0.0 0.0 ] def
+	/FontName /NotDefFont def
+	/FontBBox [ 0 0 0 0 ] def
+	/BuildChar { pop pop 1 0 0 0 1 1 0 -1 0.5 1 setcachedevice2} def
+	/CDevProc {11 {pop} repeat 1 0 0 0 1 1 0 -1 0.5 1} def
+	/FontType 3 def
+	/Encoding /NotDefEncoding findencoding def
+currentdict end definefont pop

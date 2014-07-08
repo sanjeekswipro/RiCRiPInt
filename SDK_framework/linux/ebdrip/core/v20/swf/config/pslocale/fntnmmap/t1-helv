@@ -1,0 +1,32 @@
+%!PS-Adobe-3.0
+%%Title: Type1-Helvetica
+%%CreationDate: Dec 2003
+% Copyright (C) Global Graphics Software Limited, 2003-2006. All Rights Reserved.
+% $Revision: 1.3.4.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:fntnmmap:t1-helv(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Font name map for Latin text in T1 fonts
+% This is the default map for fonts used in print marginalia
+% in Latin installations
+
+/FontNameMap <<
+
+	/Fonts <<
+		/Plain	/Helvetica
+		/Emphasis	/Helvetica-Bold
+		/Narrow	/Helvetica-Narrow
+		/NarrowEmphasis	/Helvetica-Narrow-Bold
+		/Monospace	/Courier
+		/MonospaceEmphasis	/Courier-Bold
+	>>
+	
+	/FontClass	(T1Latin)
+	
+>>
+
+%%EOF

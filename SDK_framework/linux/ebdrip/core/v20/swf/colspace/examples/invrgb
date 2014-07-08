@@ -1,0 +1,36 @@
+%!PS-Adobe-3.0
+%%Title: DeviceRGB/Invert RGB
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu Nov 28 13:15:52 1996
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% $HopeName: SWv20!swf:colspace:examples:invrgb(EBDSDK_P.1) $
+%
+% This colorspace resource just inverts the RGB input data. Note that the
+% inversion is at the point of converting from the DeviceN to DeviceRGB
+% because the first is subtractive and the latter is additive.
+% Useful for testing but probably not much else.
+%
+% To install this colorspace copy the file into the folder
+%
+%               SW:Colorspaces:DeviceRGB
+%
+% this can then be selected in the Color Setup dialog for
+% any of the color options.
+%
+%%EndComments
+
+%%BeginResource: colorspace DeviceRGB/Invert RGB
+
+currentglobal false setglobal
+
+[   /DeviceN
+    [/Unknown /Unknown /Unknown]
+    /DeviceRGB
+    {}
+]
+
+(DeviceRGB/Invert RGB) cvn exch /ColorSpace defineresource pop setglobal
+
+%%EndResource

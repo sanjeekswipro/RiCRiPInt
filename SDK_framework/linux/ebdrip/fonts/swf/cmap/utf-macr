@@ -1,0 +1,160 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%IncludeResource: ProcSet (CIDInit)
+%%BeginResource: CMap (Unicode-MacRoman)
+%%Title: (UTF-16BE-MacRoman Harlequin Unicode 0)
+%%Version: 1.000
+%%EndComments
+
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Harlequin) def
+  /Ordering (Unicode) def
+  /Supplement 0 def
+end def
+
+/CMapName /UTF-16BE-MacRoman def
+/CMapVersion 1.000 def
+/CMapType 1 def
+
+% /XUID [] def
+
+/WMode 0 def
+
+1 begincodespacerange
+  <00> <FF>
+endcodespacerange
+
+12 beginnotdefrange
+<00> <1F> 32
+<7F> <7F> 32
+<AD> <AD> 32
+<B0> <B0> 32
+<B2> <B3> 32
+<B6> <BA> 32
+<BD> <BD> 32
+<C3> <C3> 32
+<C5> <C6> 32
+<CA> <CA> 32
+<D7> <D7> 32
+<F0> <F0> 32
+endnotdefrange
+
+% The 16#... encoding is not strictly kosher, but will work
+% in the context of a Harlequin RIP, and is much easier to
+% create and maintain.
+99 begincidrange
+<20> <7E> 16#0020
+<80> <81> 16#00C4
+<82> <82> 16#00C7
+<83> <83> 16#00C9
+<84> <84> 16#00D1
+<85> <85> 16#00D6
+<86> <86> 16#00DC
+<87> <87> 16#00E1
+<88> <88> 16#00E0
+<89> <89> 16#00E2
+<8A> <8A> 16#00E4
+<8B> <8B> 16#00E3
+<8C> <8C> 16#00E5
+<8D> <8D> 16#00E7
+<8E> <8E> 16#00E9
+<8F> <8F> 16#00E8
+<90> <91> 16#00EA
+<92> <92> 16#00ED
+<93> <93> 16#00EC
+<94> <95> 16#00EE
+<96> <96> 16#00F1
+<97> <97> 16#00F3
+<98> <98> 16#00F2
+<99> <99> 16#00F4
+<9A> <9A> 16#00F6
+<9B> <9B> 16#00F5
+<9C> <9C> 16#00FA
+<9D> <9D> 16#00F9
+<9E> <9F> 16#00FB
+<A0> <A0> 16#2020
+<A1> <A1> 16#00B0
+<A2> <A3> 16#00A2
+<A4> <A4> 16#00A7
+<A5> <A5> 16#2022
+<A6> <A6> 16#00B6
+<A7> <A7> 16#00DF
+<A8> <A8> 16#00AE
+<A9> <A9> 16#00A9
+<AA> <AA> 16#2122
+<AB> <AB> 16#00B4
+<AC> <AC> 16#00A8
+<AE> <AE> 16#00C6
+<AF> <AF> 16#00D8
+<B1> <B1> 16#00B1
+<B4> <B4> 16#00A5
+<B5> <B5> 16#00B5
+<BB> <BB> 16#00AA
+<BC> <BC> 16#00BA
+<BE> <BE> 16#00E6
+<BF> <BF> 16#00F8
+<C0> <C0> 16#00BF
+<C1> <C1> 16#00A1
+<C2> <C2> 16#00AC
+<C4> <C4> 16#0192
+<C7> <C7> 16#00AB
+<C8> <C8> 16#00BB
+<C9> <C9> 16#2026
+<CB> <CB> 16#00C0
+<CC> <CC> 16#00C3
+<CD> <CD> 16#00D6
+<CE> <CF> 16#0152
+<D0> <D1> 16#2013
+<D2> <D3> 16#201C
+<D4> <D5> 16#2018
+<D6> <D6> 16#00F7
+<D8> <D8> 16#00FF
+<D9> <D9> 16#0178
+<DA> <DA> 16#2044
+<DB> <DB> 16#00A4
+<DC> <DD> 16#2039
+<DE> <DF> 16#FB01
+<E0> <E0> 16#2021
+<E1> <E1> 16#00B7
+<E2> <E2> 16#201A
+<E3> <E3> 16#201E
+<E4> <E4> 16#2030
+<E5> <E5> 16#00C2
+<E6> <E6> 16#00CA
+<E7> <E7> 16#00C1
+<E8> <E8> 16#00CB
+<E9> <E9> 16#00C8
+<EA> <EB> 16#00CD
+<EC> <EC> 16#00CF
+<ED> <ED> 16#00CC
+<EE> <EF> 16#00D3
+<F1> <F1> 16#00D2
+<F2> <F2> 16#00DA
+<F3> <F3> 16#00DB
+<F4> <F4> 16#00D9
+<F5> <F5> 16#0131
+<F6> <F6> 16#02C6
+<F7> <F7> 16#02DC
+<F8> <F8> 16#00AF
+<F9> <F9> 16#02D8
+<FA> <FB> 16#02D9
+<FC> <FC> 16#00B8
+<FD> <FD> 16#02BA
+<FE> <FE> 16#02DB
+<FF> <FF> 16#02C7
+endcidrange
+
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

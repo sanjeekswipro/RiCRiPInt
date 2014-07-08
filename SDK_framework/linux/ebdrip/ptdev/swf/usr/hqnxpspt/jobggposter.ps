@@ -1,0 +1,84 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:jobggposter.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code configures support for the JobGGPoster (which may be processed
+% further by the main PrintTicket procset).
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+/DoJobGGPoster {
+  begin
+    (->DoJobGGPoster) PTDebug
+
+    1 dict begin
+      % Check value is a square number.
+      /PageCount
+        pt_value [/SheetsPerPage /Value] 1 GetPTValueWithDefault exch pop
+        dup 1 lt { pop 2 }if % Make a negative or zero value cause a warning.
+      def
+      PageCount dup sqrt cvi dup mul ne {
+        (%%[ Warning: Ignoring unsupported JobGGPoster value. ]%%) =
+        /PageCount 1 def
+      }if
+      
+      InternalState begin
+        % Prevent use when N-Up features are active.
+        PagesPerSheet 1 gt PageCount 1 gt and {
+          (%%[ Warning: Ignoring JobGGPoster with N-Up are unsupported options. ]%%) =
+          /PageCount 1 store
+        }if
+
+        % Store JobGGPoster dict so the main PrintTicket procset can use it.
+        /PosterX PageCount sqrt cvi def
+        /PosterY PosterX def
+        
+        % Instruct the RIP to output each page multiple times.
+        (%xpspt%) <<
+          /PageRepeatCount PageCount
+          /NeedPageCount PageCount 1 gt
+          /PageCount -1
+          /CurrentPageRepeat 0
+        >> setdevparams
+      end
+    end
+
+    (<-DoJobGGPoster) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /JobGGPoster <<
+    /PostAction //DoJobGGPoster
+    /Default << /SheetsPerPage << /Value 1 >> >>
+  >>
+>>
+
+end

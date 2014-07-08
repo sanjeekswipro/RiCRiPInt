@@ -1,0 +1,31 @@
+%!PS-Adobe-3.0
+%%Title: BitmapFontInit
+%%Creator: Global Graphics Software Limited
+%%Creation Date: Mar 09, 1998
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%BeginProcSet: (BitmapFontInit)
+
+3 dict begin
+
+  /addglyph {
+    1183615869 internaldict /addglyph get exec
+  } bind def
+  
+  /removeglyphs {
+    1183615869 internaldict /removeglyphs get exec
+  } bind def
+
+  /removeall {
+    1183615869 internaldict /removeall get exec
+  } bind def
+
+
+currentdict
+end
+
+/BitmapFontInit exch /ProcSet defineresource
+
+
+
+%%EndProcSet

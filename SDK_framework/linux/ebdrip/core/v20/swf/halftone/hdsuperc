@@ -1,0 +1,30 @@
+%!PS-Adobe-3.0
+%%Title: HDS-SuperC
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 10, 1995
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginResource: halftone HDS-SuperC
+
+% $HopeName: SWv20!swf:halftone:hdsuperc(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+% use as follows in Photoshop etc:
+%       /HDS-SuperC /Halftone findresource /SpotFunction get
+
+currentglobal false setglobal
+32 dict begin
+/globalness exch def
+
+/HalftoneType 1 def
+/SpotFunction $printerdict /switchscreens get /HDS-E get def
+/Angle 0 def
+/Frequency 60 def
+currentdict
+end
+
+/HDS-SuperC exch /Halftone defineresource
+/globalness get setglobal
+
+%%EndResource

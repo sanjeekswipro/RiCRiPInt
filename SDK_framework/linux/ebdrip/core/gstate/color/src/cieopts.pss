@@ -1,0 +1,76 @@
+% $HopeName: COREgstate!color:src:cieopts.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 1991-2010 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+$printerdict begin
+
+  % CIE encode and decode procedures, indexed by number (which is used as an
+  % index into the function table in ciepsopt.c; do not leave gaps in it).
+  % The functions are bound so that the object match is quicker.
+  /switchcieprocs <<
+    % 0 - Decode for CCIR XA/11 recommended phosphor (RB2, p.189)
+    0 { 1 0.45 div exp } bind
+
+    % 1, 2, 3 - Decode for L, M, N channels for CIE 1976 L*a*b* with
+    %           CCIR XA/11 recommended (D65) white point (RB2, p.191)
+    1 { dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse 0.9505 mul} bind
+
+    2 { dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse} bind
+
+    3 { dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse 1.0890 mul} bind
+
+    % 4, 5, 6 - Decode for A, B, C channels for CIE 1976 L*a*b* with
+    %           CCIR XA/11 recommended (D65) white point (RB2, p.191)
+    4 { 16 add 116 div } bind
+
+    5 { 500 div } bind
+
+    6 { 200 div } bind
+
+    % 7 - Decode for L* dimension of CIE 1976 L*a*b* space with CCIR XA/11
+    %     recommended white point (RB2, p.193).
+    7 { 16 add 116 div dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse} bind
+
+    % 8 - Default ScriptWorks EncodeLMN
+    8 { 0.45 /exp load stopped { pop pop 0 } if } bind
+
+    % 9-11 - Default ScriptWorks TransformPQRs
+    9 {4 index 3 get div 2 index 3 get mul 4 {exch pop} repeat} bind
+
+    10 {4 index 4 get div 2 index 4 get mul 4 {exch pop} repeat} bind
+
+    11 {4 index 5 get div 2 index 5 get mul 4 {exch pop} repeat} bind
+
+    % 12-14 - ICC Installed TransformPQRs
+    12 {4 index 0 get div 2 index 0 get mul 4 {exch pop} repeat} bind
+
+    13 {4 index 1 get div 2 index 1 get mul 4 {exch pop} repeat} bind
+
+    14 {4 index 2 get div 2 index 2 get mul 4 {exch pop} repeat} bind
+
+    % 15 - RenderTable procedure for standard CRDs
+    15 {0.998 mul 0.001 add} bind
+
+    % 16 - Photoshop device independent RGB Decode for LMN
+    16 {1.8 exp} bind
+
+    % 17, 18 - Decodes for L and N channels for L*a*b* with D50 white point
+    %          (M is same as D65 white point)
+    17 { dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse 0.9642 mul} bind
+
+    18 { dup 6 29 div ge {dup dup mul mul}
+        {4 29 div sub 108 841 div mul} ifelse 0.8249 mul} bind
+  >> def % switchcieprocs in $printerdict
+
+end % $printerdict
+
+% end of cieopts.pss

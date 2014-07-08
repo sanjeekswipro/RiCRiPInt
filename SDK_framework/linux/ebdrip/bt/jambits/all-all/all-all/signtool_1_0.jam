@@ -1,0 +1,12 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:all-all:signtool_1_0.jam(EBDSDK_P.1) $
+#
+
+    FatalIfNotSet CompilerVariable ;
+
+    CompilerVar Sign : $(CompilerVariable) ;
+
+
+# Log stripped

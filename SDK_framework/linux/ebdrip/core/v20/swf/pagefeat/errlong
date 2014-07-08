@@ -1,0 +1,44 @@
+% Load error handler - long format
+%% Creator: Martin Bailey
+%% CreationDate: 94.10.20
+%% For: Harlequin
+% Copyright (C) 1994-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+
+% $HopeName: SWv20!swf:pagefeat:errlong(EBDSDK_P.1) $
+
+% This page feature as shipped sets all configuration values to the default
+% for a long report
+% Switches are documented in the Harlequin RIP Tech Note 17, 
+% and in comments at the head of the HqnErrorHandler procset
+	<<
+	/longErrorReport true
+	/fullDictReport 6
+	
+	/HqnShowOperand	true
+	/HqnShowDictionary true
+	/HqnShowExecution true
+	/HqnShowFiles true
+	
+	/HqnShowFollowing 512
+
+	/HqnShowStrings 128
+	/HqnShowSubStrings 64
+	
+	/HqnNormalChars	/raw
+	/HqnPrintControls	/raw
+	/HqnControlChars	/allhex
+	/HqnHighByte		/raw
+	/HqnUTF8			/hex
+
+	/HqnResolveURLPercent false
+		
+	/HqnShowArrays 768
+	/HqnShowDictArrays 256
+
+	/HqnShowExecTop false
+	/HqnShowExecBase false
+
+>> /HqnErrorHandler /ProcSet findresource /LoadErrorHandler get exec
+
+%%EOF

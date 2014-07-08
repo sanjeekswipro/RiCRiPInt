@@ -1,0 +1,200 @@
+%!
+
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% $HopeName: SWv20!swf:pagefeat:listspot(EBDSDK_P.1) $
+%
+
+% This feature lists to the system monitor / console the names of all the
+% spot colors accessible in the current job. Also loads the level 1 separator
+% so we see level 1 spot colors.
+
+/Level1Separator /ProcSet findresource /HqnInitializeL3Separation get exec
+userdict begin
+/setcustomcolor {
+	globaldict /HqnListSpotColors-RequiresL1Conventions true put
+	//setcustomcolor exec
+} bind def
+end
+
+% dictionary for adding colorant name mapping to.
+% Each key should be a colorant that will be produced, 
+%	the value should be the name to which that colorant name should be mapped.
+currentglobal true setglobal
+globaldict /HqnListSpotDict 12 dict put
+setglobal
+
+10 dict begin
+/ListSpotDict currentdict def
+
+/altprint serverdict /altprint get def
+
+/HqnListedSpots 10 dict def
+
+/AlwaysReport [ ] def
+/NeverReport [ /Cyan /Magenta /Yellow /Black /Gray ] def
+
+UVS(\nInfo: Processed using 'List Spot Colors' page feature. NO OUTPUT WILL BE PRODUCED\n)
+altprint
+
+% Make sure that HqnImpose doesn't trip us up:
+userdict /HqnImposeDict known {
+	HqnImposeDict /ImpositionInitialised get 0 gt {
+		/HqnImpose /ProcSet findresource /HqnUnloadImpose get exec
+	} if
+} if
+
+% Make sure that HqnImpose2 doesn't trip us up:
+globaldict /HqnImpose2GlobalDict known {
+	HqnImpose2GlobalDict /ImpositionInitialised get 0 gt {
+		/HqnImpose2 /ProcSet findresource /HqnUnloadImpose get exec
+	} if
+} if
+
+% accelerate interpretation by disabling some stuff
+userdict /settrap undef		% Quark settrap
+
+	<<
+	/AccurateScreens false	% HPS
+>> setsystemparams
+
+% Disable colour management etc
+null setinterceptcolorspace
+
+% Turn off rendering using the NeverRender userparam, used to use
+% nulldevice which wouldn't work if a job included setpagedevice
+	<< 
+	/NeverRender true 
+>> setuserparams
+
+	<< 
+	/OverrideSeparations false 
+	/OverrideKeys << /HWResolution false >>
+>> setpagedevice
+
+<<
+  /CalibrationColorModel null
+  
+  /StartRender <<
+    /ListSpotColors {
+      (\n) //altprint exec
+		
+		currentdict { pop //HqnListedSpots exch undef } forall
+
+		currentpagedevice begin
+		SeparationDetails begin
+		false
+		ColorantFamilies {
+			dup /ColorantFamilyName get DeviceColorantFamily eq {
+				/DeviceTypes get {
+					dup /DeviceType get 
+					PageBufferType eq {
+						/Colorants get {
+							/Names get {
+								//HqnListedSpots exch cvn null put
+							} forall
+						} forall
+						pop true
+						exit
+					} { pop } ifelse
+				} forall
+			} { pop } ifelse
+			dup { exit } if
+		} forall
+		pop		% true/false
+
+		//NeverReport {
+			//HqnListedSpots exch null put
+		} forall
+
+		//AlwaysReport {
+			//HqnListedSpots exch undef
+		} forall
+
+		end end
+
+		//ListSpotDict /ProcessCount //HqnListedSpots length put
+
+		% Find out if the job is pre-separated or composite (or recombined).
+		1183615869 internaldict /recombinestatus get exec exch pop 2 ge {
+			% Pre-separated job
+			currentsystemparams /Separation get
+			//HqnListedSpots 1 index known { pop }{
+			% GLOB: see call below for globalisation string.
+			(SPOT COLOR: ") //altprint exec 
+				//altprint exec 
+				("\n) //altprint exec
+			} ifelse
+		}	{
+			% Composite or recombined job
+			% list, excluding omitted colors, duplicates and colorants implied by ProcessColorModel
+				<< 
+				/Name null /Omit false
+			>> 1183615869 internaldict /currentseparationorder get exec {
+					{
+					/Name get
+					//HqnListSpotDict 1 index known {
+						//HqnListSpotDict exch get
+					} if
+					//HqnListedSpots 1 index known not {
+						% UVM(SPOT COLOR: "%s"\n)
+						dup
+						(SPOT COLOR: ") //altprint exec 
+							dup type /stringtype ne { //=string cvs } if
+							//altprint exec 
+							("\n) //altprint exec
+						//HqnListedSpots exch null put
+					} if
+				} forall
+			} forall
+
+			globaldict /HqnListSpotColors-RequiresL1Conventions known {
+			  UVS( (job requires level 1 separator conventions)\n) //altprint exec
+			} if
+			(\n) //altprint exec
+
+			//HqnListedSpots length 
+			//ListSpotDict /ProcessCount get eq {
+			  UVS(\n(No spot colors in page.)\n\n) //altprint exec
+			} if
+		} ifelse
+		statusdict /NumCopies 0 put
+    } bind
+  >>		% StartRender
+
+  /InterleavingStyle 4
+
+  /SeparationDetails <<
+	/Abort false
+    /Add true
+	/Remove true
+	/Omit <<
+		/Monochrome false
+		/Separations false
+		/Process true
+		/Spot true
+		/ExtraSpot true
+	>>
+	/Ignore	<<
+		/RegisterMarks true
+	>>
+	/SeparationStyle 1
+	/MaxExtraSpotColorants 100000
+  >>
+  
+  /Preseparation null
+  
+  % accelerate interpretation
+	% /HWResolution [ 36 36 ]
+	/Trapping false
+>> setpagedevice
+
+	<< 
+	/OverrideSeparations true 
+	/OverrideKeys << /HWResolution true >>
+>> setpagedevice
+
+end		% temp dict
+
+% end of 'List Spot Colors'

@@ -1,0 +1,321 @@
+% /* $HopeName: SWv20!src:errorpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 1991-2011 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Error dictionary and error handling
+%
+% Log stripped
+
+
+$error begin
+  /SubstituteFont { pop /Courier } bd
+  /default true def
+  /resync false def
+  /binary false def
+  /errorinfo null def
+  /initializing true def
+  /newerror false def
+  /inerror false def
+  /failjob false def
+  /errorname null def
+  /command null def
+  /recordstacks true def
+  /ostack null def
+  /estack null def
+  /dstack null def
+  /ostackarray null def
+  /estackarray null def
+  /dstackarray null def
+  /fnamestring 2048 string def
+  currentglobal
+    false setglobal /ErrorParams 10 dict def
+  setglobal
+  /cleanup {
+    $error begin
+    /newerror false def
+    /inerror false def
+      { /errorname /errorinfo /dstack /estack /ostack /dstackarray /estackarray /ostackarray }
+      { null def }
+    forall
+    end
+  } bd
+end
+
+systemdict begin
+  /.error {
+    dup 500 le { true } { pop 500 false } ifelse
+    2 index $error exch get dup type /arraytype eq { dup length } { -1 } ifelse
+    3 index ge 2 index not 5 index /ostackarray ne and or {
+      exch 4 2 roll pop pop
+    } {
+      pop exch { array } stopped
+        { pop pop false }
+        { $error exch 3 index exch put }
+      ifelse
+      exch $error exch get exch
+    } ifelse
+  } bd
+  /.error {
+    % According to spec (pg 100), sets local VM allocation before saving info.
+    false setglobal % switch to local VM allocation.
+    $error /inerror get { pop pop stop } if
+    $error /inerror true put
+    $error exch /errorname exch put
+    $error exch /command exch put
+    $error /newerror true put
+    $error /command get type /stringtype eq {
+      $error /command get length 128 gt {
+        $error /command get 0 128 getinterval $error exch /command exch put
+      } if
+    } if
+    $error /errorinfo null put
+    $error /ErrorParams get
+    % If errorparams were big and rich we would probably do something more cunning than
+    % checking whether the one possible parameter is present...
+    dup /errorinfo known {
+      dup /errorinfo get $error exch /errorinfo exch put
+      /errorinfo undef
+    } {
+       pop
+    } ifelse
+    $error /recordstacks get
+    $error /errorname    get /VMerror ne and {
+      count /ostackarray exch //.error exec
+        { 0 count 2 sub getinterval }
+	{ dup type /arraytype ne { pop [ ] } if }
+      ifelse
+      astore aload
+      $error exch /ostack exch put
+      /dstackarray countdictstack //.error exec
+        { dictstack }
+	{ pop null }
+      ifelse
+      $error exch /dstack exch put
+      /estackarray countexecstack 1 add //.error exec
+        { execstack 0 1 index length 3 sub getinterval }
+	{ pop null }
+      ifelse
+      $error exch /estack exch put
+    } if
+    $error /inerror false put
+    $error /initializing get { //$error /default get { defaulthandleerror } { handleerror } ifelse } if
+    stop
+  } bd
+end % systemdict
+
+errordict begin
+  /configurationerror { /configurationerror //.error exec } bd
+  /dictfull { /dictfull //.error exec } bd
+  /dictstackoverflow { /dictstackoverflow //.error exec } bd
+  /dictstackunderflow { /dictstackunderflow //.error exec } bd
+  /execstackoverflow { /execstackoverflow //.error exec } bd
+  /invalidaccess { /invalidaccess //.error exec } bd
+  /invalidexit { /invalidexit //.error exec } bd
+  /invalidfileaccess { /invalidfileaccess //.error exec } bd
+  /invalidfont { /invalidfont //.error exec } bd
+  /invalidrestore { /invalidrestore //.error exec } bd
+  /ioerror{ /ioerror //.error exec } bd
+  /limitcheck { /limitcheck //.error exec } bd
+  /nocurrentpoint { /nocurrentpoint //.error exec } bd
+  /rangecheck { /rangecheck //.error exec } bd
+  /stackoverflow { /stackoverflow //.error exec } bd
+  /stackunderflow { /stackunderflow //.error exec } bd
+  /syntaxerror{ /syntaxerror //.error exec } bd
+  /timeout {
+    /setjobtimeout cvx /timeout //.error stopped pop
+    interruptenabled { superstop } { stop } ifelse
+  } bd
+  /typecheck { /typecheck //.error exec } bd
+  /undefined { /undefined //.error exec } bd
+  /undefinedfilename { /undefinedfilename //.error exec } bd
+  /undefinedresource { /undefinedresource //.error exec } bd
+  /undefinedresult { /undefinedresult //.error exec } bd
+  /unmatchedmark { /unmatchedmark //.error exec } bd
+  /unregistered { /unregistered //.error exec } bd
+  /VMerror { /VMerror //.error exec } bd
+  /interrupt {
+   /interrupt /interrupt //.error stopped pop
+   interruptenabled { superstop } { stop } ifelse
+  } bd
+
+  /listfilesinestack {
+    0 1 estack length 1 sub {
+      estack exch get
+      dup type /filetype eq {
+	 dup fnamestring statusdict /filename get stopped {
+           pop pop UVS(Unknown File)
+         }{
+           pop
+         } ifelse
+         print
+	 statusdict /filelinenumber get exec {
+	   (: ) print =string cvs print
+         } if
+	 (\n) print
+      } { pop } ifelse
+    } for
+  } bd
+
+  /gettopfile {
+    false
+    estack type /arraytype eq {
+      0 1 estack length 1 sub {
+	estack exch get
+	dup type /filetype eq {
+	  exch pop true exit
+	} {
+	  pop
+	} ifelse
+      } for
+    } if
+  } bd
+
+  /gettoprealfile {
+    false
+    estack type /arraytype eq {
+      0 1 estack length 1 sub {
+	estack exch get
+	dup type /filetype eq {
+	  dup statusdict /filekind get exec pop
+	  /realfile eq {
+	    exch pop true exit
+	  } {
+	    pop
+	  } ifelse
+	} {
+	  pop
+	} ifelse
+      } for
+    } if
+  } bd
+
+  /errorbeep << /RingBell true /Password 0 >> def
+  /errorbeep {
+    (%progress%) mark 1 index devstatus {
+      cleartomark mark 1 index //errorbeep
+      //systemdict /setdevparams get stopped
+    } if
+    cleartomark pop
+  } bd
+
+  /senderrorevent { % bool --senderrorevent--
+    $error begin
+      failjob or initializing not and {
+	mark % Start of params for failjobinternal
+	  failjob
+	  errorname
+	  /command load
+	1183615869 internaldict /failjobinternal get exec {
+	  % If failjobinternal left true on the stack, the event handler
+	  % consumed the error and the normal handler actions should be ignored.
+	  /newerror false def
+	} if
+      } if
+      /failjob false def
+    end
+  } bind executeonly def
+
+  /handleerror {
+    $error begin
+      newerror //errordict /senderrorevent get exec
+      newerror {
+	/newerror false def
+        systemdict /languagelevel known {
+          systemdict /languagelevel get 1 gt {
+	    binary currentobjectformat 0 gt and
+          } {
+            false   % language level exists, is 1
+          } ifelse
+        } {
+          false % language level doesn't exist, so we're level 1
+        } ifelse
+        {
+          [ /Error errorname /command load false ] cvx 250 printobject
+        } {
+% If we do beeps, then things like the Adobe font downloader
+% do not recognise the error, and get very messed up (Jez)
+          errordict /errorbeep get exec
+	  %
+          % Output will be one of:
+          %
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s ]%%%%)
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s; Info: %s ]%%%%)
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s; Key: %s; Value: %s ]%%%%)
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s; File: %s ]%%%%)
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s; File: %s; Line Number: %d ]%%%%)
+          %
+          % or possibly a combination such as
+          %
+	  % UVM(%%%%[ Error: %s; OffendingCommand: %s; Info: %s; File: %s ]%%%%)
+	  %
+	  (%%[ Error: ) print
+	  errorname =print
+% Some applications parse this string, so we should make it like the
+% Laserwriter, with NO space between Offending and Command
+          (; OffendingCommand: ) print
+          /command load =print
+% Now print errorinfo, either a key/value pair or a NULL followed by errortext
+	  mark
+          % |
+          /errorinfo where {
+            % | dict
+	    /errorinfo get
+            dup type
+            dup /arraytype eq exch /packedarraytype eq or {
+              % | errorinfo
+	      dup length 2 eq {
+                % | errorinfo
+		dup 0 get
+                % | errorinfo key
+		dup type /nulltype eq {
+                  % | errorinfo null
+		  pop
+		  (; Info: ) print
+		  1 get =print
+                  % |
+                } {
+                  % | errorinfo key
+		  (; Key: ) print
+		  =print
+                  % | errorinfo
+		  (; Value: ) print
+		  1 get =print
+                  % |
+		} ifelse
+	      } if
+	    } if
+	  } if
+	  cleartomark
+	  recordstacks errorname /VMerror ne and {
+	    //gettoprealfile exec {
+	      true
+	    } {
+	      //gettopfile exec
+	    } ifelse
+	    {
+	      dup fnamestring statusdict /filename get exec pop
+	      exch statusdict /filelinenumber get exec {
+		(; Line Number: ) print =string cvs print
+	      } if
+	      (; File: ) print print
+	    } if
+	  } if
+	  ( ]%%\n) print flush
+        } ifelse
+      } if % newerror test
+    end % close $error dict
+  } readonly def
+  % not bound, because we want to arrange to pick up print from different
+  % places at different times; the readonly ensures it cant accidentally be
+  % bound with an inclusion in another bound procedure (with //...)
+  /defaulthandleerror /handleerror load def
+end % errordict
+
+% handleerror in systemdict only invokes handleerror from errordict
+systemdict begin
+  /handleerror        { //errordict        /handleerror get exec } bd
+  /defaulthandleerror { //errordict /defaulthandleerror get exec } bd
+end
+
+% end of errorpss

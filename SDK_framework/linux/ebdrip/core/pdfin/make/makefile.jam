@@ -1,0 +1,152 @@
+# =============================================================================
+# $HopeName: SWpdf!make:makefile.jam(EBDSDK_P.1) $
+#
+# Copyright (C) 1999-2012 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# This required to get defines correct:
+ImplementsVariant pdfin metrics ;
+
+# Compilation rules
+
+    DependsOn all : pdfin ;
+
+    IncludeExportDirectories Local :
+        devices
+        fileio
+        fonts
+        functions
+        gstate
+        halftone
+        hdlt
+        images
+        mm
+        multi
+        objects
+        pdf
+        pdfout
+        recombine
+        render
+        tables
+        trapping
+        v20
+        xml
+    : .. ;
+
+    IncludeExportDirectories Local :
+        unicode    # For unicode handling
+        encrypt    # For the HQN OpenSSL interface
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        aes.c
+        cryptFilter.c
+        pdfacrof.c
+        pdfactxt.c
+        pdfannot.c
+        pdfattrs.c
+        pdfbxex.c
+        pdfcid.c
+        pdfclip.c
+        pdfcmap.c
+        pdfcolor.c
+        pdfencod.c
+        pdfexec.c
+        pdffont.c
+        pdffs.c
+        pdfgs4.c
+        pdfgstat.c
+        pdfimg.c
+        pdfin.c
+        pdfinlop.c
+        pdfirrc.c
+        pdfjtf.c
+        pdflabel.c
+        pdfmc.c
+        pdfMetadata.c
+        pdfncryp.c
+        pdfopi.c
+        pdfops.c
+        pdfopt.c
+        pdfpaint.c
+        pdfparam.c
+        pdfpseg.c
+        pdfrefs.c
+        pdfrepr.c
+        pdfrr.c
+        pdfscan.c
+        pdfsgs.c
+        pdfshow.c
+        pdfstrobj.c
+        pdftextstr.c
+        pdftxt.c
+        pdftype3.c
+        pdfvign.c
+        pdfwidge.c
+        pdfx.c
+        pdfxChecks.c
+        pdfxIntents.c
+        pdfxobj.c
+        rc4.c
+        streamd.c
+    : Variant pdfin=yes ;
+
+    AddToVar Local : CFILES : nopdfin.c : Variant pdfin=no ;
+
+    Library pdfin : $(CFILES) ;
+
+    SWF testsrc : pagefeat : "Page Features" : : pdfin : Build DEBUG ;
+    SWF testsrc : pagefeat pdfdump : "PDF Dump" : : pdfin : Build DEBUG ;
+    SWF testsrc : pagefeat pdfrewrite : "PDF Rewrite" : : pdfin : Build DEBUG ;
+    SWF testsrc : pagefeat pdfrr : "HVD Debug" : : pdfin : Build DEBUG ;
+
+    if $(DEBUG) = 1 {
+        # Export debug aids to source list for shipping to third party - have to be added explicitly
+        ExportSource $(CurrentPath)$/testsrc$/pagefeat$/pdfdump : Swf ;
+        ExportSource $(CurrentPath)$/testsrc$/pagefeat$/pdfrewrite : Swf ;
+        ExportSource $(CurrentPath)$/testsrc$/pagefeat$/pdfrr : Swf ;
+    }
+
+    SWF swf : procsets : procsets : : pdfin ;
+    SWF swf : procsets extfile   : HqnExternalFile : : pdfin ;
+    SWF swf : procsets hqnpdfcm : HqnPDFContextManager : : pdfin ;
+    SWF swf : procsets pdfpages : HqnPDFPages : : pdfin ;
+
+    # N.B. Don't use AddToVar with conditions, because we want this to propagate
+    # to the SW folder without having to make the product implement the pdfin
+    # variant.
+    if $(Variant_pdfin) = yes {
+        AddUnique SW-Folder-Variants : pdfin ;
+        if ! $(Variant_minimal) {
+            AddUnique SW-Folder-Variants : pdfinnonminimal ;
+        }
+        if $(ProductName) = ebd {
+            AddUnique SW-Folder-Variants : pdfinebd ;
+        } else {
+            AddUnique SW-Folder-Variants : pdfinhost ;
+        }
+        if $(Variant_fontemul) = yes {
+            if $(ProductName) = gui
+              || $(ProductName) = mac || $(ProductName) = motif || $(ProductName) = pc {
+                AddUnique SW-Folder-Variants : fontemulgui ;
+            } else {
+                AddUnique SW-Folder-Variants : fontemulclebd ;
+            }
+            AddUnique SW-Folder-Variants : fontemul ;
+        }
+    }
+
+    if $(Variant_pdfin) = yes {
+        # So that exported source can be built without pdfin if required
+        ExportSource $(CurrentPath)$/src$/nopdfin.c : C ;
+    }
+
+# Log stripped

@@ -1,0 +1,205 @@
+%!PS-Adobe-3.0
+%%Title: HqnImportICC
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri May 15, 1998
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnImportICC) 1 0
+
+% $HopeName: SWicolor!swf:procsets:hqnicc(EBDSDK_P.1) $
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+14 dict begin % the procset dictionary
+
+  /altprint serverdict /altout 2 copy known {
+    get dup type /filetype eq {
+      dup status not dup { exch pop } if
+    } { pop true } ifelse
+  } { pop pop true } ifelse
+  { (%stderr)(w)file } if
+  def
+  /altprint {
+    //altprint exch
+    dup type /stringtype
+    ne { =string cvs} if
+    writestring
+  } bind def
+
+  % buffer for reading HNA strings from CSAs, and for reading
+  % encoded lines of embedded profile data
+  /buf 8192 string def
+
+  % dict to hold embedded profiles
+  /embedded-profiles 2 dict def
+
+  /workdict 15 dict def
+
+  %============================================================================
+  %
+  % Install comment parsing hooks to detect ICC profiles embedded using the
+  % convention for EPS files defined by ICC.
+
+  /InstallEmbeddedICCHandlers {
+    (%%dict) load begin
+      (%%actions) load begin
+
+        % %%BeginICCProfile: acts by parsing and storing the profile in a dictionary until
+        % the job sets a colorspace using a %%BeginSetColorSpace: comment.
+        /BeginICCProfile: { % |- line
+          % remainder of line contains: <profileid> <numberof> [<encoding> [<bytesorlines>]]
+          //workdict begin
+            % defaults for optional args
+            /encoding /ASCII def
+            /bytesorlines /bytes def
+
+            % use a loop for convenience of exit
+            {
+              token not { false exit } if
+              % if <profileid> is a name, make sure it is not executable
+              dup type /nametype eq { cvlit } if
+              /profileid exch def
+              token not { false exit } if
+              % numberof must be an integer
+              dup type /integertype ne { pop false exit } if
+              /numberof exch def
+              token not { true exit } if
+              % optional encoding must be a name
+              dup type /nametype ne { pop false exit } if
+              /encoding exch cvlit def
+              token not { true exit } if
+              % optional bytesorlines must be a name
+              dup type /nametype ne { pop false exit } if
+              /bytesorlines exch cvlit def
+              pop true exit
+            } loop % |- bool
+
+            {
+              % Suck the raw profile data into a filter
+              % until we discover what to do with it.  Don't bother checking
+              % whether the exact number of bytes or lines is present - simply
+              % read lines until we hit the %%EndICCProfile marker.
+
+              % UVM(Encountered embedded ICC profile `%s'\n)
+              (Encountered embedded ICC profile `) //altprint exec
+              profileid //altprint exec
+              ('\n) //altprint exec
+
+              /source currentfile def
+
+              % procedure to read and uncomment lines from currentfile
+              {
+                % we assume lines are small enough to fit in buf
+                source //buf readline not {
+                  % complain if we hit EOF
+                  UVS(Error: did not find %%EndICCProfile\n) //altprint exec
+                  /BeginICCProfile: /ioerror //systemdict /.error get exec
+                } if
+                (%%EndICCProfile) anchorsearch {
+                  % return EOD
+                  pop pop ()
+                } {
+                  % strip % from start; leave space in case line is otherwise empty
+                  dup 1 exch length 1 sub getinterval
+                } ifelse
+              } % |- source-proc
+
+              % Construct the appropriate decode filter to get binary data
+              encoding /ASCII eq { /ASCII85Decode } { /ASCIIHexDecode } ifelse
+              filter % |- decode-filter
+              << /Intent 3 >> /ReusableStreamDecode filter % |- RSD-filter
+
+              % save the filter handle in readiness for a %%BeginSetColorSpace:
+              % comment that will act as a setcolorspace.
+              //embedded-profiles profileid 3 -1 roll put
+            } {
+              % complain if details of %%BeginICCProfile were wrong
+              UVS(Error parsing %%BeginICCProfile\n) //altprint exec
+              /BeginICCProfile: /syntaxerror //systemdict /.error get exec
+            } ifelse
+
+          end % //workdict
+        } def
+
+        % %%BeginSetColorSpace: is essentially equivalent to a setcolorspace call
+        % using an ICC profile that has been previously stored from a call to the
+        % BeginICCProfile: comment handler.
+        /BeginSetColorSpace: { % |- line
+          % remainder of line contains: <profileid>
+          //workdict begin
+
+            % use a loop for convenience of exit
+            {
+              token not { false exit } if
+              % if <profileid> is a name, make sure it is not executable
+              dup type /nametype eq { cvlit } if
+              /profileid exch def
+              pop true exit
+            } loop % |- bool
+
+            % If we have a profileid then set the colorspace from it, otherwise
+            % ignore the comment and proceed - there is likely to be an equivalent
+            % postscript colorspace following the comment.
+            {
+              % Generate an ICCBased colorspace from the embedded profile, and
+              % use that. Ignore all content up to the EndSetColorSpace.
+              //embedded-profiles profileid known {
+                currentfile 1 (%%EndSetColorSpace) /SubFileDecode filter dup flushfile closefile
+
+                [ /ICCBased  //embedded-profiles profileid get dup resetfile ] setcolorspace
+              } {
+                % UVM(Warning: embedded ICC profile `%s' not seen; ignoring ICC colorspace\n)
+                (Warning: embedded ICC profile `) //altprint exec
+                profileid //altprint exec
+                (' not seen; ignoring ICC colorspace\n) //altprint exec
+              } ifelse
+            } if
+
+          end % //workdict
+        } def
+
+        % %%BeginRenderingIntent: comment handling is deliberately not done because
+        % it's function is to set an output profile which we don't want to allow from
+        % the job thankyou very much. The rendering intent is actually set using
+        % findcolorrendering which is conventionally placed between %%BeginRenderingIntent:
+        % and %%EndRenderingIntent. We will still process the findcolorrendering if
+        % we ignore this comment.
+
+      end % (%%actions)
+    end % (%%dict)
+  } bind def
+
+  % Remove comment parsing hooks to detect ICC profiles embedded in PS files.
+  /RemoveEmbeddedICCHandlers {
+    (%%dict) load begin
+      (%%actions) load begin
+        [ 
+          /BeginICCProfile:
+          /BeginSetColorSpace:
+          /BeginRenderingIntent:
+        ]
+        { currentdict exch undef } forall
+      end % (%%actions)
+    end % (%%dict)
+  } bind def
+
+
+  % Remove traces of private data and local procedures which are not
+  % to be exported as facilities of the procset.
+  [
+    /altprint
+    /embedded-profiles
+    /workdict
+    /buf
+  ] { currentdict exch undef } forall
+
+  currentdict
+end % the procset dictionary
+
+/HqnImportICC exch /ProcSet defineresource
+
+exch setglobal
+
+%%EndProcSet

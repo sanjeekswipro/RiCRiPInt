@@ -1,0 +1,231 @@
+# Copyright (C) 2012-2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Product-level definitions
+#
+# $HopeName: SWprod_hqnrip!make:product.jam(EBDSDK_P.1) $
+#
+
+if all in $(JAM_ARGUMENTS) {
+  Error all target is obsolete - use clrip, ebdrip or guirip instead ;
+
+} else if guirip in $(JAM_ARGUMENTS) {
+  # GUI RIP (HMR)
+
+  ProductName = gui ;
+  ProductDir = guirip ;
+  ProductSW = SW-guirip ;
+  ProductDefine = CORESKIN ;
+  ProductTarget = guirip ;
+  ProductSDK = none ;
+
+  if $(MACOSX) {
+    ProductSkin = coregui mac3 ;
+  } else if $(NT) { 
+    ProductSkin = coregui gui ;
+
+    RequiresVariant fwcidfileselect fwpcosfolderselect ;
+  } else if $(UNIX) { 
+    ProductSkin = coregui motifpart ;
+
+    ImplementsVariant motifversion ;
+  }
+
+  RequiresVariant custiface gui fwutfconv calibration has_fwos ;
+
+  if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+    Include $(BUILDROOT)$/security$/make$/ldkvendor.jam ;
+  }
+
+} else if clrip in $(JAM_ARGUMENTS) {
+  # LE RIP (HHR)
+
+  ProductName = le ;
+  ProductDir = clrip ;
+  ProductSW = SW-clrip ;
+  ProductDefine = CORERIP ;
+  ProductTarget = clrip ;
+  ProductSDK = skinkit ;
+
+  local CustomerProductJambits = $(BUILDROOT)$/clrip$/make$/product-$(Variant_customised).jam ;
+  if $(CustomerProductJambits:E)
+  {
+    Include $(CustomerProductJambits) ;
+  }
+
+  RequiresVariant calibration has_fwos ;
+
+  if ! $(Variant_rt_libs) {
+    RequiresVariant rt_libs : dynamic_multi_threaded ;
+  }
+  if $(Variant_security) != ldklic && $(Variant_security) != lic {
+    RequiresVariant C++_ORB : 0 ;
+  }
+  if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+    Include $(BUILDROOT)$/security$/make$/ldkvendor.jam ;
+    RequiresVariant fwutfconv ;
+  }
+
+  # Default to non-concurrent RIPping
+  # Override if required in product-$(Variant_customised).jam
+  if ! $(Variant_xpsdrvfilter)   { RequiresVariant xpsdrvfilter : streamfilter ; }
+
+  CompilerVersion Inherited Local : Zip : zip_2_3_1 : : ;
+
+  CompilerVersion Inherited Local : PREfast : prefast_8_0 : : win_32 : ;
+
+} else if ebdrip in $(JAM_ARGUMENTS) {
+  # Embedded RIP
+
+  ProductName = ebd ;
+  ProductDir = ebdrip ;
+  ProductSW = SW-ebdrip ;
+  ProductDefine = CORERIP ;
+  ProductTarget = ebdrip ;
+  ProductSDK = skinkit ;
+
+  local CustomerProductJambits = $(BUILDROOT)$/ebdrip$/make$/product-$(Variant_customised).jam ;
+  if $(CustomerProductJambits:E)
+  {
+    Include $(CustomerProductJambits) ;
+  }
+
+  if ! $(Variant_rt_libs) {
+    RequiresVariant rt_libs : dynamic_multi_threaded ;
+  }
+  RequiresVariant C++_ORB : 0 ;
+  RequiresVariant dll : nd ;
+
+  # Default to non-concurrent RIPping
+  # Override if required in product-$(Variant_customised).jam
+  if ! $(Variant_xpsdrvfilter)   { RequiresVariant xpsdrvfilter : streamfilter ; }
+
+  CompilerVersion Inherited Local : Zip : zip_2_3_1 : : ;
+
+  CompilerVersion Inherited Local : PREfast : prefast_8_0 : : win_32 : ;
+
+} else if clean in $(JAM_ARGUMENTS) {
+
+  ProductName = clean ;
+
+  ProductSW = SW-guirip ;      # or clean will delete entire source tree!
+
+  ProductTarget = guirip ;     # or get no targets on rule DependsOn (for pthreads DLL)
+
+  RequiresVariant gui ;        # because ConvertToBundle requires C-Exec-Creator
+
+} else if depend in $(JAM_ARGUMENTS) {
+
+  # depend on its own needs no ProductName
+
+  ProductSW = SW-guirip ;      # or get no targets on rule NOTFILE
+
+  RequiresVariant gui ;        # because ConvertToBundle requires C-Exec-Creator
+
+} else if doc in $(JAM_ARGUMENTS) {
+
+  # doc on its own needs no ProductName
+
+  ProductSW = SW-guirip ;      # or get no targets on rule NOTFILE
+
+} else {
+  Error A rip target (clrip, guirip), depend, doc or clean must be specified ;
+
+}
+
+Include $(BUILDROOT)$/tools$/make$/swproduct.jam ;
+
+AddToVar Inherited Local : C-Defines : $(ProductDefine) : Variant product ;
+
+if $(ProductName) = gui {
+  # GUI RIP
+
+  if $(UNIX) { 
+    CompilerVersion Inherited Local : gui : motif_1      : irix ;
+    switch $(Variant_motifversion) {
+      case motif_4 :
+        CompilerVersion Inherited Local : gui : motif_4 : linux ;
+      case motif_2_3 :
+        CompilerVersion Inherited Local : gui : motif_2_3 : linux ;
+      case * :
+        CompilerVersion Inherited Local : gui : motif_2_2_3 : linux ;
+    }
+    CompilerVersion Inherited Local : gui : motif_1      : solaris ;
+
+    DefaultVar C-Defines : PRODUCT=Scriptworks ;
+  }
+
+  # This product can be compiled as a small executable/large dll pair or
+  # as a monolithic executable (default, mainly for debugging).  This
+  # variant chooses which. "d" == dll, "nd" == Not dll.
+  # Default to building a monolithic exe
+  if ! $(Variant_dll) { RequiresVariant dll : nd ; }
+
+  # Set the dll name depending on security type
+  # (this allows multiple RIP types to be installed in the same directory)
+
+  local DllPrefix = sw- ;
+
+  if $(Variant_security) && ! $(Variant_security) = dng
+  {
+    DllPrefix = $(Variant_security)$(DllPrefix) ;
+  }
+
+  ScriptworksDll = $(DllPrefix)gui ;
+  AddToVar Inherited Local : C-Defines : SCRIPTWORKS_DLL=\"\\\"$(ScriptworksDll)\\\"\" : Variant dll=d ;
+
+} else if $(ProductName) = le {
+  # LE RIP
+
+  # Default to building a DLL
+  if ! $(Variant_dll) { RequiresVariant dll : d ; }
+
+  # Default to non-regression skin
+  if ! $(Variant_skin) { RequiresVariant skin : host ; }
+
+  if $(Variant_xpsdrv) && $(Variant_xps) = no {
+    Error xpsdrv variant requires RIP to support XPS ;
+  }
+
+} else if clean in $(JAM_ARGUMENTS) {
+
+  # Arbitrary choice, but we need to choose something
+  if ! $(Variant_dll) { RequiresVariant dll : nd ; }
+}
+
+AddToVar Inherited Local : Suffix : freetype : Variant freetype ;
+
+CompilerVersion Inherited Local : Graphviz : graphviz_2 ;
+CompilerVersion Inherited Local : Doxygen : doxygen_1_6_2 ;
+CompilerVersion Inherited Local : WDK : wdk_vista_6000 : : win : Variant xps=yes ;
+
+AddToVar Inherited Local : C-Defines : USE_RAM_SW_FOLDER : Variant sw=ram ;
+AddToVar Inherited Local : C-Defines : USE_HYBRID_SW_FOLDER : Variant sw=hybrid ;
+AddToVar Inherited Local : C-Defines : USE_ZIP_HYBRID_SW_FOLDER : Variant sw=ziphybrid ;
+
+AddToVar Inherited Local : Suffix    : d   : Variant dll=d ;
+AddToVar Inherited Local : Suffix    : nd  : Variant dll=nd ;
+AddToVar Inherited Local : C-Defines : DLL DYLIB : Variant dll=d ;
+
+# The fwos variant is linked to the product
+AddToVar Inherited Local : Suffix : fw : Variant has_fwos ;
+AddToVar Inherited Local : C-Defines : HAS_FWOS : Variant has_fwos ;
+
+# The calibration variant is linked to the product
+AddToVar Inherited Local : Suffix : cal : Variant calibration ;
+
+if ! $(Variant_fontlib) { RequiresVariant fontlib : none ; }
+
+
+# set C defines for core:interface:version:ripversn.h to pick out product (not core) release version
+if $(ProductName) = le {
+  AddToVar Inherited Local : C-Defines : HHR_PRODUCT ;
+} else if $(ProductName) = ebd {
+  AddToVar Inherited Local : C-Defines : EBD_PRODUCT ;
+}
+
+# for exporting source archive
+    CompilerVersion Inherited Local : Zip : zip_2_3_1 : : ;
+
+
+# Log stripped

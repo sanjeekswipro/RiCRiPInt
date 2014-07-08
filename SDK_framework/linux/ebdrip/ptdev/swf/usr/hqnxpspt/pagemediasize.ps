@@ -1,0 +1,332 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pagemediasize.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for obtaining PageMediaSize from the
+% job PrintTicket.  Note that applying the size in the actual
+% page device is handled by the PrintTicket procset itself.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+
+% Dictionary of named media sizes.  Extend as required.
+/MediaSizeList <<
+  /ISOA0 << /MediaSizeWidth << /Value 841000 >> /MediaSizeHeight << /Value 1189000 >> >>
+  /ISOA1 << /MediaSizeWidth << /Value 594000 >> /MediaSizeHeight << /Value 841000 >> >>
+  /ISOA10 << /MediaSizeWidth << /Value 26000 >> /MediaSizeHeight << /Value 37000 >> >>
+  /ISOA2 << /MediaSizeWidth << /Value 420000 >> /MediaSizeHeight << /Value 594000 >> >>
+  /ISOA3 << /MediaSizeWidth << /Value 297000 >> /MediaSizeHeight << /Value 420000 >> >>
+  /ISOA3Extra << /MediaSizeWidth << /Value 322000 >> /MediaSizeHeight << /Value 445000 >> >>
+  /ISOA4 << /MediaSizeWidth << /Value 210000 >> /MediaSizeHeight << /Value 297000 >> >>
+  /ISOA4Extra << /MediaSizeWidth << /Value 235500 >> /MediaSizeHeight << /Value 322300 >> >>
+  /ISOA5 << /MediaSizeWidth << /Value 148000 >> /MediaSizeHeight << /Value 210000 >> >>
+  /ISOA6 << /MediaSizeWidth << /Value 105000 >> /MediaSizeHeight << /Value 148000 >> >>
+  /ISOA7 << /MediaSizeWidth << /Value 74000 >> /MediaSizeHeight << /Value 105000 >> >>
+  /ISOA8 << /MediaSizeWidth << /Value 52000 >> /MediaSizeHeight << /Value 74000 >> >>
+  /ISOA9 << /MediaSizeWidth << /Value 37000 >> /MediaSizeHeight << /Value 52000 >> >>
+  /ISOB0 << /MediaSizeWidth << /Value 1000000 >> /MediaSizeHeight << /Value 1414000 >> >>
+  /ISOB1 << /MediaSizeWidth << /Value 707000 >> /MediaSizeHeight << /Value 1000000 >> >>
+  /ISOB10 << /MediaSizeWidth << /Value 31000 >> /MediaSizeHeight << /Value 44000 >> >>
+  /ISOB2 << /MediaSizeWidth << /Value 500000 >> /MediaSizeHeight << /Value 707000 >> >>
+  /ISOB3 << /MediaSizeWidth << /Value 353000 >> /MediaSizeHeight << /Value 500000 >> >>
+  /ISOB4 << /MediaSizeWidth << /Value 250000 >> /MediaSizeHeight << /Value 353000 >> >>
+  /ISOB5 << /MediaSizeWidth << /Value 176000 >> /MediaSizeHeight << /Value 250000 >> >>
+  /ISOB5Extra << /MediaSizeWidth << /Value 201000 >> /MediaSizeHeight << /Value 276000 >> >>
+  /ISOB7 << /MediaSizeWidth << /Value 88000 >> /MediaSizeHeight << /Value 125000 >> >>
+  /ISOB8 << /MediaSizeWidth << /Value 62000 >> /MediaSizeHeight << /Value 88000 >> >>
+  /ISOB9 << /MediaSizeWidth << /Value 44000 >> /MediaSizeHeight << /Value 62000 >> >>
+  /ISOC0 << /MediaSizeWidth << /Value 917000 >> /MediaSizeHeight << /Value 1297000 >> >>
+  /ISOC1 << /MediaSizeWidth << /Value 648000 >> /MediaSizeHeight << /Value 917000 >> >>
+  /ISOC10 << /MediaSizeWidth << /Value 28000 >> /MediaSizeHeight << /Value 40000 >> >>
+  /ISOC2 << /MediaSizeWidth << /Value 458000 >> /MediaSizeHeight << /Value 648000 >> >>
+  /ISOC3 << /MediaSizeWidth << /Value 324000 >> /MediaSizeHeight << /Value 458000 >> >>
+  /ISOC4 << /MediaSizeWidth << /Value 229000 >> /MediaSizeHeight << /Value 324000 >> >>
+  /ISOC5 << /MediaSizeWidth << /Value 162000 >> /MediaSizeHeight << /Value 229000 >> >>
+  /ISOC6 << /MediaSizeWidth << /Value 114000 >> /MediaSizeHeight << /Value 162000 >> >>
+  /ISOC7 << /MediaSizeWidth << /Value 81000 >> /MediaSizeHeight << /Value 114000 >> >>
+  /ISOC8 << /MediaSizeWidth << /Value 57000 >> /MediaSizeHeight << /Value 81000 >> >>
+  /ISOC9 << /MediaSizeWidth << /Value 40000 >> /MediaSizeHeight << /Value 57000 >> >>
+  /ISOSRA3 << /MediaSizeWidth << /Value 320000 >> /MediaSizeHeight << /Value 450000 >> >>
+  /JISB0 << /MediaSizeWidth << /Value 1030000 >> /MediaSizeHeight << /Value 1456000 >> >>
+  /JISB1 << /MediaSizeWidth << /Value 728000 >> /MediaSizeHeight << /Value 1030000 >> >>
+  /JISB10 << /MediaSizeWidth << /Value 32000 >> /MediaSizeHeight << /Value 45000 >> >>
+  /JISB2 << /MediaSizeWidth << /Value 515000 >> /MediaSizeHeight << /Value 728000 >> >>
+  /JISB3 << /MediaSizeWidth << /Value 364000 >> /MediaSizeHeight << /Value 515000 >> >>
+  /JISB4 << /MediaSizeWidth << /Value 257000 >> /MediaSizeHeight << /Value 364000 >> >>
+  /JISB5 << /MediaSizeWidth << /Value 182000 >> /MediaSizeHeight << /Value 257000 >> >>
+  /JISB6 << /MediaSizeWidth << /Value 128000 >> /MediaSizeHeight << /Value 182000 >> >>
+  /JISB7 << /MediaSizeWidth << /Value 91000 >> /MediaSizeHeight << /Value 128000 >> >>
+  /JISB8 << /MediaSizeWidth << /Value 64000 >> /MediaSizeHeight << /Value 91000 >> >>
+  /JISB9 << /MediaSizeWidth << /Value 45000 >> /MediaSizeHeight << /Value 64000 >> >>
+  /NorthAmerica10x11 << /MediaSizeWidth << /Value 254000 >> /MediaSizeHeight << /Value 279400 >> >>
+  /NorthAmerica10x14 << /MediaSizeWidth << /Value 254000 >> /MediaSizeHeight << /Value 355600 >> >>
+  /NorthAmerica11x17 << /MediaSizeWidth << /Value 279400 >> /MediaSizeHeight << /Value 431800 >> >>
+  /NorthAmerica9x11 << /MediaSizeWidth << /Value 228600 >> /MediaSizeHeight << /Value 279400 >> >>
+  /NorthAmericaArchitectureASheet << /MediaSizeWidth << /Value 228600 >> /MediaSizeHeight << /Value 304800 >> >>
+  /NorthAmericaArchitectureBSheet << /MediaSizeWidth << /Value 304800 >> /MediaSizeHeight << /Value 457200 >> >>
+  /NorthAmericaArchitectureCSheet << /MediaSizeWidth << /Value 457200 >> /MediaSizeHeight << /Value 609600 >> >>
+  /NorthAmericaArchitectureDSheet << /MediaSizeWidth << /Value 609600 >> /MediaSizeHeight << /Value 914400 >> >>
+  /NorthAmericaArchitectureESheet << /MediaSizeWidth << /Value 914400 >> /MediaSizeHeight << /Value 1219200 >> >>
+  /NorthAmericaCSheet << /MediaSizeWidth << /Value 431800 >> /MediaSizeHeight << /Value 558800 >> >>
+  /NorthAmericaDSheet << /MediaSizeWidth << /Value 558800 >> /MediaSizeHeight << /Value 863600 >> >>
+  /NorthAmericaESheet << /MediaSizeWidth << /Value 863600 >> /MediaSizeHeight << /Value 1117600 >> >>
+  /NorthAmericaExecutive << /MediaSizeWidth << /Value 184150 >> /MediaSizeHeight << /Value 266700 >> >>
+  /NorthAmericaGermanLegalFanfold << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 330200 >> >>
+  /NorthAmericaGermanStandardFanfold << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 304800 >> >>
+  /NorthAmericaLegal << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 355600 >> >>
+  /NorthAmericaLegalExtra << /MediaSizeWidth << /Value 241300 >> /MediaSizeHeight << /Value 381000 >> >>
+  /NorthAmericaLetter << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 279400 >> >>
+  /NorthAmericaLetterExtra << /MediaSizeWidth << /Value 241300 >> /MediaSizeHeight << /Value 304800 >> >>
+  /NorthAmericaLetterPlus << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 322326 >> >>
+  /NorthAmericaNote << /MediaSizeWidth << /Value 215900 >> /MediaSizeHeight << /Value 279400 >> >>
+  /NorthAmericaQuarto << /MediaSizeWidth << /Value 215000 >> /MediaSizeHeight << /Value 275000 >> >>
+  /NorthAmericaStatement << /MediaSizeWidth << /Value 139700 >> /MediaSizeHeight << /Value 215900 >> >>
+  /NorthAmericaSuperA << /MediaSizeWidth << /Value 227000 >> /MediaSizeHeight << /Value 356000 >> >>
+  /NorthAmericaSuperB << /MediaSizeWidth << /Value 305000 >> /MediaSizeHeight << /Value 487000 >> >>
+  /NorthAmericaTabloid << /MediaSizeWidth << /Value 279400 >> /MediaSizeHeight << /Value 431800 >> >>
+  /NorthAmericaTabloidExtra << /MediaSizeWidth << /Value 296926 >> /MediaSizeHeight << /Value 457200 >> >>
+>> def
+
+/PSCustomMediaDict 5 dict def
+
+% Mapping the PSCustomMediaSize orientation to the required XPS PageOrientation
+%
+% For most devices, we consider the media feed direction to be such that the
+% raster feeds upwards, so the Y axis is parallel to the media feed direction (Y-feed).
+% Consequently, we need to swap the page dimensions for X-Feed devices and
+% in that case, the orientation mapping also has to change.
+
+/OrientMapYFeed [ /ReverseLandscape /Portrait /Landscape /ReversePortrait ] def
+/OrientMapXFeed [ /Portrait /Landscape /ReversePortrait /ReverseLandscape ] def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% n1 n2 EqRel bool
+% Are n1 and n2 equal to within a relative error
+/EqRel {
+  2 copy abs exch abs 2 copy le { exch } if pop % | n1 n2 max(|n1|, |n2|)
+  1e-6 mul 3 1 roll                             % | max(|n1|,|n2|)*relative-error n1 n2
+  sub abs                                       % | max(|n1|,|n2|)*relative-error |n1-n2|
+  ge
+} bind def
+
+% width height SetPageSize -
+% Set page size for next page started. (Note: width and height are in points)
+/SetPageSize {
+  InternalState begin
+    % Check if page size has changed
+    2 copy PageSize aload pop
+    3 -1 roll //EqRel exec not 3 1 roll //EqRel exec not or {
+      PageSize astore pop
+    }{
+      pop pop
+    } ifelse
+  end
+} bind def
+
+/DoPageMediaSize {
+  begin
+    (->DoPageMediaSize) PTDebug
+
+    % Use named media size if known
+    pt_value [/Value] /ISOA4 GetPTValueWithDefault exch pop
+
+    dup /PSCustomMediaSize ne {
+      //MediaSizeList 1 index known {
+        //MediaSizeList exch get
+      }{
+        pop pt_value
+      } ifelse
+
+      % Get media dimensions (in points)
+      dup /MediaSizeWidth get /Value get
+      dup type /nametype eq { currentdict exch get /Value get } if cvr
+      25400 div 72 mul
+      exch
+      /MediaSizeHeight get /Value get
+      dup type /nametype eq { currentdict exch get /Value get } if cvr
+      25400 div 72 mul
+
+      //SetPageSize exec
+    }{
+      % PSCustomMediaSize makes life a bit more complicated
+      % It's based on the PPD spec (section 5.16) custom page sizes.
+      pop %/PSCustomeMediaSize
+
+      //PSCustomMediaDict /Width
+      pt_value /PSWidth get /Value get
+      dup type /nametype eq { currentdict exch get /Value get } if cvr
+      25400 div 72 mul
+      put
+
+      //PSCustomMediaDict /Height
+      pt_value /PSHeight get /Value get
+      dup type /nametype eq { currentdict exch get /Value get } if cvr
+      25400 div 72 mul
+      put
+
+      //PSCustomMediaDict /WidthOffset
+      pt_value /PSWidthOffset known {
+        pt_value /PSWidthOffset get /Value get
+        dup type /nametype eq { currentdict exch get /Value get } if cvr
+        25400 div 72 mul
+      }{
+        0.0
+      }ifelse put
+
+      //PSCustomMediaDict /HeightOffset
+      pt_value /PSHeightOffset known {
+        pt_value /PSHeightOffset get /Value get
+        dup type /nametype eq { currentdict exch get /Value get } if cvr
+        25400 div 72 mul
+      }{
+        0.0
+      }ifelse put
+
+      //PSCustomMediaDict /Orientation
+      pt_value /PSOrientation known {
+        pt_value /PSOrientation get /Value get
+        dup type /nametype eq { currentdict exch get /Value get } if
+      }{
+        0
+      }ifelse put
+
+      //PSCustomMediaDict PTDebug
+
+      % Now set the page size
+      //PSCustomMediaDict dup /Width get exch /Height get
+
+      % For most devices, we consider the media feed direction to be such that the
+      % raster feeds upwards, so the Y axis is parallel to the media feed direction (Y-feed).
+      % Consequently, we need to swap the page dimensions for X-Feed devices.
+      currentpagedevice /XFeed get { exch }if
+
+      //SetPageSize exec
+
+      % Work out what orientation we need in the page device
+      InternalState /PagesPerSheet get 1 gt {
+        /Portrait  % Allow the N-up code to orient the pages onto the media
+      }{
+        currentpagedevice /XFeed get { //OrientMapXFeed }{ //OrientMapYFeed }ifelse
+        //PSCustomMediaDict /Orientation get get
+      }ifelse
+      InternalState /PSCustomOrient 3 -1 roll put
+
+      % The PPD spec says the page device key /PageOffset should be used for the offsets, although
+      % the RIP doesn't actually support that key yet, but we still call it that in the InternalState.
+      InternalState /PSPageOffset [ //PSCustomMediaDict dup /WidthOffset get exch /HeightOffset get ] put
+
+    } ifelse  % whether /PSCustomMediaSize
+
+    (<-DoPageMediaSize) PTDebug
+  end
+} bind def
+
+/OverridePageMediaSize {
+  begin
+    % Check for a GUI RIP override value in statusdict -> GuiRIPXPSOverrides -> PageMediaSize
+    statusdict /GuiRIPXPSOverrides 2 copy known {
+      get /PageMediaSize 2 copy known {
+        get
+        % GuiRIPXPSOverrides is an index
+        % Translate to required override value, if any
+        InternalState begin
+          dup 0 eq {
+            % Use FixedPage width / height
+            <<
+              /Value /FixedPage
+              /MediaSizeWidth <<
+                /Value FixedPageSize 0 get 72 div 25400 mul
+              >>
+              /MediaSizeHeight <<
+                /Value FixedPageSize 1 get 72 div 25400 mul
+              >>
+            >>
+            true
+            3 -1 roll
+          } if
+          dup 1 eq {
+            % Use FixedPage BleedBox
+            <<
+              /Value /BleedBox
+              /MediaSizeWidth <<
+                /Value BleedBox 2 get 72 div 25400 mul
+              >>
+              /MediaSizeHeight <<
+                /Value BleedBox 3 get 72 div 25400 mul
+              >>
+            >>
+            true
+            3 -1 roll
+          } if
+          dup 2 eq {
+            % Use FixedPage ContentBox
+            <<
+              /Value /ContentBox
+              /MediaSizeWidth <<
+                /Value ContentBox 2 get 72 div 25400 mul
+              >>
+              /MediaSizeHeight <<
+                /Value ContentBox 3 get 72 div 25400 mul
+              >>
+            >>
+            true
+            3 -1 roll
+          } if
+          dup 3 eq {
+            % Use PT value
+            false
+            exch
+          } if
+        end
+        pop
+      }{
+        pop pop
+        false
+      }ifelse
+    }{
+      pop pop
+      false
+    }ifelse
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageMediaSize <<
+    /Action //DoPageMediaSize
+
+    statusdict /GuiRIPEnablePTProcessing known {
+      % GUI RIP uses override function above
+      /Override //OverridePageMediaSize
+    }if
+  >>
+>>
+
+end

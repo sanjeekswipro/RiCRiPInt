@@ -1,0 +1,62 @@
+%!PS-Adobe-3.0
+%%Title: MarginText_ISO12647-7
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Aug 2011
+% Copyright (C) 2011 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.2.2.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:annots:mt126477(EBDSDK_P.1) $
+
+% The file must return a single dictionary
+	<<
+
+	/Name		(MarginText_ISO12647-7)
+	
+	/AnnotType /Mark
+	
+	/AnnotSpace	14
+	
+	/Mark <<
+		% The mark dictionary is a standard ControlText mark,
+		/MarkType /ControlText
+		/Enabled true
+
+		% BaseY sets the distance from the edge of the raster
+		% to the baseline of the mark text.
+		/BaseY 3 
+		% BaseX is the distance in from the edge of the raster that the slug text will start
+		% BaseAngle will be ignored.
+		/BaseX 22 /BaseAngle 0
+		
+		% UVPS (Contone)
+		
+			/Text (\
+<#s2<s8><H <V, \
+<#f3<s10>K<#s2<s8><R\
+<#f3<s10>-D<#s2<s8><D <s10>\(\
+<#f3<s10>L<#s2<s8><#D0, \
+<#f3<s10>I<#s2<s8><I\
+<s10>\)<s8> \
+\
+<#f3<s10>-P<#s2<s8><P <s10>, \
+<#f3<s10>C<#s2<s8><C\
+<?IsColorManaged>, <#f3<s10>Q<#s2<s8><Q<!\
+, <#f3<s10>3<#s2<s8><3\
+, <#f3<s10>4<#s2<s8><4\
+<#f3<s10>-<#s2<s6><S\
+\
+)
+			/TextSize 9
+			/TextFonts <<
+				3	/SlugLine
+			>>
+		>>
+	>>
+
+% preload font.
+/SlugLine findfont pop
+
+%%EOF
+

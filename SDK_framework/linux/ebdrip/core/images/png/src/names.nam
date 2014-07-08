@@ -1,0 +1,28 @@
+/* $HopeName: COREpng!src:names.nam(EBDSDK_P.1) $
+ *
+ * Copyright (C) 2005-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREpng. See SWv20!src/names.nam for documentation on
+ * the file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ */
+
+BitsPerComponent
+ColorSpace
+DataSource
+DeviceGray
+DeviceRGB
+EmbeddedICCProfile
+Height
+ImageType
+InterleaveType
+MultipleDataSources
+PreMult
+Width
+XResolution
+YResolution
+
+/*
+Log stripped */

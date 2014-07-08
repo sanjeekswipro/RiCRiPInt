@@ -1,0 +1,96 @@
+% Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWebd_OIL_example_gg!swf:sys:extpgedk(EBDSDK_P.1) $
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+
+%!PS-Adobe
+%%Title: Sys/ExtraPageDeviceKeys
+%%Creator: Global Graphics Software Limited
+%%CreationDate: January 23, 1992
+%%EndComments
+
+% This file should produce a set of key / value pairs on the operand stack to
+% be used as extensions for setpagedevice, typically either for use as
+% additonal medai selection keys (in which case you will also need to modify
+% Sys/ExtraMediaSelectionKeys) or as pagebuffer device parameters (for which
+% you need to refer to OEM documentation for detail).
+% For example:
+%                 /MyMediaKey         null
+%                 /MyPageBufferOption /Red
+%
+/PageBufferType /GGE
+/EndRender                             % PS to tell RIP to notify page rendering completion to embedded device
+   << /zzEmbeddedNotifyEndRender       % starts with zz to allow other EndRender hooks to execute first (alphabetically)
+   {
+     (%embedded%) << /EndRender true >> setdevparams      % set EndRender flag in embedded device to trigger page checkin
+   } bind
+   >>
+/NegativePrint false
+/RunLength false
+/Duplex false
+/Tumble false
+/Orientation 0
+/Collate false
+/OutputFaceUp false
+
+% These are not used by the pagebuffer device, but may help other procsets
+% work as intended
+/MediaCenterPageWidth false
+/MediaCenterPageLength false
+/ResamplingFactor 1
+/Exposure 0
+/RunOverlap true
+/RunLineOutput true
+/XFeed false
+
+% PageBufferGeneration is used as a hook to note when all pagebuffer changes
+% are complete.
+//globaldict /PageBufferGeneration 0 put
+
+% This routine is called as the last thing when resetting a page device. It
+% can set any additional %pagebuffer% device keys required.
+/PageBufferSetup {
+  (%pagebuffer%)
+    0 % dictionary substituted below
+
+    % clean out the dictionary
+    dup { pop 1 index exch undef } forall
+
+    % set all of these params in one go
+    2 copy
+    [
+      /Collate
+      /Duplex
+      /Orientation
+      /OutputFaceUp
+      /Tumble
+    ] {
+      currentpagedevice 1 index known {
+	2 copy currentpagedevice 1 index get put
+      } if
+      pop
+    } forall
+    dup /Password 0 put setdevparams
+
+    % clean out the dictionary again
+    dup { pop 1 index exch undef } forall
+
+    % This is the last thing done when resetting the page device;
+    % incrementing the page buffer generation is a hook used to tell the
+    % %pagebuffer% device that all of the parameters have now been set.
+    dup /Password 0 put
+    dup /PageBufferGeneration
+      //globaldict /PageBufferGeneration 2 copy get 1 add dup 4 1 roll put
+    put setdevparams
+} dup 1 10 dict put % statically create the dictionary with some extra space
+bind
+
+/InputAttributes <<
+    1 << /PageSize [612 792]  >> % description of default ~cassette~ 1
+>>
+

@@ -1,0 +1,3747 @@
+%!
+
+% /* PLEASE DO NOT REMOVE THIS LINE - C-STYLE COMMENT REQD. FOR SOLARIS etc...
+%
+% ALSO, DO NOT USE SINGLE QUOTES IN PS COMMENTS - IT BREAKS THE UNIX BUILD
+%
+% $HopeName: SWv20!src:pagedev.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 1991-2014 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% allow the user to mount any additional devices they require: %pagebuffer%
+% must at least be done in here
+
+{
+  (Sys/ExtraDevices) run
+} stopped {
+  UVS(Error: Error in Sys/ExtraDevices\n) print
+  clear cleardictstack
+} if
+
+% For a particular device, the default page device dictionary should be set
+% up directly by definition as in the following example; then a dummy call
+% to setpagedevice will activate the device with the correct parameters
+
+currentglobal dup { false setglobal } if
+
+32 dict begin % a dictionary for the page device procedures etc
+
+/globalness exch def
+
+% here is the ScriptWorks standard Install procedure, which goes in the
+% Private dictionary in the page device
+/Install
+<< /Cyan 0 /Red 0 /Magenta 1 /Green 1 /Yellow 2 /Blue 2
+   /Black 3 /Gray 3
+>> def % angle index for process seps
+
+/Install {
+
+  statusdict begin
+
+    % Implement UseCIEColor
+
+    currentpagedevice /UseCIEColorDetails get /Override get not {
+      currentpagedevice /UseCIEColor get
+      {
+        % remember what it was previously, if not arrived at via UseCIEColor
+        currentpagedevice /Private get dup /Intercepts known not {
+          dup /Intercepts currentinterceptcolorspace put
+        } if pop
+
+        <<
+          /DeviceGray /DefaultGray /ColorSpace findresource
+          /DeviceCMYK /DefaultCMYK /ColorSpace findresource
+          /DeviceRGB /DefaultRGB /ColorSpace findresource
+        >> setinterceptcolorspace
+      }{
+        % reset to what it was before
+        currentpagedevice /Private get dup /Intercepts known {
+          <<
+            1 index /Intercepts get begin
+              /DeviceGray dup load
+              /DeviceCMYK dup load
+              /DeviceRGB dup load
+            end
+          >> setinterceptcolorspace
+          dup /Intercepts undef
+        } if pop
+      } ifelse
+    } if
+
+    % (a) set the flatness according to resolution
+
+    /HWResolution getknown { aload pop } { 300 300 } ifelse
+    dup mul exch dup mul add 2 div sqrt
+    dup dup 1000 ge { 2000 ge { 1.8 } { 1.4 } ifelse }{ pop 1.0 } ifelse
+    setflat
+
+    % (b) set the appropriate screen: do it automatically if not set
+    vmstatus pop pop 0 eq {
+       2 mul % the resolution
+    } {
+          /DefaultScreenFrequency getknown not {
+            dup
+            { { 200 3 }         % 200 dpi or less
+                  { 600 5 }         % 600 dpi or less
+                  { 1500 12 }       % 1500 dpi or less
+                  { 100000 22 } }   % up to 100000 (assume no bigger)
+            { dup 0 get 2 index ge { exch pop 1 get div exit } if pop } forall
+          }{
+            exch pop % the resolution
+          } ifelse
+    } ifelse
+
+    /DefaultScreenAngle getknown not { 45 } if
+
+    //$printerdict /switchscreens get
+    /DefaultScreenName getknown not { /Euclidean } if
+    2 copy known {
+      get dup type /dicttype eq {
+        pop % this is the Euclidean spot function
+        { abs exch abs 2 copy add 1 gt {
+           1 sub dup mul exch 1 sub dup mul add 1 sub
+         }{
+           dup mul exch dup mul add 1 exch sub
+         } ifelse
+        } bind
+      } if
+    } {
+      pop pop % this is the Euclidean spot function
+      { abs exch abs 2 copy add 1 gt {
+         1 sub dup mul exch 1 sub dup mul add 1 sub
+       }{
+         dup mul exch dup mul add 1 exch sub
+       } ifelse
+      } bind
+    } ifelse
+
+    % (c) set the smoothness: the value of 1/256 means that a
+    % graduated tint contains at least as many levels when done
+    % as a shfill as when done using typical Level 2 methods.
+    0.00390625 setsmoothness   % (1/256)% maximum colour error
+  end
+
+  statusdict begin
+    /DefaultScreenName getknown {
+      //$printerdict /switchscreens get 1 index known {
+        //$printerdict /switchscreens get exch get type /dicttype eq
+        vmstatus pop pop 0 gt and
+      }{
+        pop false
+      } ifelse
+    }{
+      false
+    } ifelse
+    {
+
+      % the default screen is a halftone dictionary - so just use it
+      //$printerdict /switchscreens get currentpagedevice /DefaultScreenName get get
+      sethalftone
+
+      pop pop pop
+    }{
+
+      vmstatus pop pop 0 gt
+      % |- f a s vm-condition
+      currentpagedevice /SeparationColorNames get length 0 gt
+      currentpagedevice /SeparationDetails get /Add get true eq or and {
+
+        % additional colorants to the ProcessColorModel, or
+        % DeviceN (in which colorants are spelled out - use sethalftone), or
+        % dynamic spots allowed (in which case Default is needed).
+        % (note, SeparationOrder really does not define the order of colorants,
+        % independently of sethalftone, so there is no need to do a sethalftone
+        % specifically for separations any more)
+
+        currentpagedevice /Private get /SeparationColorNames get % the complete list
+        dup length 2 add dict begin
+          /HalftoneType 5 def
+
+          % |- f a s SeparationColorNames
+          {
+            5 dict begin
+              /HalftoneType 1 def
+              /Frequency 4 index def
+
+              /Angle /DefaultScreenAngles getknown {
+                2 index 2 copy known { get /Angle get }{ pop /Default get /Angle get } ifelse
+              }{
+                save currentsystemparams /ScreenAngles get exch restore
+                3 index /Cyan eq 4 index /Red eq or { 0 get } {
+                  3 index /Magenta eq 4 index /Green eq or { 1 get } {
+                    3 index /Yellow eq 4 index /Blue eq or { 2 get } {
+                      3 index /Black eq 4 index /Gray eq or { 3 get } {
+                        pop 4 index % the original angle
+                      } ifelse
+                    } ifelse
+                  } ifelse
+                } ifelse
+              } ifelse
+              def
+
+              /SpotFunction 2 index def
+              currentdict
+            end
+            def
+          } forall
+
+          % For Default, use /Default entry from DefaultScreenAngles if
+          % present, otherwise use Black, Gray or the first color as the
+          % Default in that order of preference
+          currentdict /Default known not {
+            /Default /DefaultScreenAngles getknown {
+              5 dict begin
+                /Angle exch /Default get /Angle get def
+                /HalftoneType 1 def
+                /Frequency 4 index def
+                /SpotFunction 2 index def
+                currentdict
+              end
+            } {
+              currentdict /Black known {
+                Black
+              }{
+                currentdict /Gray known {
+                  Gray
+                }{
+                  currentpagedevice /Private get /SeparationColorNames get 0 get load
+                } ifelse
+              } ifelse
+            } ifelse
+            def % /Default dict
+          } if
+
+          currentdict
+        end
+
+        sethalftone
+
+        pop pop pop % f a s
+
+      } {
+
+        % no additional colorants. Do a setscreen for DeviceGray,
+        % and a Type 5 sethalftone otherwise.
+
+        currentpagedevice /ProcessColorModel get /DeviceGray ne {
+
+          % Use DefaultScreenAngles, or failing that ScreenAngles
+
+          exch pop
+          % |- f s
+
+          /DefaultScreenAngles getknown {
+            { /Cyan /Magenta /Yellow /Black } {
+              2 copy known {
+                1 index exch get /Angle get
+              }{
+                pop dup /Default get /Angle get
+              } ifelse
+              exch
+            } forall
+            pop
+          }{
+            save currentsystemparams /ScreenAngles get exch restore aload pop
+          } ifelse
+
+          6 -2 roll % ac am ay ak f s
+          <<
+              /HalftoneType 1
+              /Frequency 5 index
+              /SpotFunction 6 index
+              /Angle 0
+          >>  3 1 roll pop pop 5 1 roll % D ac am ay ak
+          4 { 4 index 0 dict copy dup /Angle 3 index put 6 1 roll 4 1 roll }
+          repeat
+          5 { pop } repeat % Dk Dy Dm Dc
+          <<
+            /Cyan     2 index
+            /Magenta  5 index
+            /Yellow   8 index
+            /Black   11 index
+            /Default  1 index
+            /HalftoneType 5
+          >> 5 1 roll 4 { pop } repeat % D-cmyk
+          % (calling sethalftone\n) print dup == flush count == flush
+          sethalftone
+
+        }{
+
+          % simple DeviceGray setscreen will do nicely
+          % |- f a s
+
+          /DefaultScreenAngles getknown {
+            { /Black /Gray /Default } {
+              2 copy known { 1 index exch get /Angle get 4 -1 roll pop 3 1 roll  exit } if
+              pop
+            } forall
+            pop
+          } if
+
+          setscreen
+
+        } ifelse
+
+      } ifelse
+
+    } ifelse
+  end % statusdict (for getknown)
+
+  % (ab): set the halftone phase
+  vmstatus pop pop 0 gt {
+    % Set initial halftonephase to be centre of page.
+    currentpagedevice /Private get begin
+      Width  XRes mul 2 div cvi
+      Height YRes mul 2 div cvi
+    end
+    sethalftonephase
+
+    % Set initial ForcePositive to be TRUE when Recombining.
+    <<
+      /Password 0
+      /ForcePositive
+         currentsystemparams /ForcePositive get
+         currentpagedevice /Preseparation get null ne or
+    >> setsystemparams
+  } if
+
+} bind def % end of Install
+
+
+% here is the default page device dictionary
+<<
+  % allow oem extensions, try to cope with at least some errors
+  % oem extensions may override built-in defaults
+  {
+    /markmarkmark
+    << (Sys/ExtraPageDeviceKeys) run >>
+    exch /markmarkmark ne { stop } if
+    { } forall
+  } stopped {
+    % clear back to marker
+    { /markmarkmark eq { exit } if } loop
+  } if
+
+  % standard input media selection entries
+  /PageSize [612 792] % default paper size = Letter
+                      % EXTENSION: 0 in either dimension means
+                      % ~leave unchanged~ (or ~unlimited dimension~ if
+                      % you prefer)
+  /MediaColor null    % string
+  /InsertSheet false  % boolean
+  /MediaWeight null   % number
+  /MediaType null     % string
+  /MediaPosition null % integer - The position number of the media source to be used.
+
+  /PageDeviceName null % string
+  /InputAttributes <<
+    0 << /PageSize [612 792]  >> % description of cassette 0
+      % EXTENSION: 0 in either dimension means ignore for the purposes of
+      %            matching media (e.g. roll feed has the y as 0, and an
+      %            arbitrary window is 0 in both)
+      %            In addition, is a dimension is zero, the attribute
+      %            can have /MaxPageSize and /MinPageSize entries which
+      %            are used in determining media size available and in the
+      %            media matching algorithm.
+  >>
+
+  % ManualFeed entries are not supported
+
+  % Processing and output entries
+  /ImagingBBox null   % or bounding box (4 array) for the area of page painted
+  /OutputAttributes << 0 << >> >>
+  /OutputType null    % given if specific output is required: belongs
+                      % with OutputAttributes
+
+  /NumCopies null     % an integer here overrides #copies
+
+  /Separations false  % now in all rips from L3
+  /MaxSeparations 250 % Adobe only allow 250 seps max
+
+  /OverrideSeparations false
+                      % when true means that subsequent calls will not take any
+                      % notice of Separations, SeparationColorNames, SeparationOrder etc
+
+  /ValuesPerComponent 2
+                      % 2^bitsperpixel
+  /Halftone true     % raster is screened
+  /InterleavingStyle 1
+                      % 1=mono, 2=pixel, 3=band, 4=frame
+
+  /SeparationDetails <<
+    /Abort  null
+    /Omit   null
+    /Ignore null
+
+    /Add    null
+    /Remove null
+
+    /SeparationStyle 0
+                      % 0 = mono, 1 = ordinary seps, 2 = colored seps,
+                      % 3 = progressives, 4 = composite
+    /MaxExtraSpotColorants 100000
+    /MinExtraSpotColorants 0
+    /SeparationOrdering 5
+                      % 1=fixed, 2=variable ored with
+                      % 4=spots last, 8=spots first, 12 = spots mixed
+
+    /ColorantFamilies [
+      <<
+        /ColorantFamilyName (DeviceGray)
+        /DeviceTypes [ <<
+          /DeviceType (Hqn) /Plugin (Hqn) /CustomConversions ({{}{}{}} cvlit)
+          /Colorants [
+            << /sRGB [0.0 0.0 0.0] /Presence 2 /ColorantType 2 /Names [ (Gray) ] >>
+          ]
+        >> ]
+      >>
+      <<
+        /ColorantFamilyName (DeviceRGB)
+        /DeviceTypes [ <<
+          /DeviceType (Hqn) /Plugin (Hqn) /CustomConversions ({{}{}{}} cvlit)
+          /Colorants [
+            << /sRGB [1.0 0.0 0.0] /Presence 2 /ColorantType 1 /Names [ (Red) ] >>
+            << /sRGB [0.0 1.0 0.0] /Presence 2 /ColorantType 1 /Names [ (Green) ] >>
+            << /sRGB [0.0 0.0 1.0] /Presence 2 /ColorantType 1 /Names [ (Blue) ] >>
+          ]
+        >> ]
+      >>
+      <<
+        /ColorantFamilyName (DeviceCMYK)
+        /DeviceTypes [ <<
+          /DeviceType (Hqn) /Plugin (Hqn) /CustomConversions ({{}{}{}} cvlit)
+          /Colorants [
+            << /sRGB [0.0 1.0 1.0] /Presence 2 /ColorantType 1 /Names [ (Cyan) ] >>
+            << /sRGB [1.0 0.0 1.0] /Presence 2 /ColorantType 1 /Names [ (Magenta) ] >>
+            << /sRGB [1.0 1.0 0.0] /Presence 2 /ColorantType 1 /Names [ (Yellow)] >>
+            << /sRGB [0.0 0.0 0.0] /Presence 2 /ColorantType 2 /Names [ (Black) ] >>
+          ]
+        >> ]
+      >>
+    ]
+
+    /CompositeColorNames [ /Gray ]
+    /CompositeOrder 1 index
+    /ColorantRender << /Gray 1 >>
+    /RasterFormat -1    % dont know
+    /DeviceColorantFamily (DeviceGray)
+  >>
+
+  % This group are Adobe extensions. We already had Tones and and extension to
+  % sethalftone to cover this functionality, so these new keys work by
+  % setting our equivalents and vice-versa
+  /ProcessColorModel /DeviceGray
+  /SeparationColorNames [] % implictly includes ProcessColorModel colors
+  /SeparationOrder      [] % empty means same as SeparationColorNames
+
+  % This group is standard, but not included in the base product (add via
+  % ExtraPageDeviceKeys).
+% /Collate false      % omit for devices that do not support collation
+% /OutputFaceUp false % omit when cannot be changed
+% /Jog 0 def          % when to jog, i.e. to eject a set of pages
+
+  /Duplex false       % omit for devices that cannot duplex
+  /Tumble false       % omit when Duplex is omitted or if only one way to do it
+
+  /HWResolution [72 72]
+                      % dots per inch of the output device; independent of
+                      % scaling extension
+  /Margins [0 0]      % Hardware margins to set in the device, additional
+                      % to those of the CTM
+% /NegativePrint false
+                      % PostScript independent inversion
+  /MirrorPrint false  % PostScript independent (in theory)
+
+  % Roll media entries
+  /Orientation 0             % orientation with respect to normal page
+
+  % these three are not standard, but will go in most of our own startup files
+% /CutMedia null             % when to cut the film
+% /AdvanceMedia null         % when to feed the film
+% /AdvanceDistance null      % how much to advance the film
+
+  % Policy and special action entries
+  /Policies <<
+    /PolicyNotFound 1 % default action if no policy: ignore
+    /PageSize 7       % action on failure to match page size (within tolerance)
+    /PolicyReport { pop }
+                      % called if policies were consulted ( { pop } is the
+                      % default value)
+    /Orientation 0    % example of an action for a key that does not exist
+  >>
+
+  % as with all the fields, these defaults have to be here even though
+  % behaviour without them would be the same, because setpagedevice
+  % would refuse to replace them with other values if not present.
+  /Install {}
+  /BeginPage { userdict /BeginPageTransform get exec } bind
+  /EndPage { exch pop 2 ne } bind  % ditto
+
+  % Harlequin specific extensions
+
+  /Scaling [1 1]              % as in scaling and setscaling (see 11813)
+  /BandHeight null
+
+  /FilmSaving null           % as in filmsaving
+  /TimeSaving null           % as in timesaving
+  /XFeed false               % whether media is being fed from the side: used
+                             % to decide what to do for media and time saving
+  /TrimPage false            % as in settrimpage
+  /ExtraOrientation 0     % added to Orientation before use
+  /OneWayMedium null         % whether we are allowed to match media in
+                             % both directions; FilmSaving and TimeSaving effectively
+                             % override this
+% /MediaOffset null          % not included here, but standard name
+  /PageBufferType  /None     % /Preview (name required), /Ultre, or whatever
+  /PageBufferId    null      % which particular unit (e.g. on laser bus)
+  /PageBufferSetup null      % procedure to setup the device
+  /SensePageDevice null      % procedure to sense page device
+  /OperatorActions null      % procedure to ask the operator something
+  /DeviceType null
+  /DeviceAddress null
+  /Plugin null
+
+  % This sets up contone, graytone or mono output as appropriate
+  /Tones null                % Equivalent to [/Gray 1] ==> gray halftoning
+                             % Alternative values:
+                             % /Gray and [ /Gray 8 ] ==> graytone 8 bit
+                             % [/Red 8 /Green 8 /Blue 8 ] ==> 8 bit pixel interleaved
+                             % [/Red /Green /Blue 8 ] ==> 8 bit band interleaved
+                             % [8 /Red /Green /Blue ] ==> 8 bit frame interleaved (v4 only)
+                             % same for /Cyan /Magenta /Yellow /Black
+                             % The order of the array gives the output order
+  /CalibrationColorModel null % Equivalent to ProcessColorModel
+                             % Alternative values:
+                             % /DeviceGray, /DeviceRGB and /DeviceCMYK only.
+                             % For some devices, eg. PhotoInk printers, we want
+                             % calibration and color management to be performed
+                             % in a colorspace other than the ProcessColorModel.
+  /JobName null              % non-null value overrides statusdict entry
+  /DefaultScreenFrequency null
+  /DefaultScreenAngle null
+  /DefaultScreenAngles null
+  /DefaultScreenName null
+  /Imposition false
+  /Preseparation null        % special color space indicating recombining seps
+  /Override null
+  /OverrideKeys <<           % These pagedevice keys can be individually overridden
+    /HWResolution false      % if the corresponding flag in this dictionary is set
+    /Trapping false          % to true. Only the keys predefined here can be
+  >>                         % overridden in this way.
+
+  /ExtraPageDeviceKeys 5 dict
+                             % allows new keys to be added dynamically by
+                             % passing in this as a dictionary
+  /ExtraMediaSelectionKeys 2 dict
+                             % identifies new keys as media selection keys
+                             % like the file of the same name, but dynamic
+  /StartJob 3 dict           % a dictionary of procedures to be run
+                             % immediately after the job starts
+  /StartRender 3 dict        % a dictionary of procedures to be run as
+                             % rendering is about to start (*not* end of page)
+  /StartPartialRender 3 dict % a dictionary of procedures to be run immediately
+                             % before a partial paint.
+  /StartPainting 3 dict      % a dictionary of procedures to be run as the
+                             % first painting operator is encountered
+
+  /StartImage 3 dict         % ditto, at the start of images
+  /EndImage 3 dict           % ditto, at the end of images
+  /StartVignette 3 dict      % ditto, at the start of a vignette
+  /EndVignette 3 dict        % ditto, at the end of a vignette
+
+  /EndRender 3 dict          % a dictionary of procedures to be run just after
+                             % queueing all separations for rendering
+  /EndJob 3 dict             % a dictionary of procedures to be run as
+                             % the job is about to end
+  /EraseColor null           % a procedure which determines what color to
+                             % use to erase the page (executes a setcolor or
+                             % whatever as appropriate).
+
+  /Deactivate null           % Similar to Override but allows the deactivation
+                             % of a pagedevice to be deferred over a save/restore.
+
+  % The three /...RenderingEnhance keys are here for compatibility. They do nothing,
+  % and I have no idea what the numbers mean, but jobs look for the first of these
+  % and change decisions about number of steps in vignettes on the basis of it.
+  /PostRenderingEnhance true
+  /PreRenderingEnhance true
+  /PreRenderingEnhanceDetails <<
+    /S1 <0000047EF800000000000000032000C8
+         00000000000002BC012C000000000000
+         02580190000000000000010402E40000
+         00000000FFB0005E01A0024A>
+    /S2 <0000C000F000FC00FF00FFC0FFF01C38
+         7E7EFFFCBC00F600F980FE001E78FFFF
+         E000F800FC00FE00FF80FFC0FFE0FFF8
+         1FFF07FF03FF01FF007F003F001F0007
+         00010101010101000001010000000000
+         00000000000000000000000000000000>
+    /S3 <0000FFFFFFFFFFFFFFFFFFFFFFFF0000
+         FFFFFFFFFFFFFFFFFFFFFFFF0000FFFF
+         0000F000F000FF00FF00FFF0FFFFFFFF
+         FFFF0FFF00FF00FF00FF000F000F0000
+         00010101010101000001010000000000
+         00000000000000000000000000000000>
+    /S4 <080A020B0C03030D0D04040505060606  08010A02020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907
+         08010102020303040405050606090907  08010102020303040405050606090907>
+    /Type 1
+    /DefaultHalftone /106x45
+    /ActualPreRenderingEnhance true
+  >>
+
+  % the Private dictionary is one that cant be modified but can be consulted
+  % It contains things we dont want messed with.
+  /Private 36 dict begin
+
+    /InputAttributes  0 def  % the one actually selected
+    /OutputAttributes 0 def  % the one actually selected
+    /Install          /Install load def
+    /Rotate           false def
+                             % whether the media matched requires a coordinate
+                             % system rotation
+    /Fit              false def
+                             % whether the media matched requires to be
+                             % scaled down to fit the media
+    /ReqWidth         0 def  % the width of the raster requested with
+                             % PageSize, scaled and rotated as appropriate
+    /ReqHeight        0 def  % ditto for Height
+    /PageSize         [0 0] def
+                             % the page size originally requested: the one
+                             % in the main dictionary can be nulled as part
+                             % of the standard media matching process so we
+                             % need somewhere to get it back from
+    /Orientation      0 def  % compounded page rotations required
+    /Matches          4 dict def
+                             % stores the candidates for media selection
+                             % during the media matching process in the form
+                             % << tray rotation ... >>
+                             % where tray is the numeric tray identifier
+                             % as in InputAttributes, and rotation is true
+                             % if the match was achieved by rotation of the
+                             % requested page (perhaps by FilmSaving,
+                             % TimeSaving or absence of OneWayMedium
+    /State            /ExactMatch  def
+                             % temporary variable to hold state of
+                             % media matching process
+    /Matrix           [1 0 0 1 0 0] def
+                             % the default device matrix calculated
+                             % for the page
+    /TmpMatrix        [1 0 0 1 0 0] def
+                             % for intermediate results
+    /PagePolicy7      true def
+                             % abbreviation to get at this quickly
+    currentdict
+  end % Private
+
+  % PDF output switch and its parameters
+
+  /PDFOut false
+
+  /PDFOutDetails <<
+    /OutputFileProc   { pop pop } % Redefine to something more sensible to use
+    /Filter           << >>
+    /Split            false
+  >>
+
+  /UseCIEColor        false
+  /UseCIEColorDetails << /Override false >>
+  /AlternateCMM       null
+
+  /ConvertAllSeparation null
+
+  /Trapping false            % 3010 flag to globally enable/disable trapping
+  /TrappingDetails <<
+    /Type 1001               % The only value permitted in 3010
+    /ColorantDetails 12 dict % Initially empty, room for a reasonable number
+    /TrappingOrder []        % We currently do not act on this
+    /HqnType /TrapPro        % We have to pretend to be Adobe IRT by setting
+                             % /Type above to 1001. Here is where we decide what
+                             % engine to really use: options are /TrapPro
+                             % or /TrapMaster.
+    /HqnSuppressSmallTextTrapping   false % STTS enabler/disabler
+    /HqnSmallTextThreshold          0     % STTS - font sizes less than this
+                                          % will not be trapped
+  >>
+
+  /OmitHiddenFills true      % aka rollover fills
+
+  % for postscript access to PDF1.3 page cropping parameters
+
+  /CropBox <<
+    /CropBox null
+    /ArtBox null
+    /TrimBox null
+    /BleedBox null
+    /MediaBox null
+  >>
+
+  /PageRange null            % all pages
+
+  /ScreenBitDepth 1
+
+  % RLE Output parameters
+  /RunLength false
+  /RunLengthDetails <<
+  >>
+
+  /ContoneMask 0
+
+  /HVDInternal false
+
+  /VirtualDeviceSpace /DeviceCMYK
+  /BackdropAutoSeparations true
+  /DeviceROP true
+
+  /ObjectMap false
+  /ObjectTypeMap null
+  /ScanConversion /RenderHarlequin
+
+  % Maximum height of transparency regions
+  /MaxBackdropHeight 0
+  /MaxBackdropWidth 0
+
+  % Packing unit for output raster (0 for any width)
+  /PackingUnitRequest 0
+  
+  % spare slots for level 1 compatibility (so we dont immediately get dictfull error)
+  /a null /b null /c null /d null /e null /f null /g null /h null
+>>
+
+dup /a undef dup /b undef dup /c undef dup /d undef
+dup /e undef dup /f undef dup /g undef dup /h undef
+
+setpagedevice % first call to setpagedevice initialises the page device dictionary
+
+% reset global-ness to prior state
+globalness { true setglobal } if
+userdict begin
+
+% BeginPageTransform consumes pagecount
+% Implements Red Book Tumble
+% pagecount |-
+/BeginPageTransform {
+  currentpagedevice begin
+  2 mod 1 eq Duplex and Tumble and {
+    PageSize aload pop translate
+    180.0 rotate
+  } if
+  end
+} bind def
+
+end
+
+% ----------------------------------------------------------------------
+% these procedures invoke the corresponding page device procedure hooks
+
+  /sensepagedevice << >> def
+  /sensepagedevice {
+    {
+      /markmarkmark
+      currentpagedevice /SensePageDevice get dup null eq { stop } if
+      << exch exec >>
+      exch /markmarkmark ne { stop } if
+    } stopped {
+      % clear back to marker
+      { /markmarkmark eq { exit } if } loop
+      //sensepagedevice
+    } if
+  } bind def
+
+  /operatorpagedevice {
+    % |- requested-key requested-value
+    % tries to run a piece of PostScript to satisfy the request, which
+    % might block. If there is no such procedure, we do a
+    % configurationerror as per the spec.
+    % There will always be a sensepagedevice after this to pick
+    % up any changes
+    {
+      /markmarkmark 3 1 roll
+      currentpagedevice /OperatorActions get dup null eq { stop } if
+      exec
+      /markmarkmark ne { stop } if
+    } stopped {
+      % clear back to marker, keep in the stopped result
+      { /markmarkmark eq { exit } if } loop
+      % arbitrarily select a tray so we dont fall in a heap recovering
+      currentpagedevice /InputAttributes get { null ne { exit } if pop } forall
+      currentpagedevice /Private get /InputAttributes 3 -1 roll put
+      //systemdict /setpagedevice get
+      /configurationerror //systemdict /.error get exec
+    } if
+  } bind def
+
+% ----------------------------------------------------------------------
+% These are the fields which affect the media selection (input and output)
+% If a product has additional ones they must go here, otherwise they
+% are ignored. The value says whether the name is an input or output
+% attribute, or neither.
+
+/MediaSelectionKeys <<
+  /PageSize    /InputAttributes
+  /MaxPageSize /HarlequinExtension
+  /MinPageSize /HarlequinExtension
+  /MediaColor  /InputAttributes
+  /InsertSheet /InputAttributes
+  /MediaWeight /InputAttributes
+  /MediaType   /InputAttributes
+  /OutputType  /OutputAttributes
+  /InputAttributes  /Policies
+  /OutputAttributes /Policies
+     % the name Policies is not significant, only that it is
+     % neither InputAttributes nor OutputAttributes
+  % let the oem add their own; do this last so that ours take preference
+  % if they try to add the same names
+  {
+    /markmarkmark
+    << (Sys/ExtraMediaSelectionKeys) run >>
+    dup {
+      dup /InputAttributes ne exch /OutputAttributes ne and { stop } if
+      dup type /nametype ne { stop } if
+      % must also be a pagedevice key
+      currentpagedevice exch known not { stop } if
+    } forall
+    exch /markmarkmark ne { stop } if
+    { } forall
+  } stopped {
+    % clear back to marker
+    { /markmarkmark eq { exit } if } loop
+  } if
+>> def
+
+  /setparamdict 32 dict def
+
+  % -------------------------------------------------------------------
+  % utility procedure to determine whether or not a page dimension
+  % is in the range given by tray (if explicit) or Max and MinPageSize if any
+  % (if tray dimension is arbitrary).
+
+  /inrange { % |- val attr direction
+    % val is the page dimension to be tested
+    % attr is the attribute dictionary in which the Max and Min
+    %   entries are to be found
+    % and direction is 0 if the test is on width and 1 if on height
+    % Explicit size is default (applies to policy 7)
+    1 index /PageSize get 1 index get
+    dup 0 le {
+      2 index /MaxPageSize known {
+        pop 1 index /MaxPageSize get 1 index get
+      } if
+    } if
+    % |- val attr direction maxval
+    dup 0 le {
+      % a zero or negative max entry is always in range, as if it
+      % wasnt there
+      pop true
+    }{
+      3 index ge
+    } ifelse
+    % |- val attr direction bool
+    dup {
+      % Max in range; try Min
+      pop
+      % |- val attr direction
+      0 % default minimum
+      2 index /MinPageSize known {
+        pop 1 index /MinPageSize get 1 index get
+      } if
+      % |- val attr direction minval
+      dup 0 le {
+        pop true
+      }{
+        3 index le
+      } ifelse
+      % |- val attr direction bool
+    } if
+
+    % |- val attr direction bool
+    4 1 roll pop pop pop
+    % |- bool
+  } bind def
+
+  % -------------------------------------------------------------------
+
+  /nearestpagedevice { % |- candidate-id-dict(ids)
+    % works out the nearest paper tray from the paper size requested
+    % according to the defintion on page 249 of RB2; note only the attributes
+    % which are left after other matching failures have been taken into account
+    % are considered, hence the attributes operand, not the direct use of
+    % InputAttributes. Less than 2 to choose from should have been
+    % recognised before this.
+    % Returns the id matched (must match one)
+
+    currentpagedevice begin
+
+      false false
+      % these are dummy values for the minimum area difference and tray
+      % number for which it arises. The non numeric values are used
+      % to catch the first time through where they are assigned to the
+      % stack unconditionally
+      % |- ids area-diff ia-tray
+
+      3 -1 roll
+      % |- area-diff ia-tray ids
+      { % forall candidate trays
+        % |- curr-tray area-diff ia-tray rotation
+
+        pop InputAttributes 1 index get
+        % |- curr-tray area-diff ia-tray iadict
+
+        1 index type /integertype eq {
+          % compare the area of the page in this tray with the best so far
+          dup /PageSize get aload pop
+          % |- curr-tray area-diff ia-tray iadict w h
+          % replace undefined dimensions with maximum if any, otherwise as
+          % requested (which includes any scaling), width then height
+          exch dup 0 le {
+            % |- curr-tray curr-area ia-tray iadict h w
+            2 index /MaxPageSize known {
+              pop 1 index /MaxPageSize get 0 get
+            } if
+            dup 0 le {
+              pop Private /ReqWidth get
+            } if
+          } if
+          % |- curr-tray area-diff ia-tray iadict h w
+
+          exch dup 0 le {
+            % |- curr-tray curr-area ia-tray iadict w h
+            2 index /MaxPageSize known {
+              pop 1 index /MaxPageSize get 1 get
+            } if
+            dup 0 le {
+              pop Private /ReqHeight get
+            } if
+          } if
+          % |- curr-tray area-diff ia-tray iadict w h
+
+          3 -1 roll pop   % lose the candidate dictionary
+          mul             % to get the area of the media in square points
+          % |- curr-tray area-diff ia-tray actual-area
+          Private begin ReqWidth ReqHeight mul end
+                          % to get the area of the requested size
+          % |- curr-tray area-diff ia-tray actual-area requested-area
+          sub abs         % to find the closest to zero
+          % |- curr-tray area-diff ia-tray this-area-diff
+          2 index type /booleantype eq {
+            % |-  curr-tray area-diff ia-tray this-area-diff
+            % first time
+            4 2 roll
+            % |- ia-tray actual-area false false
+          }{
+            % |- curr-tray area-diff ia-tray actual-area
+            dup 3 index
+            % |- curr-tray area-diff ia-tray this-diff this-diff area-diff
+            lt {
+              % |- curr-tray area-diff ia-tray this-diff
+              4 2 roll
+            } if
+            % |- curr-tray area-diff garbage1 garbage2
+          } ifelse
+        } if
+        % |- curr-tray area-diff garbage1 garbage2
+
+        pop pop
+        % |- curr-tray curr-area
+      } forall
+
+      % |- selected-tray selected-area
+      pop
+      % |- selected-tray
+    end
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /nextlargestpagedevice { % |- candiate-id-dict(ids)
+    % works out the next largest paper tray from the paper size requested
+    % according to the defintion on page 249 of RB2; note only the attributes
+    % which are left after other matching failures have been taken into account
+    % are considered, hence the attributes operand, not the direct use of
+    % InputAttributes. Less than 2 to choose from should haveg been
+    % recognised before this.
+    % Returns the id matched (must match one)
+
+    currentpagedevice begin
+      false false
+      % the two false values are used as dummies to catch the first time through
+      % |- ids curr-area ia-tray
+
+      2 index
+      % |- ids curr-area ia-tray ids
+      { % forall candidate tray identifiers
+        % |- ids curr-tray curr-area ia-tray rotation
+
+        pop InputAttributes 1 index get
+        % |- ids curr-tray curr-area ia-tray iadict
+
+        1 index type /integertype eq {
+          dup /PageSize get aload pop
+          % replace undefined dimensions with maximum if any, otherwise as
+          % requested (which includes any scaling), width then height
+          exch dup 0 le {
+            2 index /MaxPageSize known {
+              pop 1 index /MaxPageSize get 0 get
+            } if
+            dup 0 le {
+              pop Private /ReqWidth get
+            } if
+          } if
+          % |- ids curr-tray curr-area ia-tray iadict h w
+
+          exch dup 0 le {
+            % |- attributes curr-tray curr-area ia-tray iadict w h
+            2 index /MaxPageSize known {
+              pop 1 index /MaxPageSize get 1 get
+            } if
+            dup 0 le {
+              pop Private /ReqHeight get
+            } if
+          } if
+          % |- attributes curr-tray area-diff ia-tray iadict w h
+
+          3 -1 roll pop % lose the dictionary
+          % |- ids curr-tray curr-area ia-tray w h
+          2 copy
+          % |- ids curr-tray curr-area ia-tray w h w h
+          Private /ReqHeight get
+          % |- ids curr-tray curr-area ia-tray w h w h ph
+          ge exch
+          % |- ids curr-tray curr-area ia-tray w h bool w
+          Private /ReqWidth get
+          % |- ids curr-tray curr-area ia-tray w h bool w pw
+          ge and
+          {
+            % |- ids curr-tray curr-area ia-tray w h
+            % is it smaller than the current largest area?
+            mul
+            % |- ids curr-tray curr-area ia-tray actual-area
+            3 index type /integertype eq {
+              % |- ids curr-tray curr-area ia-tray actual-area
+              dup 3 index lt {
+                % |- ids curr-tray curr-area ia-tray actual-area
+                4 2 roll
+                % |- ids ia-tray actual-area curr-tray curr-area
+              } if
+              % |- ids curr-tray curr-area curr-tray curr-area
+            }{
+              % first one: must be a candidate
+              % |- ids curr-tray curr-area ia-tray actual-area
+              4 2 roll
+              % |- ids curr-tray curr-area curr-tray curr-area
+            } ifelse
+            pop pop
+            % |- ids curr-tray curr-area
+          }{
+            % |- ids curr-tray curr-area ia-tray w h
+            pop pop pop
+          } ifelse
+          % |- ids curr-tray curr-area
+        }{
+          pop pop
+        } ifelse
+        % |- ids curr-tray curr-area
+      } forall
+
+      % |- ids curr-tray curr-area
+      type /booleantype ne {
+        % |- ids tray
+        exch pop
+        % |- tray
+      }{
+        % there isnt a next largest, so get the nearest instead
+        % |- ids curr-tray
+        pop
+        % |- ids
+        //nearestpagedevice exec
+      } ifelse
+    end
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /approxmatch {
+    % last try to force media match: look for allowable variations in page
+    % size (policy codes 3 and above for /PageSize in Policies)
+    % returns id matched or false if nothing matched
+
+    % |- candidate-tray-dict(ids)
+    /None
+    currentpagedevice
+
+    % |- ids /None pagedevice
+    dup /Policies known {
+      dup /Policies get
+      % |- ids /None pagedevice policies
+
+      dup /PageSize known {
+        dup /PageSize get
+        % |- ids /None pagedevice policies policy-code
+        dup 3 ge {
+          % |- ids /None pagedevice policies policy-code
+          % we are really going to use the Policy so note the fact for PolicyReport
+          2 index /Private get /ReportPolicy get /PageSize 2 index
+          % |- ids /None pagedevice policies policy-code reportpolicy /PageSize policy-code
+          put
+          % |- ids /None pagedevice policies policy-code
+          % select cases 3..7:
+          dup 3 sub
+          {
+            % case 3: select nearest and scale
+            {
+              % |- ids /None pagedevice policies policy-code
+              4 index //nearestpagedevice exec
+              currentpagedevice /Private get /Fit true put
+            }
+
+            % case 4: select next larger and scale
+            {
+              % |- ids /None pagedevice policies policy-code
+              4 index //nextlargestpagedevice exec
+              currentpagedevice /Private get /Fit true put
+            }
+
+            % case 5: select nearest, no adjustment
+            {
+              % |- ids /None pagedevice policies policy-code
+              4 index //nearestpagedevice exec
+              currentpagedevice /Private get /Fit false put
+            }
+
+            % case 6: select next larger, no adjustment
+            {
+              % |- ids /None pagedevice policies policy-code
+              4 index //nextlargestpagedevice exec
+              currentpagedevice /Private get /Fit false put
+            }
+            % case 7: exactly like 6, except for raster size in resetpagedevice
+            {
+              % |- ids /None pagedevice policies policy-code
+              4 index //nextlargestpagedevice exec
+              currentpagedevice /Private get /Fit false put
+            }
+          }
+          exch get exec
+          % |- ids /None pagedevice policies policy-code id
+          5 -1 roll exch 5 1 roll pop
+          % |- ids id pagedevice policies policy-code
+        } if
+        % |- ids id pagedevice policies policy-code
+        pop
+        % |- ids id pagedevice policies
+      } if
+      % |- ids id pagedevice policies
+      pop
+      % |- ids id pagedevice
+    } if
+    % |- ids id pagedevice
+
+    pop exch pop
+    % |- id(OR /None)
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /pagesizematch {
+    % |- attrs key attr-value
+    % returns whether or not the match succeeded
+
+    currentpagedevice /Private get /State get /ApproxMatch eq {
+      % pretend it matches for now (unless MatchAll is set in
+      % which case it certainly does not match because we would have
+      % got it the first time through) - we are only interested
+      % in getting a list of inputs to choose from at
+      % this stage
+
+      pop true % default !MatchAll in case there isnt one
+      % |- attrs key true
+      2 index /MatchAll known {
+         pop 1 index /MatchAll get not
+      } if
+      { /Normal } { /None } ifelse
+      % |- attrs key result
+    }{
+      currentpagedevice /Private get begin
+        % |- attrs key attr-value
+        aload pop
+        % |- attrs key tray-width tray-height
+        /TrayHeight exch def
+        /TrayWidth exch def
+
+        % |- attrs key
+        TrayWidth 0 le PagePolicy7 or {
+          % width unspecified; is it in range of tray, Max and MinPageSize
+          % if present?
+          ReqWidth 2 index 0 //inrange exec
+        }{
+          % normal case: width is explicit, so compare within 5 points
+          % |- attrs key
+          ReqWidth TrayWidth sub abs 5 le
+        } ifelse
+
+        % now the height
+        % |- attrs key bool
+        TrayHeight 0 le PagePolicy7 or {
+          ReqHeight 3 index 1 //inrange exec
+        }{
+          % |- attrs key bool
+          ReqHeight TrayHeight sub abs 5 le
+        } ifelse
+
+        % the (provisional) result
+        and { /Normal } { /None } ifelse
+
+        % |- attrs key result
+        % there may be a match, or a better match, if FilmSaving or TimeSaving
+        % is turned on, but this is only valid if we have some arbitrary
+        % (zero) tray dimensions (though maybe constrained by Max and Min)
+
+        TrayWidth 0 le TrayHeight 0 le and PagePolicy7 or {
+          /FilmSaving //statusdict /getknown get exec not { false } if {
+            % The direction of the test depends on whether media is fed
+            % from the side (XFeed) or not
+            /XFeed //statusdict /getknown get exec not { false } if {
+              % side fed media (drum): so we save film if we rotate
+              % a landscape page providing it will fit in that direction
+              % |- attrs key result
+              ReqWidth ReqHeight gt {
+                ReqWidth 3 index 1 //inrange exec { pop /Rotate } if
+              } if
+            }{
+              % bottom or top fed media (capstan), or irrelevant (sheet)
+              % so we save media if we rotate a portrait page, if it
+              % will fit across
+              ReqHeight ReqWidth gt {
+                ReqHeight 3 index 0 //inrange exec { pop /Rotate } if
+              } if
+            } ifelse
+          }{
+            % no FilmSaving; how about TimeSaving - must have XFeed (drum)
+            % set for TimeSaving to have any effect (and FilmSaving
+            % has taken preference). We save time if we rotate a portrait
+            % page (if it will fit around the drum).
+            /TimeSaving //statusdict /getknown get exec not { false } if {
+              /XFeed //statusdict /getknown get exec not { false } if {
+                ReqHeight ReqWidth gt {
+                  ReqHeight 3 index 0 //inrange exec { pop /Rotate } if
+                } if
+              } if
+            } if
+          } ifelse
+        } if
+
+        % if we failed to get a match so far, we may be able to get one by
+        % rotating the requested page, but only if we are allowed to
+        % (i.e. OneWayMedium not set). If we have got a match, then
+        % that is deemed tobe better than a rotated match (both would
+        % only be feasible on a square tray or one of arbitrary dimensions)
+        % |- attrs key result
+
+        dup /None eq {
+          /OneWayMedium //statusdict /getknown get exec not { false } if not {
+            TrayWidth 0 gt TrayHeight 0 gt and {
+              ReqHeight TrayWidth sub abs 5 le
+              ReqWidth TrayHeight sub abs 5 le
+              % if we match make a note that this is a rotated solution
+              % |- attrs key result bool bool
+              and { pop /Rotate } if
+            } if
+          } if
+        } if
+
+      end % Private
+    } ifelse
+    % |- attrs key result
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /mediamatch {
+    % tries to match the requested attributes with those available.
+    % |- ioro(/InputAttributes or /OutputAttributes)
+
+    currentpagedevice begin
+      % keep a record of the matches (as per whateverAttributes) in a
+      % separate dictionary, so clear out the one in Private set aside
+      % for this purpose. The dictionary keys the identifier of candidate
+      % trays versus whether the match is rotated or not.
+      Private /Matches get begin
+        currentdict { pop currentdict exch undef } forall
+      end
+
+      % forall input/output attributes do...
+      % |- ioro
+      currentdict 1 index get { % forall
+        % |- ioro id attrs
+        dup type /nulltype ne 2 index type /integertype eq and {
+          % |- ioro id attrs
+          /Normal exch % default result
+          % for all non-null media requests for this i or o do ...
+          //MediaSelectionKeys { % forall
+            % |- ioro id result attrs key this-ioro
+            5 index eq {
+              % |- ioro id result attrs key
+              dup load type /nulltype ne {
+                % |- ioro id result attrs key
+                % is the selection key not present in the attribute dictionary?
+                2 copy known not {
+                  % |- ioro id result attrs key
+                  pop exch pop /None exch
+                  % |- ioro id /None attrs
+                  exit
+                } if
+
+                % media selection key present in attribute dictionary, does it match?
+                % |- ioro id result attrs key
+                2 copy get
+                % |- ioro id result attrs key attr-value
+                1 index load
+                % |- ioro id result attrs key attr-value req-value
+                2 index /PageSize eq {
+                  % PageSize handled specially
+                  pop % look at the Requested PageSize values in Private
+                      % rather thanthose in the original page device
+                      % because we need to match against scaled values.
+                  % |- ioro id result attrs key attr-value
+
+                  //pagesizematch exec
+                  % |- ioro id result attrs key new-result
+                }{
+                  % |- ioro id result attrs key attr-value req-value
+                  eq {
+                    % once Rotate always Rotate whatever the other matches
+                    2 index /Rotate ne { /Normal }{ /Rotate } ifelse
+                  }{
+                    /None
+                  } ifelse
+                } ifelse
+                % |- ioro id result attrs key new-result
+                4 -1 roll pop 3 1 roll
+                % |- ioro id new-result attrs key
+
+                2 index /None eq {
+                  % |- ioro id /None attrs key
+                  pop
+                  % |- ioro id /None attrs
+                  exit
+                } if
+              } if
+            } if
+            % |- ioro id result attrs key
+            pop
+            % |- ioro id result attrs
+          } forall
+
+          % |- ioro id result attrs
+
+          % if it has matched so far, check for MatchAll violations
+          1 index /None ne {
+            dup /MatchAll known { dup /MatchAll get } { false } ifelse
+            {
+              % |- ioro id result attrs
+              dup { % forall attribute keys
+                % |- ioro id result attrs key attr-value
+                pop
+                % |- ioro id result attrs key
+                % check it is not one of the control keys
+
+                true
+                { /MatchAll /MaxPageSize /MinPageSize /RasterBBox } { % forall
+                        % |- ioro id result attrs key bool ?key
+                        2 index ne and
+                } forall % keys we can ignore
+                % |- ioro id result attrs key bool
+                {
+                  % |- ioro id result attrs key
+                  null currentdict 2 index known {
+                    pop currentdict 1 index get
+                  } if
+                  null eq {
+                    % key is not explicitly present in page device when
+                    % MatchAll requires it to be there, so the match fails
+                    % |- ioro id result attrs key
+                    pop exch pop /None exch
+                    % |- ioro id /None attrs
+                    exit
+                  } if
+                  % |- ioro id result attrs key
+                } if
+                % |- ioro id result attrs key
+                pop
+                % |- ioro id result attrs
+              } forall
+            } if
+            % |- ioro id result attrs
+          } if
+
+          % |- ioro id result attrs
+          % if it still matches record it for posterity
+          1 index /None ne {
+            % |- ioro id result attrs
+            Private /Matches get 3 index 3 index put
+          } if
+          % |- ioro id result attrs
+          exch pop
+          % |- ioro id attrs
+        } if
+        % |- ioro id attrs
+        pop pop
+        % |- ioro
+      } forall % input or output attributes
+
+      % |- ioro
+      % we now have a dictionary of candidate matches in Private, containing
+      % attribute id versus /Normal or /Rotate according to the orientation
+      % of the match: decide what to do depending on how many of them we have.
+
+      Private begin
+        Matches length dup 1 eq {
+          % exactly one match: remember it. If this was as a result of an
+          % approximate page size match, we need to record that for policy report
+          % |- ioro length
+          pop
+          State /ApproxMatch eq {
+            % no need to go through the pain of matching sizes,
+            % but we do need to fit if policy 3 or 4
+            % |- ioro
+            /Fit false def
+            currentpagedevice /Policies known {
+              currentpagedevice /Policies get dup /PageSize known {
+                /Fit 1 index /PageSize get dup 3 eq exch 4 eq or def
+              } if
+              pop
+            } if
+          } if
+
+          Matches {} forall % only iterates once!
+          % |- ioro id normal-or-rotate
+          2 index /InputAttributes eq {
+            /Rotate 1 index /Rotate eq def
+          } if
+          % |- ioro id normal-or-rotate
+          pop def
+          % |-
+          State /ApproxMatch eq {
+            ReportPolicy /PageSize Policies /PageSize get put
+          } if
+        }{
+          % |- ioro length
+          0 eq {
+            % no matches: indicate this so we can try the various other things
+            % listed on RB2 page 248: put /None in Private to indicate
+            % this is required
+            % |- ioro
+            /None def
+            % |-
+          }{
+            % several matches: either use Priority; the first entry in the
+            % Priority array to be present in the matched array is the one
+            % to use,
+            % OR select by nearest or next largest if matching approximately
+
+            % |- ioro
+            State /ApproxMatch eq {
+              % |- ioro
+              Matches //approxmatch exec
+              % |- ioro id(or /None)
+            }{
+              % |- ioro
+              false
+              currentpagedevice 2 index get
+              % |- ioro false attributes
+
+              dup /Priority known {
+                % |- ioro false attributes
+                /Priority get { % forall Priority
+                  % |- ioro false priority-id
+
+                  Matches 1 index known
+                  % |- ioro false priority-id bool
+                  {
+                    exch pop true exit
+                    % |- ioro priority-id true
+                  } if
+                  pop
+                  % |- ioro false
+                } forall
+              }{
+                % no Priority entry in attributes
+                % |- ioro false attributes
+                pop
+              } ifelse
+
+              % |- ioro [id true]|[false]
+              not {
+                % no priority (either no Priority entry, or empty array, or
+                % none of the entries in it match the candidates):
+                % arbitrarily select one
+                % |- ioro
+                Matches { pop exit } forall
+                % |- ioro id
+              } if
+              % |- ioro id
+            } ifelse % ApproxMatch
+            % |- ioro id
+
+            1 index /InputAttributes eq {
+              Matches 1 index get
+              /Rotate exch /Rotate eq def
+            } if
+            def
+            % |-
+          } ifelse
+        } ifelse
+      end % Private
+    end % currentpagedevice
+  } bind def
+
+  % -------------------------------------------------------------------
+  /mergecompositeparents <<
+    /ColorantDetails null
+  >> def
+
+  /mergecomposite { % |- input-dict key
+    2 copy known {
+      % key present in input-dict
+      % |- input-dict key
+      currentpagedevice
+      % |- input-dict key pagedevice
+      % assume pagedevice contains the required key
+      dup 2 index known {
+        % |- input-dict key pagedevice
+        1 index get
+        % |- input-dict key composite-dict
+        begin
+          % |- input-dict key
+          get
+          % insert elements item by item
+          % |- composite-value
+          {
+            % |- value-key value-value
+            //mergecompositeparents 2 index known {
+            % Grotty special case for ColorantDetails in TrappingDetails
+            % Always merge at this level and one more down. Note that we
+            % dont necessarily know the names of any sub-dictionaries - they
+            % are colorant names, so we cant use the general mechanism.
+              exch load begin
+                {
+                  % key value-may-be-dict
+                  dup type /dicttype eq {
+                    currentdict 2 index known {
+                      % merge dictionary contents
+                      1 index load
+                      dup type /dicttype eq {
+                        begin
+                        { def } forall
+                        end
+                        pop
+                      } {
+                        pop
+                        def
+                      } ifelse
+                    } {
+                      def
+                    } ifelse
+                  } {
+                    def
+                  } ifelse
+		} forall
+              end
+            } {
+              def
+            } ifelse
+            % |-
+          } forall
+        end
+      }{
+        % |- input-dict key pagedevice
+        % not present in pagedevice: insert it
+        3 copy pop get
+        % |- input-dict key pagedevice composite-value
+        exch 3 1 roll
+        % |- input-dict pagedevice key composite-value
+        put pop
+        % |-
+      } ifelse
+    }{
+      % not relevant
+      % |- input-dict key
+      pop pop
+      % |-
+    } ifelse
+  } bind def
+
+  % -------------------------------------------------------------------
+  % This is the list of pagedevice keys which should not be replaced
+  % bodily, but merged using mergecomposite.  Not all are merged on every
+  % occasion that some are, i.e. after calling SensePageDevice or
+  % AdjustPageDevice or OperatorActions, as opposed to normal key merging.
+  % The numeric values permit nested control over the sets which are
+  % merged.
+  % Private is in here because it must be neither bodily replaced or
+  % merged, and has a negative numeric value to reflect this.
+
+  /mergecompositekeys <<
+    /InputAttributes            20
+    /OutputAttributes           20
+    /SeparationDetails          20
+    /Policies                   10
+    /ExtraPageDeviceKeys         0
+    /ExtraMediaSelectionKeys     0
+    /StartJob                    0
+    /EndJob                      0
+    /StartRender                 0
+    /EndRender                   0
+    /StartPartialRender          0
+    /StartPainting               0
+    /StartImage                  0
+    /StartVignette               0
+    /EndImage                    0
+    /EndVignette                 0
+    /TrappingDetails             0
+    /Private                    -1
+    /OverrideKeys               -1
+  >> def
+
+  /mergecompositelist {                 % |- dict numeric
+    //mergecompositekeys {              % |- dict numeric key val
+      2 index ge {                      % |- dict numeric key domerge
+        2 index exch                    % |- dict numeric dict key
+        //mergecomposite exec           % |- dict numeric
+      } {                               % |- dict numeric key
+        pop                             % |- dict numeric
+      } ifelse                          % |- dict numeric
+    } forall
+    pop                                 % |- dict
+  } bind def
+
+
+  % --------------------------------------------------------------------
+
+  /mediapolicies1 {
+    % what to do in the first instance (para 1 page 248) if we do not
+    % have any media matches
+    % |- ioro(/InputAttributes or /OutputAttributes)
+
+    currentpagedevice
+    % |- ioro pagedevice
+    dup /Policies known {
+      % |- ioro pagedevice
+      dup /Policies get
+      % |- ioro pagedevice policies
+      //MediaSelectionKeys {
+        % |- ioro pagedevice policies key ioromatch
+        4 index eq {
+          % it applies to the attribute collection we are studying
+          % |- ioro pagedevice policies key
+          2 copy known {
+            % it is present in policies
+            % |- ioro pagedevice policies key
+            2 copy get
+          }{
+            % try PolicyNotFound
+            1 index /PolicyNotFound known {
+              1 index /PolicyNotFound get
+            }{
+              0 % no idea
+            } ifelse
+          } ifelse
+
+          % |- ioro pagedevice policies key policy-code
+          1 eq {
+            % it is the ~ignore~ policy code
+            % |- ioro pagedevice policies key
+            3 copy exch pop
+            % |- ioro pagedevice policies key pagedevice key
+            known {
+              3 copy exch pop get type /nulltype ne {
+                % it is present in pagedevice and not already null, therefore
+                % to be made null:
+                % make a note that we are going to act on the policy
+                % for later reporting
+                % |- ioro pagedevice policies key
+                2 index /Private get /ReportPolicy get 1 index 1 put
+                % |- ioro pagedevice policies key
+                3 copy exch pop
+                % |- ioro pagedevice policies key pagedevice key
+                null put
+              } if
+            } if
+            % |- ioro pagedevice policies key
+          } if
+        } if
+        % |- ioro pagedevice policies key
+        pop
+        % |- ioro pagedevice policies
+      } forall
+      % |- ioro pagedevice policies
+      pop
+    } if
+    % |- ioro pagedevice
+    pop pop
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /mediapolicies2 {
+    % second attempt at patching up media request to make it work as per
+    % 4th paragraph on RB2 p248.
+    % returns a boolean saying whether it did anything or not.
+
+    % |- ioro(/InputAttributes or /OutputAttributes)
+    false exch
+    currentpagedevice
+    % |- bool ioro pagedevice
+    dup /Policies known {
+      % |- bool ioro pagedevice
+      dup /Policies get
+      % |- bool ioro pagedevice policies
+      //MediaSelectionKeys {
+        % |- bool ioro pagedevice policies key ioromatch
+        4 index eq {
+          % it applies to the attribute collection we are studying
+          % |- bool ioro pagedevice policies key
+          2 copy known {
+            % it is present in policies
+            % |- bool ioro pagedevice policies key
+            2 copy get
+          }{
+            1 index /PolicyNotFound known {
+              1 index /PolicyNotFound get
+            }{
+              0 % no idea
+            } ifelse
+          } ifelse
+
+          % |- bool ioro pagedevice policies key policy-code
+          2 eq {
+            % it is the ~operator intervention~ policy code
+            % |- bool ioro pagedevice policies key
+
+            3 copy exch pop
+            % |- bool ioro pagedevice policies key pagedevice key
+            known {
+              3 copy exch pop get type /nulltype ne {
+                % it is present in pagedevice and not null, therefore operator intervene:
+                % make a note that this has been done for policy reporting
+                % |- bool ioro pagedevice policies key
+
+                2 index /Private get /ReportPolicy get 1 index 2 put
+                % |- bool ioro pagedevice policies key
+
+                % put on the stack thekey and value requested
+                dup     % the key with the #2 policy code
+                3 index 1 index get % its requested value
+
+                % |- bool ioro pagedevice policies key key value
+                //operatorpagedevice exec
+
+                % |- bool ioro pagedevice policies key
+                //sensepagedevice exec
+                dup length 0 gt {
+                  20 //mergecompositelist exec
+                } if
+                pop
+                % |- bool ioro pagedevice policies key
+
+                % set the result
+                5 -1 roll pop true 5 1 roll
+              } if
+            } if
+          } if
+          % |- bool ioro pagedevice policies key
+        } if
+        % |- bool ioro pagedevice policies key
+        pop
+        % |- bool ioro pagedevice policies
+      } forall
+      % |- bool ioro pagedevice policies
+      pop
+    } if
+    % |- bool ioro pagedevice
+
+    pop pop
+    % |- bool(result)
+  } bind def
+
+  % --------------------------------------------------------------------
+
+  /matchpolicies { % |- input-key input-value pagedevice
+    % key not present in pagedevice - invoke policies
+    begin
+      % |- input-key input-value
+      Policies
+      % |- input-key input-value policies
+
+      dup 3 index known {
+        2 index get
+        % |- input-key input-value policy-code
+      }{
+        dup /PolicyNotFound known { /PolicyNotFound get } { pop 0 } ifelse
+        % |- input-key input-value policy-code
+      } ifelse
+
+      dup
+      % |- input-key input-value policy-code policy-code
+      % switch on policy-code
+      {
+        % case 0: generate configurationerror
+        {
+          % |- input-key input-value policy-code
+          pop $error
+          % |- input-key input-value $error
+
+          [ 4 -2 roll ] /errorinfo exch
+          % |- $error /errorinfo key-value-array
+          put
+          % |- bool input-dict pagedevice
+          pop exch pop
+          % |- input-dict
+          //systemdict /setpagedevice get
+          /configurationerror //systemdict /.error get exec
+        }
+
+        % case 1: ignore
+        % |- input-key input-value policy-code
+        {} % do nothing
+
+        % case 2: request action from operator
+        % |- input-key input-value policy-code
+        {
+          3 copy pop
+          //operatorpagedevice exec
+        }
+      }
+      exch get exec
+
+      % |- input-key input-value policy-code
+      % add to dictionary for reporting policies
+      exch pop
+      % |- input-key policy-code
+      Private /ReportPolicy get 3 1 roll put
+      % |-
+    end % pagedevice
+  } bind def % matchpolicies
+
+  % --------------------------------------------------------------------
+
+  % currentdict is currentpagedevice
+  /matchInputAttributes  { % | - bool true if succeeded false if failed
+
+    false
+    { % loop
+        Private /State /ExactMatch put
+        /InputAttributes //mediamatch exec
+        Private /InputAttributes get /None ne {
+          pop true exit
+        } if
+
+        % no match: consult policies
+        /InputAttributes //mediapolicies1 exec
+        /InputAttributes //mediamatch exec
+        PageSize null eq {
+          % if PageSize was ignored page 248 says it should not be left
+          % null but be the actual size selected - in any case, if it
+          % is left as null, resetpagedevice couldnt do its job
+          InputAttributes Private /InputAttributes get get
+          /PageSize get % assume it exists - it should do - but it may
+                        % have zeros in it
+          dup aload pop 0 le exch 0 le or {
+            /PageSize [
+              3 -1 roll aload pop
+              exch dup 0 le { pop Private /PageSize get 0 get } if
+              exch dup 0 le { pop Private /PageSize get 1 get } if
+            ] def
+          }{
+            /PageSize exch def
+          } ifelse
+
+          % copy PageSize into Private dict...
+          Private /PageSize PageSize put
+        } if
+        Private /InputAttributes get /None ne {
+          pop true exit
+        } if
+
+        % still no match
+        /InputAttributes //mediapolicies2 exec not {
+
+          % no operator intervention, try PageSize extended options
+          Policies /PageSize known {
+            Policies /PageSize get 3 ge currentdict /OriginalInputAttributes known not and {
+              % OriginalInputAttributes is only defined, if we are examining the tray pointed to by MediaPosition.
+              % In here only if OriginalInputAttributes is not defined, ie we are looking at all the trays.
+              Private /State /ApproxMatch put
+              /InputAttributes //mediamatch exec
+              Private /InputAttributes get /None ne {
+
+                % adjust page size for any max and min exceeded
+                InputAttributes Private /InputAttributes get get
+                PageSize aload pop
+                % attrs px py
+
+                % get min and max (default if necessary)
+                2 index /MinPageSize known {
+                  2 index /MinPageSize get aload pop
+                  ExtraOrientation Orientation add 1 and 1 eq {
+                    exch
+                  } if
+                }{
+                  0 0
+                } ifelse
+                % attrs px py minx miny
+                4 index /MaxPageSize known {
+                  4 index /MaxPageSize get aload pop
+                  ExtraOrientation Orientation add 1 and 1 eq {
+                    exch
+                  } if
+                }{
+                  3 index 3 index
+                } ifelse
+                % attrs px py minx miny maxx maxy
+
+                % Check that MaxPageSize entries not zero.
+                dup 0 eq {
+                  pop 3 index
+                } if
+                exch
+                dup 0 eq {
+                  pop 4 index
+                } if
+                exch
+
+                % compare page with min and max in x and y
+                5 -1 roll 2 copy gt { exch } if pop
+                % attrs px minx miny maxx pyn
+                3 -1 roll 2 copy lt { exch } if pop
+                % attrs px minx maxx pyn
+                3 1 roll 4 -1 roll % px pyn minx maxx
+                % attrs pyn minx maxx px
+                2 copy gt { exch } if pop
+                % attrs pyn minx pxn
+                2 copy lt { exch } if pop
+                % attrs pyn pxn
+
+                % redefine PageSize if it needs to change
+                exch PageSize aload pop
+                % attrs pxn pyn px py
+                2 index ne exch 3 index ne or {
+                  /PageSize [ 3 index 3 index ] def
+                  % copy PageSize into Private dict...
+                  Private /PageSize PageSize put
+                } if
+                pop pop pop
+
+                pop true exit % it worked!
+              } if
+            }{
+              % PageSize Policies is 0, 1 or 2
+              exit
+            } ifelse
+          } if
+        } if
+      } loop
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % renderproc is the procedure which actually invokes rendering.
+  %  It is used as the operand to the pagedevice operator.
+
+  /renderproc {
+    % |- mcopies torip
+    % We get given the MultipleCopies devparam and the number of copies to use.
+    % Note that to override this with a StartRender procedure it needs to modify
+    % NumCopies in statusdict. Note that otherwise it would not necessarily work
+    % since it can not (should not) really override what is in the pagedevice.
+    //statusdict /NumCopies 3 -1 roll put
+    % |-
+    currentpagedevice /StartRender 1183615869 internaldict /runhooks get exec
+    % |-
+    //statusdict /NumCopies get
+    % |- mcopies torip
+    % calculate tocopy given torip
+    dup 0 eq { 0 } { 1 } ifelse 3 -1 roll
+    % |- torip tocopy mcopies
+    /PageBufferType //statusdict /getknown get exec not {
+      /pagedevice //errordict /rangecheck get exec
+    } if
+    /Preview eq {       % So we get at most 1 copy
+      pop exch
+    } {
+      { exch } if
+    } ifelse
+
+    % |- torip tocopy
+    //setparamdict { pop //setparamdict exch undef } forall
+    mark exch (%pagebuffer%) exch
+    //setparamdict begin
+      /Password 0 def
+      /NumCopies exch def
+      /JobName statusdict begin jobname end dup type /stringtype ne {
+        pop currentpagedevice /JobName get dup type /stringtype ne {
+          pop (Untitled)
+        } if
+      } if def
+
+      currentdict
+    end
+    { setdevparams } stopped cleartomark
+
+    % |- torip
+    //statusdict begin
+      /jobstate (printing) def
+      0 setblink
+      sendprinterstate
+    end
+
+    % |- torip
+    1183615869 internaldict /renderbands get exec % <----- WOW! REAL WORK
+
+    //statusdict begin
+      /jobstate (busy) def
+      1 setblink
+      sendprinterstate
+    end
+
+    currentpagedevice /EndRender 1183615869 internaldict /runhooks get exec
+  } bind def
+
+  % ----------------------------------------------------------------------
+  /complementarycolors << % complementary colors, used by DefaultScreenAngles
+    /Gray /Black 2 copy exch
+    /Cyan /Red 2 copy exch
+    /Magenta /Green 2 copy exch
+    /Yellow /Blue 2 copy exch
+  >> def
+
+   % Default colorant, used by DefaultScreenAngle
+  /defaultcolorant << /Default -2 >> def
+
+  % ----------------------------------------------------------------------
+
+  /OverrideValues 32 dict def % Holds values to restore when a key is being
+                              % overridden with the OverrideKeys mechanism.
+
+  % ----------------------------------------------------------------------
+  %  getlanguagelevel --> languagelevel (integer)
+  %  Puts the PostScript language level on the stack
+  /getlanguagelevel {
+      systemdict /languagelevel known {
+         systemdict /languagelevel get
+      } {
+         1
+      } ifelse
+  } bd
+
+  % ----------------------------------------------------------------------
+  % the following procedures are extracted from internaldict in C
+
+  1183615869 internaldict begin
+
+  % ----------------------------------------------------------------------
+  /callbackcurrentpagedevice {
+    % does nothing since SeparationOrder and SeparationColorNames superseded Tones
+  } bind def
+
+  % ----------------------------------------------------------------------
+  % Bug 7618; these dicts are used to specify keys who should NOT be
+  % passed FROM ExtraPageDeviceKeys to the %pagebuffer% device.
+  % The empty dict is used normally.
+  %
+  /skipkeysemptydict << >> def
+
+  % ----------------------------------------------------------------------
+
+  % wl pagedevicedict mediadimension width/length
+  % wl = 0 => width, = 1 => length
+  % NOTE: width is always in the fast scan (x) direction irrespective of the
+  % orientation of the media. This is by definition in Adobe extensions eg for
+  % Emerald
+  /mediadimension [/Width /Height] bind def
+  /mediadimension {
+    dup begin
+      % | wl dict
+      InputAttributes Private /InputAttributes get get
+      begin
+        % | wl dict
+        PageSize 2 index get
+        % | wl dict size
+        dup 0 le {
+          currentdict /MaxPageSize known {
+            pop MaxPageSize 2 index get
+          } if
+        } if
+
+        % | wl dict size
+        dup 0 le {
+          % everything is unlimited, so return raster width + margins
+          pop
+          %dup /Private get 2 index 0 eq {/Width}{/Height} ifelse get
+          dup /Private get //mediadimension 3 index get get
+          % | wl dict wh
+          Margins 3 index get
+          0
+          % | wl dict wh margin 0
+          Margins length 4 eq {
+            pop Margins 4 index 2 add get
+          } if
+          % | wl dict wh margin integer
+          % left and right margin - in pixels, so convert to points
+          HWResolution 5 index get 72 div exch 1 index div 3 1 roll div exch
+          add add % -> lm + pw + rm
+          % this may be negative if the margins are large and negative, which
+          % can happen, either directly in PostScript, or if we know nothing
+          % about the media but we are given essentially arbitrary margins
+          dup 0 lt {
+            pop 0
+          } if
+        } if
+      end % inputattributesdict
+    end % pagedevicedict
+    3 1 roll pop pop
+  } bind def
+
+  % ----------------------------------------------------------------------
+
+  /resetpagedevice {
+    % bool resetpagedevice -
+
+    % this routine is analagous to the former setthepage: called whenever
+    % changes have been made to the page device. The bool parameter says whether the
+    % rest is initializing (true) or only reinitializing after Install (false)
+    % the pagedevice
+
+    //setparamdict { pop //setparamdict exch undef } forall
+    mark (%pagebuffer%)
+    //setparamdict begin
+      /Password 0 def
+      /PageBufferType currentpagedevice /PageBufferType get def
+      currentdict
+    end
+    { setdevparams } stopped cleartomark
+
+    % set up parameters for pagedevice and call it, then send some device
+    % parameters
+
+    % first operand, bool, on stack already
+    currentpagedevice begin
+      Private begin
+        Matrix
+        Width  XRes mul ceiling cvi
+        Height YRes mul ceiling cvi
+      end
+    end
+    //renderproc pagedevice
+    % Reload the matrix back into Matrix, since it gets cleaned
+    currentpagedevice begin
+      Private begin
+        Matrix defaultmatrix pop
+      end
+    end
+
+    % Tell the output device various things
+    mark currentpagedevice /Private get begin
+      /Password 0
+
+      /XResolution XRes 72 mul cvi
+      /YResolution YRes 72 mul cvi
+
+      /XResFrac XRes 72 mul dup cvi sub cvr
+      /YResFrac YRes 72 mul dup cvi sub cvr
+
+      /AdvanceDistance //statusdict /getknown get exec
+      {
+        dup type /arraytype eq { aload pop }{ 0 } ifelse
+      }{
+        0 0
+      } ifelse
+      % |- pre-feed pst-feed
+
+      % If XFeed is true, then the advance distance needs to be based on the XRes
+      /XFeed //statusdict /getknown get exec not { false } if
+      { XRes } { YRes } ifelse
+      % |- pre-feed pst-feed xyres
+      exch 1 index
+      % |- pre-feed xyres pst-feed xyres
+      mul round cvi /AdvanceAfter  exch 4 2 roll
+      mul round cvi /AdvanceBefore exch
+
+      currentpagedevice /MediaOffset known {
+        /MediaOffset currentpagedevice /MediaOffset get
+      } if
+
+      currentpagedevice /Exposure known {
+        /Exposure currentpagedevice /Exposure get
+      } if
+
+      /MediaWidth 0 currentpagedevice //mediadimension exec XRes mul ceiling cvi
+      /MediaHeight 1 currentpagedevice //mediadimension exec YRes mul ceiling cvi
+
+      /InputAttributes InputAttributes
+      /OutputAttributes OutputAttributes
+
+      currentpagedevice /NegativePrint known {
+        /NegativePrint currentpagedevice /NegativePrint get
+      } if
+
+      % margins
+      /LeftMargin LeftMargin
+      /TopMargin TopMargin
+      /RightMargin RightMargin
+      /BottomMargin BottomMargin
+
+      /JobName statusdict begin jobname end dup type /stringtype ne {
+        pop currentpagedevice /JobName get dup type /stringtype ne {
+          pop (Untitled)
+        } if
+      } if
+
+      /PageBufferId //statusdict /getknown get exec {
+        /PageBufferId exch
+      } if
+
+      /InsertSheet //statusdict /getknown get exec {
+        /InsertSheet exch
+      } {
+        /InsertSheet false
+      } ifelse
+
+      1 /ResamplingFactor //statusdict /getknown get exec { exch pop } if
+      /ResamplingFactor exch
+
+      % When accelerating, RunLength is controlled by ScreeningLate. Also if accelerating but not
+      % late, we must force the depth to 1.
+      % ScreeningLate and /Accelerator are not pagebuffer parameters themselves. Note that
+      % some of this was previously done in C in devops.c
+
+
+      /RasterDepth currentpagedevice /ValuesPerComponent get dup 2 eq {
+        pop 1
+      } {
+        dup 256 eq {
+          pop 8
+        } {
+          dup 1024 eq {
+            pop 10
+          } {
+            dup 4096 eq {
+              pop 12
+            } {
+              dup 16 eq {
+                pop 4
+              } {
+                4 eq {
+                  2
+                } {
+                  16
+                } ifelse
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      } ifelse
+
+      /RunLength dup //statusdict /getknown get exec dup { pop } if
+
+      /ScreeningAccelerator //statusdict /getknown get exec {
+        length 0 gt {
+          pop /ScreeningLate //statusdict /getknown get exec dup { pop } if
+          % force 1 bit output when early accelerated screening:
+          dup not {
+            3 -1 roll
+            pop 1
+            3 1 roll
+          } if
+        } if
+      } if
+
+      /RunOverlap true
+
+      /InterleavingStyle currentpagedevice /InterleavingStyle get
+
+      /ColorantFamily ColorantFamilyName
+
+      % raster format is negative if it is an old-style plugin with
+      % explicit color types: we need this because there may be no Tones value
+      % set at all by the old style plugin which would otherwise distinguish it as such
+      currentpagedevice /SeparationDetails get /RasterFormat get
+      /ColorType 1 index 0 gt { 0 } { 1 } ifelse
+      currentdict /Tones known {
+        pop
+        currentpagedevice /SeparationDetails get /CompositeColorNames get length
+        dup 1 eq {
+          pop
+          currentpagedevice /ValuesPerComponent get 2 eq { 1 } { 2 } ifelse
+        }{
+          currentpagedevice /InterleavingStyle get 2 mul
+            % => 4, 6 or 8 for pixel, band or frame, which is right for CMYK.
+          exch 3 eq { 1 sub } if
+        } ifelse
+      } if
+
+      /RasterFormat 4 -1 roll abs 1 sub
+
+    end % Private
+
+    % |- mark <lots of key/value pairs>
+    % each of these is sent separately because if the plugin fails to
+    % accept them we would kill the whole setdevparams
+
+    counttomark 2 idiv {
+      //setparamdict { pop //setparamdict exch undef } forall
+      //setparamdict 3 1 roll put //setparamdict /Password 0 put
+      mark (%pagebuffer%) //setparamdict { setdevparams } stopped {
+        % UVM(%%%%[ Warning: pagebuffer rejected %s ]%%%%)
+        (%%[ Warning: pagebuffer rejected ) print
+        //setparamdict {
+          exch dup /Password eq { pop pop }{ =print ( ) print =print } ifelse
+        } forall
+        ( ]%%\n) print
+      } if cleartomark
+    } repeat
+    pop % the mark
+
+    % the pagebuffer may not accept these: ExtraPageDeviceKeys may not
+    % have come from a plugin so the pagebuffer device may not know
+    % about them
+    /ExtraPageDeviceKeys //statusdict /getknown get exec {
+      //skipkeysemptydict
+      exch % skipdict, extrapagedevkeysdict
+      {
+        pop % the default value
+        2 copy known not {  % unknown in the skipdict
+          dup //statusdict /getknown get exec {
+            //setparamdict { pop //setparamdict exch undef } forall
+            //setparamdict 3 1 roll put //setparamdict /Password 0 put
+            mark (%pagebuffer%) //setparamdict { setdevparams } stopped cleartomark
+          } { pop } ifelse
+        } { pop } ifelse
+      } forall
+      pop % the skipdict
+    } if
+
+    % set up the OEMs own device parameters
+    /PageBufferSetup //statusdict /getknown get exec {
+      dup dup type /arraytype eq exch xcheck and {
+        dup exec
+      } if
+      pop
+    } if
+
+    //statusdict /sendprinterstate get exec
+
+  } bind def % resetpagedevice in internaldict
+
+  % ----------------------------------------------------------------------
+
+  /jugglepagedevice {
+    % |- reason-code
+    % 1 = deactivation, 2 = end of job, 3 = end of set, 4 = showpage/copypage
+    statusdict begin
+      /Jog getknown not { 0 } if
+      1 eq {
+        % do whatever is required for Jogging
+      } if
+
+      /AdvanceMedia getknown not { 0 } if
+      1 eq {
+        % do whatever is required to advance the media
+      } if
+
+      /CutMedia getknown not { 0 } if
+      1 eq {
+        % do whatever is required to cut the media
+      } if
+
+      /Duplex getknown not { false } if
+      {
+        % if an odd number of sides, eject the single sided last sheet, on
+        % deactivation only
+      } if
+    end % statusdict
+  } bind def % unsetpagedevice in internaldict
+
+  % ----------------------------------------------------------------------
+
+  /translatepdoperand {
+    % |- pagedevice input-dict, with pagedevice as current dictionary
+
+    % Deal with Separations, ProcessColorModel and SeparationStyle as a special case.
+    % if Separations is explicitly set but ProcessColorModel and/or SeparationStyle is not
+    % we need to default these. Also, we mustnt actually take any notice of Separations
+    % etc if this is being overridden
+
+    dup /Separations known 1 index /Tones known not and {
+      dup /ProcessColorModel known not {
+        dup /Separations get {
+          /ProcessColorModel /DeviceCMYK def
+        }{
+          InterleavingStyle 1 eq { /ProcessColorModel /DeviceGray def } if
+        } ifelse
+      } if
+      dup /SeparationColorNames known not {
+        /SeparationColorNames {} cvlit def
+      } if
+      dup /SeparationOrder known not {
+        /SeparationOrder {} cvlit def
+      } if
+      dup /SeparationDetails known not {
+        /SeparationDetails SeparationDetails dup length dict copy dup
+          /SeparationStyle Separations { 1 }
+            { InterleavingStyle 1 eq { 0 }{ 4 } ifelse } ifelse put def
+      } if
+    } if
+
+    % reinstate ProcessColorModel if working in composite and InterleavingStyle
+    % is not also given at the same time
+
+    dup /InterleavingStyle known not Separations not and {
+      /ProcessColorModel Private /PreviousProcessColorModel get def
+    } if
+
+    % Now translate Tones if it is explicitly given - Tones is now deprecated, but will
+    % still appear in lots of old code
+    dup /Tones known {
+
+      % check for contradictory input: most likely cause
+      % is currentpagedevice setpagedevice
+
+      dup /InterleavingStyle known
+      1 index /ValuesPerComponent known or
+      not {
+
+        Private /Tones true put
+
+        Separations not {
+          /InterleavingStyle 1 % unless we discover differently
+          Tones type /nametype ne Tones null ne and {
+            Tones 0 get /Gray ne {
+              pop
+              Tones 0 get type /integertype eq {
+                4 % frame
+              }{
+                Tones 1 get type /integertype eq { 2 }{ 3 } ifelse % pixel=2 / band=3 (default)
+              } ifelse
+            } if
+          } if
+          def
+        } if
+
+        /ValuesPerComponent 256  % unless we discover differently
+          Separations { pop 2 } if
+          Tones null eq {
+            pop 2
+          }{
+            Tones type /nametype ne {
+              Tones {
+                dup type /integertype eq { exch pop 1 exch bitshift exit } if
+                pop
+              } forall
+            } if
+          } ifelse
+        def
+
+        dup /ProcessColorModel known not {
+          /ProcessColorModel /DeviceGray
+            Tones type /nametype ne {
+              Tones null eq {
+                Separations { pop /DeviceCMYK } if
+              }{
+                Tones 0 get dup type /nametype ne { pop Tones 1 get } if
+                  dup /Red eq 1 index /Green eq or 1 index /Blue eq or {
+                  pop pop /DeviceRGB
+                }{
+                  /Gray ne { pop /DeviceCMYK } if
+                } ifelse
+              } ifelse
+            } if
+          def
+        } if
+
+        dup /SeparationOrder known not {
+          Tones type /nametype eq Tones null eq or {
+            /SeparationOrder [
+              ProcessColorModel /DeviceCMYK eq { { /Cyan /Magenta /Yellow /Black } } if
+              ProcessColorModel /DeviceRGB  eq { { /Red  /Green /Blue } } if
+              ProcessColorModel /DeviceGray eq { { /Gray } } if
+              % other cases should not arise with real world plugins and old style PostScript,
+              % (we are translating Tones here remember), but just in case someone is perverse
+              % enough to try to break it by quoting both Tones and ProcessColorModel of
+              % DeviceN...
+              dup /SeparationOrder eq { {} } if
+              cvlit
+              {
+                dup SeparationDetails /ColorantRender get exch 2 copy known
+                { get 0 eq { pop } if }{ pop pop } ifelse
+              } forall
+            ] def
+          }{
+            % Define SeparationOrder based on Tones array and CSS print settings.
+            /SeparationOrder [
+              Tones {
+                dup type /integertype eq
+                { pop }
+                {
+                  dup SeparationDetails /ColorantRender get exch 2 copy known
+                  { get 0 eq { pop } if }{ pop pop } ifelse
+                } ifelse
+              } forall
+            ] def
+          } ifelse
+        } if
+
+        dup /SeparationColorNames known not ProcessColorModel /DeviceN ne and {
+          /SeparationColorNames [] def
+        } if
+
+        Separations not {
+          SeparationDetails begin
+            /CompositeColorNames [
+              Tones dup null ne {
+                % Tones can take just a name of /Gray so need to check for it
+                % before sucking names out of an array.
+                dup type /nametype ne {
+                  % Add process colorants in the order they appear in Tones array.
+                  { dup type /nametype ne { pop } if } forall
+                } if
+              }{
+                % Use Gray when not separating as per 7.2, para 4 of the Extensions manual.
+                pop /Gray
+              } ifelse
+              % Plus additional colarants
+              % Note: SeparationColorNames should not also contain the PCM
+              % colorants extracted from Tones, but if it does then they will
+              % need to be filtered out.
+              SeparationColorNames aload pop
+            ] def
+            /CompositeOrder SeparationOrder def
+          end
+        } if
+
+        /SeparationDetails SeparationDetails dup length dict copy dup
+          /SeparationStyle Separations {
+            % make it consistent for separating style, but still allow for
+            % colored seps and progressives being set
+            2 copy known {
+              2 copy get
+              dup 0 eq 1 index 4 eq or { pop 1 } if
+            }{ 1 } ifelse
+          }{
+            InterleavingStyle 1 eq { 0 }{ 4 } ifelse
+          } ifelse put def
+
+      } if
+
+    } if
+
+    % If ValuesPerComponent was specified in the input dict, and Halftone was
+    % NOT specified, then default Halftone based on ValuesPerComponent.
+    dup /Halftone known not {
+      dup /ValuesPerComponent known {
+        % Halftone is true if ValuesPerComponent is less than 256. Since all
+        % RLE surfaces are 256 or more components, this will be RLE
+        % compatible, and doesn't need any special cases.
+        dup /ValuesPerComponent get 256 lt /Halftone exch def
+      } if
+    } if
+
+    % Halftone and RLE are incompatible. Halftone is NOT specified in the
+    % input dict. If RunLength is present in the input dict, and is true,
+    % then force Halftone to false
+    dup /RunLength known {
+      dup /RunLength get true eq {
+        /Halftone false def
+      } if
+    } if
+  } bind def % translatepdoperand in internaldict
+
+  % ----------------------------------------------------------------------
+
+  /setpagedevice % really an operator which calls this special PostScript
+                 % (among other tasks)
+  {
+    % operand: a dictionary
+
+    % Define a dummy screen using an internal spot function.
+    10 30 { pop abs 1 exch sub } setscreen
+
+    % 1. Merge with existing dictionary; only change relevant values, that is
+    % those that are already defined. Note if media selections get changed
+    % so we only need to do the matching algorithm in those circumstances
+
+    currentpagedevice begin
+      % If /ReportPolicy exists, empty it of values, otherwise create it.
+      Private /ReportPolicy
+           2 copy known { get dup { pop 1 index exch undef } forall pop }
+                        { 10 dict put } ifelse
+
+      % save away supplied dictionary so that it can be accessed from
+          % e.g. SensePageDevice.
+          Private /RequestDict 2 index put
+
+      % update special cases ---------------------------------------------
+
+      % |- input-dict
+      % Copy the input-dict and cull the keys related to separations under certain
+      % conditions.
+      % - never cull if OverrideSeparations is present in input-dict.
+      % - don't cull if the value in currentpagedevice is false.
+      % The value of OverrideSeparations is typically set to false during page setup
+      % which allows plugin postscript to behave correctly.
+      dup /OverrideSeparations known not {
+        OverrideSeparations { % it's on already in the page device
+          dup /Separations known
+          1 index /SeparationOrder known or
+          1 index /SeparationColorNames known or
+          1 index /ProcessColorModel known or
+          1 index /InterleavingStyle known or
+          1 index /SeparationDetails known or
+          1 index /MaxSeparations known or {
+            dup length dict copy
+            dup /Separations undef
+            dup /SeparationOrder undef
+            dup /SeparationColorNames undef
+            dup /ProcessColorModel undef
+            dup /InterleavingStyle undef
+            dup /SeparationDetails undef
+            dup /MaxSeparations undef
+          } if
+        } if
+      } if
+
+      % NB. This input-dict no longer contains separation related keys that
+      % might have been culled above. This allows currentpagedevice setpagedevice
+      % to be consistent.
+      0 //mergecompositelist exec
+
+      % |- input-dict
+      % insert any new page device keys and media selection keys
+      ExtraPageDeviceKeys {
+        % |- input-dict extrakey extradefaultvalue
+        currentdict 2 index known not {
+          % |- input-dict extrakey extradefaultvalue
+          2 copy def
+          % |- input-dict extrakey extradefaultvalue
+          ExtraMediaSelectionKeys 2 index known {
+            % |- input-dict extrakey extradefaultvalue
+            //MediaSelectionKeys 2 index
+            % |- input-dict extrakey extradefaultvalue mediakeys extrakey
+            ExtraMediaSelectionKeys 4 index get put
+            % |- input-dict extrakey extradefaultvalue
+          } if
+        } if
+        pop pop
+      } forall
+
+      % |- input-dict
+      % remember the current setting of ProcessColorModel in case we have
+      % to reverse a setting because we are in composite
+      Private /PreviousProcessColorModel ProcessColorModel put
+
+      % |- input-dict
+      % Walk OverrideKeys, storing the original values for those keys to be
+      % overridden. That way we can restore them later.
+
+      OverrideKeys
+      % |- input-dict overridekeys
+      {
+        {
+          dup load
+          % |- input-dict key value
+          //OverrideValues 3 1 roll put
+        } { pop }
+        ifelse
+      }
+      forall
+
+
+      % |- input-dict
+      % The Preseparation dictionary may contain color information suitable for
+      % setinterceptcolorspace. This use has been deprecated, but we support
+      % it for the moment. We only call setinterceptcolorspace on this, one, call
+      % to setpagedevice that contains it. That allows future calls to
+      % setinterceptcolorspace to work as you would expect.
+      % Don't call setinterceptcolorspace if the value is null, because that
+      % would result in clearing all intercept values.
+      dup /Preseparation known {
+        dup /Preseparation get dup null ne {setinterceptcolorspace} {pop} ifelse
+      } if
+
+      % |- input-dict
+      % Merge the rest of the fields with our existing page device dictionary
+
+      currentdict 1 index
+      % |- input-dict pagedevice input-dict
+      { % |- input-dict pagedevice input-key input-value
+        2 index 2 index known {
+          % |- input-dict pagedevice input-key input-value
+          % replace non-special case items
+          exch dup
+
+          % |- input-dict pagedevice input-value input-key input-key
+          //mergecompositekeys exch known not
+          {
+            % ordinary key - replace it bodily (we know it exists
+            % in pagedevice); for zero or negative page dimensions,
+            % replace request with existing value: this probably means they~ve
+            % picked the value straight out of InputAttributes and fed it back
+            % in to select a specific known cassette with a free dimension
+            % |- input-dict pagedevice input-value input-key
+            dup /PageSize eq {
+              % |- input-dict pagedevice input-value input-key
+              exch
+              % |- input-dict pagedevice input-key input-value
+              dup 0 get 0 le {
+                [ exch aload pop
+                  % |- input-dict pagedevice input-key mark 0 y
+                  exch pop
+                  % |- input-dict pagedevice input-key mark y
+                  3 index /PageSize get 0 get exch
+                  % |- input-dict pagedevice input-key mark x y
+                ]
+              } if
+
+              % |- input-dict pagedevice input-key input-value~
+              dup 1 get 0 le {
+                [ exch aload pop pop 3 index /PageSize get 1 get ]
+              } if
+              % |- input-dict pagedevice input-key input-value~~
+              exch
+            } if
+            % |- input-dict pagedevice input-value input-key
+
+            % here~s the replacement:
+            3 copy exch put
+            % |- input-dict pagedevice input-value input-key
+          } if
+        }{
+          % |- input-dict pagedevice input-key input-value
+          % no match: consult the policies dictionary for advice
+          2 copy 4 index
+          % |- input-dict pagedevice input-key input-value
+          %                                input-key input-value pagedevice
+          //matchpolicies exec
+          % |- input-dict pagedevice input-key input-value
+        } ifelse
+
+        % |- input-dict pagedevice input-key input-value
+        pop pop
+        % |- input-dict pagedevice
+      } forall
+      % |- input-dict pagedevice
+
+      % Deal with Separations, ProcessColorModel and SeparationStyle as a special case.
+      % and translate Tones into the new method of setting up colorants
+
+      exch //translatepdoperand exec
+
+      exch
+
+      % |- input-dict pagedevice
+
+      % explicitly set Post and PreRenderingEnhance to true, whatever we are told
+      % because we dont want to let applications reduce the number of steps
+      % in their blends. Do it before sensepagedevice so that we have an
+      % opportunity to change it in the field if this proves undesirable
+      % later for some reason.
+
+      true
+      2 copy /PreRenderingEnhance exch put
+      2 copy /PostRenderingEnhance exch put
+      pop
+
+      % now look at the device itself; this may override what the user has
+      % just set, but typically will only set Input/Output Attributes
+      % |- input-dict pagedevice
+
+      Private /PreviousProcessColorModel ProcessColorModel put
+
+      % Reinstate the original values of those keys which have the corresponding
+      % flag set in OverrideKeys. Once we have done that, set any new values in
+      % the OverrideKeys dictionary. Special-cased because the normal
+      % mergecomposite behaviour is not what we want.
+
+      //OverrideValues { def } forall
+
+      exch dup /OverrideKeys known {
+        /OverrideKeys get {
+          OverrideKeys 2 index known {
+            dup type /booleantype ne {
+              //systemdict /$error get /ErrorParams get /errorinfo
+                [ null UVS(OverrideKeys must be boolean) ] put
+              //systemdict /setpagedevice get
+              /typecheck //systemdict /.error get exec
+            } if
+            OverrideKeys 3 1 roll put
+          } { pop pop }
+          ifelse
+        } forall
+      } { pop }
+      ifelse
+
+      //OverrideValues { pop //OverrideValues exch undef } forall
+
+      //sensepagedevice exec
+      % |- pagedevice sense-dict
+
+      10 //mergecompositelist exec
+
+      exch 1 index
+      % |- sensedict pagedevice sensedict
+
+      { % |- sense-dict pagedevice sense-key sense-value
+        2 index 2 index known {
+          % |- sense-dict pagedevice sense-key sense-value
+          % sense-key is present in pagedevice; replace non-composite items
+          exch dup
+
+          % |- sense-dict pagedevice sense-value sense-key sense-key
+          //mergecompositekeys exch known not
+          {
+            % ordinary key - replace it bodily (we know it exists
+            % in pagedevice); no special action for PageSize this time
+            % |- sense-dict pagedevice sense-value sense-key
+
+            % here~s the replacement:
+            3 copy exch put
+            % |- sense-dict pagedevice sense-key sense-value
+          } if
+        } if
+        pop pop
+      } forall
+      % |- sense-dict pagedevice
+
+      exch //translatepdoperand exec
+
+      pop pop
+
+      % ----------------------------------------------------------------------
+      % 2. Run the media match algorithm
+      % |-
+
+      { % loop
+        Private /State /ExactMatch put
+        /OutputAttributes //mediamatch exec
+        Private /OutputAttributes get /None ne {
+          exit
+        } if
+
+        % no match: consult policies for type 1 policies
+        /OutputAttributes //mediapolicies1 exec
+        /OutputAttributes //mediamatch exec
+        Private /OutputAttributes get /None ne {
+          exit
+        } if
+
+        % still no match: try for policy 2
+        /OutputAttributes //mediapolicies2 exec not {
+          % cannot select an output tray at all: configurationerror
+          % set one at random so at least it doesnt break
+          Private /OutputAttributes
+            OutputAttributes { null ne exit pop } forall put
+          $error /errorinfo [
+            currentdict /OutputType known {
+              /OutputType OutputType
+            }{
+              /OutputAttributes OutputAttributes
+            } ifelse
+          ] def
+          //systemdict /setpagedevice get
+          /configurationerror //systemdict /.error get exec
+        } if
+      } loop
+
+      % now InputAttributes
+
+      % put the orientation and requested page size (oriented accordingly)
+      % into Private so we can munge it, and remember the original page
+      % size too so we can restore it if it gets nulled.
+
+      /Orientation //statusdict /getknown get exec not { 0 } if
+      /ExtraOrientation //statusdict /getknown get exec not { 0 } if
+      add 3 and
+      /Scaling //statusdict /getknown get exec { aload pop } { 1 1 } ifelse
+      PageSize
+      HWResolution aload pop
+      Private begin
+        /YRes exch 72 div def
+        /XRes exch 72 div def
+        /PageSize exch def
+        /ScaleHeight exch def % dont forget this can be negative
+        /ScaleWidth exch def  % ditto
+        /Orientation exch def
+        /Rotate false def
+        /Fit false def
+
+        % Now calculate ReqWidth and ReqHeight. Will have to update these
+        % values later if Rotate key becomes active.
+        % Note : Effect of Orientation is swap width/height but NOT scaleWidth
+        % and scaleHeight
+
+        Orientation 1 and 0 eq {
+          /ReqWidth PageSize 0 get ScaleWidth abs mul def
+          /ReqHeight PageSize 1 get ScaleHeight abs mul def
+        } {
+          /ReqWidth PageSize 1 get ScaleWidth abs mul def
+          /ReqHeight PageSize 0 get ScaleHeight abs mul def
+        } ifelse
+
+        /PagePolicy7 false def
+        currentpagedevice /Policies known {
+          currentpagedevice /Policies get dup /PageSize known {
+            dup /PageSize get 7 eq {
+              /PagePolicy7 true def
+            } if
+          } if
+          pop
+        } if
+
+      end
+
+      % MediaPosition should only be honoured if !PagePolicy7 and !ManualFeed and !DeferredMediaSelection ?
+
+      false % this will change to true if we find a match
+
+      MediaPosition null ne {
+
+        currentpagedevice /InputAttributes get MediaPosition known {
+          pop % false
+          % Save the original InputAttributes. currentdict is currentpagedevice
+          currentdict /OriginalInputAttributes InputAttributes put
+
+          % We force the media matching algorithms only on the tray pointed to by MediaPosition.
+          % If that fails, then we reinstate the original InputAttributes and
+          % perform media matching again.
+
+          % Get the tray described by MediaPosition
+          currentpagedevice /InputAttributes get MediaPosition get %
+          dup length dict exch copy % copy the dict pointed to by MediaPosition in a new dict
+          currentpagedevice /InputAttributes << MediaPosition 5 -1 roll >> put % and store it in InputAttributes
+
+          //matchInputAttributes exec
+          % bool
+
+          % restore original InputAttributes
+          currentpagedevice /InputAttributes currentdict /OriginalInputAttributes get put
+          currentdict /OriginalInputAttributes undef
+
+        } if
+      } if % MediaPosition null
+
+      dup not {
+        % We come straight here, if there is no MediaPosition defined
+        % or the MediaPosition specified did not succeed in a match
+        pop % bool
+        //matchInputAttributes exec
+      } if
+
+      not {
+        % cannot match an input tray at all: configurationerror
+        $error /errorinfo [
+          currentpagedevice /PageSize known {
+            /PageSize PageSize
+          }{
+            /InputAttributes InputAttributes
+          } ifelse
+        ] def
+
+        //systemdict /setpagedevice get
+        /configurationerror //systemdict /.error get exec
+      } if
+
+    end
+
+    %%%> This is where...
+    % ----------------------------------------------------------------------
+    % call the AdjustPageDevice proc if present and executable and so on
+    % ...it may add more keys in the light of the IA matching.
+    %%%> ...used to be. [Bug #5021]
+
+    % ----------------------------------------------------------------------
+    % work out the raster size and the device matrix we need. Bear in mind
+    % that a non-standard Install procedure may want to change the
+    % device matrix (RB2 p238).
+    currentpagedevice begin
+      Private begin
+        Rotate {
+          % the tray match was rotated wrt to the requested page
+          /Orientation Orientation 1 add 3 and def
+          Orientation 1 and 0 eq {
+            /ReqWidth PageSize 0 get ScaleWidth abs mul def
+            /ReqHeight PageSize 1 get ScaleHeight abs mul def
+          } {
+            /ReqWidth PageSize 1 get ScaleWidth abs mul def
+            /ReqHeight PageSize 0 get ScaleHeight abs mul def
+          } ifelse
+        } if
+
+        % this is the size of the tray we matched: this ISNT rotated
+        % because it is the fixed point in our universe.
+
+        currentpagedevice /InputAttributes get InputAttributes get begin
+          0 0 currentdict /MaxPageSize known {
+            pop pop MaxPageSize aload pop
+          } if
+          PageSize aload pop
+        end
+
+        % it is the size of the tray...
+        /Height exch def
+        /Width exch def
+
+        % ...except in policy 7, where it is the requested size..
+        PagePolicy7 {
+          /Width 0 def /Height 0 def
+        } if
+
+        % ...unless it is arbitrary in which case it is the requested size...
+        Height 0 le {
+          /Height ReqHeight def
+          % ...unless it exceeds the maximum if any, in which case it
+          % gets clipped...
+          dup 0 gt {
+            dup Height lt {
+              /Height 1 index def
+            } if
+          } if
+        } if pop
+
+        % likewise for the width
+        Width 0 le {
+          /Width ReqWidth def
+          dup 0 gt {
+            dup Width lt {
+              /Width 1 index def
+            } if
+          } if
+        } if pop
+
+        % now ImagingBBox - which maybe changes the raster size,
+        % matrix and the margins
+        /TopMargin 0 def
+        /BottomMargin 0 def
+        /LeftMargin 0 def
+        /RightMargin 0 def
+
+        /Width2 Width def       % used for handling RasterBBox correctly;
+        /Height2 Height def     % fixed points must be the page corners.
+
+        currentdict /RasterBBox undef
+        currentpagedevice /InputAttributes get
+        Private /InputAttributes get
+        get                     % got the InputAttrs dict
+        /RasterBBox 2 copy known {
+                % if so, use it, and only use ImagingBBox (if any) for clipping.
+                get
+                dup type /arraytype eq
+                { dup length 4 eq } { false } ifelse
+                { /RasterBBox exch def } { pop } ifelse
+        } { pop pop } ifelse
+
+        currentdict /RasterBBox known
+        {       RasterBBox aload pop
+                /TopMargin exch Height exch sub def
+                /RightMargin exch Width exch sub def
+                /BottomMargin exch def
+                /LeftMargin exch def
+                /IBBDirectionLeft -1 def   % always for RasterBBox.
+                /IBBDirectionBottom -1 def
+
+                /Width Width LeftMargin sub RightMargin sub def
+                /Height Height TopMargin sub BottomMargin sub def
+                % leaving Width2, Height2 being the page size.
+
+                false % for the "is there an ImagingBBox" if below.
+        } { /ImagingBBox //statusdict /getknown get exec } ifelse
+        {
+          % ImagingBBox is relative to the original job by rotation
+          % and scaling. One reason this is so fiddly is that you need
+          % the transformation to determine the effect of ImagingBBox but
+          % you need the new width and height to determine the transformation.
+          % This is why the transformation is effectively done explicitly
+          % here on the IBB.
+          aload pop
+          /TopMargin exch ScaleHeight abs mul def
+          /RightMargin exch ScaleWidth abs mul def
+          /BottomMargin exch ScaleHeight abs mul def
+          /LeftMargin exch ScaleWidth abs mul def
+          /IBBDirectionLeft -1 def
+          /IBBDirectionBottom -1 def
+
+          TopMargin BottomMargin lt {
+            /TopMargin BottomMargin /BottomMargin TopMargin def def
+          } if
+          RightMargin LeftMargin lt {
+            /RightMargin LeftMargin /LeftMargin RightMargin def def
+          } if
+
+          /TopMargin Orientation 1 and 0 eq { Height }{ Width } ifelse
+            TopMargin sub dup 0 lt { pop 0 } if def
+          /RightMargin Orientation 1 and 0 eq { Width }{ Height } ifelse
+            RightMargin sub dup 0 lt { pop 0 } if def
+
+          % by analogy with the above, not mentioning the "0 sub"
+          /LeftMargin LeftMargin dup 0 lt { pop 0 } if def
+          /BottomMargin BottomMargin dup 0 lt { pop 0 } if def
+
+          {
+            {}
+            {
+              /LeftMargin BottomMargin /TopMargin RightMargin
+              /RightMargin TopMargin /BottomMargin LeftMargin
+              def def def def
+              /IBBDirectionLeft 1 def
+            }
+            {
+               /IBBDirectionLeft 1 def
+               /IBBDirectionBottom 1 def
+            }
+            {
+              /LeftMargin BottomMargin /TopMargin RightMargin
+              /RightMargin TopMargin /BottomMargin LeftMargin
+              def def def def
+              /IBBDirectionBottom 1 def
+            }
+          } Orientation get exec
+
+          false /MirrorPrint //statusdict /getknown get exec { exch pop } if
+          {
+            /IBBDirectionLeft IBBDirectionLeft neg def
+          } if
+          ScaleWidth 0 lt {
+            Orientation 2 mod 0 eq
+              { /IBBDirectionLeft } { /IBBDirectionBottom } ifelse
+              dup load neg def
+          } if
+          ScaleHeight 0 lt {
+            Orientation 2 mod 0 eq
+              { /IBBDirectionBottom } { /IBBDirectionLeft } ifelse
+              dup load neg def
+          } if
+
+          /Width Width LeftMargin sub RightMargin sub def
+          /Height Height TopMargin sub BottomMargin sub def
+          /Width2 Width def
+          /Height2 Height def
+        } if
+
+
+        % Now the default matrix: remember that transforms work backwards, so
+        % the first one below is the last to be applied.
+        Matrix identmatrix setmatrix
+
+        % points -> device pixel scaling
+        XRes YRes
+        scale
+
+        % apply the natural y-flip to go from
+        % PS (right-handed, O at bottom left) coordinates to raster
+        % coordinates (left-handed, O at top-left). Do this about the
+        % CENTER of the page
+        Width 2 div Height 2 div
+        translate
+        1 -1
+        scale
+        Width 2 div neg Height 2 div neg
+        translate
+
+        % do any translations arising from ImagingBBox
+        BottomMargin 0 ne LeftMargin 0 ne or {
+          LeftMargin IBBDirectionLeft mul BottomMargin IBBDirectionBottom mul
+          translate
+        } if
+
+        % MirrorPrint if required, Do this about the
+        % CENTER of the page
+        false /MirrorPrint //statusdict /getknown get exec { exch pop } if
+        {
+          Width2 2 div Height2 2 div
+          translate
+          -1 1
+          scale
+          Width2 2 div neg Height2 2 div neg
+          translate
+        } if
+
+        % Now rotation. This arises as a composite of the user-requested
+        % Orientation, our additional ExtraOrientation, possibly overridden
+        % by FilmSaving, TimeSaving or an exact media match in the un-natural
+        % direction. Because we rotate about the page lower-left, we need
+        % a translation too to bring it back into view.
+        { { 0 0 } { Width2 0 } { Width2 Height2 } { 0 Height2 } }
+        Orientation get exec
+        translate
+        { 0 90 180 270 } Orientation get
+        rotate
+
+        % anything arising from the Scaling key. Note the Private
+        % variation has them swapped if needed by orientation. Scale
+        % about the origin. We have to bring the page back into view
+        % in either direction if scaling is negative.
+        ScaleWidth 0 lt {
+          Orientation 1 and 0 eq { Width2 } { Height2 } ifelse 0 translate
+        } if
+        ScaleHeight 0 lt {
+          0 Orientation 1 and 0 eq { Height2 }{ Width2 } ifelse translate
+        } if
+        ScaleWidth ScaleHeight
+        Orientation 1 and 0 ne
+        ScaleWidth 0 gt and ScaleHeight 0 gt and
+        { exch } if
+        scale
+
+        % Now any transformation required as a result of page size policies
+        % 3 and 4 which require scale to fit. We never scale up, only down,
+        % but always center whatever. Do the scaling about the center,
+        % maintaining the aspect ration (se we choose the smaller scale factor
+        % less than 1) and calculate a translation vector based on the
+        % vector between raster and page center.
+        Fit {
+          Width 2 div Height 2 div
+          translate
+
+          Width ReqWidth div Height ReqHeight div
+          2 copy gt { exch } if pop
+
+          dup 1.0 le {
+            dup dup
+            scale
+          } if
+          pop
+          Width ReqWidth sub 2 div Height ReqHeight sub 2 div
+          translate
+
+          Width 2 div neg Height 2 div neg
+          translate
+        } if
+
+        Matrix currentmatrix pop
+
+       % margins need to be in device space
+        /LeftMargin LeftMargin XRes mul def
+        /TopMargin TopMargin YRes mul def
+        /RightMargin RightMargin XRes mul def
+        /BottomMargin BottomMargin YRes mul def
+
+        % Now add in device margins from the page device
+        /Margins //statusdict /getknown get exec {
+          pop % Margins as left over from getknown
+          /LeftMargin Margins 0 get LeftMargin add def
+          /TopMargin  Margins 1 get TopMargin add def
+          Margins length 4 eq {
+            /RightMargin  Margins 2 get RightMargin add def
+            /BottomMargin Margins 3 get BottomMargin add def
+          } if
+        } if
+
+        % margins need to be integral
+        /LeftMargin LeftMargin ceiling cvi def
+        /TopMargin TopMargin ceiling cvi def
+        /RightMargin RightMargin ceiling cvi def
+        /BottomMargin BottomMargin ceiling cvi def
+
+        % now check and index the colorants
+
+        % We set up these items in Private:
+        %
+        % - SeparationColorNames: this is an expanded version of the
+        % key given to setpagedevice to include the colorant names
+        % implied by ProcessColorModel, and defines the colorants
+        % which the rip will separate into (subject to being dynamic
+        % addition).
+        %
+        % - SeparationOrder: also an expanded version of the page
+        % device key of the same name. This defines the colorants
+        % which will actually print, and in what order. It must be a
+        % subset of SeparationColorNames. However, composite devices
+        % may require certain channels always to print, and may not
+        % allow spot colors or duplicates. Therefore we may reject
+        % this, or may choose to deliver channels that cannot be
+        % omitted as empty.
+        %
+        % - ColorChannels defines exactly the number of channels on
+        % each output raster. When separating, this will be one for a
+        % monochrome device; exactly the number of channels the device
+        % can handle for composite devices requiring a fixed set of
+        % channels (e.g. a four color ribbon), augmented with spot
+        % color channels where allowed (e.g. extra donor sheets). We
+        % use the devices preferred names for these rather than the
+        % jobs SeparationColorNames for example, except that spot
+        % color names come from the job in most cases.
+        %
+        % - Colorants provides a means of translating colorant names
+        % (which may identify the same actual colorant) in terms of a
+        % unique index. This code assigns the indices.
+        %
+        % - ReservedColorants is created empty. It is populated by
+        % colorant names encountered only in halftone dictionaries,
+        % so that we use the same number in the halftone cache as
+        % for any colorant introduced later for separation.
+        %
+        % - CustomConversions, an array of three procedures for converting
+        % from DeviceGray DeviceRGB and DeviceCMYK to the separation
+        % DeviceN space
+        %
+        % - sRGB, a dictionary mapping colorant names to arrays of three sRGB
+        % values.
+
+        % first work out the _real_ SeparationColorNames:
+
+        /SeparationColorNames [
+          1 {
+            ProcessColorModel /DeviceGray eq { /Gray exit } if
+            ProcessColorModel /DeviceRGB eq { /Red /Green /Blue exit } if
+            ProcessColorModel /DeviceCMYK eq { /Cyan /Magenta /Yellow /Black exit } if
+            ProcessColorModel /DeviceCMY eq { /Cyan /Magenta /Yellow exit } if
+            ProcessColorModel /DeviceRGBK eq { /Red /Green /Blue /Black exit } if
+          } repeat
+          currentpagedevice /SeparationColorNames get aload pop
+        ] def
+
+        % ditto SeparationOrder
+        /SeparationOrder currentpagedevice /SeparationOrder get length 0 eq {
+          SeparationColorNames % the private one
+        }{
+          currentpagedevice /SeparationOrder get
+        } ifelse def
+
+        % is SeparationOrder a subset of SeparationColorNames?
+        SeparationOrder {
+          dup () eq { % Ignore null string.
+            pop null
+          } {
+            SeparationColorNames {
+              1 index eq { pop null exit } if
+            } forall
+          } ifelse
+          null ne  {
+            //systemdict /$error get /ErrorParams get /errorinfo
+              [ null (SeparationOrder not a subset of SeparationColorNames) ] put
+            //systemdict /setpagedevice get
+            /configurationerror //systemdict /.error get exec
+          } if
+        } forall
+
+        % try to identify the colorant family we are separating to from its (real)
+        % SeparationColorNames colors - we must find all of the aliases from the same set
+        % in a colorant family in SeparationColorNames, but not
+        % necessarily vice-versa (because SeparationColorNames may include spot colors).
+        % Note: the order of the colorant indexes produced is important because the
+        % CustomConversions outputs correspond one to one with the colorants listed
+        % for the identified family. Any spot colors are over and above these.
+
+        % make it easy to check for existence of a name in SeparationColorNames
+        /SCNdict <<
+          0 1 SeparationColorNames length 1 sub {
+            dup SeparationColorNames exch get exch
+          } for
+        >> def
+        /l 0 def
+
+        SeparationDetails /ColorantFamilies get {
+          dup /DeviceTypes get {
+            dup /Colorants get
+            dup length l gt { % More specific match?
+              true 1 index { % Iterate over all colorants
+                false exch /Names get { % Look for matching name
+                  SCNdict exch known or dup {exit} if
+                } forall
+                and dup not {exit} if
+              } forall
+              { % All colorants known->matched family
+                /ColorantFamily 3 index def
+                /ColorantFamilyName 3 index /ColorantFamilyName get def
+                /l 1 index length def % length of Colorants
+              } if
+            } if
+            pop pop
+          } forall
+          pop
+        } forall
+
+        % identify which DeviceType of the colorant family to use,
+
+        /ProcessColorantFamily
+          ColorantFamily /DeviceTypes get
+          dup 0 get % the default
+          exch {
+            dup /DeviceType get DeviceType eq 1 index /Plugin get Plugin eq and {
+              exch pop
+              exit
+            } if
+            pop
+          } forall
+        def
+
+        % thence the custom conversions
+        % the skin wraps these conversions in the form of a string which is made
+        % executable and run here. The result should be an array of 3 items as
+        % required. The reason for the Mapped key is because there are occasions
+        % (recombine) when we might want to hang on to a pagedevice from a higher
+        % save level than the (recombined) showpage. Doing it this way, we create
+        % the custom conversions at a low save level so the object in the C structure
+        % is still valid.
+        ProcessColorantFamily /CustomConversionsMapped known not {
+          ProcessColorantFamily /CustomConversions 2 copy get cvx exec put
+          ProcessColorantFamily /CustomConversionsMapped true put
+        } if
+        /CustomConversions ProcessColorantFamily /CustomConversions get def
+
+        % and the process colorants (important for DeviceN)
+        /ProcessColorantBlack null def
+        /ProcessColorants [
+          ProcessColorantFamily /Colorants get {
+            dup /ColorantType get dup dup 1 eq exch 2 eq or { % Process/Black
+              2 eq {
+                dup /Names get {
+                  SCNdict 1 index known {
+                    /ProcessColorantBlack exch def
+                    exit
+                  } { pop } ifelse
+                }forall
+              }if
+
+              /Names get { % Leave name on stack
+                SCNdict 1 index known { exit } { pop } ifelse
+              } forall
+            } {
+              pop
+              pop
+            } ifelse
+          } forall
+        ] def
+        /NumProcessColorants ProcessColorants length def
+
+        % Populate Colorants
+
+        currentglobal true setglobal
+          /Colorants 20 dict def
+          /ReservedColorants 10 dict def % ready for sethalftone
+          /sRGB 20 dict def
+          /ColorantPresence 20 dict def  % can colorant be omitted
+        setglobal
+        /NumFixedColorants 0 def
+
+        % First, all the colorants of the device itself
+
+        0 1 ProcessColorantFamily /Colorants get length 1 sub {
+          % |- dtdict i
+          ProcessColorantFamily /Colorants get 1 index get /Names get {
+            % |- dtdict i name
+            Colorants 1 index known not {
+              Colorants 1 index 3 index put
+              1 index NumFixedColorants ge { /NumFixedColorants 2 index 1 add def } if
+              sRGB 1 index ProcessColorantFamily /Colorants get 4 index get /sRGB get
+              aload length currentglobal true setglobal exch array exch setglobal astore put
+            } if
+            pop % name
+          } forall
+          pop % i
+        } for
+
+        % Setup ColorantPresence dictionary based on output devices colorspace, not
+        % the process color space. Keyed on colorant name, value is presence flag.
+
+        SeparationDetails /ColorantFamilies get {
+          dup % |- colfamnam-dict colfamnam-dict
+          /ColorantFamilyName get SeparationDetails /DeviceColorantFamily get eq {
+            exit % |- colfamnam-dict
+          } if
+          pop % |-
+        } forall
+
+        null exch
+
+        /DeviceTypes get % |- null devtypedict-arr
+        {
+          dup % |- null devtypedict devtypedict
+          /DeviceType get DeviceType eq 1 index /Plugin get Plugin eq and {
+            exch pop
+            exit % |- devtypedict
+          } if
+          pop % |- null
+        } forall
+
+        dup null ne {
+          /Colorants get % |- colordict-arr
+          {
+            dup /Presence get exch /Names get {
+              1 index                   % |- presence name presence
+              ColorantPresence 3 1 roll % |- presence cp name presence
+              put                       % |- presence
+            } forall
+            pop                         % |-
+          } forall
+        }{
+          pop
+          ColorantPresence /Gray 2 put
+        } ifelse
+
+        % color channels for the device are identified by CompositeColorNames,
+        % but we need to filter based on CSS print setting and colorant presence
+        % value
+        /ColorChannels [
+          SeparationDetails /CompositeColorNames get
+          {
+            dup
+            SeparationDetails /ColorantRender get exch 2 copy known
+            {
+              get 0 eq {
+                dup ColorantPresence exch 2 copy known
+                {
+                  get 1 eq { pop } if % Colorant channel not required in pgb - remove
+                }{
+                  % CompositeColorName not in ColorantPresence list - leave as is
+                  pop pop
+                } ifelse
+              } if
+            }{
+              % CompositeColorName not in CSS list - awooga, but leave as is for now
+              pop pop
+            } ifelse
+          } forall
+        ] def
+
+        %find ProcessColorantBlack
+        /ProcessColorantBlack null def
+        SeparationDetails /ColorantFamilies get
+        {
+          dup /ColorantFamilyName get
+          SeparationDetails /DeviceColorantFamily get
+          eq {
+            /DeviceTypes get {
+              /Colorants get {
+                dup /ColorantType get 2 eq {
+                  /Names get {
+                    /ProcessColorantBlack exch def
+                    exit
+                  }forall
+                }{pop}ifelse
+                ProcessColorantBlack null ne {exit}if
+              }forall
+              ProcessColorantBlack null ne {exit}if
+            }forall
+          }{pop}ifelse
+          ProcessColorantBlack null ne {exit}if
+        }forall
+
+        % Second, any aliases for the same colors from other devices (process colors only)
+        % Note, this implies that colorants will be associated in the order given with
+        % any intervening spot colors discounted for the purposes of numbering. e.g.
+        % P0 P1 S P2 P3, not P0 P1 S P3 P4.
+
+        ColorantFamily /DeviceTypes get {
+          /l 0 def
+          0 1 2 index /Colorants get length 1 sub {
+            % |- dtdict i
+            1 index /Colorants get 1 index get dup /ColorantType get 3 eq {
+              pop /l l 1 add def
+            }{
+              /Names get {
+                Colorants 1 index known not {
+                  Colorants 1 index 3 index l sub put
+                  1 index NumFixedColorants ge { /NumFixedColorants 2 index 1 add def } if
+                  sRGB 1 index 4 index /Colorants get 4 index get /sRGB get
+                  aload length currentglobal true setglobal exch array exch setglobal astore put
+                } if
+                pop
+              } forall
+            } ifelse
+            pop
+          } for
+          pop
+        } forall
+
+        % and add any spot colors from SeparationColorNames, starting from l+1
+        /l NumFixedColorants def
+        SeparationColorNames {
+          Colorants 1 index known not {
+            Colorants 1 index l put
+            /l l 1 add def
+          } if
+          pop
+        } forall
+
+        l NumFixedColorants sub dup
+        SeparationDetails /MaxExtraSpotColorants get gt exch
+        SeparationDetails /MinExtraSpotColorants get lt or
+        {
+          //systemdict /$error get /ErrorParams get /errorinfo
+            [ null (Too many or too few spot colors) ] put
+          //systemdict /setpagedevice get
+          /configurationerror //systemdict /.error get exec
+        } if
+
+        % Set MaxSeparations in currentpagedevice
+        currentpagedevice /MaxSeparations
+          NumFixedColorants SeparationDetails /MaxExtraSpotColorants get add
+          % Adobe only allow 250 seps. Genoa FTS 460-01 checks this limit.
+          dup 250 gt { pop 250 } if
+        put
+
+        % make up a dictionary for any overrides of screen angles, keyed by colorant index.
+        % Chances are this will be the same length as DefaultScreenAngles is the
+        % first colorant overrides its angle
+
+        /OverrideScreenAngles
+        0
+        DefaultScreenAngles null ne {
+          DefaultScreenAngles {
+            exch pop /Override get { pop DefaultScreenAngles length exit } if
+          } forall
+        } if
+        dict def
+
+        DefaultScreenAngles null ne {
+          [ Colorants ReservedColorants //defaultcolorant ] {
+            {
+              % Test colorant name, then complementary color, then Default
+              [ 2 index
+                //complementarycolors % Complementary color dict
+                1 index 2 copy known { get } { pop pop } ifelse
+                /Default
+              ] {
+                DefaultScreenAngles 1 index known {
+                  DefaultScreenAngles 1 index get dup /Override get {
+                    OverrideScreenAngles 3 index 2 index /Angle get put
+                  } if
+                  pop pop exit % Dict found, ignore entry
+                } if
+                pop
+              } forall
+              pop pop
+            } forall
+          } forall
+        } if
+
+      end % Private
+    end % currentpagedevice
+
+    % ----------------------------------------------------------------------
+    % reset the page device (like setthepage in days of yore; after doing the
+    % C bit, it calls the corresponding procedure defined below), and do the
+    % install stuff
+
+    true //resetpagedevice exec
+
+    currentpagedevice /Private get /Install get exec
+    currentpagedevice /Install known {
+      //getlanguagelevel exec 1 gt {
+        /Trapping /ProcSet resourcestatus {
+          pop pop << /HqnDefaultZone true >> /Trapping /ProcSet findresource /settrapparams get exec
+        } if
+      } if
+      currentpagedevice /Install get exec
+      //getlanguagelevel exec 1 gt {
+        /Trapping /ProcSet resourcestatus {
+          pop pop << /HqnDefaultZone false >> /Trapping /ProcSet findresource /settrapparams get exec
+
+          % STTS - Create the TrapMaster trap separation if needed
+          currentpagedevice /Trapping get {
+            currentpagedevice /TrappingDetails get /HqnType get /TrapMaster eq {
+              currentpagedevice /TrappingDetails get dup /HqnSuppressSmallTextTrapping known {
+                /HqnSuppressSmallTextTrapping get {
+                  % If trapping is active, and its TrapMaster, and STTS is active,
+                  % create the separation
+                  /Trapping /ProcSet findresource /TrapAddSeparation get exec
+                } if
+              }{
+                pop
+              } ifelse
+            } if
+          } if
+          % STTS - end
+        } if % /Trapping /ProcSet resourcestatus
+      } if
+    } if
+
+    % Install may have changed the Matrix, so reset again, and reset the
+    % screen because the device space cache will not be appropriate any more
+    currentpagedevice begin
+      Private begin
+        TmpMatrix currentmatrix Matrix false
+        0 1 5 {
+          % |- matrix1 matrix2 bool index
+          3 index 1 index get
+          % |- matrix1 matrix2 bool index matrix1-element
+          3 index 3 -1 roll get
+          % |- matrix1 matrix2 bool matrix1-element matrix2-element
+          ne { pop true exit } if
+        } for
+
+        % |- matrix1 matrix2 bool
+        {
+          2 copy copy pop
+          false //resetpagedevice exec
+          % We want to redo the current screen in case of side effects
+          % (e.g. a changed default ctm). We cant simply do one of setscreen,
+          % setcolorscreen or sethalftone since we dont know which one established
+          % the current screen in force. The simplest way of therefore doing this
+          % is to do it inside the pagedevice operator, which resetpagedevice calls.
+        } if
+        pop pop % the matrices
+
+      end % Private
+    end % currentpagedevice
+
+    initgraphics
+    erasepage
+
+    % ----------------------------------------------------------------------
+    % call the BeginPage procedure - now via beginpage operator
+
+    beginpage
+
+    % ----------------------------------------------------------------------
+    % call the PolicyReport procedure if it exists, with the failures
+    % we accumulated on the way
+    % |-
+
+    currentpagedevice /Private get /ReportPolicy get
+    % |- ReportPolicy
+    dup length 0 gt {
+      % |- ReportPolicy
+
+      currentpagedevice
+      % |- ReportPolicy pagedevice
+      dup /Policies known {
+        % |- ReportPolicy pagedevice
+
+        /Policies get
+        % |- ReportPolicy Policies
+        dup /PolicyReport known {
+          % |- ReportPolicy Policies
+
+          /PolicyReport get
+          % |- ReportPolicy
+          exec
+        }{
+          % |- ReportPolicy Policies
+          pop pop
+        } ifelse
+      }{
+        % |- ReportPolicy pagedevice
+        pop pop
+      } ifelse
+    }{
+      pop
+    } ifelse
+  } bind def
+
+end % internaldict
+
+currentdict /setparamdict undef
+currentdict /getlanguagelevel undef
+
+end % temporary dictionary
+
+% end of pagedev.pss

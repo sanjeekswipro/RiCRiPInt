@@ -1,0 +1,50 @@
+%!PS-Adobe-3.0
+%%Title: sRGB
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mon Mar 05 13:28:00 2001
+%%Copyright (C) 2001-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colrende:srgb(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% CRD for transfomation from CIE 1931 XYZ values to RGB values.
+
+
+currentglobal false setglobal
+
+/sRGB
+<<
+    /ColorRenderingType 1
+
+    /MatrixLMN [
+      3.2406   -0.9689 0.0557
+      -1.5372  1.8758  -0.2040
+      -0.4986  0.0415  1.0570 
+    ] 
+
+    /EncodeLMN [{dup 0.0031308 le {12.92 mul}{1 2.4 div exp 1.055 mul 0.055 sub} ifelse} bind dup dup]
+
+    /WhitePoint [0.9505 1 1.0890]
+
+    /MatrixPQR [
+       0.40024 -0.22630  0.0
+       0.70760  1.16532  0.0
+       -0.08081  0.04750  0.91822
+    ]
+
+    /TransformPQR[
+      {4 index 3 get div 2 index 3 get mul 4 {exch pop} repeat} bind
+      {4 index 4 get div 2 index 4 get mul 4 {exch pop} repeat} bind
+      {4 index 5 get div 2 index 5 get mul 4 {exch pop} repeat} bind
+    ]
+   
+>> 
+
+/ColorRendering defineresource pop
+
+setglobal
+
+%%EndResource

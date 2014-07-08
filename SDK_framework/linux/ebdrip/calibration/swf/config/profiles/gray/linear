@@ -1,0 +1,49 @@
+%!PS-Adobe-3.0
+%%Title: DeviceGray
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Wed Mar 15 16:16:55 1995
+% Copyright (c) Global Graphics Software Limited, 1992, 1993, 1994, 1995 All Rights Reserved.
+%%EndComments
+
+
+/Profile <<
+  /ProfileVersion 1
+  /ProfileID (Test Profile)
+  /LastModified (/1995/03/14/19/56/00)
+  /ProfileColorSpace /DeviceGray
+  /DeviceType (XRite 938)
+  /DeviceSerialNumber (ABC123)
+  /MediaType (Unknown)
+  /ColorantType (Unknown)
+  /Resolution [1200 1200]
+  /Halftone /Contone
+  /ValidForComment (Test DeviceGray Linearization)
+  /ValidForDeviceTypes /Any
+  /ValidForMediaTypes /Any
+  /ValidForColorantTypes /Any
+  /ValidForResolutions /Any
+  /ValidForHalftones /Any
+  /Comments (For test purposes only)
+
+  /Linearization [
+    <<
+      /ChannelName (Gray)
+      /ChannelColor /Gray
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (Positive % Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Visual)
+        >>
+        <<
+          /TableName (Negative % Dot)
+          /TableValues [0.0 0.0 100.0 1.0]
+          /Filter (Visual)
+        >>
+      ]
+    >>
+  ]
+
+  /MeasurementDataPresent false
+>>

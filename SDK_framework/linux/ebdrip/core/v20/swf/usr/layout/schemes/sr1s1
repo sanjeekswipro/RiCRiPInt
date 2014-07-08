@@ -1,0 +1,96 @@
+%!PS-Adobe-3.0
+%%Title: NUp_1s_1
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sept 2004
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.5.10.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:schemes:sr1s1(EBDSDK_P.1) $
+
+
+% This file defines the single-sided N-Up imposition scheme.
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+
+	<<
+
+	/Name  (StepRepeat_1s_1)
+
+	/UserName (Step and repeat, single-sided)
+	
+	/SchemeVersion	(2.0.0)
+
+	/Sides 1
+
+	/CheckDivisor 1
+
+	/EarlyImposeDesign true
+
+	% Any values that differ from those in Validate
+	/LocalValidate << >>
+	
+	/LocalValues [ ]
+	
+	% SetOnce should be a boolean or a procedure that returns a boolean
+	% If true, a single layout is used for all surfaces, 
+	% if false the layout is recalculated for every sheet
+	% false here, because even though the same layout will be used, we can't 
+	% just run the content file start to end once.
+	/SetOnce false
+	
+	% A hint to the HqnLayout code that step & repeat optimisations are 
+	% required.
+	/StepRepeat true
+	
+	% Called at the start of the job to set anything that might be useful
+	% later
+	/Initialize { 
+		PagesAcross 0 eq PagesUp 0 eq ne {
+			(HqnLayout: StepRepeat_1s_1: Error: Auto page count clash\n) ErrPrint
+			/StepRepeat_1s_1 /rangecheck (PagesAcross/Up) ExtraError
+		} if
+		PagesAcross 0 eq ImageWidth -1 eq and {
+			(HqnLayout: StepRepeat_1s_1: Error: Auto page count cannot be used with dimensions from job\n) ErrPrint
+			/StepRepeat_1s_1 /undefinedresult (FromJob/ImageWidth) ExtraError
+		} if
+		1 dict begin
+		/i 0 def
+		/SR1S1Array [
+			1 { [
+				HqnImpose2GlobalDict /PagesUp get { [
+					HqnImpose2GlobalDict /PagesAcross get { <<
+						/PN i
+					>> } repeat	% cols
+				] } repeat	% rows
+				/i i 1 add def
+			] } repeat		% surfaces
+		]
+		end def
+	} bind
+
+	/TableInitialize {
+			<<
+			/PageCountAcross HqnImpose2GlobalDict /PagesAcross get
+			/PageCountUp HqnImpose2GlobalDict /PagesUp get
+			/PageFlow /StepRepeat
+		>>
+	} bind
+	
+	/GetAutoSpine {
+		% Shouldn't happen - should be caught by call validation
+		(HqnLayout Error: Auto SpineFold used with StepRepeat_1s_1 scheme\n) ErrPrint
+		/StepRepeat_1s_1 errordict /undefinedresult get exec
+	} bind
+	
+	/GetPageArray {
+		SR1S1Array
+	} bind
+
+	/CutMarks [ true true ]
+	
+	% No FoldMarks
+
+>>
+
+%%EOF

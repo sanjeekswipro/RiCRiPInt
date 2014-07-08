@@ -1,0 +1,27 @@
+%!PS-Adobe-3.0 Resource-Font
+%%Version: 002.001 (1)
+%%VMlocation: global
+
+(%os%shivafonts/Paltamo-Bold) run
+
+/Palatino-Bold
+/Paltamo-Bold findfont dup length dict begin
+% start of loop for original Font dictionary keys
+{exch dup /FontInfo eq{ exch dup length dict begin
+% start of loop for the /FontInfo dictionary keys
+ {exch dup /FullName eq {(Palatino-Bold) def pop}
+%not /FullName
+ {dup /FamilyName eq{(Palatino) def pop}{exch def}ifelse}ifelse}
+% end of loop for the /FontInfo dictionary keys
+ forall currentdict readonly end def}
+%not /FontInfo
+{exch def}ifelse}
+% end of loop forall original Font dictionary keys
+forall
+
+/Paltamo-Bold undefinefont
+dup /FontName exch def
+currentdict /SubstFontName undef
+currentdict end
+dup /FID undef
+definefont pop

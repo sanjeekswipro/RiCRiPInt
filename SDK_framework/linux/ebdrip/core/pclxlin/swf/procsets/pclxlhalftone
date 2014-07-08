@@ -1,0 +1,108 @@
+%!PS-Adobe-3.0
+%%Title: PCLXLHalftone
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Oct 3, 2008
+%{PCLXLHalftone version #1 1
+% Copyright (C) 2008 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information. 
+%%EndComments
+%%BeginProcSet: "(PCLXLHalftone)" 1 1
+
+%(Loading Harlequin PCLXLHalftone ProcSet...) print flush
+
+% PCLXLHalftone procset is invoked by the PCLXL interpreter to provide control
+% over % attempts to configure screening from inside PCLXL jobs.
+%
+% When the halftone attributes of the PCLXL graphics state are changed
+% explicitly, the PCLXLSetHalftone procedure is invoked. The invocation
+% of PCLXLSetHalftone should result % in the translation of the supplied PCLXL
+% hafltone specification being translated into a form suitable for the rip and
+% installed in the gstate. It is permitted for this operation
+% to be a no-op.
+%
+% When the halftone phase attribute of the PCLXL graphics state is changed
+% explicitly, the PCLXLSetHalftonePhase procedure is invoked. The invocation
+% of PCLXLSetHalftonePhase should result in adjustment to the gstate of the
+% rip provide the required phase. It is permitted for this operation to be
+% a no-op.
+%
+% PCLXLSetHalftone hook takes a dictionary parameter defining the requested
+% PCLXL halftoning. For each entry in the dictionary, the key indicates an
+% object category whose screening is to be set and the value indicates the
+% details of the required halftone for that category.
+% Valid keys are : /Text, /Picture, /Linework.
+% Valid values are : /HighLPI, /MediumLPI, /LowLPI.
+%
+% PCLXLSetHalftonePhase takes two numbers as parameters, giving the device
+% coordinates of the halftone cell origin.
+%
+% Procedures in this procset must consume their parameters.
+% The procedures are called with the procset dictionary on top of the
+% dictionary stack.
+%
+% The procedures in PCLXLHalftone are currently just proxies for procedures
+% defined in the EBDPCLXLHalftone procset. EBDPCLXLHalftone procset contains
+% procedures EBDPCLXLSetHalftone and EBDSetHalftonePhase, which take the same
+% arguments as PCLXLSetHalftone and PCLXLSetHalftonePhase respectively.
+%
+% If this procset cannot locate the appropriate EBDPCLXLHalftone procset,
+% then PCLXLHalftone procedures only consume their arguments and do not
+% affect state.
+
+currentglobal false setglobal
+
+10 dict begin
+  /globalness exch def
+
+  /PCLXLSetHalftone { % config_dict
+    % (Running PCLXLHalftone) print flush 
+
+    % Look for skin provided translation procedure.
+    /EBDPCLXLHalftone /ProcSet 2 copy resourcestatus 
+    {
+      pop pop % status info popped.
+      %(EBDPCLXLHalftone) print flush
+      findresource
+      dup
+      /EBDPCLXLSetHalftone known
+      {begin EBDPCLXLSetHalftone end}
+      {pop pop} ifelse
+    }
+    {
+      pop pop pop
+      %( NO EBDPCLXLHalftone) print flush
+      % else, do nothing for PCLXL screeing.
+      % could install an actual default.
+      % /HMS-Euclidean /Halftone findresource sethalftone
+    } ifelse
+
+  } bind def
+
+  /PCLXLSetHalftonePhase { % phase_x phase_y
+
+    /EBDPCLXLHalftone /ProcSet 2 copy resourcestatus
+    {
+      pop pop %status info popped
+      findresource
+      dup
+      /EBDPCLXLSetHalftonePhase known
+      { begin EBDPCLXLSetHalftonePhase end } 
+      { pop pop pop } ifelse
+    }
+    {
+      pop pop pop pop
+    } ifelse
+    
+  } bind def
+
+  currentdict
+end
+
+/PCLXLHalftone exch /ProcSet defineresource
+/globalness get setglobal
+
+% (done\n) print
+
+%%EndProcSet
+
+% $HopeName: COREpcl_pclxl!swf:procsets:pclxlhalftone(EBDSDK_P.1) $

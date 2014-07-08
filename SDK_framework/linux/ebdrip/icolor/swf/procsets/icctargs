@@ -1,0 +1,623 @@
+%!PS-Adobe-3.0
+%%Title:HqnICCTargets
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 12th, 1996
+%%Copyright (C) 1996-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWicolor!swf:procsets:icctargs(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+%%BeginProcSet: "HqnICCTargets" 1 1
+
+20 dict begin
+  /newline {
+    currentpoint exch pop 0 exch moveto 0 Leading rmoveto
+  } bind def
+
+  /separator {
+    % currentpoint exch pop 0 exch moveto 0 Leading 4 div rmoveto
+    gsave
+      1 setlinewidth [ 1 2 1 ] 0 setdash
+      currentpoint newpath exch pop dup LeftMargin SeparatorMargin add exch moveto
+      RightMargin SeparatorMargin sub exch lineto
+      stroke
+    grestore
+    0 Leading 1 div rmoveto
+  } bind def
+
+  /buffer 200 string def
+
+  /showvalue {
+    //buffer cvs show
+  } bind def
+
+   /showXYZnumber {
+     ([ ) show
+     dup 0 get //showvalue exec
+     ( ) show
+     dup 1 get //showvalue exec
+     ( ) show
+         2 get //showvalue exec
+     ( ]) show
+   } bind def
+
+  /GetICCtitle {
+    dup /desc known {
+      dup /desc get
+    } {
+      dup /dmdd known {
+        dup /dmdd get
+      } {
+        << /Type /text /Text (Unknown title) >>
+      } ifelse
+    } ifelse
+    /ASCII get
+    (Got title ) print dup ==
+    /ICCTitle exch def
+  } bind def
+
+
+  % This should also move the currentpoint to the first sensible place
+  % for writing text onto the page, so please call it for each page.
+
+  /printICCtitle {
+    PageMidX PageHeight moveto
+    gsave
+      /Helvetica-Bold FontSize selectfont
+      ICCTitle
+      dup stringwidth pop -2 div Leading rmoveto
+      show
+    grestore
+    //newline exec
+  } bind def
+
+  /printICCheader {
+    //newline exec
+    dup /Header get
+      dup (Profile Size: ) show
+          /ProfileSize get 
+          //showvalue exec
+          //newline exec
+      dup (CMM Type: ) show
+          /CMMType get 
+          //showvalue exec
+          //newline exec
+      dup (Profile Version: ) show
+          /ProfileVersion_As_String get 
+          //showvalue exec
+          //newline exec
+      dup (ProfileDeviceClass: ) show
+          /ProfileDeviceClass_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /ProfileDeviceClass_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (ColorSpace: ) show
+          /ColorSpace_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /ColorSpace_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (ProfileConnectionSpace: ) show
+          /ProfileConnectionSpace_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /ProfileConnectionSpace_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (CreationDate: ) show
+          /CreationDate_As_String get 
+          //showvalue exec
+          //newline exec
+      dup (PrimaryPlatformTarget: ) show
+          /PrimaryPlatformTarget_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /PrimaryPlatformTarget_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (CMMFlags: \() show
+          /CMMFlags_As_Fix get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup /CMMFlags get
+	  dup (  Embedded:) show
+          /Embedded get 
+          //showvalue exec
+          //newline exec
+	  dup (  UseAsEmbeddedOnly:) show
+          /UseAsEmbeddedOnly get 
+          //showvalue exec
+          //newline exec
+	  pop
+      dup (DeviceManufacturer: ) show
+          /DeviceManufacturer_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /DeviceManufacturer_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (DeviceModel: ) show
+          /DeviceModel get 
+          //showvalue exec
+          //newline exec
+      dup (DeviceAttributes: )       show
+          /DeviceAttributes_As_Fix get
+	    dup ([ ) show 0 get 
+                //showvalue exec
+                ( ) show 1 get 
+              //showvalue exec ( ]) show
+          //newline exec
+      dup /DeviceAttributes get
+	  dup (  Media Type: ) show
+          /Reflective_or_Transparent get 
+          //showvalue exec
+          //newline exec
+	  dup (  Surface: ) show
+          /Surface get 
+          //showvalue exec
+          //newline exec
+	  pop
+      dup (RenderingIntent: ) show
+          /RenderingIntent get 
+          //showvalue exec
+      dup ( \() show
+          /RenderingIntent_As_Fix get 
+          //showvalue exec (\)) show
+          //newline exec
+      dup (Illuminant: ) show
+          /Illuminant_As_Float get
+          //showXYZnumber exec
+          //newline exec
+      dup (Creator: ) show
+          /Creator_As_String get 
+          //showvalue exec
+      dup ( \() show
+          /Creator_As_Sig get 
+          //showvalue exec (\)) show
+          //newline exec
+      pop
+  } bind def
+
+  /printICCfilelayout {
+    currentpoint /LayoutTop exch def pop
+    /LayoutHeight LayoutTop BottomMargin sub def
+    /LayoutExplanationX PageMidX def
+    /LayoutExplanationY LayoutTop Leading add def
+    dup /Header get /ProfileSize get /ProfileBytes exch def
+    /LayoutBytesScale LayoutHeight ProfileBytes div def
+    /LayoutGray .3 def
+    dup /TagTable get
+    dup /Tags get
+    {
+      LayoutGray setgray
+      /LayoutGray LayoutGray .6 add dup cvi sub def
+      dup /Offset get LayoutBytesScale mul LayoutTop exch sub 50 exch
+      2 copy
+      -40
+      5 index /Size get LayoutBytesScale mul neg rectfill
+
+      moveto
+
+      dup /Size get exch
+      dup /Offset get exch
+      /Signature get
+      0 setgray
+      LayoutExplanationX LayoutExplanationY lineto
+      currentpoint stroke moveto FontSize 2 div Leading 3 div rmoveto //showvalue exec
+      ( at ) show //showvalue exec
+      (, size ) show //showvalue exec
+      /LayoutExplanationY LayoutExplanationY Leading add def
+    } forall
+    pop
+  } bind def
+
+  /GetMargins {
+    gsave
+      clippath
+      pathbbox
+    grestore
+    /TopMargin exch def
+    /RightMargin exch def
+    /BottomMargin exch def
+    /LeftMargin exch def
+    /PageWidth RightMargin LeftMargin sub def
+    /PageHeight TopMargin BottomMargin sub def
+    /PageMidX LeftMargin PageWidth 2 div add def
+    /FontSize PageHeight 60 div def
+    /Leading FontSize -1.2 mul def
+    /SeparatorMargin PageWidth 10 div def
+    /Helvetica FontSize selectfont
+    /LutVectorsHeight 100 def
+  } bind def
+
+  /RecordKnownTags {
+    /RemainingTags
+    1 index /TagTable get /Tags get
+    <<
+       exch
+       { dup /Signature get exch /Offset get } forall
+    >> def
+  } bind def
+
+  /MarkTagAsPrinted {
+    RemainingTags exch undef
+  } bind def
+
+  /PrintSmallTags {
+    //printICCtitle exec
+
+    //newline exec
+    dup /cprt known {
+      (Copyright: ) show
+      dup /cprt get /ASCII get //showvalue exec //newline exec
+      /cprt //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /dmnd known {
+      (Device Manufacturer: ) show
+      dup /dmnd get /ASCII get //showvalue exec //newline exec
+      /dmnd //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /dmdd known {
+      (Device Model: ) show
+      dup /dmdd get /ASCII get //showvalue exec //newline exec
+      /dmdd //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /desc known {
+      (Profile description: ) show
+      dup /desc get /ASCII get //showvalue exec //newline exec
+      /desc //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /wtpt known {
+      (White point: ) show
+      dup /wtpt get
+        /XYZ get
+        0 get
+        /XYZ_As_Float get
+        //showXYZnumber exec //newline exec
+      /wtpt //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /bkpt known {
+      (Black point: ) show
+      dup /bkpt get
+        /XYZ get
+        0 get
+        /XYZ_As_Float get
+        //showXYZnumber exec //newline exec
+      /bkpt //MarkTagAsPrinted exec
+      //separator exec
+    } if
+   
+    dup /bfd known {
+      dup /bfd get
+      (UnderColor Removal and Black Generation: ) show
+      /Description get //showvalue exec //newline exec
+      /bfd //MarkTagAsPrinted exec
+      //separator exec
+    } if
+   
+    dup /calt known {
+      dup /calt get
+      (Calibration date (Year/Month/Day) and time: ) show
+      /DateTime_As_String get //showvalue exec //newline exec
+      /calt //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /tech known {
+      (Technology: ) show
+      dup /tech get /ASCII get //showvalue exec //newline exec
+      /tech //MarkTagAsPrinted exec
+      //separator exec
+    } if
+    
+    dup /vued known {
+      (Viewing conditions description: ) show
+      dup /vued get /ASCII get //showvalue exec //newline exec
+      /vued //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /view known {
+      dup /view get
+        (Illuminant standard: ) show
+        dup /Iluminant_Standard get //showvalue exec //newline exec
+            (  Illuminant and Surround are in XYZ Candelas per Square Metre)
+            show //newline exec
+       dup (    Illuminant: ) show
+          /Illuminant_XYZ get
+          /Illuminant_XYZ_As_Float get
+          //showXYZnumber exec //newline exec  
+         (    Surround: ) show
+          /Surround_XYZ get
+          /Surround_XYZ_As_Float get
+          //showXYZnumber exec //newline exec
+       /view //MarkTagAsPrinted exec
+      //separator exec
+    } if
+  
+    dup /scrd known {
+      (Screening description: ) show
+      dup /scrd get /ASCII get //showvalue exec //newline exec
+      /scrd //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+    dup /scrn known {
+      dup /scrn get
+      //newline exec
+      (Screens \() show
+        dup /PrinterDefaultScreens get not { ( not) show } if
+        ( using printer default screens\):) show //newline exec
+      dup /ScreeningFrequencyUnit get exch
+      /Screens get
+      {
+        (  Frequency: ) show
+        dup /Frequency_As_Float get //showvalue exec
+        ( ) show 1 index //showvalue exec //newline exec
+        (  Angle: ) show
+        dup /Angle_As_Float get //showvalue exec //newline exec
+        (  Shape: ) show
+            /SpotShape get //showvalue exec //newline exec //newline exec
+      } forall
+      pop
+      /scrn //MarkTagAsPrinted exec
+      //separator exec
+    } if
+
+  } bind def
+
+  /PrintLutVectors {               % vectors
+    dup length                     % vectors nvectors
+    PageWidth exch div             % vectors onewidth
+    0 LutVectorsHeight neg rmoveto % vectors onewidth
+    gsave                          % vectors onewidth
+      currentpoint translate       % vectors onewidth
+      LutVectorsHeight             % vectors onewidth oneheight
+      scale                        % vectors
+      % now draw each in a unit square (including border space)
+      {                            % vector
+        gsave
+          .05 .05 translate
+          .9 .9 scale
+          .01 setlinewidth
+          0 0 moveto 1 0 lineto 1 1 lineto 0 1 lineto closepath stroke
+          dup length 1 exch div 1 scale
+          0 0 moveto
+          {
+            1 exch lineto
+            1 0 translate
+          } forall
+          stroke
+        grestore
+        1 0 translate
+      } forall
+    grestore
+  } bind def
+
+  /printLUT3main {
+    pop
+  } bind def
+
+  /PrintLUT {
+    gsave
+      //printICCtitle exec
+      //newline exec
+
+      (LUT tag: ) show
+      3 -1 roll //showvalue exec //newline exec
+
+      dup (params ) print == % use the params, really
+      pop
+   
+      dup /Pre_As_Float get
+      //PrintLutVectors exec
+
+      dup /Post_As_Float get
+      //PrintLutVectors exec
+
+      dup /Input_Channels get
+      4 eq {
+        dup /Main_As_Float get
+        {
+          % sizing and placing hackery to go here.................
+          //printLUT3main exec
+        } forall
+      } {
+        dup /Main_As_Float get
+        % sizing hackery to go here...................
+        //printLUT3main exec
+      } ifelse
+
+      % other data fields are as follows:
+      % /
+      % /Output_Channels
+      % /Points_per_side
+      % /Matrix_As_Fix
+      % /Matrix_As_Float
+      % /Pre_As_Fix
+      % /Main_As_Fix
+      % /
+      % /Post_As_Fix
+     
+      pop
+    grestore
+
+    gsave
+      showpage
+    grestore
+  } bind def
+
+  /dumpersByType <<
+    % these get tag tagdict dumperparamarray on stack, should pop them all
+    /mft1 [ //PrintLUT 1 ]
+    /mft2 [ //PrintLUT 2 ]
+  >> def
+
+  /Printifpresent {                % alldict tag
+    2 copy known {                 % alldict tag
+      2 copy get                   % alldict tag tagdict
+      dup /Duplicate_Of known      % alldict tag tagdict isduplicate
+      {                            % alldict tag tagdict
+        pop pop                    % alldict
+      } {                          % alldict tag tagdict
+        1 index                    % alldict tag tagdict tag
+        //MarkTagAsPrinted exec    % alldict tag tagdict
+	dup /Type get              % alldict tag tagdict type
+	//dumpersByType exch       % alldict tag tagdict dumpers type
+	2 copy                     % alldict tag tagdict dumpers type dumpers type
+	known {                    % alldict tag tagdict dumpers type
+	  get                      % alldict tag tagdict dumperspec
+	  dup 0 get exch           % alldict tag tagdict dumperproc dumperspec
+	  dup length               % alldict tag tagdict dumperproc dumperspec dslen
+	  1 sub                    % alldict tag tagdict dumperproc dumperspec dslen
+	  1 exch                   % alldict tag tagdict dumperproc dumperspec 1 dslen
+	  getinterval              % alldict tag tagdict dumperproc dumperparams
+	  exch exec                % alldict
+         } {                       % alldict tag tagdict dumpers type
+	  pop pop pop pop          % alldict
+	} ifelse
+      } ifelse
+    } {                            % alldict tag
+      pop                          % alldict
+    } ifelse
+  } bind def
+
+  /PrintLargeTags {
+    /A2B0 //Printifpresent exec
+    /A2B1 //Printifpresent exec
+    /A2B2 //Printifpresent exec
+    /B2A0 //Printifpresent exec
+    /B2A1 //Printifpresent exec
+    /B2A2 //Printifpresent exec
+    /gamt //Printifpresent exec
+    /pre0 //Printifpresent exec
+    /pre1 //Printifpresent exec
+    /pre2 //Printifpresent exec
+  } bind def
+
+  /PrintRemainingTags {              % outer
+
+    //printICCtitle exec
+    //newline exec
+    (Tags not dumped individually:) show //newline exec
+
+    RemainingTags {                  % outer tagname taglocation
+      2 index                        % outer tagname taglocation outer
+      2 index                        % outer tagname taglocation outer tagname
+      get                            % outer tagname taglocation inner
+      dup /Duplicate_Of known {      % outer tagname taglocation inner
+        /Duplicate_Of get            % outer tagname taglocation dupofwhat
+        (  ) show                    % outer tagname taglocation dupofwhat
+        3 -1 roll //showvalue exec   % outer taglocation dupofwhat
+        ( \(is duplicate of ) show   % outer taglocation dupofwhat
+        //showvalue exec             % outer taglocation
+        (\)) show                    % outer taglocation
+        //newline exec               % outer taglocation
+        pop                          % outer
+      } {                            % outer tagname taglocation inner
+        pop pop                      % outer tagname
+        (  ) show                    % outer tagname
+        //showvalue exec             % outer
+         //newline exec
+      } ifelse
+    } forall
+  } bind def
+
+  /DisplayICCfile {
+    save
+    30 dict begin
+      /ICCtargsave exch def
+      //GetMargins exec
+      Leading neg 0 translate
+      //GetMargins exec
+      //GetICCtitle exec
+      gsave
+        //printICCtitle exec
+        % (end of printICCtitle, stack:\n) print pstack
+	//printICCheader exec
+        % (end of printICCheader, stack:\n) print pstack
+        //printICCfilelayout exec
+        % (end of printICCfilelayout, stack:\n) print pstack
+      grestore
+
+      gsave
+        showpage
+      grestore
+
+      gsave
+        //RecordKnownTags exec
+        % (end of RecordKnownTags, stack:\n) print pstack
+        //PrintSmallTags exec
+        % (end of PrintSmallTags, stack:\n) print pstack
+      grestore
+
+      gsave
+        showpage
+      grestore
+
+
+      % print TRCs and related data here .....................................
+
+      gsave
+        //PrintLargeTags exec
+        % (end of PrintLargeTags, stack:\n) print pstack
+      grestore
+
+      % no showpage here, each large tag shows it own page
+
+      gsave
+        //PrintRemainingTags exec
+        % (end of PrintRemainingTags, stack:\n) print pstack
+        % (end of stack\n) print
+      grestore
+
+      gsave
+        showpage
+      grestore
+      ICCtargsave
+    end
+    restore
+  } bind def
+
+  [
+    /newline
+    /separator
+    /printICCtitle
+    /printICCheader
+    /GetMargins
+    /GetICCtitle
+    /showvalue
+    /buffer
+    /dumpersByType
+    /printICCfilelayout
+    /PrintSmallTags
+    /Printifpresent
+    /PrintLutVectors
+    /printLUT3main
+    /PrintLUT
+    /PrintLargeTags
+    /PrintRemainingTags
+  ] { currentdict exch undef } forall
+
+  currentdict
+end
+
+/HqnICCTargets exch /ProcSet defineresource
+
+%%EndProcSet

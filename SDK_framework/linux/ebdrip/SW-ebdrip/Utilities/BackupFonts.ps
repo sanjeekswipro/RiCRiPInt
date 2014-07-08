@@ -1,0 +1,452 @@
+%!PS-Adobe-3.0
+%%Title: Font Backup
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mon, Mar 7, 1994
+% Font Backup version #2 0
+% Copyright (C) 1994-2013 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+
+% This job will create a back-up file for fonts. It will work for
+% Type 1 and DLD1 fonts and almost all Type 3, 4 and 0 ones. 
+%
+% Composite fonts create their data files in directories spread through
+% the RIP's file system in a way which varies according to the font
+% manufacturer and the downloader version. 
+%
+% If any files are not included in the copy the font will not work 
+% correctly after restoration .
+%
+% This utility therefore selects files by detecting which files should
+% NOT be copied because they are a standard part of the RIP and by 
+% copying all other files.
+%
+% Files are saved by their PostScript names, so you can use backup
+% and restore to move fonts from a level 1 to a level 2 PC RIP or between
+% RIPs running on different platforms and all file name mappings will 
+% be automatically set up.
+%
+% To reduce the size of the backup file the data is LZW compressed when
+% this file is run from a level 2 RIP. If you wish to transfer fonts
+% from a level 2 to a level 1 RIP then the level 2 RIP must be run in 
+% level 1 mode.
+%
+% When run under ScriptWorks version 3.2 or later the backup file will be 
+% created in the same directory as this file is found. Under earlier 
+% versions the backup file will be created in the SW directory.
+%
+% Note that fonts encrypted against a specific dongle will only work with
+% a RIP using that dongle. If copied to a RIP using a different dongle 
+% they will not continue to work - you may see PostScript errors or the
+% characters may simply not be rendered.
+%
+% To re-install the fonts simply run 'print file' on the file produced 
+% by this utility. 
+%
+% PLEASE ENSURE THAT YOU HAVE APPROPRIATE LICENCES TO 
+% USE THE FONTS ON THE RIP ON WHICH YOU INSTALL THEM.
+%
+
+% *********************************************************************
+% 
+% The next two arrays define the list of files which will NOT be backed up
+% when this utility is run. 
+% 
+% The first array lists the stem names of files which will effectively have 
+% '*' added after them , e.g. (Config/) means that (Config/*) will not be 
+% included. Where these are directory names you should include the terminating
+% / character
+% 
+% The second array lists individual files and must include the full file name.
+% For the second array only, you may also list files in the form *.extension,
+% but then you may not name a specific directory.  For example, you could list
+% *.tif but not (MyFolder/*.tif).  The * wildcard must replace the whole of
+% the filename without the extension.
+% 
+% *********************************************************************
+
+/FolderList [ 
+	(CalData/)
+	(CATCHPS/)
+	(categories/)
+	(colorrenderings/)
+	(colorspaces/)
+	(Complete/)
+	(Config/)
+	(Crdgen/) (/crdgen/)
+	(DCS/)
+	(DEVEXTRA/)
+	(Devices/) (/devices/)
+	(ERROR/)
+	(Extensions/) (/extensions/)
+	(FlatPgbDir/)
+	(forms/)
+	(halftones/)
+	(icccrd/)
+	(iccprofiles/)
+	(iccreg/)
+	(IdiomSet/)
+	(INPEXTRA/)
+	(Inputs/) (/inputs/)
+	(FontDB/)
+	(LOGFILE) 	% exclude files with prefix LOGFILE
+	(MediaSavingDir/)
+	(NamedColor/)
+	(NamedColorOrder/)
+	(OPI/)
+	(Page Features/)
+	(PageBuffers/)
+	(Passwords/)
+	(patterns/)
+	(PDFprofiles/)
+	(PrepFiles/)
+	(procsets/)
+	(ReproductionCriteria/)
+	(Screens/)
+	(ScriptProof/)
+	(Separation Features/)
+	(Spool/)
+	(Sys/ExtraStart/)
+	(Sys/Hqn)	% for HqnStart, HqnOEM etc.
+	(targeteps/)
+	(tmp/)
+	(TrapFinal/)
+	(TrapParams/)
+	(TrapProof/)
+	(Unicode/)
+	(Usr/)
+	(Utilities/)
+	(WorkSpace/)
+] def
+	
+/FileList [
+  (*.cip3)
+	(*.CIP3)
+	(*.PPF)
+	(*.ppf)
+	(*.TIF)
+	(*.TIFF)
+	(*.tif)
+	(*.tiff)
+	(*.FP)
+	(*.fp)
+	(*.CT)
+	(*.ct)
+	(*.LW)
+	(*.lw)
+	(*.HC)
+	(*.hc)
+	(*.ico)
+	(DESCRIBE.PS)
+	(Desktop.ini)
+	(FILEMAP.PS)
+	(FILEMAP.DAT)
+	(FILERED.PS)
+	(FILERED.ps)
+	(LOGBACK)
+	(version)
+	(Sys/BootDevices)
+	(Sys/Bootlist)
+	(Sys/ExtraDevices)
+	(Sys/ExtraMediaSelectionKeys)
+	(Sys/ExtraPageDeviceKeys)
+	(Sys/LicenseFile)
+	(Sys/PlatformUpgrade)
+	(Sys/Start)
+] def
+
+% *********************************************************************
+
+/tmpstr 65535 string def
+/filestr 255 string def
+/outfilestr 255 string def
+/shortstr 20 string def
+/outfilename (FONTS.PS) def
+
+statusdict /filename known {
+	currentfile
+	statusdict begin outfilestr filename pop end
+	
+	dup length 1 sub -1 0 {
+		% |- str i
+		2 copy get (/) 0 get eq {
+			% found the path
+			1 add
+			exit
+		}	{
+			pop		% i
+		} ifelse
+	} for
+	
+	dup type /integertype eq {
+		% we found the '/'
+		% |- inputname i
+		0 exch getinterval
+		dup length outfilename length add string
+		% |- path newstr
+		dup 0 3 index putinterval
+		% |- path newstr
+		dup 3 -1 roll length outfilename putinterval
+	}	{
+		% loose in SW
+		pop	% input name
+		outfilename
+	} ifelse
+
+	/outfilename exch def
+} if
+
+mark outfilename { deletefile } stopped cleartomark 
+/outputfile outfilename (w) file def
+	
+/do_write {
+	outputfile exch
+	{ writestring } stopped {
+		(WRITE FAILED - check whether the drive is full!)=
+		stop
+	} if
+} bind def
+
+/do_hex_write {
+	outputfile exch
+	{ writehexstring } stopped {
+		(WRITE FAILED - check whether the drive is full!)=
+		stop
+	} if
+} bind def
+
+/copy_block { % |- proc
+		{
+		currentfile tmpstr readline pop
+		dup length 0 gt {
+			dup 0 get 46 eq {
+				pop exit
+			}	{
+				1 index exec
+			} ifelse
+		}	{
+			1 index exec
+		} ifelse
+	} loop
+	pop		% proc
+} bind def
+
+(% Fonts backed up: )do_write daytime do_write (\r)do_write
+(% from RIP version )do_write hqnversion do_write (\r)do_write
+(% serial number )do_write serialnumber dup tmpstr cvs do_write 
+	(-)do_write statusdict begin checksum end tmpstr cvs do_write (\r)do_write
+
+systemdict /languagelevel known { systemdict /languagelevel get } { 1 } ifelse
+2 ge {
+	(currentfile /LZWDecode filter cvx exec\r) do_write
+	/outputfile outputfile /LZWEncode filter def
+} if
+
+% ------------------------
+% start of data copied into head of backup file.
+
+{ do_write (\r) do_write } copy_block
+
+/tmpstr 65535 string def
+/copy_out {
+	(File ")print dup print (" - )print
+	dup status {
+		pop pop pop pop pop (already exists )print
+		/outputting false def
+	}	{
+		mark 1 index { deletefile } stopped cleartomark
+		/outfile exch (w) file def /outputting true def
+	} ifelse
+	flush
+	/togo exch def
+		{
+		  currentfile tmpstr togo 65535 lt { 0 togo getinterval } if
+		  readstring exch
+		  outputting {
+			  outfile exch  { writestring } stopped {
+				(WRITE FAILED - check whether the drive is full!)=
+				stop
+			  } if
+		  } 	{
+		  	pop
+		  } ifelse
+		  
+%		  (.) print flush
+		  /togo togo 65535 sub def
+		  not togo 0 le or{ exit } if
+	} loop
+	outputting { 
+		outfile closefile
+		(RESTORED)=
+	} 	{
+		(- skipped)=
+	} ifelse
+} bind def
+/copy_block { % |- proc
+		{
+		currentfile tmpstr readline pop
+		dup length 0 gt {
+			dup 0 get 43 eq { pop exit } { 1 index exec } ifelse
+		}	{ 1 index exec } ifelse
+	} loop
+	pop		% proc
+} bind def
+/showtimes {
+	(Fonts backed up from RIP version )print =
+	(On )print = 
+	(from RIP serial number )print dup =print (-)print
+	dup statusdict begin checksum end ==
+	serialnumber ne {
+(
+Please note: You are restoring this data on a RIP other
+      than the one from which it was backed up
+
+      It is your responsibility to check that you have an 
+      appropriate licence to use the restored data on this RIP.
+      
+      Some encrypted fonts may not work correctly on this RIP.
+      
+*****************************************************************
+)print
+	} if
+	()=
+} def
+
+{ = } copy_block
+
+*****************************************************************
+                  RESTORING FONT DATA
+*****************************************************************
++ ********** End of copy block
+
+. ********** End of copy block
+
+% end of header copied into backup file
+%--------------------------------
+
+serialnumber tmpstr cvs do_write
+(\()do_write daytime do_write (\)\()do_write hqnversion do_write 
+(\)showtimes)do_write 
+
+{ = } copy_block
+
+*****************************************************************
+                  BACKING UP FONT DATA
+*****************************************************************
+Please note: If you intend to restore this data on a RIP other
+      than the one from which it was backed up then it is your
+      responsibility to check that you have an appropriate
+      licence to use the restored data on that RIP.
+*****************************************************************
+
+. ********** End of copy block
+
+(*)	{
+    	/SaveAway true def
+	/realfile 1 index def
+	
+	% work out the file name without the device prefix
+	1 1 index length 1 sub getinterval (%) search {
+		pop pop
+	}	{
+		% no device - use the whole string
+		pop realfile
+	} ifelse
+
+	/foundfile exch def
+	
+	//FileList {
+	  dup
+	  foundfile eq {
+		  /SaveAway false def
+			pop
+			exit
+		} {
+		  % see if the filelist file is of the form *.extension
+		  (*.) search {
+			  () eq {
+				  % see if the filelist file extension matches the foundfile extension
+					pop   % the (*.)
+          foundfile (.) search {
+            pop pop  % the foundfile name before the (.) and the (.)
+						eq {
+						  % the foundfile extension is the same as the filelist extension
+              /SaveAway false def
+							exit
+						} if				
+					} {
+            % no (.) found in the foundfile
+            pop pop  % the foundfile and the filelist file
+				  } ifelse
+        } {
+          % not interested if the filelist file didn't start with (*.)
+          pop pop  % the (*.) and the extension
+        } ifelse
+			} {
+        pop % the filelist file
+			} ifelse
+		} ifelse
+	} forall
+	
+	SaveAway {
+		//FolderList {
+			foundfile exch anchorsearch {
+				pop pop
+				/SaveAway false def
+				exit
+			} { pop } ifelse
+		} forall
+	} if
+	
+	SaveAway {
+		(File ")print realfile print (")=
+		mark /inputfile realfile (r) {
+			file 
+		} stopped {
+			(CAN'T OPEN FILE FOR READING!)=
+			cleartomark
+		}	{
+			def
+			pop	% mark
+
+			(\r% **************** ) do_write foundfile do_write ( ****\r)do_write
+			/totlength 0 def
+			% Find file length
+				{
+				  inputfile //tmpstr readstring 
+				  /realstr 3 -1 roll def
+				  /totlength totlength realstr length add def
+				  not { exit } if		% false from readstring
+			} loop
+	
+			totlength shortstr cvs do_write
+			( <) do_write
+			foundfile do_hex_write
+			(> copy_out\r) do_write
+			
+			inputfile closefile
+			
+			totlength 65535 le {
+				realstr do_write
+			}	{
+				/inputfile realfile (r) file def
+	
+					{
+					  inputfile tmpstr readstring exch
+					  do_write
+					  not { exit } if		% false from readstring
+				} loop
+			} ifelse
+			
+			inputfile closefile
+		} ifelse	% stopped
+	} if
+} //filestr filenameforall
+
+outputfile closefile
+
+(\n*****************************************************************)=
+(Backup file is called )print outfilename =
+(*****************************************************************\n)=
+
+%EOF

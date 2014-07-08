@@ -1,0 +1,46 @@
+%!PS-Adobe
+%%Title: "Error page"
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+
+% Use this file as a page feature (or a boot option in HqnOEM)
+% to print partial pages when a PostScript error other than interrupt 
+% or timeout occurs.
+%
+% Blank pages will not be printed.
+
+% $HopeName: SWv20!swf:pagefeat:errpage(EBDSDK_P.1) $
+
+errordict begin
+
+/handleerror {
+	//systemdict begin //$error begin
+	newerror errorname dup /interrupt ne exch /timeout ne and
+	save exch
+	mark { 1183615869 internaldict /pagebbox get exec } stopped {
+		cleartomark false
+	}	{
+		cleartomark true
+	} ifelse 
+	and	exch restore
+	/newerror true store
+	//defaulthandleerror exec
+	end	% $error
+		{
+		showpage
+		% force page out even when recombining
+		gsave << /Deactivate -1 >> setpagedevice grestore
+	} if
+	$error /newerror false put 
+	end	% systemdict
+} bind def
+
+end
+
+userdict begin
+	/handleerror        errordict /handleerror get def % in userdict
+	/defaulthandleerror /handleerror load          def % in userdict
+end % userdict
+
+%%EOF

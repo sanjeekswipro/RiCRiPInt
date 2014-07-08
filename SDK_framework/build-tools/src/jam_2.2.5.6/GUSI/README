@@ -1,0 +1,346 @@
+                 G U S I -- Grand Unified Socket Interface
+
+INTRODUCTION
+
+GUSI is an extension and partial replacement of the MPW C runtime library. Its
+main objective is to provide a more or less simple and consistent interface
+across the following communication domains:
+
+Files				Ordinary Macintosh files and MPW pseudo devices.
+Unix				Memory based communication within a single machine.
+Appletalk		ADSP communication over a network.
+PPC				Connections with the System 7 PPC Toolbox.
+Internet			TCP and UDP connections over MacTCP.
+PAP 				Connections to PostScript printers.
+
+Additionally, GUSI adds some UNIX library calls dealing with files which were
+missing, like chdir(), getcwd(), symlink(), and readlink(), and changes a few
+other library calls to behave more like their UNIX counterparts.
+
+REQUIREMENTS
+
+To use GUSI, you need MPW C 3.2 or later. To modify it, you additionally need MPW
+C++ 3.2 or later and Perl. For the PowerMac version, you need PPCC.
+
+COPYING
+
+Copyright © 1992-1995 Matthias Neeracher
+
+Permission is granted to anyone to use this software for any purpose on any
+computer system, and to redistribute it freely, subject to the following
+restrictions:
+
+- The author is not responsible for the consequences of use of this software,
+  no matter how awful, even if they arise from defects in it.
+- The origin of this software must not be misrepresented, either by explicit
+  claim or by omission.
+- Altered versions must be plainly marked as such, and must not be misrepresented
+  as being the original software.
+
+WHERE TO BEGIN
+
+You should probably start with printing out the documentation in GUSI.ps. Maybe
+it helps also to play with the sample programs.
+
+BUGS, QUESTIONS, SUGGESTIONS
+
+Please report any problems you experience with the code or the documentation to
+me. I'd also be interested in hearing about your success stories, if you have
+any.
+
+MAILING LIST
+
+There is now a mailing list for announcing new releases and discussions about 
+how to make GUSI change your life. To subscribe, send a mail to 
+<gusi-request@iis.ee.ethz.ch>
+
+Matthias Neeracher					Office:	+41 1 632 51 46
+Hohenklingenstrasse 19				Home: 	+41 1 341 85 06
+8049 Zuerich							Email:	<neeri@iis.ee.ethz.ch>
+SWITZERLAND
+
+RELEASE NOTES
+
+Version 1.5.2	22Jan95
+
+- The TFileSpec constructor taking working directories was broken, which in
+  turn resulted in wrong directories for choose() [Barry Eynon].
+  
+Version 1.5.1	08Jan95
+
+- Under some circumstances, using a custom console would crash the PowerPC version
+  [C. Joe Holmes, Charles Albrecht].
+  
+Version 1.5.0	31Dec94
+
+- Port GUSI to the PowerPC. This has had the useful side effect of making the
+  source more portable to other compilers by eliminating some syntactic 
+  idiosyncrasies that MPW C was supporting and by moving the source to the 
+  universal headers.
+- Improve handling of filename oriented calls. All calls taking file names as
+  arguments are now fully dispatchable.
+- Move support for David Peterson's Inetd into a separate file. The bad news is
+  that you'll now have to explicitely request support for inetd, the good news
+  is that the majority of GUSI clients will have a somewhat smaller burden linked
+  in.
+- Added routines for encoding FSSpecs into printable C strings.
+- Fixed a horrible bug which would destroy certain path names on TFileSpec 
+  construction [John Liberty].
+- Increased the TCP buffer size and inserted process manager wakeups into TCP code,
+  both of which might improve performance; fixed a few more bugs in the TCP code
+  [Mark Lanett and Stephan Deibel].
+- Added documentation for TFileSpec.h
+- Added routines to the test code to test request/reply throughput.
+- Fixed a few minor bugs.
+- Added chmod(). The only part of its functionality that is supported is the 
+  ability to lock a file [John Kamp].
+  
+Version 1.4.1	02May94
+
+- Non-blocking sends on TCP sockets with large amounts of data would not do
+  anything [Benjamin Beberness].
+
+Version 1.4.0	01May94
+
+- Enabled recvfrom with non-NULL from addresses on all stream socket families
+  (returning getpeername()) to fix a problem with MacPerl [James Burgess, 
+  Asa Packer].
+- Attempting to write on half open sockets would still sometimes hang because of
+  the fflush() problem mentioned below. I had to extend the kludge to almost
+  all possible error codes [Asa Packer].
+- Permissions returned by stat() for locked files were wrong [John Kamp].
+- Implemented utime() as far as possible (i.e., for modification times, the
+  Mac has no concept of access times) [James Burgess].
+- Another round in my epic battle with rename(): This time, rename() resolved
+  aliases that should have been left unresolved [Maki Watanabe, Man Wei Tam].
+- Avoided calls to malloc() on system startup to circumvent problems with 
+  MacPerl memory allocation [Sal Gurnani, Torsten Ekedahl et al.].
+- Try to behave more sensibly when the other side closes a socket() 
+  [David Hansen].
+- getservbyname() would fail unless /etc/services was in the preferences folder
+  [Alasdair Rawsthorne].
+- Switched from Projector to RCS.
+- Tried to fix a compatibility problem with MPW 3.2
+
+Version 1.3.6  22Feb94
+
+- recvfrom wouldn't return the address of the sender [Michael Wu].
+- TFileSpec constructors now preserve case, (hopefully) making rename("a","A")
+  finally work [Maki Watanabe].
+- rename() is now able to rename locked files. This is an experimental feature
+  introduced to support RCS. It might go away again.
+  
+Version 1.3.5	11Jan94
+
+- Made the semantics of select() conform more closely to their UN*X counter-
+  parts. In particular, if there is no more data to read/write, a socket is 
+  now flagged as ready to read/write. In the past, the exception flag was 
+  incorrectly used to signal error conditions.
+- EBADF is now treated the same way as ESHUTDOWN on write().
+- GUSI now handles more than _NFILE stdio FILEs [James Tisdall].
+- Fixed several bugs with default arguments and prompts for choose() with 
+  files [Maki Watanabe].
+- chdir() would ignore most errors [Peter Lewis].
+
+Version 1.3.4	17Nov93
+
+- Fixed a bug in GUSIBuffer which prevented PPC Toolbox sockets from receiving
+  more than about 2K of data before crashing.
+- fflush() in the MPW stdio library doesn't take no (or -1) for an answer, 
+  therefore quitting with unsent data in the stdio buffers would cause programs 
+  to hang. As a workaround, GUSI detects when write() is called twice in a row 
+  and ESHUTDOWN would have been returned both times. In this case, GUSI pretends
+  the write succeeded the second time.
+- The new version of rename introduced in 1.3.3 was buggy in several respects.
+  First of all, it would return EINVAL when the call actually had succeeded. 
+  Second, rename() was too naive to actually force the correct spelling.
+  rename("a", "A"), would work, rename("A", "A"), when the file was actually
+  spelled "a" would not.
+- rmdir() frivolously walked up a directory before deleting, which for some
+  strange reason sometimes actually worked.
+- readdir() would return ENOENT when the end of the directory was reached, 
+  which is contrary to the way UN*X does it.
+- GUSI would try to open all network services whose socket families were 
+  linked  in at a very early stage in the application. This would cause 
+  problems for SLIP/PPP (and probably also ARA) users, as for some applications 
+  (like MacPerl), starting up SLIP every time made little sense. Additionally, 
+  initializing MacTCP before the rest of the Toolbox would cause crashes with 
+  some SLIP implementations. The behaviour of GUSI has now changed so network
+  services are only initialized when the first socket is opened or another call 
+  necessitates it.
+- A new socket family has been added in GUSIRemoteConole.o, which is currently 
+  not documented, so using it is not recommended.
+ 
+Version 1.3.3	24Oct93
+
+- Added automatic centering to get directory dialog if rezzed for System 7 only.
+- Added a constructor for special files and folders to class TFileSpec.
+- Made rename("a", "A") possible.
+- Made TFileSpec and consequently GUSI file routines more robust against 
+  pathological paths. Path components longer than 63 chars used to trash 
+  memory.
+
+Version 1.3.2	11Sep93
+
+- In the absence of an /etc/services file, endservent() tried to fclose 
+  (FILE *) -1, with disastrous consequences. Thanks to Olafur Bragason for
+  reporting this bug.
+- Paul C. Aitkenhead discovered that accept() for TCP sockets didn't fill
+  in the name of the connecting peer. 
+- The tests will now initialize QuickDraw by themselves, to take into account
+  the fact that when using SIOW, WaitNextEvent might get called before SIOW has
+  a chance to initialize the Toolbox.
+- As Brad Pickering found out, sends for UDP sockets would by mistake never 
+  report errors.
+
+Version 1.3.1  09Aug93
+
+- Reid Simmons brought to my attention that gethostname() was no longer an
+  external symbol. On closer inspection, the same turned out to be true about 
+  truncate() and GUSIDefaultSpin(). I had made a few mistakes in my prototypes.
+  The new version of the Internalize script should catch this type of error in
+  the future.
+  
+Version 1.3.0	31Jul93
+
+- Separated examples into their own folder with their own Makefile. Building
+  GUSITest will therefore no longer cause GUSI.o to be rebuilt.
+- The Makefile has been generally sanitized. 
+- All header files now reside in :includes
+- Most headers have changed in rather drastical ways. The BSD headers are now
+  taken from net2 and are prototyped. This is initially likely to produce a 
+  few errors in your code where typecasts have been missing. In particular, the
+  following have changed:
+   - bind, connect, accept, and getsockname take address parameters 
+	  of type (struct sockaddr *).
+	- If you had declard any variables as (dirent *), you will have to change 
+	  that to (struct dirent *).
+- The headers have also been adapted so that no symbol from the standard MPW 
+  headers is ever redefined in an incompatible way (hopefully).
+- getserv...() has been enhanced, thanks to code contributed by Sak Wathanasin.
+  The new implementation first searches for a file /etc/services in the 
+  preferences folder, before falling back on the old approach.
+- getservent(), setervent(), endservent(), getservbyport(), truncate(), 
+  ftruncate(), and scandir() were added.
+- stat() on a directory now returns the number of files in st_size. Needless to
+  say, this is totally nonportable.
+- Pathnames where an intermediate folder existed as a file didn't give the
+  errors they should have given.
+- Another UDP fix.
+ 
+Version 1.2.0	20Jun93
+
+- Fixed a disastrous bug with configuration resources. MPW Tools that had no 
+  configuration resources would "borrow" resources of other Tools previously
+  loaded.
+- It is now possible to make the type & creator of newly created file dependent
+  on their suffixes (i.e., anything ening in .o can be mapped to 'OBJ '/'MPS ')
+- If socket creation fails due to low memory conditions, errno is set correctly
+- Opening of the console is now handled more subtly, allowing programmers to link
+  GUSI with their custom "Dev:Console" handlers.
+- The routine for checking for Command-period is now exported
+- getsockname() for UDP sockets in an early stage of their existence would in 
+  some cases nonsense. Thanks to Paul C. Aitkenhead for discovering.
+- Changed sa_constr_ppc. The old version was basically unable to provide a real
+  constraint. Hopefully, though, old sa_constr_ppc records are still handled
+  correctly.
+- Bracketed all headers defining prototypes with #ifdef __cplusplus 
+  incantations. Thanks to John W. Pope for suggesting this.
+  
+Version 1.1.1	04Apr93
+
+- A few of the declarations in sys/fcntl.h were inconsistent with Fcntl.h and 
+  the actual behaviour of GUSI, in particular O_CREATE. (thanks to Franklin Chen 
+  for reporting).
+- PAP sockets would lose data when closed.
+
+Version 1.1.0	14Mar93
+
+- Reorganized the way to specify parts of GUSI to include. There are no 
+  specialized builds like GUSI_AFU.o anymore. Instead, you specify one or several 
+  configuration files in addition to GUSI.o in the link. If you just want to 
+  include everything possible, use {CLibraries}GUSI_Everything.cfg.
+- Added support for the Printer Access Protocol (PAP): You can open a connection
+  to the currently chosen LaserWriter with open("Dev:Printer").
+- Added support for Dave Peterson's forthcoming inetd.
+- Introduced fgetfileinfo().
+- All header files are now protected against multiple inclusion, as suggested by
+  J.T. Conklin.
+- st_nlink in statbufs used to return 1 for both files and folders. While it 
+  might be argued that this is true, it breaks some Unix programs. Therefore, 
+  the current version returns for folders either the number of items the folder 
+  contains + 2 or the number of subdirectories the folder contains + 2 (the 2 is 
+  an Unixism), depending on a flag in the configuration resource (thanks to 
+  Charlie Reiman for reporting).
+- fstat() used to claim that sockets were regular files. This bug had horrible 
+  consequences for some Unix software. Now, they correctly declare sockets to be
+  such.
+- Use FSpMakeFSSpec at some places in TFileSpec if it's available. Added a member
+  function Bless() to guarantee the kosherness of a TFileSpec.
+- Found a few severe bugs in GUSIBuffer. PPC sockets might work better now.
+- Added several new options to the preference resource. To specify which version 
+  of the preference resource you want, #define GUSI_PREF_VERSION to the version 
+  you want. If you don't, version '0102' is assumed.
+- To faciliate changing flags on the fly, programs rezzed with GUSI.r now include
+  a TMPL for the version resource.
+
+Version 1.0.2	24Jan93
+
+- rename() used to sometimes do the wrong thing if both the name and the folder 
+  had to be changed. I don't think the new version is 100% correct, but it 
+  should be better. (thanks to Brad Pickering for reporting)
+- choose() for files doesn't count the terminating NULL byte anymore. I hope 
+  nobody relied on the old version. (thanks again to Brad Pickering)
+- getserv...() and getprotoby...() used to return NULL for the aliases field, 
+  which is not correct.
+- TCP/IP sockets had a horrible bug with fast read/writes. That's what I get for
+  not doing my code stealing properly.
+
+Version 1.0.1	09Jan93
+
+- If a TCP socket returned from accept() was closed, further accepts on the
+  parent socket were disabled. Fixed. Thanks to Chen JiaTyan for reporting.
+- GUSI configuration resources are now respected
+- Programs linked with GUSI now by default automatically call the spin routine
+  for every read/write (This can be turned off in the configuration resource).
+- Add a chdir()-respecting fsetfileinfo()
+
+Version 1.0		20Dec92
+
+- Changed the way subset libraries were built.
+- Arrange for the GUSI_F variant to be always built.
+- Add routines to access FSSpec manipulations from plain C.
+- Add correct prototypes to netdb.h.
+- Rename GUSIFSp_P.h to TFileSpec.h and make it public.
+- Let choose() treat flags consistently for all address families: If CHOOSE_NEW
+  or CHOOSE_DIR are specified for a family that doesn't support them, EINVAL
+  is returned.
+- FileSocketDomain::choose() now treats CHOOSE_DEFAULT correctly
+- Add getcwd()
+- stat() now considers files with type 'TEXT' as executable (this is certainly
+  controversial and might be made configurable in a future version).
+- removed GUSIResident, the feature from hell. I forgot twice to specify
+  a resident segment for it, and both times it took me almost a week to find
+  the bug. The routines formerly in GUSIResident are now in Main.
+- fixed a few bugs.
+- Updated the documentation.
+
+Version 1.0b4	29Oct92
+
+Purged (hopefully) the last remaining traces of the obsolete structure name
+"direct" (should have been "dirent"). Thanks to Kevin Willey for pointing out
+that bug.
+
+Version 1.0b3	19Oct92
+
+Fixed a few bugs in the test programs
+
+Version 1.0b2	05Oct92
+
+The documentation is now almost complete.
+
+Version 1.0b1	28Sep92
+
+This release is somewhat premature. Although I believe the code is already in a
+decent shape, the documentation is still in a bad shape. I wouldn't trust the PPC
+Toolbox code too much yet.

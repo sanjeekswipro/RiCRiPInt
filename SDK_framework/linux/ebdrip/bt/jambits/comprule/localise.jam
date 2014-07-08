@@ -1,0 +1,110 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Localisation message compilation rules.
+#
+# $HopeName: HQNjambits!comprule:localise.jam(EBDSDK_P.1) $
+#
+
+#* Strip messages files of Hope logs, in preparation for encryption or
+#* copying.
+#*
+#* $(1) language...
+#*
+#*seerule EncryptMessages CopyMessages
+#*section Localisation
+rule StripMessages {
+    local messtemp = $(CurrentPath)$/obj$/$(SupraPlat)$/messtemp ;
+
+    for L in $(1) {
+        local Source Target ;
+        MakeGristed Source : $(L) : $(CurrentPath)/original ;
+        MakeGristed Target : $(L) : $(CurrentPath)/stripped ;
+        ExportSource $(Source) : Text ;
+        SEARCH on $(Source) += $(CurrentPath)$/messages ;
+        DirectoryFor $(Target) : $(messtemp) ;
+        DEPENDS $(Target) : $(Source) ;
+        FloatingDepends $(Target) ;
+        _StripMessages $(Target) : $(Source) ;
+    }
+    ExportSource $(BUILDROOT)$/tools$/striplogs.pl : Perl ;
+    CleanDir $(messtemp) ;
+}
+
+actions _StripMessages {
+    $(Perl) $(BUILDROOT)$/tools$/striplogs.pl $(>) $(<)
+}
+
+#* Encrypt localisation message files, leaving the result in the Messages
+#* output directory.
+#*
+#* $(1) language...
+#*
+#*seerule StripMessages CopyMessages
+#*section Localisation
+rule EncryptMessages {
+    local messtemp = $(CurrentPath)$/obj$/$(SupraPlat)$/messtemp ;
+    local messages = $(CurrentPath)$/obj$/$(SupraPlat)$/Messages ;
+    local Encrypt ;
+    MakeGristed Encrypt : cryptify$(C-Exec-Suffix) : $(CurrentPath)$/..$/encrypt ;
+
+    for L in $(1) {
+        local Source Target ;
+        MakeGristed Source : $(L) : $(CurrentPath)/stripped ;
+        MakeGristed Target : $(L) : $(CurrentPath) ;
+        ExportSource $(Source) : Text ;
+        SEARCH on $(Source) += $(messtemp) ;
+        DirectoryFor $(Target) : $(messages)$/$(Variant_customised) ;
+        DEPENDS $(Target) : $(Source) ;
+        DEPENDS $(Target) : $(Encrypt) ;
+        FloatingDepends $(Target) ;
+        CUSTMR on $(Target) = $(Variant_customised) ;
+        Encrypt on $(Target) = $(Encrypt) ;
+        if $(C-Compiler-Family) = msvc   { PLAT on $(Target) = WIN32 ; }
+        if $(MAC) || $(MACOSX)  { PLAT on $(Target) = MACINTOSH ; }
+        if $(UNIX) { PLAT on $(Target) = UNIX ; }
+        _EncryptMessages $(Target) : $(Source) ;
+        CleanDir $(messages) ;
+    }
+    ExportSource $(BUILDROOT)$/tools$/encrypt.pl : Perl ;
+    ExportSource $(BUILDROOT)$/tools$/oemno.pl : Perl ;
+    ExportSource $(BUILDROOT)$/tools$/pltools$/fileutil.pl : Perl ;
+    ExportSource $(BUILDROOT)$/tools$/pltools$/pcutil.pl : Perl ;
+    ExportSource $(BUILDROOT)$/tools$/pltools$/trace.pl : Perl ;
+}
+
+actions _EncryptMessages bind Encrypt {
+    $(Perl) $(BUILDROOT)$/tools$/encrypt.pl $(PLAT) $(CUSTMR) $(BUILDROOT)$/customer$/export$/customer.h $(Encrypt) $(>) >$(<)
+}
+
+
+#* Copy non-encrypted localisation message files, leaving the result in the
+#* Messages directory.
+#*
+#* $(1) language...
+#*
+#*seerule StripMessages EncryptMessages
+#*section Localisation
+rule CopyMessages {
+    local messtemp = $(CurrentPath)$/obj$/$(SupraPlat)$/messtemp ;
+    local messages = $(CurrentPath)$/obj$/$(SupraPlat)$/Messages ;
+
+    for L in $(1) {
+        local Source Target ;
+        MakeGristed Source : $(L) : $(CurrentPath)/stripped ;
+        MakeGristed Target : $(L) : $(CurrentPath) ;
+        ExportSource $(Source) : Text ;
+        SEARCH on $(Source) += $(messtemp) ;
+        DirectoryFor $(Target) : $(messages)$/$(Variant_customised) ;
+        DEPENDS $(Target) : $(Source) ;
+        FloatingDepends $(Target) ;
+        _CopyMessages $(Target) : $(Source) ;
+        CleanDir $(messages) ;
+    }
+}
+
+actions _CopyMessages {
+    $(Copy) $(>) $(<)
+}
+
+# Log stripped

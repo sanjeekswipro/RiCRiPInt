@@ -1,0 +1,424 @@
+%!PS-Adobe-3.0
+%%Title: HqnPDFContextManager
+%%Creator: Global Graphics Software Limited
+%%CreationDate: 2004
+%{HqnMedia version #1 0
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%%EndComments
+%%BeginProcSet: (HqnPDFContextManager) 1 0
+
+%
+% $HopeName: SWpdf!swf:procsets:hqnpdfcm(EBDSDK_P.1) $
+%
+
+%
+
+
+% HqnPDFContextManager
+%
+% This procset offers an alternative interface for using the pdfopen and
+% pdfexecid operators. It allows any number of "virtual" PDF contexts to
+% be held open with a significantly reduced VM cost. These virtual contexts
+% are indentified via integer handles, and can be treated similarly to
+% regular PDF context IDs. The procset ensures that only a bounded number
+% of actual PDF contexts are held open at any one time, thus saving on
+% postscript VM.
+%
+% This ProcSet can be used by postscript programs that would ideally like
+% to hold a large number of PDF contexts open concurrently, but where the
+% consequent consumption of VM would be unacceptable. The interface offered
+% by this procset is as convenient to use as the regular interface provided
+% by pdfopen and pdfexecid. The difference is that the VM cost of a virtual
+% PDF context is negligible.
+%
+% The procset offers the procedures PDFOpen, PDFExecID and PDFClose, which
+% can be treated as direct alternatives to the operators pdfopen, pdfexecid
+% and pdfclose respectively. The only difference is that PDFOpen returns
+% a context ID _and_ a page count on the stack, and takes a filename rather
+% than an open filestream as is first argument.
+
+
+currentglobal false setglobal
+
+10 dict begin
+
+/globalness exch def
+
+/PDFContextManagerWS currentdict def
+
+% virtualContexts
+% This is the main internal data structure, a dictionary organized
+% as follows:
+%
+% /contextArray   (Array of dictionaries)
+%
+%   An array of "virtual context dictionaries". The array is 1-indexed,
+%   so its first element is always unused. The array becomes populated
+%   by dictionaries as virtual contexts are opened with /PDFOpen. Unused
+%   places in the array hold null.
+%
+%   This array is grown to hold an arbitrary number of virtual context
+%   dictionaries. When it becomes full, it is expanded by a fixed number
+%   of new elements according to the /growthSpace query.
+%
+%   The integer ID of a virtual PDF contexts corresponds exactly to its
+%   position in this array. (This is why index zero is not used: we
+%   prefer to avoid using zero as a context ID). This value is then negated
+%   so that other procsets (e.g. HqnPDFPages) can distinguish virtual
+%   contexts from normal ones and know to act accordingly.
+%
+%   The format of each the virtual context dictionary is:-
+%
+%      <<
+%         /File         The postscript filename of the PDF file. (String).
+%         /FileStream   The readonly stream for the file when its PDF context
+%                       is open.
+%         /IsOpen       Boolean flag indicating whether the PDF context is
+%                       currently open.
+%         /ContextID    Holds the actual PDF context ID while it is open.
+%         /LastSwapIn   Holds an integer value that indicates how recently
+%                       the context was last used. (See below).
+%         /PDFOpenParams  A dictionary of parameters for pdfopen. These need
+%                         to be stored persistently because the manager may
+%                         need to close and then re-open the context multiple
+%                         times.
+%      >>
+%
+%
+% /nextID   (Integer)
+%
+%   The index within /contextArray where the next virtual context dictionary
+%   should be allocated. This is initially 1, because index 0 of the array
+%   is not used. Note that this value is NOT negated.
+%
+%
+% /maxOpen   (Integer)
+%
+%   The maximum number of actual PDF contexts that are permitted to be
+%   held open concurrently. When this number of open contexts is
+%   exceeded, the manager starts to close contexts that have least-recently
+%   been used.
+%
+%   This can be specified when /InitPDFContextManager is called.
+%
+%
+% /nOpen   (Integer)
+%
+%   The number of actual PDF contexts that are currently open.
+%
+%
+% /tick   (Integer)
+%
+%   A simple tick counter that is incremented each time a virtual PDF
+%   context is used. The value of this ticker is copied into the
+%   /LastSwapIn key of the virtual context. This mechanism allows the
+%   manager to determine which open contexts have been least-recently
+%   used.
+%
+%
+% /growthSpace
+%
+%   The number of new elements by which the context array should be
+%   extended when it is full.
+%
+%
+% On a per-job basis, the initial settings in this dictionary are set up by
+% /InitPDFContextManager in the procset.
+/virtualContexts 6 dict def
+
+% Create and store a new virtual context dictionary, growing the context
+% array if necessary.
+%
+% |- filename pdfparams -> |- virtual-context-id
+/AllocateNewVirtualContext
+{
+  //virtualContexts begin
+
+    % Grow contextArray if necessary
+    nextID contextArray length ge
+    {
+      contextArray dup length growthSpace add array
+      2 copy copy pop
+      exch pop
+      /contextArray exch def
+    } if
+
+    % Store the new dictionary.
+    contextArray
+    nextID
+    <<
+       /File          5 index
+       /PDFOpenParams 6 index
+       /IsOpen        false
+       /ContextID     0
+       /LastSwapIn    -1
+       /FileStream    null
+    >>
+    put
+
+    pop pop % Original args
+
+    % Return new ID and increment next ID.
+    nextID /nextID 1 index 1 add def
+    
+    neg		% Mark as a virtual context
+  end
+} bind def
+
+% Close a virtual PDF context (and its corresponding actual PDF context, if
+% it is currently open).
+%
+% |- virtual-context-id -> |-
+/CloseVirtualContext
+{
+  neg
+  //virtualContexts /contextArray get 1 index get begin
+    IsOpen
+    {
+      ContextID pdfclose
+      FileStream closefile
+      /ContextID 0 def
+      /IsOpen false def
+      /FileStream null def
+      //virtualContexts /nOpen 2 copy get 1 sub put
+    } if
+  end
+
+  % Store null at the context's array position. This position will not be
+  % re-used.
+  //virtualContexts /contextArray get exch null put
+} bind def
+
+% Close the least-recently used PDF context if the number of open contexts
+% has exceeded the limit.
+%
+% |- -> |-
+/EnsureOpenContextsBoundedD 1 dict def
+/EnsureOpenContextsBounded
+{
+  //virtualContexts begin
+    nOpen maxOpen gt
+    {
+      % Close the context with the lowest value of /LastSwapIn
+      contextArray
+      //EnsureOpenContextsBoundedD begin
+        /contextToClose null def
+        {
+          % |- context-dict
+          dup null eq { pop }
+          {
+            dup /IsOpen get
+            {
+              contextToClose null eq
+              {
+                /contextToClose exch def
+              }
+              {
+                dup /LastSwapIn get contextToClose /LastSwapIn get lt
+                {
+                  /contextToClose exch def
+                }
+                {
+                  pop
+                } ifelse
+              } ifelse
+            }
+            {
+              pop
+            } ifelse
+          } ifelse
+        } forall
+
+        contextToClose begin
+          ContextID   pdfclose
+          FileStream  closefile
+          /ContextID 0 def
+          /IsOpen     false def
+          /FileStream null def
+        end
+      end
+      /nOpen nOpen 1 sub def
+    } if
+  end
+} bind def
+
+% Set up the virtualContexts data structure.
+%
+% |- max-open -> |-
+/InitializeVirtualContexts
+{
+  //virtualContexts begin
+    /maxOpen      exch def
+    /contextArray 16 array def
+    /nOpen        0 def
+    /nextID       1 def
+    /tick         0 def
+    /growthSpace  16 def
+  end
+} bind def
+
+% Ensure that a virtual context is open, and return the actual context ID of
+% the open PDF context.
+%
+% |- virtual-context-id -> actual-context-id
+/SwapIn
+{
+  //virtualContexts /contextArray get exch 
+  neg		% it's a virtual context, flagged by being negative
+  { get } stopped {
+  	/HqnPDFContextManager errordict /rangecheck get exec
+  } if
+  begin
+
+    /LastSwapIn //virtualContexts /tick get def
+    //virtualContexts /tick 2 copy get 1 add put
+
+    IsOpen
+    {
+      ContextID
+    }
+    {
+      /FileStream File (r) file def
+      /ContextID FileStream PDFOpenParams pdfopen def
+      /IsOpen true def
+      //virtualContexts /nOpen 2 copy get 1 add put
+      //EnsureOpenContextsBounded exec
+      ContextID
+    } ifelse
+  end
+} bind def
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The ProcSet Resource                                                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/HqnPDFContextManager
+<<
+
+  % Approximately equivalent to the pdfopen operator, but accepts a
+  % postscript filename rather than an open file stream, and returns
+  % a page count in addition to the (virtual) context ID.
+  %
+  % You should only call this procedure within the job's top-level save
+  % context. Calling this procedure within a temporary save context
+  % will cause the manager's internal data structure to become
+  % inconsistent.
+  %
+  % |- filename dict -> virtual-context-id page-count
+  /PDFOpen
+  {
+    //PDFContextManagerWS begin
+      AllocateNewVirtualContext
+      dup SwapIn
+
+      % |- virtual-context real-context
+      % The page count is useful to the caller.
+      /HqnPDFPages /ProcSet findresource /getpagecount get exec
+    end
+  } bind
+
+  % Equivalent to the pdfexecid operator.
+  %
+  % This procedure will ensure that the given virtual context is
+  % opened (possibly needing to close an existing PDF context in order
+  % to maintain the limit). It will then exchange the virtual context
+  % ID for the actual context ID, and call pdfexecid.
+  %
+  % This procedure potentially updates the manager's internal data
+  % structure. It is therefore important _not_  to call this procedure
+  % in a temporary save context, because the data structure updates
+  % would consequently get "restored away", leaving the manager in
+  % a confused state, almost certainly causing errors later on. It is
+  % recommended that you call this procedure only in the job's top-level
+  % save context. A work-around for this restriction is provided by
+  % the /SwapIn procedure (see below).
+  %
+  % |- virtual-context-id dict -> |-
+  /PDFExecID
+  {
+    //PDFContextManagerWS begin
+      exch SwapIn exch pdfexecid
+    end
+  } bind
+
+  % Ensure that a particular virtual context is currently open.
+  %
+  % The /PDFExecID procedure will do this anyway, but a call to /SwapIn
+  % before /PDFExecID will ensure that /PDFExecID does not need to
+  % update the internal data structure. This means that /PDFExecID
+  % _can_ be called in a temporary save context as long as /SwapIn
+  % is called before save. Eg:-
+  %
+  % /HqnPDFContextManager /ProcSet findresource begin
+  %   26 SwapIn
+  %   save
+  %     ...
+  %     26 << >> PDFExecID
+  %     ...
+  %   restore
+  % end
+  %
+  % |- virtual-context-id -> |-
+  /SwapIn
+  {
+    //PDFContextManagerWS /SwapIn get exec pop
+  } bind
+
+  % Close a virtual context.
+  %
+  % This procedure is basically equivalent to pdfclose. You should call it
+  % only when you are not going to use the context any more. If the virtual
+  % context is currently open, it will be closed. In addition to this,
+  % the virtual context ID is de-assigned.
+  %
+  % |- virtual-context-id -> |-
+  /PDFClose
+  {
+    //PDFContextManagerWS /CloseVirtualContext get exec
+  } bind
+
+  % Initialization routine that must be called at the start of any job
+  % using this procset.
+  %
+  % This procedure allows you to specify the maximum number of PDF contexts
+  % that the manager can keep open concurrently.
+  %
+  % |- max-open-contexts -> |-
+  /InitPDFContextManager
+  {
+    //PDFContextManagerWS /InitializeVirtualContexts get exec
+  } bind
+
+% Translate from a virtual context to a 'real' one.
+% This procedure is intended for use ONLY with care, not as a general method of
+% working with virtual contexts.
+% A virtual context is flagged by being supplied as a negative number
+% VContext -> ResolvePDFContext -> realContext
+/ResolvePDFContext {
+	count 1 lt {
+		/ResolvePDFContext errordict /stackunderflow get exec
+	} if
+	dup type /integertype ne {
+		/ResolvePDFContext errordict /typecheck get exec
+	} if
+	dup 0 ge {
+		/ResolvePDFContext errordict /rangecheck get exec
+	} if
+	
+	//PDFContextManagerWS begin
+	
+	//SwapIn exec
+	
+	end
+} bind
+
+>> /ProcSet defineresource pop
+
+globalness
+end		% PDFContextManagerWS
+setglobal
+
+%%EOF

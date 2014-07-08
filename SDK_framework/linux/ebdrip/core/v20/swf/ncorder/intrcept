@@ -1,0 +1,26 @@
+%!PS-Adobe-3.0
+%%Title: Intercept
+%%Creator: Global Graphics Software Limited
+%%CreationDate: February 1999
+% Copyright (C) 1999-2013 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:ncorder:intrcept(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This resource defines the order in which NamedColor resource databases should
+% be searched for NamedColor interception.
+
+/Intercept
+[
+    % If a gui rip color setup has set PantonePLUS, use it. HHR will use PantonePLUS.
+    mark {1183615869 internaldict /PageSetup get /HCMS get /PantonePLUS get exch pop} stopped
+    {cleartomark true} if
+    {(PantonePLUS)} {(PantoneStandard)} ifelse
+    /NamedColorOrder findresource aload pop
+]
+/NamedColorOrder defineresource
+
+%%EOF

@@ -1,0 +1,25 @@
+%!PS-Adobe-3.0
+%%Title: ja_JP	OS locales
+%%CreationDate: Dec 2004
+% Copyright (C) Global Graphics Software Limited, 2004. All Rights Reserved.
+% $Revision: 1.3.4.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:oslocale:ja_jp(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Encoding map for ja_JP OS locales
+
+% Strings entered in operating system or RIP user interfaces
+% are assumed to match the encoding used by
+% the platform on which the RIP is running.
+/OSLocale	<<
+		/Mac		/ibm-943_P15A-2003
+		/MacX		/UTF-8
+		/Win		/ibm-943_P15A-2003
+		/Unix		/ibm-954_P101-2000
+>>
+	
+%%EOF

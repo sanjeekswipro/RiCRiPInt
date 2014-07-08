@@ -1,0 +1,155 @@
+/* $HopeName: COREwcs!src:names.nam(EBDSDK_P.1) $
+ * Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+ * Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREwcs. See SWv20!src/names.nam for documentation on the
+ * file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ *
+ * The names for ALL WCS files should be put in this file.
+ *
+ * Don't use the ; character in PS style comments.
+ * ============================================================================
+ */
+
+% Use \057/ for double-slash so cpp does not treat it as C++ comment.
+
+http:\057/schemas.microsoft.com/windows/2005/02/color/WcsCommonProfileTypes  NAME(ns_2005_02_wcs_cpt)
+http:\057/schemas.microsoft.com/windows/2005/02/color/ColorDeviceModel       NAME(ns_2005_02_wcs_cdm)
+http:\057/schemas.microsoft.com/windows/2005/02/color/ColorAppearanceModel   NAME(ns_2005_02_wcs_cam)
+http:\057/schemas.microsoft.com/windows/2005/02/color/GamutMapModel          NAME(ns_2005_02_wcs_gmm)
+
+X
+Y
+Z
+
+ColorDeviceModel
+ProfileName
+Description
+Author
+MeasurementConditions
+SelfLuminous
+MaxColorant
+MinColorant
+CRTDevice
+LCDDevice
+RGBProjectorDevice
+ScannerDevice
+CameraDevice
+RGBPrinterDevice
+CMYKPrinterDevice
+RGBVirtualDevice
+PlugInDevice
+GUID
+ID
+Text
+
+% MeasurementConditions
+ColorSpace
+CIEXYZ
+WhitePoint
+WhitePointName
+Geometry
+0/45       NAME(0_45)
+0/diffuse  NAME(0_diffuse)
+diffuse/0  NAME(diffuse_0)
+direct
+ApertureSize
+
+% DisplayMeasurementType
+MeasurementData
+TimeStamp
+WhitePrimary
+RedPrimary
+GreenPrimary
+BluePrimary
+BlackPrimary
+GrayRamp
+RedRamp
+GreenRamp
+BlueRamp
+ColorSamples
+White
+Black
+Red
+Green
+Blue
+Cyan
+Magenta
+Yellow
+PrimaryIndex
+NeutralIndices
+ColorSamples
+ColorCube
+MaxColorantUsed
+MinColorantUsed
+Gamma
+GammaOffsetGain
+GammaOffsetGainLinearGain
+HDRToneResponseCurves
+GamutBoundarySamples
+value
+Gamma
+Offset
+Gain
+LinearGain
+TransitionPoint
+RedTRC
+GreenTRC
+BlueTRC
+TRCLength
+RGB
+Input
+Output
+R
+G
+B
+C
+M
+%Y
+K
+CMYK
+Tag
+Sample
+
+ColorAppearanceModel
+ProfileName
+Description
+Author
+ViewingConditions
+WhitePoint
+WhitePointName
+D50
+D65
+A
+F2
+Background
+ImpactOfSurround
+Surround
+Average
+Dim
+Dark
+LuminanceOfAdaptingField
+DegreeOfAdaptation
+NormalizeToMediaWhitePoint
+ID
+
+GamutMapModel
+ProfileName
+Description
+Author
+DefaultBaselineGamutMapModel
+HPMinCD_Absolute
+HPMinCD_Relative
+SGCK
+HueMap
+PlugInGamutMapModel
+ID
+
+errorinfo
+$error NAME(DollarError)
+ErrorParams
+
+/*
+* Log stripped */

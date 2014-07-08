@@ -1,0 +1,62 @@
+%!PS
+%%Title: Htm2bpp
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2007 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWebd_OIL_example_gg!swf:usr:hqnebd:htm2bpp(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Initialization file to install the halftone dictionaries for the example
+% screening module(s), ready for use with the /OverrideSpotFunctionName
+% systemparam.
+
+currentglobal true setglobal
+
+
+% This halftone dictionary is approprate for DeviceCMYK,
+% with or without spot colors. Any spot colors will be screened
+% using the screen used for Black.
+
+/htmCMYK2bpp <<
+  /HalftoneType 5
+  /HalftoneName /htmCMYK2bpp
+
+  /Cyan <<
+    /HalftoneType 100
+    /HalftoneModule /htm2bpp
+    /Screen 0
+  >>
+  /Magenta  <<
+    /HalftoneType 100
+    /HalftoneModule /htm2bpp
+    /Screen 1
+  >>
+  /Yellow <<
+    /HalftoneType 100
+    /HalftoneModule /htm2bpp
+    /Screen 2
+  >>
+  /Black <<
+    /HalftoneType 100
+    /HalftoneModule /htm2bpp
+    /Screen 3
+  >>
+  /Default <<
+    /HalftoneType 100
+    /HalftoneModule /htm2bpp
+    /Screen 3
+  >>
+
+>>
+
+/HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+setglobal % restore
+
+% (%stderr%)(w) file (Diags - example modular halftones defined\n) writestring
+

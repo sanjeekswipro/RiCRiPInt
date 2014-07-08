@@ -1,0 +1,117 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWebd_OIL_example_gg!swf:sys:extdevic(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+% This file is loaded very early on in the RIP bootup, and it describes the devices
+% that need to be initialized in order for the RIP to run.
+
+%!PS-Adobe
+%%Title: Sys/ExtraDevices
+%%Creator: Global Graphics Software Limited
+%%EndComments
+
+statusdict begin
+  (%console%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff0001
+    /Enable true
+  >> setdevparams
+ 
+  (%stdin%)   (r) file (%console%) (w) file setstdio
+  (%console%) (w) file setstderr
+
+  (%config%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff0002
+    /Enable true
+  >> setdevparams
+
+  (%pagebuffer%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff0003
+    /Enable true
+  >> setdevparams
+
+  (%tmp%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 0
+%    /Enable true
+    /Prefix (tmp/tmp)
+  >> setdevparams
+
+mark {
+  % This is in a stopped context, because the Calendar device may not be
+  % supported in the Core build. The calendar device may be built as part of
+  % the LE skin.
+
+  (%Calendar%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff0005
+    /Enable true
+  >> setdevparams
+} stopped cleartomark
+
+mark {
+  % This is in a stopped context, because the Stream device may not be
+  % supported in the Core build. The stream device may be built as part of
+  % the LE skin.
+
+  (%pipeline%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff0006
+    /Enable true
+  >> setdevparams
+} stopped cleartomark
+
+mark {
+  % this is in a stopped context, because the font decoding filter is only
+  % conditionally compiled in the example skin.  In a real application, you
+  % would either need it or not, and therefore would either run this normally
+  % (rather than stopped) or remove this entire block.
+  /FONTDecode
+  <<
+    /FilterType 	(r)
+    /FilterNumber	128
+  >>
+  /Filter defineresource
+  /FONTEncode
+  <<
+    /FilterType 	(w)
+    /FilterNumber	128
+  >>
+  /Filter defineresource
+} stopped cleartomark
+
+mark { 
+  % This is in a stopped context, because the progress device may not be
+  % supported in the Core build. The progress device may be built as part of
+  % the LE skin.
+  (%progress%) dup devmount pop
+  <<
+    /Password 0
+    /DeviceType 16#ffff000b
+    /SearchOrder -1
+    /Enable true
+    /JobTiming false
+  >> setdevparams
+} stopped cleartomark
+
+end
+
+/ICCDecode
+<<
+  /FilterType 	(r)
+  /FilterNumber	1003
+>>
+/Filter defineresource pop

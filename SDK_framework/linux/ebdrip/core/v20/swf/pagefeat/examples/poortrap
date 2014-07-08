@@ -1,0 +1,24 @@
+%!PS-Adobe
+%%Title: Poor Trap Rule
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2001-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% 
+% This simple page feature turns on the 'poor trap rule' parameter in TrapWorks.
+% When considering whether two colors require a trap, the Red Book specifies
+% that tint values in each colorant are compared. The default behaviour in
+% TrapWorks (HqnPoorTrapRule false) is to compare neutral density components
+% rather than tint values. This tends to result in fewer traps involving
+% yellow and more with black, so that large density differences are trapped
+% but unnecessary traps aren't generated in lighter colorants.
+%
+
+% $HopeName: SWv20!swf:pagefeat:examples:poortrap(EBDSDK_P.1) $
+%
+
+<< /HqnPoorTrapRule true >>
+/Trapping /ProcSet findresource /settrapparams get exec
+
+<< /Trapping true >> setpagedevice
+
+%%END

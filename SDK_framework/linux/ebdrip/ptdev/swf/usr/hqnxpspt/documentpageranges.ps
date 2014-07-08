@@ -1,0 +1,87 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:documentpageranges.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles DocumentPageRanges.
+% See the XPS PrintSchema for details on valid DocumentPageRanges values.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+
+/DoDocumentPageRanges {
+  begin
+    % Set the value in the PrintTicket device, as this is the component which
+    % tells the RIP which page to process next.
+    % The default value is an empty string, which will cause all pages in the
+    % job to be printed.
+    (%xpspt%) <<
+      /PageRange pt_value [/Value] () GetPTValueWithDefault exch pop
+    >> setdevparams
+  end
+} bind def
+
+
+/OverrideDocumentPageRanges {
+  begin
+    % Check for a GUI RIP override value in statusdict -> GuiRIPXPSOverrides -> DocumentPageRanges
+    statusdict /GuiRIPXPSOverrides 2 copy known {
+      get /DocumentPageRanges 2 copy known {
+        get
+        << /Value 3 -1 roll >>
+        true
+      }{
+        pop pop
+        false
+      }ifelse
+    }{
+      pop pop
+      false
+    }ifelse
+
+    % If no GUI RIP override ensure that key is ignored when PT processing is disabled
+    dup not {
+      InternalState /JobXPSPTProcessing get not {
+        pop
+        null true
+      }if
+    }if
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /DocumentPageRanges
+    <<
+      /Action //DoDocumentPageRanges
+      /Override //OverrideDocumentPageRanges
+      /AlwaysEnabled true
+    >>
+>>
+
+end

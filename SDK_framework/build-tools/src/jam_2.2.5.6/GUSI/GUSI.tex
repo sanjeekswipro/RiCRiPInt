@@ -1,0 +1,2615 @@
+\input cweb.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Project : GUSI   - Grand Unified Socket Interface
+% File  : GUSI.web  - Documentation
+% Author : Matthias Neeracher
+% Language : C SpiderWeb
+%
+% $Log: GUSI.tex,v $
+% Revision 1.1  1999/04/22  16:02:40  build
+% new unit
+% Grand Unified Socket Interface
+%
+% Revision 1.4  1994/12/31  03:30:13  neeri
+% PS: Document TFileSpec.h
+%
+% Revision 1.3  1994/12/30  19:35:58  neeri
+% Update for 1.5.0
+%
+% Revision 1.2  1994/05/01  23:28:39  neeri
+% Added utime().
+%
+% Revision 1.1  1994/02/25  02:44:55  neeri
+% Initial revision
+%
+% Revision 0.9  1993/07/30  00:00:00  neeri
+% Update for 1.3.0
+%
+% Revision 0.8  1993/06/20  00:00:00  neeri
+% Last minute changes for 1.2.0
+%
+% Revision 0.7  1993/06/20  00:00:00  neeri
+% Update for 1.2.0
+%
+% Revision 0.6  1993/06/06  00:00:00  neeri
+% Expurgate docu
+%
+% Revision 0.5  1993/02/22  00:00:00  neeri
+% Update for 1.1.0
+%
+% Revision 0.4  1993/01/09  00:00:00  neeri
+% Update for 1.0.1
+%
+% Revision 0.3  1992/12/13  00:00:00  neeri
+% Brush it up for release
+%
+% Revision 0.2  1992/10/05  00:00:00  neeri
+% More or less complete now
+%
+% Revision 0.1  1992/09/08  00:00:00  neeri
+% It's beginning to take shape
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Copyright 1992--1994 Matthias Neeracher <neeri@iis.ee.ethz.ch>
+
+% This file is part of GUSI
+
+% Here is TeX material that gets inserted after \input webmac
+
+% \message{OK, entering \string\batchmode...}
+% \batchmode
+
+\def\hang{\hangindent 3em\indent\ignorespaces}
+
+\def\title{GUSI 1.5.0 Reference}
+\def\contentspagenumber{1} % should be odd
+\def\topofcontents{\null\vfill
+  \titlefalse % include headline on the contents page
+  \def\rheader{\hfil}
+  \centerline{\ttitlefont GUSI \titlefont --- Grand Unified Socket Interface}
+  \vfill
+}
+
+\def\onecollist#1{\halign{\quad$\triangleright$\ \vtop{
+ \hsize=15cm\strut##\strut}\hfil\cr#1}}
+\def\twocollist#1{\halign{\quad$\triangleright$\bf\ ##\hfil&\quad
+ \vtop{\hsize=13cm\strut##\strut}\hfil\cr#1}}
+\def\plainonecol#1{\halign{\quad
+ \vtop{\hsize=15cm\strut##\strut}\hfil\cr#1}}
+\def\plaintwocol#1{\halign{\quad##\hfil&\quad
+ \vtop{\hsize=13cm\strut##\strut}\hfil\cr#1}}
+\def\bibliolist#1{\halign{\quad\bf$[$##$]$\hfil&\quad
+ \vtop{\hsize=13cm\strut##\strut}\hfil\cr#1}}
+\parindent=0pt
+
+
+\N1. = Introduction.  \.{GUSI} is an extension and partial replacement of the
+\.{MPW} runtime library. Its main objective is to provide a more or less simple
+and consistent interface across the following {\it communication domains}:
+
+\medskip\twocollist{
+Files&Ordinary Macintosh files and \.{MPW} pseudo devices.\cr
+Unix&Memory based communication within a single machine (This name exists for
+historical reasons).\cr
+Appletalk&\.{ADSP} (and possibly in the future \.{DDP}) communication over a
+network.\cr
+PPC&Local and remote connections with the System 7 \.{PPC Toolbox}\cr
+Internet&\.{TCP} and \.{UDP} connections over \.{MacTCP}.\cr
+PAP&Connections with the \.{Printer Access Protocol}, typically to a networked
+PostScript printer.\cr
+}
+
+\medskip
+Additionally, \.{GUSI} adds some \.{UNIX} library calls dealing with files
+which
+were missing, like \CD{}$\\{chdir}(\,)$\DC{}, \CD{}$\\{getcwd}(\,)$\DC{}, %
+\CD{}$\\{symlink}(\,)$\DC{}, and \CD{}$\\{readlink}(\,)$\DC{}, and
+changes a few other library calls to behave more like their \.{UNIX}
+counterparts.
+
+The most recent version of \.{GUSI} may be obtained by anonymous ftp from
+\.{ftp.switch.ch} in the directory \.{software/mac/src/mpw\_c}.
+
+There is also a mailing list devoted to discussions about \.{GUSI}. You can
+join the
+list by sending email to $<$gusi-request\AT!iis.ee.ethz.ch$>$.
+
+\fi
+
+\N2. 2 Copying.
+
+\medskip Copyright \copyright\ 1992--1994 Matthias Neeracher
+
+\medskip Permission is granted to anyone to use this software for any
+purpose on any computer system, and to redistribute it freely,
+subject to the following restrictions:
+
+\medskip\onecollist{
+The author is not responsible for the consequences of use of
+this software, no matter how awful, even if they arise
+from defects in it.\cr
+The origin of this software must not be misrepresented, either
+by explicit claim or by omission.\cr
+Altered versions must be plainly marked as such, and must not
+be misrepresented as being the original software.\cr
+}
+
+\fi
+
+\N3. 2 Design Objectives. \.{GUSI} was developed according to at least three
+mutually conflicting standards:
+
+\medskip\onecollist{
+The definition of the existing C library.\cr
+The behavior of the corresponding UNIX calls.\cr
+The author's judgement, prejudices, laziness, and limited resources.\cr
+}
+
+\medskip
+In general, the behavior of the corresponding UNIX library call was
+implemented,
+since this faciliates porting UNIX utilities to the Macintosh.
+
+\fi
+
+\N4. 2 Acknowledgements. I would like to thank all who have agreed to beta test
+this
+code and who have provided feedback.
+
+\medskip The TCP/IP code in \.{GUSIINET.cp}, \.{GUSITCP.cp}, and \.{GUSIUDP.cp}
+is
+derived from a socket library written by Charlie Reiman $<$reiman%
+\AT!talisman.kaleida.com$>$,
+which in turn is based on code written by Tom Milligan $<$milligan%
+\AT!madhaus.utcs.utoronto.ca$>$.
+
+\medskip The PAP code in \.{GUSIPAP.cp} is derived from code written by Sak
+Wathanasin
+$<$sw\AT!nan.co.uk$>$.
+
+\medskip Many of the header files in the \.{:include:} subdirectory are
+borrowed from BSD Unix,
+therefore: This product includes software developed by the University of
+California,
+Berkeley and its contributors.
+
+\fi
+
+\N5. = Installing and using GUSI. This section discusses how you can install
+\.{GUSI} on your disk and use it for your programs.
+
+\fi
+
+\M6. To install \.{GUSI}, change in the MPW Shell to its directory and type:
+\medskip
+\.{BuildProgram Install $<$Enter$>$}
+\medskip
+This will install all necessary files in \.{\{CIncludes\}}, \.{\{CLibraries\}},
+and
+\.{\{RIncludes\}}, respectively. It will also install \.{/etc/services} in your
+preferences
+folder, prompting you if you have an older version there.
+
+\medskip
+This requires that you have MPW Perl installed, which is available in the same
+ftp
+directory as \.{GUSI}.
+
+\fi
+
+\M7. To use \.{GUSI}, include one or more of the following header files in your
+program:
+\medskip\plaintwocol{
+\.{GUSI.h}&The main file. This includes almost everything else.\cr
+\.{TFileSpec.h}&\CD{}$\\{FSSpec}$\DC{} manipulation routines.\cr
+\.{dirent.h}&Routines to access all entries in a directory.\cr
+\.{netdb.h}&Looking up TCP/IP host names.\cr
+\.{netinet/in.h}&The address format for TCP/IP sockets.\cr
+\.{sys/errno.h}&The errors codes returned by GUSI routines.\cr
+\.{sys/ioctl.h}&Codes to pass to \CD{}$\\{ioctl}(\,)$\DC{}.\cr
+\.{sys/socket.h}&Data types for socket calls.\cr
+\.{sys/stat.h}&Getting information about files.\cr
+\.{sys/types.h}&More data types.\cr
+\.{sys/uio.h}&Data types for scatter/gather calls.\cr
+\.{sys/un.h}&The address format for Unix domain sockets.\cr
+\.{unistd.h}&Prototypes for most routines defined in GUSI.\cr
+}
+
+\fi
+
+\M8. GUSI expects the Macintosh Toolbox to be initialized. This will happen
+automatically
+if you're writing an \.{MPW} tool or if you are linking with \.{SIOW} and are
+forcing
+a write to standard output or standard error before you are using any non-file %
+\.{GUSI}
+routines. Otherwise, you should init the Toolbox in the following way:
+\Y\P $\\{InitGraf}((\\{Ptr})\amp\\{qd}.\\{thePort});$\6
+$\\{InitFonts}(\,);$\6
+$\\{InitWindows}(\,);$\6
+$\\{InitMenus}(\,);$\6
+$\\{TEInit}(\,);$\6
+$\\{InitDialogs}(\\{nil});$\6
+$\\{InitCursor}(\,);$\par
+\fi
+
+\M9. You have to link your program with the \.{GUSI} library. The exact
+procedure differs
+slightly between the \.{680X0} version and the \.{PowerPC} version.
+
+\fi
+
+\M10. For the  \.{680X0} version, you should link with \.{\{CLibraries%
+\}GUSI.o},
+and optionally one or several {\it configuration files}. Currently, the
+following
+configuration files exist:
+\medskip\plaintwocol{
+\.{GUSI\_Everything.cfg}&Include code for everything defined in \.{GUSI}.\cr
+\.{GUSI\_Appletalk.cfg}&Include code for AppleTalk sockets.\cr
+\.{GUSI\_Internet.cfg}&Include code for MacTCP sockets.\cr
+\.{GUSI\_PAP.cfg}&Include code for PAP sockets.\cr
+\.{GUSI\_PPC.cfg}&Include code for PPC sockets.\cr
+\.{GUSI\_Unix.cfg}&Include code for Unix domain sockets.\cr
+}
+
+\medskip If you don't specify any configuration files, only the file related
+routines will be
+included. It's important that these files appear {\it before} all other
+libraries.
+Linking with \.{GUSI} doesn't free you from linking in the standard libraries,
+typically:
+\medskip\plainonecol{
+\.{\{Libraries\}Runtime.o}\cr
+\.{\{Libraries\}Interface.o}\cr
+\.{\{CLibraries\}StdCLib.o}\cr
+\.{\{Libraries\}ToolLibs.o}\cr
+}
+
+\fi
+
+\M11. For the \.{PowerPC} version, you should link with \.{\{PPCLibraries%
+\}GUSI.xcoff} and
+if you are linking with SIOW, also with \.{\{PPCLibraries\}GUSI.xcoff}. The %
+\.{PowerPC}
+version currently doesn't support flexible configuration. As for the \.{680X0}
+version,
+\.{GUSI} should be first in your link, and you have to link with the standard
+libraries.
+
+\medskip \.{GUSI} for the \.{PowerPC} makes use of Code Fragment Manager
+version numbers,
+therefore you have to specify the correct version number for \.{MakePEF} with
+the \.{-l}
+option.
+
+\medskip
+\.{-l "GUSI.xcoff=GUSI\#0x01508000-0x01508000"}
+\medskip
+
+In case you were wondering, this encodes the version number (1.5.0) the same
+way as the
+header of a \.{'vers'} resource.
+
+\medskip You will get lots of warning messages about duplicate definitions, but
+that's ok
+(Which means I can't do anything about it).
+
+\fi
+
+\M12. You should also rez your program with \.{GUSI.r}. The section
+``Resources'' below
+discusses when and how to add your own configuration resource to customize %
+\.{GUSI}
+defaults. Don't forget that your \.{PowerPC} programs also need a \.{cfrg}
+resource.
+
+\fi
+
+\N13. = Overview. This section discusses the routines common to all, or almost
+all
+communication domains. These routines return \CD{}${-}\O{1}$\DC{} if an error
+occurred,
+and set the variable \CD{}$\\{errno}$\DC{} to an error code. On success, the
+routines return \CD{}$\O{0}$\DC{}
+or some positive value.
+
+\medskip
+Some common error codes are:
+\medskip\plaintwocol{
+\CD{}$\\{EBADF}$\DC{}&The descriptor number you passed doesn't refer to a valid
+file or socket.\cr
+\CD{}$\\{ENOMEM}$\DC{}&Some memory error occurred.\cr
+\CD{}$\\{EINTR}$\DC{}&The user interrupted a lengthy operation by pressing
+Command-Period.\cr
+\CD{}$\\{ENOTCONN}$\DC{}&The socket is not connected and must be connected for
+this operation.\cr
+}
+
+\fi
+
+\N14. 2 Creating and destroying sockets. A socket is created with \CD{}$%
+\\{socket}(\,)$\DC{} and destroyed
+with \CD{}$\\{close}(\,)$\DC{}.
+
+\fi
+
+\M15. \CD{}$\&{int}\ \\{socket}(\&{int}\ \\{af},\;\&{int}\ \\{type},\;\&{int}\ %
+\\{protocol})$\DC{} creates an endpoint for communication
+and returns a descriptor. \CD{}$\\{af}$\DC{} specifies the communication domain
+to be used. Valid
+values are:
+\medskip\plaintwocol{
+\CD{}$\\{AF\_UNIX}$\DC{}&Communication internal to a single Mac.\cr
+\CD{}$\\{AF\_INET}$\DC{}&TCP/IP, using \.{MacTCP}.\cr
+\CD{}$\\{AF\_APPLETALK}$\DC{}&Appletalk, using ADSP.\cr
+\CD{}$\\{AF\_PPC}$\DC{}&The Program-to-Program Communication Toolbox.\cr
+}
+\medskip
+\CD{}$\\{type}$\DC{} specifies the semantics of the communication. The
+following two types are
+available:
+\medskip\plaintwocol{
+\CD{}$\\{SOCK\_STREAM}$\DC{}&A two way, reliable, connection based byte stream.%
+\cr
+\CD{}$\\{SOCK\_DGRAM}$\DC{}&Connectionless, unreliable messages of a fixed
+maximum length.\cr
+}
+\medskip
+\CD{}$\\{protocol}$\DC{} would be used to specify an alternate protocol to be
+used with a socket.
+In \.{GUSI}, however, this parameter is always ignored.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EINVAL}$\DC{}&The \CD{}$\\{af}$\DC{} you specified doesn't exist.\cr
+\CD{}$\\{EMFILE}$\DC{}&The descriptor table is full.\cr
+}
+
+\fi
+
+\M16. \CD{}$\&{void}\ \\{close}(\&{int}\ \\{fd})$\DC{} removes the access path
+associated with the descriptor, and
+closes the file or socket if the last access path referring to it was removed.
+
+\fi
+
+\N17. 2 Prompting the user for an address. To give the user the opportunity of
+entering
+an address for a socket to be bound or connected to, the \CD{}$\\{choose}(\,)$%
+\DC{} routine was
+introduced in \.{GUSI}. This routine has no counterpart in UNIX
+implementations.
+
+\fi
+
+\M18. \CD{}$\&{int}\ \\{choose}(\&{int}\ \\{dom},\;\&{int}\ \\{type},\;\&{char}%
+\ {*}\\{prompt},\;\&{void}\ {*}\\{constraint},\;\&{int}\ \\{flags},\;\&{void}\
+{*}\\{name},\;\&{int}\ {*}\\{nlen})$\DC{} puts up a modal dialog prompting the
+user to
+choose an address. \CD{}$\\{dom}$\DC{} specifies the communication domain, like
+in \CD{}$\\{socket}$\DC{}.
+\CD{}$\\{type}$\DC{} may be used by future communication domains to further
+differentiate
+within a domain, but is ignored by current domains. \CD{}$\\{prompt}$\DC{} is a
+message that will
+appear in the dialog. \CD{}$\\{constraint}$\DC{} may be used to restrict the
+types of acceptable
+addresses (For more information, consult the section of the communication
+domain).
+The following two \CD{}$\\{flags}$\DC{} are defined for most socket types:
+\medskip\plaintwocol{
+\CD{}$\\{CHOOSE\_DEFAULT}$\DC{}&Offer the contents passed in \CD{}$\\{name}$%
+\DC{} as the default choice.\cr
+\CD{}$\\{CHOOSE\_NEW}$\DC{}&Prompt for a new address, suitable for passing to %
+\CD{}$\\{bind}(\,)$\DC{}. Default
+is prompting for an existing address, to be used by \CD{}$\\{connect}(\,)$%
+\DC{}.\cr
+}
+\medskip
+\CD{}$\\{name}$\DC{} on input contains a default address if \CD{}$\\{CHOOSE%
+\_DEFAULT}$\DC{} is set. On output, it
+is set to the address chosen.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EINVAL}$\DC{}&One of the \CD{}$\\{flags}$\DC{} is not (yet) supported
+by this communications
+domain. This error is never reported for \CD{}$\\{CHOOSE\_DEFAULT}$\DC{}, which
+might get silently
+ignored.\cr
+\CD{}$\\{EINTR}$\DC{}&The user chose ``Cancel'' in the dialog.\cr
+}
+
+\fi
+
+\N19. 2 Establishing connections between sockets. Before you can transmit data
+on a
+stream socket, it must be connected to a peer socket. Connection establishment
+is
+asymmetrical: The server socket registers its address with \CD{}$\\{bind}(\,)$%
+\DC{}, calls \CD{}$\\{listen}(\,)$\DC{}
+to indicate its willingness to accept connections and accepts them by calling
+\CD{}$\\{accept}(\,)$\DC{}. The client socket, after possibly having registered
+its address with
+\CD{}$\\{bind}(\,)$\DC{} (This is not necessary for all socket families as some
+will automatically
+assign an address) calls \CD{}$\\{connect}(\,)$\DC{} to establish a connection
+with a server.
+
+It is possible, but not required, to call \CD{}$\\{connect}(\,)$\DC{} for
+datagram sockets.
+
+\fi
+
+\M20. \CD{}$\&{int}\ \\{bind}(\&{int}\ \|s,\;\&{const}\ \&{struct}\ %
+\\{sockaddr}\ {*}\\{name},\;\&{int}\ \\{namelen})$\DC{} binds a socket to its
+address. The
+format of the address is different for every socket family. For some families,
+you
+may ask the user for an address by calling \CD{}$\\{choose}(\,)$\DC{}.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EAFNOSUPPORT}$\DC{}&\CD{}$\\{name}$\DC{} specifies an illegal address
+family for this socket.\cr
+\CD{}$\\{EADDRINUSE}$\DC{}&There is already another socket with this address.%
+\cr
+}
+
+\fi
+
+\M21. \CD{}$\&{int}\ \\{listen}(\&{int}\ \|s,\;\&{int}\ \\{qlen})$\DC{} turns a
+socket into a listener. \CD{}$\\{qlen}$\DC{} determines
+how many sockets can concurrently wait for a connection, but is ignored for
+almost
+all socket families.
+
+\fi
+
+\M22. \CD{}$\&{int}\ \\{accept}(\&{int}\ \|s,\;\&{struct}\ \\{sockaddr}\ {*}%
+\\{addr},\;\&{int}\ {*}\\{addrlen})$\DC{} accepts a connection for a socket
+{\it on a new socket} and returns the descriptor of the new socket. If \CD{}$%
+\\{addr}$\DC{} is not
+\CD{}$\\{NULL}$\DC{}, the address of the connecting socket will be assigned to
+it.
+
+You can find out if a connection is pending by calling \CD{}$\\{select}(\,)$%
+\DC{} to find out if
+the socket is ready for {\it reading}.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{ENOTCONN}$\DC{}&You did not call \CD{}$\\{listen}(\,)$\DC{} for this
+socket.\cr
+\CD{}$\\{EWOULDBLOCK}$\DC{}&The socket is nonblocking and no socket is trying
+to connect.\cr
+}
+
+\fi
+
+\M23. \CD{}$\&{int}\ \\{connect}(\&{int}\ \|s,\;\&{const}\ \&{struct}\ %
+\\{sockaddr}\ {*}\\{addr},\;\&{int}\ \\{addrlen})$\DC{} tries to connect to the
+socket whose
+address is in \CD{}$\\{addr}$\DC{}. If the socket is nonblocking and the
+connection cannot be
+made immediately, \CD{}$\\{connect}(\,)$\DC{} returns \CD{}$\\{EINPROGRESS}$%
+\DC{}. You can find out if the
+connection has been established by calling \CD{}$\\{select}(\,)$\DC{} to find
+out if
+the socket is ready for {\it writing}.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EAFNOSUPPORT}$\DC{}&\CD{}$\\{name}$\DC{} specifies an illegal address
+family for this socket.\cr
+\CD{}$\\{EISCONN}$\DC{}&The socket is already connected.\cr
+\CD{}$\\{EADDRNOAVAIL}$\DC{}&There is no socket with the given address.\cr
+\CD{}$\\{ECONNREFUSED}$\DC{}&The socket refused the connection.\cr
+\CD{}$\\{EINPROGRESS}$\DC{}&The socket is nonblocking and the connection is
+being established.\cr
+}
+
+\fi
+
+\N24. 2 Transmitting data between sockets. You can write data to a socket using
+\CD{}$\\{write}(\,)$\DC{},
+\CD{}$\\{writev}(\,)$\DC{}, \CD{}$\\{send}(\,)$\DC{}, \CD{}$\\{sendto}(\,)$%
+\DC{}, or \CD{}$\\{sendmsg}(\,)$\DC{}. You can read data from a socket
+using \CD{}$\\{read}(\,)$\DC{}, \CD{}$\\{readv}(\,)$\DC{}, \CD{}$\\{recv}(\,)$%
+\DC{}, \CD{}$\\{recvfrom}(\,)$\DC{}, or \CD{}$\\{recvmsg}(\,)$\DC{}.
+
+\fi
+
+\M25. \CD{}$\&{int}\ \\{read}(\&{int}\ \|s,\;\&{char}\ {*}\\{buffer},\;%
+\&{unsigned}\ \\{buflen})$\DC{} reads up to \CD{}$\\{buflen}$\DC{} bytes from
+the socket. \CD{}$\\{read}(\,)$\DC{} for sockets differs from \CD{}$\\{read}(%
+\,)$\DC{} for files mainly in that it
+may read fewer than the requested number of bytes without waiting for the rest
+to
+arrive.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EWOULDBLOCK}$\DC{}&The socket is nonblocking and there is no data
+immediately available.\cr
+}
+
+\fi
+
+\M26. \CD{}$\&{int}\ \\{readv}(\&{int}\ \|s,\;\&{const}\ \&{struct}\ \\{iovec}\
+{*}\\{iov},\;\&{int}\ \\{count})$\DC{} performs the same
+action, but scatters the input data into the \CD{}$\\{count}$\DC{} buffers of
+the \CD{}$\\{iov}$\DC{}narray, always
+filling one buffer completely before proceeding to the next. \CD{}$\\{iovec}$%
+\DC{} is defined as
+follows:
+\Y\P $\&{struct}\ \\{iovec}\ \{\1$\6
+$\\{caddr\_t}\ \\{iov\_base};$\5
+\C{ Address of this buffer }\6
+$\&{int}\ \\{iov\_len};$\5
+\C{ Length of the buffer }\2\6
+$\};$\par
+\fi
+
+\M27. \CD{}$\&{int}\ \\{recv}(\&{int}\ \|s,\;\&{void}\ {*}\\{buffer},\;\&{int}\
+\\{buflen},\;\&{int}\ \\{flags})$\DC{} is identical to \CD{}$\\{read}(\,)$%
+\DC{},
+except for the \CD{}$\\{flags}$\DC{} parameter. If the \CD{}$\\{MSG\_OOB}$\DC{}
+flag is set for a stream socket
+that supports out-of-band data, \CD{}$\\{recv}(\,)$\DC{} reads out-of-band
+data.
+
+\fi
+
+\M28. \CD{}$\&{int}\ \\{recvfrom}(\&{int}\ \|s,\;\&{void}\ {*}\\{buffer},\;%
+\&{int}\ \\{buflen},\;\&{int}\ \\{flags},\;\&{void}\ {*}\\{from},\;\&{int}\ {*}%
+\\{fromlen})$\DC{}
+is the equivalent of \CD{}$\\{recv}(\,)$\DC{} for unconnected datagram sockets.
+If \CD{}$\\{from}$\DC{} is not
+\CD{}$\\{NULL}$\DC{}, it will be set to the address of the sender of the
+message.
+
+\fi
+
+\M29. \CD{}$\&{int}\ \\{recvmsg}(\&{int}\ \|s,\;\&{struct}\ \\{msghdr}\ {*}%
+\\{msg},\;\&{int}\ \\{flags})$\DC{} is the most general routine,
+combining the possibilities of \CD{}$\\{readv}(\,)$\DC{} and \CD{}$%
+\\{recvfrom}(\,)$\DC{}. \CD{}$\\{msghdr}$\DC{} is defined as
+follows:
+\Y\P $\&{struct}\ \\{msghdr}\ \{\1$\6
+$\\{caddr\_t}\ \\{msg\_name};$\5
+\C{ Like $\\{from}$ in $\\{recvfrom}(\,)$ }\6
+$\&{int}\ \\{msg\_namelen};$\5
+\C{ Like $\\{fromlen}$ in $\\{recvfrom}(\,)$ }\6
+$\&{struct}\ \\{iovec}\ {{*}}\\{msg\_iov};$\5
+\C{ Scatter/gather array }\6
+$\&{int}\ \\{msg\_iovlen};$\5
+\C{ Number of elements in $\\{msg\_iov}$ }\6
+$\\{caddr\_t}\ \\{msg\_accrights};$\5
+\C{ Access rights sent/received. Not used in \.{GUSI}}\6
+$\&{int}\ \\{msg\_accrightslen};$\2\6
+$\};$\par
+\fi
+
+\M30. \CD{}$\&{int}\ \\{write}(\&{int}\ \|s,\;\&{char}\ {*}\\{buffer},\;%
+\&{unsigned}\ \\{buflen})$\DC{} writes up to \CD{}$\\{buflen}$\DC{} bytes to
+the socket. As opposed to \CD{}$\\{read}(\,)$\DC{}, \CD{}$\\{write}(\,)$\DC{}
+for nonblocking sockets always blocks
+until all bytes are written or an error occurs.
+
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EWOULDBLOCK}$\DC{}&The socket is nonblocking and data can't be
+immediately written.\cr
+}
+
+\fi
+
+\M31. \CD{}$\&{int}\ \\{writev}(\&{int}\ \|s,\;\&{const}\ \&{struct}\ \\{iovec}%
+\ {*}\\{iov},\;\&{int}\ \\{count})$\DC{} performs the same
+action, but gathers the output data from the \CD{}$\\{count}$\DC{} buffers of
+the \CD{}$\\{iov}$\DC{}narray, always
+sending one buffer completely before proceeding to the next.
+
+\fi
+
+\M32. \CD{}$\&{int}\ \\{send}(\&{int}\ \|s,\;\&{void}\ {*}\\{buffer},\;\&{int}\
+\\{buflen},\;\&{int}\ \\{flags})$\DC{} is identical to \CD{}$\\{write}(\,)$%
+\DC{},
+except for the \CD{}$\\{flags}$\DC{} parameter. If the \CD{}$\\{MSG\_OOB}$\DC{}
+flag is set for a stream socket
+that supports out-of-band data, \CD{}$\\{send}(\,)$\DC{} sends an out-of-band
+message.
+
+\fi
+
+\M33. \CD{}$\&{int}\ \\{sendto}(\&{int}\ \|s,\;\&{void}\ {*}\\{buffer},\;%
+\&{int}\ \\{buflen},\;\&{int}\ \\{flags},\;\&{void}\ {*}\\{to},\;\&{int}\ {*}%
+\\{tolen})$\DC{}
+is the equivalent of \CD{}$\\{send}(\,)$\DC{} for unconnected datagram sockets.
+The message will
+be sent to the socket whose address is given in \CD{}$\\{to}$\DC{}.
+
+\fi
+
+\M34. \CD{}$\&{int}\ \\{sendmsg}(\&{int}\ \|s,\;\&{const}\ \&{struct}\ %
+\\{msghdr}\ {*}\\{msg},\;\&{int}\ \\{flags})$\DC{} combines the possibilities
+of \CD{}$\\{writev}(\,)$\DC{} and \CD{}$\\{sendto}(\,)$\DC{}.
+
+\fi
+
+\N35. 2 I/O multiplexing.
+
+\fi
+
+\M36. \CD{}$\&{int}\ \\{select}(\&{int}\ \\{width},\;\\{fd\_set}\ {{*}}%
+\\{readfds},\;\\{fd\_set}\ {{*}}\\{writefds},\;\\{fd\_set}\ {{*}}\\{exceptfds},%
+\;\&{struct}\ \\{timeval}\ {*}\\{timeout})$\DC{} examines the I/O descriptors
+specified
+by the bit masks \CD{}$\\{readfs}$\DC{}, \CD{}$\\{writefs}$\DC{}, and \CD{}$%
+\\{exceptfs}$\DC{} to see if they are ready for
+reading, writing, or have an exception pending. \CD{}$\\{width}$\DC{} is the
+number of significant
+bits in the bit mask. \CD{}$\\{select}(\,)$\DC{} replaces the bit masks with
+masks of those descriptors
+which are ready and returns the total number of ready descriptors. \CD{}$%
+\\{timeout}$\DC{}, if
+not \CD{}$\\{NULL}$\DC{}, specifies the maximum time to wait for a descriptor
+to become ready. If
+\CD{}$\\{timeout}$\DC{} is \CD{}$\\{NULL}$\DC{}, \CD{}$\\{select}(\,)$\DC{}
+waits indefinitely. To do a poll, pass a pointer to
+a zero \CD{}$\\{timeval}$\DC{} value in \CD{}$\\{timeout}$\DC{}. Any of \CD{}$%
+\\{readfds}$\DC{}, \CD{}$\\{writefds}$\DC{}, or \CD{}$\\{exceptfds}$\DC{}
+may be given as \CD{}$\\{NULL}$\DC{} if no descriptors are of interest.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EBADF}$\DC{}&One of the bit masks specified an invalid descriptor.\cr
+}
+
+\fi
+
+\M37. The descriptor bit masks can be manipulated with the following macros:
+
+\Y\P $\\{FD\_ZERO}(\\{fds});$\5
+\C{ Clear all bits in ${{*}}\\{fds}$ }\6
+$\\{FD\_SET}(\|n,\;$\39$\\{fds});$\5
+\C{ Set bit $\|n$ in ${{*}}\\{fds}$ }\6
+$\\{FD\_CLR}(\|n,\;$\39$\\{fds});$\5
+\C{ Clear bit $\|n$ in ${{*}}\\{fds}$ }\6
+$\\{FD\_ISSET}(\|n,\;$\39$\\{fds});$\5
+\C{ Return $\O{1}$ if bit $\|n$ in ${{*}}\\{fds}$ is set, else $\O{0}$ }\par
+\fi
+
+\N38. 2 Getting and changing properties of sockets. You can obtain the address
+of a
+socket and the socket it is connected to by calling \CD{}$\\{getsockname}(\,)$%
+\DC{} and
+\CD{}$\\{getpeername}(\,)$\DC{} respectively. You can query and manipulate
+other properties of a
+socket by calling \CD{}$\\{ioctl}(\,)$\DC{}, \CD{}$\\{fcntl}(\,)$\DC{}, \CD{}$%
+\\{getsockopt}(\,)$\DC{}, and \CD{}$\\{setsockopt}(\,)$\DC{}. You
+can create additional descriptors for a socket by calling \CD{}$\\{dup}(\,)$%
+\DC{} or \CD{}$\\{dup2}(\,)$\DC{}.
+
+\fi
+
+\M39. \CD{}$\&{int}\ \\{getsockname}(\&{int}\ \|s,\;\&{struct}\ \\{sockaddr}\
+{*}\\{name},\;\&{int}\ {*}\\{namelen})$\DC{} returns in \CD{}${{*}}\\{name}$%
+\DC{} the address
+the socket is bound to. \CD{}${{*}}\\{namelen}$\DC{} should be set to the
+maximum length of \CD{}$\\{name}$\DC{} and
+will be set by \CD{}$\\{getsockname}(\,)$\DC{} to the actual length of the
+name.
+
+\fi
+
+\M40. \CD{}$\&{int}\ \\{getpeername}(\&{int}\ \|s,\;\&{struct}\ \\{sockaddr}\
+{*}\\{name},\;\&{int}\ {*}\\{namelen})$\DC{} returns in \CD{}${{*}}\\{name}$%
+\DC{} the address
+of the socket that this socket is connected to. \CD{}${{*}}\\{namelen}$\DC{}
+should be set to the
+maximum length of \CD{}$\\{name}$\DC{} and will be set by \CD{}$%
+\\{getpeername}(\,)$\DC{} to the actual length
+of the name.
+
+\fi
+
+\M41. \CD{}$\&{int}\ \\{ioctl}(\&{int}\ \|d,\;\&{unsigned}\ \&{int}\ %
+\\{request},\;\&{long}\ {*}\\{argp})$\DC{} performs various operations
+on the socket, depending on the \CD{}$\\{request}$\DC{}. The following codes
+are valid for all
+socket families:
+\medskip\plaintwocol{
+\CD{}$\\{FIONBIO}$\DC{}&Make the socket blocking if the \CD{}$\&{long}$\DC{}
+pointed to by argp is \CD{}$\O{0}$\DC{}, else
+make it nonblocking.\cr
+\CD{}$\\{FIONREAD}$\DC{}&Set \CD{}${{*}}\\{argp}$\DC{} to the number of bytes
+waiting to be read.\cr
+}
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EOPNOTSUPP}$\DC{}&The operation you requested with \CD{}$\\{request}$%
+\DC{} is not supported by this
+socket family.\cr
+}
+
+\fi
+
+\M42. \CD{}$\&{int}\ \\{fcntl}(\&{int}\ \|s,\;\&{unsigned}\ \&{int}\ \\{cmd},\;%
+\&{int}\ \\{arg})$\DC{} provides additional control over a
+socket. The following values of \CD{}$\\{cmd}$\DC{} are defined for all socket
+families:
+\medskip\plaintwocol{
+\CD{}$\\{F\_DUPFD}$\DC{}&Return a new descriptor $\ge$ \CD{}$\\{arg}$\DC{}
+which refers to the same socket.\cr
+\CD{}$\\{F\_GETFL}$\DC{}&Return descriptor status flags.\cr
+\CD{}$\\{F\_SETFL}$\DC{}&Set descriptor status flags to \CD{}$\\{arg}$\DC{}.\cr
+}
+\medskip
+The only status flag implemented is \CD{}$\\{FNDELAY}$\DC{} which is true if
+the socket is
+nonblocking.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{EOPNOTSUPP}$\DC{}&The operation you requested with \CD{}$\\{cmd}$\DC{}
+is not supported by this
+socket family.\cr
+}
+
+\fi
+
+\M43. \CD{}$\&{int}\ \\{getsockopt}(\&{int}\ \|s,\;\&{int}\ \\{level},\;\&{int}%
+\ \\{optname},\;\&{void}\ {*}\\{optval},\;\&{int}\ {*}\\{optlen})$\DC{} is
+used to request information about sockets. It is not implemented in \.{GUSI}.
+
+\fi
+
+\M44. \CD{}$\&{int}\ \\{setsockopt}(\&{int}\ \|s,\;\&{int}\ \\{level},\;\&{int}%
+\ \\{optname},\;\&{void}\ {*}\\{optval},\;\&{int}\ \\{optlen})$\DC{} is used
+to set options associated with a socket. It is not implemented in \.{GUSI}.
+
+\fi
+
+\M45. \CD{}$\&{int}\ \\{dup}(\&{int}\ \\{fd})$\DC{} returns a new descriptor
+referring to the same socket as \CD{}$\\{fd}$\DC{}.
+The old and new descriptors are indistinguishible. The new descriptor will
+always
+be the smallest free descriptor.
+
+\fi
+
+\M46. \CD{}$\&{int}\ \\{dup2}(\&{int}\ \\{oldfd},\;\&{int}\ \\{newfd})$\DC{}
+closes \CD{}$\\{newfd}$\DC{} if it was open and makes it
+a duplicate of \CD{}$\\{oldfd}$\DC{}. The old and new descriptors are
+indistinguishible.
+
+\fi
+
+\N47. = Detail Description. This section discusses for each socket domain the
+routines
+that behave different from their description in the previous section and a few
+calls
+specific to one domain.
+
+\fi
+
+\N48. 2 File system calls. Files are unlike sockets in many respects: Their
+length is
+never changed by other processes, they can be rewound. There are also many
+calls which
+are specific to files.
+
+\fi
+
+\N49. 4 Differences to generic behavior.
+
+\fi
+
+\M50. The following calls make no sense for files and return an error of \CD{}$%
+\\{EOPNOTSUPP}$\DC{}:
+\medskip\plainonecol{
+\CD{}$\\{socket}(\,)$\DC{}\cr
+\CD{}$\\{bind}(\,)$\DC{}\cr
+\CD{}$\\{listen}(\,)$\DC{}\cr
+\CD{}$\\{accept}(\,)$\DC{}\cr
+\CD{}$\\{connect}(\,)$\DC{}\cr
+\CD{}$\\{getsockname}(\,)$\DC{}\cr
+\CD{}$\\{getpeername}(\,)$\DC{}\cr
+\CD{}$\\{getsockopt}(\,)$\DC{}\cr
+\CD{}$\\{setsockopt}(\,)$\DC{}\cr
+}
+
+\fi
+
+\M51. The following calls {\it will} work, but might be frowned upon by your
+friends
+(besides, UNIX systems generally wouldn't like them):
+\medskip\plainonecol{
+\CD{}$\\{recv}(\,)$\DC{}\cr
+\CD{}$\\{recvfrom}(\,)$\DC{}\cr
+\CD{}$\\{recvmsg}(\,)$\DC{}\cr
+\CD{}$\\{send}(\,)$\DC{}\cr
+\CD{}$\\{sendto}(\,)$\DC{}\cr
+\CD{}$\\{sendmsg}(\,)$\DC{}\cr
+}
+
+\fi
+
+\M52. \CD{}$\\{choose}(\,)$\DC{} returns zero terminated C strings in \CD{}$%
+\\{name}$\DC{}.
+It accepts an additional flag \CD{}$\\{CHOOSE\_DIR}$\DC{}. If this is set, %
+\CD{}$\\{choose}(\,)$\DC{}
+will select directories instead of files.
+\medskip You may restrict the files presented for choosing by passing a pointer
+to
+the following structure for the \CD{}$\\{constraint}$\DC{} argument:
+\Y\P $\&{typedef}\ \&{struct}\ \{\1$\6
+$\&{short}\ \\{numTypes};$\5
+\C{ Number of legitimate file types }\6
+$\\{SFTypeList}\ \\{types};$\5
+\C{ The types, like 'TEXT' }\2\6
+$\}\ \\{sa\_constr\_file};$\par
+\fi
+
+\M53. \CD{}$\\{select}(\,)$\DC{} will give boring results. File descriptors are
+{\it always} considered
+ready to read or write, and {\it never} give exceptions.
+
+\fi
+
+\M54. \CD{}$\\{ioctl}(\,)$\DC{} and \CD{}$\\{fcntl}(\,)$\DC{} don't support
+manipulating the blocking state of a file
+descriptor or reading the number of bytes available for reading, but will
+accept
+lots of other requests---Check with your trusty MPW C documentation.
+
+\fi
+
+\N55. 4 Routines specific to the file system. In this section, you'll meet lots
+of good
+old friends. Some of these routines also exist in the standard MPW libraries,
+but
+the \.{GUSI} versions have a few differences:
+\medskip\onecollist{
+File names are relative to the directory specified by chdir().\cr
+You can define special treatment for some file names (See below under
+``Adding your own file families'').\cr
+You can pass \CD{}$\\{FSSpec}$\DC{} values to the routines by encoding
+them with \CD{}$\\{FSp2Encoding}(\,)$\DC{} (See ``FSSpec routines'' below).\cr
+}
+
+\fi
+
+\M56. \CD{}$\&{int}\ \\{stat}(\&{const}\ \&{char}\ {*}\\{path},\;\&{struct}\ %
+\\{stat}\ {*}\\{buf})$\DC{} returns information about a file.
+\CD{}$\&{struct}\ \\{stat}$\DC{} is defined as follows:
+\Y\P $\&{struct}\ \\{stat}\ \{\1$\6
+$\\{dev\_t}\ \\{st\_dev};$\5
+\C{ Volume reference number of file  }\6
+$\\{ino\_t}\ \\{st\_ino};$\5
+\C{ File or directory ID         }\6
+$\\{u\_short}\ \\{st\_mode};$\5
+\C{ Type and permission of file  }\6
+$\&{short}\ \\{st\_nlink};$\5
+\C{ Always 1     }\6
+$\&{short}\ \\{st\_uid};$\5
+\C{ Set to 0     }\6
+$\&{short}\ \\{st\_gid};$\5
+\C{ Set to 0     }\6
+$\\{dev\_t}\ \\{st\_rdev};$\5
+\C{ Set to 0     }\6
+$\\{off\_t}\ \\{st\_size};$\6
+$\\{time\_t}\ \\{st\_atime};$\5
+\C{ Set to $\\{st\_mtime}$  }\6
+$\\{time\_t}\ \\{st\_mtime};$\6
+$\\{time\_t}\ \\{st\_ctime};$\6
+$\&{long}\ \\{st\_blksize};$\6
+$\&{long}\ \\{st\_blocks};$\2\6
+$\};$\par
+\fi
+
+\M57. \CD{}$\\{st\_mode}$\DC{} is composed of a file type and of file
+permissions. The file type
+may be one of the following:
+\medskip\plaintwocol{
+\CD{}$\\{S\_IFREG}$\DC{}&A regular file.\cr
+\CD{}$\\{S\_IFDIR}$\DC{}&A directory.\cr
+\CD{}$\\{S\_IFLNK}$\DC{}&A finder alias file.\cr
+\CD{}$\\{S\_IFCHR}$\DC{}&A console file under MPW or SIOW.\cr
+\CD{}$\\{S\_IFSOCK}$\DC{}&A file representing a UNIX domain socket.\cr
+}
+\medskip Permissions consist of an octal digit repeated three times. The three
+bits
+in the digit have the following meaning:
+\medskip\plaintwocol{
+\CD{}$\O{4}$\DC{}&File can be read.\cr
+\CD{}$\O{2}$\DC{}&File can be written.\cr
+\CD{}$\O{1}$\DC{}&File can be executed, i.e., its type is `APPL', `MPST' or
+`TEXT'\cr
+}
+
+\fi
+
+\M58. \CD{}$\&{int}\ \\{lstat}(\&{const}\ \&{char}\ {*}\\{path},\;\&{struct}\ %
+\\{stat}\ {*}\\{buf})$\DC{} works just like \CD{}$\\{stat}(\,)$\DC{}, but if %
+\CD{}$\\{path}$\DC{}
+is a symbolic link, \CD{}$\\{lstat}(\,)$\DC{} will return information about the
+link and not about
+the file it points to.
+
+\fi
+
+\M59. \CD{}$\&{int}\ \\{fstat}(\&{int}\ \\{fd},\;\&{struct}\ \\{stat}\ {*}%
+\\{buf})$\DC{} is the equivalent of \CD{}$\\{stat}(\,)$\DC{} for descriptors
+representing open files. While it is legal to call \CD{}$\\{fstat}(\,)$\DC{}
+for sockets, the
+information returned is not really interesting. The file type in \CD{}$\\{st%
+\_mode}$\DC{} will be
+\CD{}$\\{S\_IFSOCK}$\DC{} for sockets.
+
+\fi
+
+\M60. \CD{}$\&{int}\ \\{chmod}(\&{const}\ \&{char}\ {*}\\{filename},\;\\{mode%
+\_t}\ \\{mode})$\DC{} changes the mode returned by \CD{}$\\{stat}(\,)$\DC{}.
+Currently,
+the only thing you can do with \CD{}$\\{chmod}(\,)$\DC{} is to turn the write
+permission off an on. This
+is translated to setting and clearing the file lock bit.
+
+\fi
+
+\M61. \CD{}$\&{int}\ \\{utime}(\&{const}\ \&{char}\ {*}\\{file},\;\&{const}\ %
+\&{struct}\ \\{utimbuf}\ {*}\\{tim})$\DC{} changes the modification time
+of a file. \CD{}$\&{struct}\ \\{utimbuf}$\DC{} is defined as:
+\Y\P $\&{struct}\ \\{utimbuf}\ \{\1$\6
+$\\{time\_t}\ \\{actime};$\5
+\C{ Access time }\6
+$\\{time\_t}\ \\{modtime};$\5
+\C{ Modification time }\2\6
+$\};$\par
+\fi
+
+\M62. \CD{}$\\{tim}\MG\\{actime}$\DC{} is ignored, as the Macintosh doesn't
+store access times. The modification
+of \CD{}$\\{file}$\DC{} is set to \CD{}$\\{tim}\MG\\{modtime}$\DC{}.
+
+\fi
+
+\M63. \CD{}$\&{int}\ \\{isatty}(\&{int}\ \\{fd})$\DC{} returns \CD{}$\O{1}$%
+\DC{} if \CD{}$\\{fd}$\DC{} represents a terminal (i.e. is connected
+to \.{"Dev:Stdin"} and the like), \CD{}$\O{0}$\DC{} otherwise.
+
+\fi
+
+\M64. \CD{}$\&{long}\ \\{lseek}($ $\&{int}$ $,\;$ $\&{long}$ $,\;$ $\&{int}$
+$)$\DC{} works the same as the \.{MPW} routine, and will
+return \CD{}$\\{ESPIPE}$\DC{} if called for a socket.
+
+\fi
+
+\M65. \CD{}$\&{int}\ \\{remove}(\&{const}\ \&{char}\ {*}\\{filename})$\DC{}
+removes the named file. If \CD{}$\\{filename}$\DC{} is a
+symbolic link, the link will be removed and not the file.
+
+\fi
+
+\M66. \CD{}$\&{int}\ \\{unlink}(\&{const}\ \&{char}\ {*}\\{filename})$\DC{} is
+identical to \CD{}$\\{remove}(\,)$\DC{}. Note that
+on the Mac, \CD{}$\\{unlink}(\,)$\DC{} on open files behaves differently from %
+\.{UNIX}.
+
+\fi
+
+\M67. \CD{}$\&{int}\ \\{rename}(\&{const}\ \&{char}\ {*}\\{oldname},\;\&{const}%
+\ \&{char}\ {*}\\{newname})$\DC{} renames and/or moves a
+file. \CD{}$\\{oldname}$\DC{} and \CD{}$\\{newname}$\DC{} must specify the same
+volume, but as opposed to
+the standard \.{MPW} routine, they may specify different folders.
+
+\fi
+
+\M68. \CD{}$\&{int}\ \\{open}(\&{const}\ \&{char}\ {*},\;\&{int}\ \\{flags})$%
+\DC{} opens a named file. The \CD{}$\\{flags}$\DC{} consist
+of one of the following modes:
+\medskip\plaintwocol{
+\CD{}$\\{O\_RDONLY}$\DC{}&Open for reading only.\cr
+\CD{}$\\{WR\_ONLY}$\DC{}&Open for writing only.\cr
+\CD{}$\\{O\_RDWR}$\DC{}&Open for reading and writing.\cr
+}
+\medskip Optionally combined with one or more of:
+\medskip\plaintwocol{
+\CD{}$\\{O\_APPEND}$\DC{}&The file pointer is set to the end of the file before
+each write.\cr
+\CD{}$\\{O\_RSRC}$\DC{}&Open resource fork.\cr
+\CD{}$\\{O\_CREAT}$\DC{}&If the file does not exist, it is created.\cr
+\CD{}$\\{O\_EXCL}$\DC{}&In combination with \CD{}$\\{O\_CREAT}$\DC{}, return an
+error if file already exists.\cr
+\CD{}$\\{O\_TRUNC}$\DC{}&If the file exists, its length is truncated to 0; the
+mode is unchanged.\cr
+\CD{}$\\{O\_ALIAS}$\DC{}&If the named file is a symbolic link, open the link,
+not the file it points
+to (This is most likely an incredibly bad idea).\cr
+}
+
+\fi
+
+\M69. \CD{}$\&{int}\ \\{creat}(\&{const}\ \&{char}\ {*}\\{name})$\DC{} is
+identical to \CD{}$\\{open}(\\{name},\;$$\\{O\_WRONLY}+\\{O\_TRUNC}+\\{O%
+\_CREAT})$\DC{}.
+If the file didn't exist before, \.{GUSI} determines its file type and creator
+of the
+according to rules outlined in the section ``Resources'' below.
+
+\fi
+
+\M70. \CD{}$\&{int}\ \\{faccess}(\&{const}\ \&{char}\ {*}\\{filename},\;%
+\&{unsigned}\ \&{int}\ \\{cmd},\;\&{long}\ {*}\\{arg})$\DC{} works the same
+as the corresponding \.{MPW} routine, but respects calls to \CD{}$\\{chdir}(%
+\,)$\DC{} for partial
+filenames.
+
+\fi
+
+\M71. \CD{}$\&{void}\ \\{fgetfileinfo}(\&{char}\ {*}\\{filename},\;\&{unsigned}%
+\ \&{long}\ {*}\\{newcreator},\;\&{unsigned}\ \&{long}\ {*}\\{newtype})$\DC{}
+returns the file type and creator of a file.
+
+\fi
+
+\M72. \CD{}$\&{void}\ \\{fsetfileinfo}(\&{char}\ {*}\\{filename},\;\&{unsigned}%
+\ \&{long}\ \\{newcreator},\;\&{unsigned}\ \&{long}\ \\{newtype})$\DC{}
+sets the file type and creator of a file to the given values.
+
+\fi
+
+\M73. \CD{}$\&{int}\ \\{symlink}(\&{const}\ \&{char}\ {*}\\{linkto},\;\&{const}%
+\ \&{char}\ {*}\\{linkname})$\DC{} creates a file named \CD{}$\\{linkname}$%
+\DC{} that
+contains an alias resource pointing to \CD{}$\\{linkto}$\DC{}. The created file
+should be
+indistinguishible from an alias file created by the System 7 Finder. Note that
+aliases bear only superficial similiarities to \.{UNIX} symbolic links,
+especially
+once you start renaming files.
+
+\fi
+
+\M74. \CD{}$\&{int}\ \\{readlink}(\&{const}\ \&{char}\ {*}\\{path},\;\&{char}\
+{*}\\{buf},\;\&{int}\ \\{bufsiz})$\DC{} returns in \CD{}$\\{buf}$\DC{} the name
+of the
+file that \CD{}$\\{path}$\DC{} points to.
+
+\fi
+
+\M75. \CD{}$\&{int}\ \\{mkdir}(\&{const}\ \&{char}\ {*}\\{path})$\DC{} creates
+a new directory.
+
+\fi
+
+\M76. \CD{}$\&{int}\ \\{rmdir}(\&{const}\ \&{char}\ {*}\\{path})$\DC{} deletes
+an empty directory.
+
+\fi
+
+\M77. \CD{}$\&{int}\ \\{chdir}(\&{const}\ \&{char}\ {*}\\{path})$\DC{} makes
+all future partial pathnames relative to this
+directory.
+
+\fi
+
+\M78. \CD{}$\&{char}$ ${{*}}\\{getcwd}$ $($ $\&{const}\ \&{char}\ {{*}}\\{buf},%
+\;\ \&{int}$ $\\{size}$ $)$\DC{} returns a pointer to the current directory
+pathname. If \CD{}$\\{buf}$\DC{} is \CD{}$\\{NULL}$\DC{}, \CD{}$\\{size}$\DC{}
+bytes will be allocated using \CD{}$\\{malloc}(\,)$\DC{}.
+\medskip
+Error codes:
+\medskip\plaintwocol{
+\CD{}$\\{ENAMETOOLONG}$\DC{}&The pathname of the current directory is greater
+than \CD{}$\\{size}$\DC{}.\cr
+\CD{}$\\{ENOMEM}$\DC{}&\CD{}$\\{buf}$\DC{} was \CD{}$\\{NULL}$\DC{} and \CD{}$%
+\\{malloc}(\,)$\DC{} failed.\cr
+}
+
+\fi
+
+\M79. A number of calls facilitate scanning directories. Directory entries are
+represented by
+following structure:
+\Y\P $\&{struct}\ \\{dirent}\ \{\1$\6
+$\\{u\_long}\ \\{d\_fileno};$\5
+\C{ file number of entry }\6
+$\\{u\_short}\ \\{d\_reclen};$\5
+\C{ length of this record }\6
+$\\{u\_short}\ \\{d\_namlen};$\5
+\C{ length of string in $\\{d\_name}$ }\6
+\8$\#{\let\\=\bf \\{define}}$\1{} $\\{MAXNAMLEN}\O{255}$\2\6
+$\&{char}\ \\{d\_name}[\\{MAXNAMLEN}+\O{1}];$\5
+\C{ name must be no longer than this }\2\6
+$\};$\par
+\fi
+
+\M80. \CD{}$\\{DIR}$ ${{*}}\\{opendir}$ $($ $\&{const}\ \&{char}$ ${{*}}%
+\\{dirname}$ $)$\DC{} opens a directory stream and returns a pointer or \CD{}$%
+\\{NULL}$\DC{}
+if the call failed.
+
+\fi
+
+\M81. \CD{}$\&{struct}\ \\{dirent}$ ${{*}}\\{readdir}(\\{DIR}{*}\\{dirp})$\DC{}
+returns the next entry from the directory or \CD{}$\\{NULL}$\DC{}
+if all entries have been processed.
+
+\fi
+
+\M82. \CD{}$\&{long}\ \\{telldir}($ $\&{const}$ $\\{DIR}$ ${{*}}\\{dirp}$ $)$%
+\DC{} returns the position in the directory.
+
+\fi
+
+\M83. \CD{}$\&{void}\ \\{seekdir}(\\{DIR}\ {{*}}\\{dirp},\;\&{long}\ \\{loc})$%
+\DC{} changes the position.
+
+\fi
+
+\M84. \CD{}$\&{void}\ \\{rewinddir}($ $\\{DIR}$ ${{*}}\\{dirp}$ $)$\DC{}
+restarts a scan at the beginning.
+
+\fi
+
+\M85. \CD{}$\&{int}\ \\{closedir}($ $\\{DIR}$ ${{*}}\\{dirp}$ $)$\DC{} closes
+the directory stream.
+
+\fi
+
+\M86. \CD{}$\&{int}\ \\{scandir}(\&{const}\ \&{char}\ {*}\\{path},\;\&{struct}\
+\\{dirent}\ {*}{*}{*}\\{entries},\;\&{int}\ ({{*}}\\{want})(\&{struct}\ %
+\\{dirent}\ {*}),\;$ $\&{int}$ $({{*}}\\{sort})$ $($ $\&{const}\ \&{void}$
+${*}$ $,\;$ $\&{const}\ \&{void}$ ${*}$ $)$ $)$\DC{} scans a whole directory at
+once and returns
+a possibly sorted list of entries. If \CD{}$\\{want}$\DC{} is not \CD{}$%
+\\{NULL}$\DC{}, only entries for which \CD{}$\\{want}$\DC{}
+returns 1 are returned. If \CD{}$\\{sort}$\DC{} is not \CD{}$\\{NULL}$\DC{},
+the list is sorted using \CD{}$\\{qsort}(\,)$\DC{} with
+sort as a comparison function. If sort is \CD{}$\\{NULL}$\DC{}, the list will
+be sorted alphabetically on
+a Mac, but not necessarily on other machines.
+
+\fi
+
+\M87. \CD{}$\&{int}\ \\{truncate}(\&{const}\ \&{char}\ {*}\\{path},\;\\{off\_t}%
+\ \\{length})$\DC{} causes a file to have a size equal to \CD{}$\\{length}$%
+\DC{}
+bytes, shortening it or extending it with zero bytes as necessary.
+
+\fi
+
+\M88. \CD{}$\&{int}\ \\{ftruncate}(\&{int}\ \\{fd},\;\\{off\_t}\ \\{length})$%
+\DC{} does the same thing with an open file.
+
+\fi
+
+\N89. 1 Unix domain sockets. This domain is quite regular and supports all
+calls that
+work on any domain, except for out-of-band data. Note, however, that this
+domain
+has been rarely (never?) used and is badly tested, especially on \.{PowerPC}.
+
+\fi
+
+\N90. 4 Differences to generic behavior.
+
+\fi
+
+\M91. Addresses are file system pathnames. \.{GUSI} complies to the
+Unix implementation in that it doesn't require the name to be terminated by a
+zero.
+Names that are generated by \.{GUSI}, however, will always be zero terminated
+(but
+the zero won't be included in the count).
+\Y\P $\&{struct}\ \\{sockaddr\_un}\ \{\1$\6
+$\&{short}\ \\{sun\_family};$\5
+\C{ Always $\\{AF\_UNIX}$   }\6
+$\&{char}\ \\{sun\_path}[\O{108}];$\5
+\C{ A pathname to a file }\2\6
+$\};$\par
+\fi
+
+\M92. \CD{}$\\{choose}(\,)$\DC{} works both for existing and new addresses, and
+no restriction
+is possible (or necessary).
+
+\fi
+
+\N93. 1 Appletalk sockets. Currently, only stream sockets (including
+out-of-band data)
+are supported. Appletalk sockets should work between all networked Macintoshes
+and between applications on a single Mac, provided the SetSelfSend flag is
+turned
+on. However, PPC sockets have a better performance for interapplication
+communication
+on a single Machine.
+
+\fi
+
+\N94. 4 Differences to generic behavior.
+
+\fi
+
+\M95. Two classes of addresses are supported for AppleTalk. The main address
+type
+specifies numeric addresses.
+\Y\P $\&{struct}\ \\{sockaddr\_atlk}\ \{\1$\6
+$\&{short}\ \\{family};$\5
+\C{ Always $\\{AF\_APPLETALK}$      }\6
+$\\{AddrBlock}\ \\{addr};$\5
+\C{ The numeric AppleTalk socket address }\2\6
+$\};$\par
+\fi
+
+\M96. For \CD{}$\\{bind}(\,)$\DC{} and \CD{}$\\{connect}(\,)$\DC{}, however,
+you are also allowed to specify symbolic
+addresses. \CD{}$\\{bind}(\,)$\DC{} registers an NBP address, and \CD{}$%
+\\{connect}(\,)$\DC{} performs an NBP
+lookup. Registered NBP adresses are automatically released when the socket is
+closed. No call ever {\it returns} a symbolic address.
+\Y\P $\&{struct}\ \\{sockaddr\_atlk\_sym}\ \{\1$\6
+$\&{short}\ \\{family};$\5
+\C{ Always $\\{ATALK\_SYMADDR}$  }\6
+$\\{EntityName}\ \\{name};$\5
+\C{ The symbolic NBP address }\2\6
+$\};$\par
+\fi
+
+\M97. \CD{}$\\{choose}(\,)$\DC{} currently only works for existing sockets. The
+peer must have registered
+a symbolic address. To restrict the choice of addresses presented, pass a
+pointer
+to the following structure for the \CD{}$\\{constraint}$\DC{} argument:
+\Y\P $\&{typedef}\ \&{struct}\ \{\1$\6
+$\&{short}\ \\{numTypes};$\5
+\C{ Number of allowed types }\6
+$\\{NLType}\ \\{types};$\5
+\C{ List of types }\2\6
+$\}\ \\{sa\_constr\_atlk};$\par
+\fi
+
+\N98. 1 PPC sockets. These provide authenticated stream sockets without
+out-of-band
+data. PPC sockets should work between all networked Macintoshes running System
+7,
+and between applications on a single Macintosh running System 7.
+
+\fi
+
+\N99. 4 Differences to generic behavior.
+
+\fi
+
+\M100. PPC socket addresses have the following format:
+\Y\P $\&{struct}\ \\{sockaddr\_ppc}\ \{\1$\6
+$\&{short}\ \\{family};$\5
+\C{ Always $\\{AF\_PPC}$        }\6
+$\\{LocationNameRec}\ \\{location};$\5
+\C{ Check your trusty Inside Macintosh }\6
+$\\{PPCPortRec}\ \\{port};$\2\6
+$\};$\par
+\fi
+
+\M101. \CD{}$\\{choose}(\,)$\DC{} currently only works for existing sockets. To
+restrict the choice of
+addresses presented, pass a pointer to the following structure for the \CD{}$%
+\\{constraint}$\DC{}
+argument:
+\Y\P $\&{typedef}\ \&{struct}\ \{\1$\6
+$\&{short}\ \\{flags};$\6
+$\\{Str32}\ \\{nbpType};$\6
+$\\{PPCPortRec}\ \\{match};$\2\6
+$\}\ \\{sa\_constr\_ppc};$\par
+\fi
+
+\M102. \CD{}$\\{flags}$\DC{} is obtained by or'ing one or several of the
+following constants:
+\medskip\plaintwocol{
+\CD{}$\\{PPC\_CON\_NEWSTYLE}$\DC{}&Always required for compatibility reasons.%
+\cr
+\CD{}$\\{PPC\_CON\_MATCH\_NBP}$\DC{}&Only display machines that have registered
+an entity of type \CD{}$\\{nbpType}$\DC{}.\cr
+\CD{}$\\{PPC\_CON\_MATCH\_NAME}$\DC{}&Only display ports whose name matches %
+\CD{}$\\{match}.\\{name}$\DC{}.\cr
+\CD{}$\\{PPC\_CON\_MATCH\_TYPE}$\DC{}&Only display ports whose type matches %
+\CD{}$\\{match}.\|u.\\{portType}$\DC{}.\cr
+}
+\medskip
+\CD{}$\\{nbpType}$\DC{} specifies the machines to be displayed, as explained
+above. \CD{}$\\{match}$\DC{} contains the name
+and/or type to match against.
+
+\fi
+
+\M103. \CD{}$\\{connect}(\,)$\DC{} will block even if the socket is
+nonblocking. In practice, however,
+delays are likely to be quite short, as it never has to block on a higher level
+protocol and the PPC ToolBox will automatically establish the connection.
+
+\fi
+
+\N104. 1 Internet sockets. These are the real thing for real programmers.
+Out-of-band
+data only works for sending. Both stream (TCP) and datagram (UDP) sockets are
+supported. Internet sockets are also suited for interapplication communication
+on a single machine, provided it runs MacTCP.
+
+\fi
+
+\N105. 4 Differences to generic behavior.
+
+\fi
+
+\M106. Internet socket addresses have the following format:
+\Y\P $\&{struct}\ \\{in\_addr}\ \{\1$\6
+$\\{u\_long}\ \\{s\_addr};$\2\6
+$\};$\7
+$\&{struct}\ \\{sockaddr\_in}\ \{\1$\6
+$\\{u\_char}\ \\{sin\_len};$\5
+\C{ Ignored }\6
+$\\{u\_char}\ \\{sin\_family};$\5
+\C{ Always $\\{AF\_INET}$ }\6
+$\\{u\_short}\ \\{sin\_port};$\5
+\C{ Port number }\6
+$\&{struct}\ \\{in\_addr}\ \\{sin\_addr};$\5
+\C{ Host ID }\6
+$\&{char}\ \\{sin\_zero}[\O{8}];$\2\6
+$\};$\par
+\fi
+
+\N107. 4 Routines specific to TCP/IP sockets. There are several routines to
+convert
+between numeric and symbolic addresses.
+
+\fi
+
+\M108. Hosts are represented by the following structure:
+\Y\P $\&{struct}\ \\{hostent}\ \{\1$\6
+$\&{char}\ {{*}}\\{h\_name};$\5
+\C{ Official name of the host      }\6
+$\&{char}\ {{*}}{{*}}\\{h\_aliases};$\5
+\C{ A zero terminated array of alternate names for the host   }\6
+$\&{int}\ \\{h\_addrtype};$\5
+\C{ Always $\\{AF\_INET}$        }\6
+$\&{int}\ \\{h\_length};$\5
+\C{ The length, in bytes, of the address }\6
+$\&{char}\ {{*}}{{*}}\\{h\_addr\_list};$\5
+\C{ A zero terminated array of network addresses for the host }\2\6
+$\};$\par
+\fi
+
+\M109. \CD{}$\&{struct}\ \\{hostent}$ ${{*}}\\{gethostbyname}$ $($ $\&{char}$
+${{*}}\\{name}$ $)$\DC{} returns an entry for the host
+with the given \CD{}$\\{name}$\DC{} or \CD{}$\\{NULL}$\DC{} if a host with this
+name can't be found.
+
+\fi
+
+\M110. \CD{}$\&{struct}\ \\{hostent}$ ${{*}}\\{gethostbyaddr}$ $($ $\&{const}\ %
+\&{char}\ {{*}}\\{addrP},\;\ \&{int}$ $,\;$ $\&{int}$ $)$\DC{} returns an
+entry for the host with the given address or \CD{}$\\{NULL}$\DC{} if a host
+with this name
+can't be found. \CD{}$\\{addrP}$\DC{} in fact has to be a \CD{}$\&{struct}\ %
+\\{in\_addr}$ ${*}$\DC{}. The last two
+parameters are ignored.
+
+\fi
+
+\M111. \CD{}$\&{char}$ ${{*}}\\{inet\_ntoa}$ $($ $\&{struct}\ \\{in\_addr}$ $%
+\\{inaddr}$ $)$\DC{} converts an internet address into
+the usual numeric string representation (e.g., 0x8184023C is converted to
+"129.132.2.60")
+
+\fi
+
+\M112. \CD{}$\&{struct}\ \\{in\_addr}\ \\{inet\_addr}(\&{char}\ {*}%
+\\{address})$\DC{} converts a numeric string into an
+internet address (If \CD{}$\|x$\DC{} is a valid address, \CD{}$\\{inet\_addr}(%
+\\{inet\_ntoa}(\|x))\S\|x$\DC{}).
+
+\fi
+
+\M113. \CD{}$\&{int}\ \\{gethostname}(\&{char}\ {*}\\{machname},\;\&{long}\ %
+\\{buflen})$\DC{} gets our name into \CD{}$\\{buffer}$\DC{}.
+
+\fi
+
+\M114. Services are represented by the following data structure:
+\Y\P $\&{struct}\ \\{servent}\ \{\1$\6
+$\&{char}\ {{*}}\\{s\_name};$\5
+\C{ official service name }\6
+$\&{char}\ {{*}}{{*}}\\{s\_aliases};$\5
+\C{ alias list  }\6
+$\&{int}\ \\{s\_port};$\5
+\C{ port number }\6
+$\&{char}\ {{*}}\\{s\_proto};$\5
+\C{ protocol to use ("tcp" or "udp") }\2\6
+$\};$\par
+\fi
+
+\M115. \CD{}$\&{void}\ \\{setservent}(\&{int}\ \\{stayopen})$\DC{} rewinds the
+file of services. If \CD{}$\\{stayopen}$\DC{} is
+set, the file will remain open until \CD{}$\\{endservent}(\,)$\DC{} is called,
+else it will be
+closed after the next call to \CD{}$\\{getservbyname}(\,)$\DC{} or \CD{}$%
+\\{getservbyport}(\,)$\DC{}.
+
+\fi
+
+\M116. \CD{}$\&{void}\ \\{endservent}()$\DC{} closes the file of services.
+
+\fi
+
+\M117. \CD{}$\&{struct}\ \\{servent}$ ${{*}}\\{getservent}(\,)$\DC{} returns
+the next service from the file of services,
+opening the file first if necessary. If the file is not found (%
+\.{/etc/services} in
+the preferences folder), a small built-in list is consulted. If there are no
+more services,
+\CD{}$\\{getservent}(\,)$\DC{} returns \CD{}$\\{NULL}$\DC{}.
+
+\fi
+
+\M118. \CD{}$\&{struct}\ \\{servent}$ ${{*}}\\{getservbyname}$ $($ $\&{const}\ %
+\&{char}\ {{*}}\\{name},\;\ \&{const}\ \&{char}$ ${{*}}\\{proto}$ $)$\DC{}
+finds a named
+service by calling \CD{}$\\{getservent}(\,)$\DC{} until the protocol matches %
+\CD{}$\\{proto}$\DC{} and either the name or
+one of the aliases matches \CD{}$\\{name}$\DC{}.
+
+\fi
+
+\M119. \CD{}$\&{struct}\ \\{servent}$ ${{*}}\\{getservbyport}$ $($ $\&{int}\ %
+\\{port},\;\ \&{const}\ \&{char}$ ${{*}}\\{proto}$ $)$\DC{} finds a
+service by calling \CD{}$\\{getservent}(\,)$\DC{} until the protocol matches %
+\CD{}$\\{proto}$\DC{} and the
+port matches \CD{}$\\{port}$\DC{}.
+
+\fi
+
+\M120. Protocols are represented by the following data structure:
+\Y\P $\&{struct}\ \\{protoent}\ \{\1$\6
+$\&{char}\ {{*}}\\{p\_name};$\5
+\C{ official protocol name }\6
+$\&{char}\ {{*}}{{*}}\\{p\_aliases};$\5
+\C{ alias list (always $\\{NULL}$ for \.{GUSI})}\6
+$\&{int}\ \\{p\_proto};$\5
+\C{ protocol number }\2\6
+$\};$\par
+\fi
+
+\M121. \CD{}$\&{struct}\ \\{protoent}$ ${{*}}\\{getprotobyname}$ $($ $\&{char}$
+${{*}}\\{name}$ $)$\DC{} finds a named protocol. This
+call is rather unexciting.
+
+\fi
+
+\N122. 1 PAP sockets. PAP, the AppleTalk Printer Access Protocol is a protocol
+which is
+almost exclusively used to access networked printers. The current
+implementation of
+PAP in \.{GUSI} is quite narrow in that it only implements the workstation side
+of
+PAP and only in communication to the currently selected LaserWriter. It is also
+doomed, as it depends on Apple system resources that probably are not supported
+anymore in Apple's Quickdraw GX printing architecture, but if there is enough
+interest, the current implementation might be replaced some time.
+
+\fi
+
+\N123. 4 Routines specific to PAP sockets. While PAP sockets behave in most
+respects like
+other sockets, they can currently not be created with the \CD{}$\\{socket}(\,)$%
+\DC{} call, but are
+opened with \CD{}$\\{open}(\,)$\DC{}.
+
+\fi
+
+\M124. \CD{}$\&{int}\ \\{open}($ $\.{"Dev:Printer"}$ $,\;$ $\&{int}$ $%
+\\{flags}$ $)$\DC{} opens a connection to the last selected
+LaserWriter. \CD{}$\\{flags}$\DC{} is currently ignored.
+
+\fi
+
+\M125. Communication with LaserWriters is somewhat strange. The three main uses
+of PAP
+sockets are probably interactive sessions, queries, and downloads, which will
+be
+discussed in the following sections. As in all other socket families, \.{GUSI}
+does
+no filtering of the transmitted data, which means that lines sent by the
+LaserWriter
+will be separated by linefeeds (ASCII 10) rather than carriage returns (ASCII
+13),
+which are used for this purpose in most other Mac contexts. For data you {\it
+send}, it
+doesn't matter which one you use.
+
+\fi
+
+\M126. You start an {\it interactive session} by sending a line \.{"executive"}
+after
+opening the socket. This will put lots of LaserWriters (certainly all
+manufactured
+by Apple, but probably not a Linotronic) into interactive mode. If you want to,
+you
+can now play terminal emulator and use your LaserWriter as an expensive desk
+calculator.
+
+\fi
+
+\M127. A {\it query} is some PostScript code you send to a LaserWriter that you
+expect
+to be answered. This is quite straightforward, except that LaserWriters don't
+seem
+to answer until you have indicated to them that no more data from you will be
+coming.
+Therefore, you have to call \CD{}$\\{shutdown}(\|s,\;$$\O{1})$\DC{} to shut the
+socket down for writing after
+you have written your query and before you try to read the answer. The
+following
+code demonstrates how to send a query to the printer:
+
+\Y\P $\&{int}\ \|s\leftarrow\\{open}(\.{"Dev:Printer"},\;$\39$\\{O\_RDWR});$\7
+$\\{write}(\|s,\;$\39$\.{"FontDirectory\ /Gorilla-SemiBold\ exch\ known..."},%
+\;$\39$\\{len});$\7
+\C{ We won't write any more }\6
+$\\{shutdown}(\|s,\;$\39$\O{1});$\7
+$\&{while}\ (\\{read}(\|s,\;$\39$\\{buf},\;$\39$\\{len})>\O{0})$\1\6
+$\\{do\_something}(\,);$\2\7
+$\\{close}(\|s);$\par
+\fi
+
+\M128. If you want to simply {\it download} a file, you can also ignore the
+LaserWriter's
+response and simply close the socket after downloading.
+
+\fi
+
+\N129. 1 Miscellaneous.
+
+\fi
+
+\N130. 4 BSD memory routines. These are implemented as macros if you \CD{} \8$%
+\#{\let\\=\bf \\{include}}${} $\LN\\{compat}.\|h\RN$\DC{}
+
+\fi
+
+\M131. \CD{}$\&{void}\ \\{bzero}(\&{void}\ {*}\\{from},\;\&{int}\ \\{len})$%
+\DC{} zeroes \CD{}$\\{len}$\DC{} bytes, starting at \CD{}$\\{from}$\DC{}.
+
+\fi
+
+\M132. \CD{}$\\{bfill}($ $\&{void}\ {{*}}\\{from},\;\ \&{int}\ \\{len},\;\ %
+\&{int}$ $\|x$ $)$\DC{} fills \CD{}$\\{len}$\DC{} bytes, starting at \CD{}$%
+\\{from}$\DC{} with
+\CD{}$\|x$\DC{}.
+
+\fi
+
+\M133. \CD{}$\&{void}\ \\{bcopy}(\&{void}\ {*}\\{from},\;\&{void}\ {*}\\{to},\;%
+\&{int}\ \\{len})$\DC{} copies \CD{}$\\{len}$\DC{} bytes from \CD{}$\\{from}$%
+\DC{} to
+\CD{}$\\{to}$\DC{}.
+
+\fi
+
+\M134. \CD{}$\&{int}\ \\{bcmp}(\&{void}\ {*}\\{s1},\;\&{void}\ {*}\\{s2},\;%
+\&{int}\ \\{len})$\DC{} compares \CD{}$\\{len}$\DC{} bytes at \CD{}$\\{s1}$%
+\DC{} against
+\CD{}$\\{len}$\DC{} bytes at \CD{}$\\{s2}$\DC{}, returning zero if the two
+areas are equal, nonzero otherwise.
+
+\fi
+
+\N135. 4 Blocking calls. Since the Macintosh doesn't have preemptive task
+switching, it
+is important that other applications get a chance to run during blocking calls.
+This
+section discusses the mechanism \.{GUSI} uses for that purpose.
+
+\fi
+
+\M136. While a routine is waiting for a blocking call to terminate, it
+repeatedly calls a
+spin routine with the following parameters:
+\Y\P $\&{typedef}\ $ $\&{enum}\ \\{spin\_msg}\ \{\1$ $\\{SP\_MISC}$ $,\;$\5
+\C{ some weird thing, usually just return immediately if you get this }\6
+$\\{SP\_SELECT}$ $,\;$\5
+\C{ in a select call, passes ticks the program is prepared to wait }\6
+$\\{SP\_NAME}$ $,\;$\5
+\C{ getting a host by name }\6
+$\\{SP\_ADDR}$ $,\;$\5
+\C{ getting a host by address }\6
+$\\{SP\_STREAM\_READ}$ $,\;$\5
+\C{ Stream read call }\6
+$\\{SP\_STREAM\_WRITE}$ $,\;$\5
+\C{ Stream write call }\6
+$\\{SP\_DGRAM\_READ}$ $,\;$\5
+\C{ Datagram read call }\6
+$\\{SP\_DGRAM\_WRITE}$ $,\;$\5
+\C{ Datagram write call }\6
+$\\{SP\_SLEEP}$ $,\;$\5
+\C{ sleeping, passes ticks left to sleep }\6
+$\\{SP\_AUTO\_SPIN}$\5
+\C{ Automatically spinning, passes spin count }\6
+$\}$ $\\{spin\_msg};$\7
+$\&{typedef}\ $ $\&{int}$ $({{*}}\\{GUSISpinFn})$ $($ $\\{spin\_msg}\ \\{msg}$
+$,\;$ $\&{long}$ $\\{param}$ $)$ $;$\par
+\fi
+
+\M137. You can modify the spin routine with the following calls:
+\Y\P $\&{int}\ \\{GUSISetSpin}(\\{GUSISpinFn}\ \\{routine})$\1$;$\2\7
+$\\{GUSISpinFn}\ \\{GUSIGetSpin}($ $\&{void}$ $)$ $;$\par
+\fi
+
+\M138. Often, however, the default spin routine will do what you want: It spins
+a
+cursor and occasionally calls \CD{}$\\{GetNextEvent}(\,)$\DC{} or \CD{}$%
+\\{WaitNextEvent}(\,)$\DC{}. By default,
+only mouse down and suspend/resume events are handled, but you can change that
+by passing your own \CD{}$\\{GUSIEvtTable}$\DC{} to \CD{}$\\{GUSISetEvents}(%
+\,)$\DC{}.
+\Y\P $\&{int}\ \\{GUSISetEvents}(\\{GUSIEvtTable}\ \\{table})$\1$;$\2\7
+$\\{GUSIEvtHandler}\ {{*}}\\{GUSIGetEvents}(\&{void});$\par
+\fi
+
+\M139. A \CD{}$\\{GUSIEvtTable}$\DC{} is a table of \CD{}$\\{GUSIEvtHandlers}$%
+\DC{}, indexed by event code. Presence
+of a non-nil entry in the table will cause that event class to be allowed for
+\CD{}$\\{GetNextEvent}(\,)$\DC{} or \CD{}$\\{WaitNextEvent}(\,)$\DC{}. \.{GUSI}
+includes one event table to
+be used with the \.{SIOW} library.
+\Y\P $\&{typedef}\ \&{void}\ ({{*}}\\{GUSIEvtHandler})(\\{EventRecord}{*}%
+\\{ev});$\6
+$\&{typedef}\ \\{GUSIEvtHandler}\ \\{GUSIEvtTable}[\O{24}];$\7
+$\&{extern}\ \\{GUSIEvtHandler}\ \\{GUSISIOWEvents}[];$\par
+\fi
+
+\N140. 4 Resources. A few \.{GUSI} routines (currently primarily choose()) need
+resources
+to work correctly. These are added if you Rez your program with \.{GUSI.r}. On
+startup, \.{GUSI} also looks for a {\it preference} resource with type
+\.{`GU$\Sigma$I'} and ID \CD{}$\\{GUSIRsrcID}$\DC{}, which is currently defined
+as follows:
+\Y\P\8$\#{\let\\=\bf \\{ifndef}}$\1{} $\\{GUSI\_PREF\_VERSION}$\2\6
+\8$\#{\let\\=\bf \\{define}}$\1{} $\\{GUSI\_PREF\_VERSION}$'$\O{0102}$'\2\6
+\8$\#{\let\\=\bf \\{endif}}$\1{} \2\7
+$\hbox{{\bf type} `\.{GU$\Sigma$I}' }$\1 $\{\1$\6
+$\\{literal}\ \\{longint}\ \\{text}\leftarrow$'$\\{TEXT}$'$;$\5
+\C{ Type for creat'ed files     }\6
+$\\{literal}\ \\{longint}\ \\{mpw}\leftarrow$'$\\{MPS}$'$;$\5
+\C{ Creator for creat'ed files     }\6
+$\\{byte}\ \\{noAutoSpin},\;\ \\{autoSpin};$\5
+\C{ Automatically spin cursor ?   }\6
+\8$\#{\let\\=\bf \&{if}\ }$\1{} $\\{GUSI\_PREF\_VERSION}\G$'$\O{0110}$'\2\6
+$\\{boolean}\ \\{useChdir},\;\ \\{dontUseChdir};$\5
+\C{ Use chdir() ?       }\6
+$\\{boolean}\ \\{approxStat},\;\ \\{accurateStat};$\5
+\C{ statbuf.st\_nlink = \# of subdirectories ? }\6
+$\\{boolean}\ \\{noTCPDaemon},\;\ \\{isTCPDaemon};$\5
+\C{ Inetd client ?       }\6
+$\\{boolean}\ \\{noUDPDaemon},\;\ \\{isUDPDaemon};$\6
+\8$\#{\let\\=\bf \&{if}\ }$\1{} $\\{GUSI\_PREF\_VERSION}\G$'$\O{0150}$'\2\6
+$\\{boolean}\ \\{noConsole},\;\ \\{hasConsole};$\5
+\C{ Are we providing our own dev:console ? }\6
+$\\{fill}\ \\{bit}[\O{3}];$\6
+\8$\#{\let\\=\bf \&{else}\ }$\1{} \2\6
+$\\{fill}\ \\{bit}[\O{4}];$\6
+\8$\#{\let\\=\bf \\{endif}}$\1{} \2\6
+$\\{literal}\ \\{longint}\leftarrow\\{GUSI\_PREF\_VERSION};$\6
+\8$\#{\let\\=\bf \&{if}\ }$\1{} $\\{GUSI\_PREF\_VERSION}\G$'$\O{0120}$'\2\7
+$\\{integer}\leftarrow\hbox{\$\$}\\{Countof}(\\{SuffixArray});$\7
+$\\{wide}\ \\{array}$ $\\{SuffixArray}$ $\{\1$ $\\{literal}\ \\{longint};$\5
+\C{ Suffix of file }\6
+$\\{literal}\ \\{longint};$\5
+\C{ Type for file }\6
+$\\{literal}\ \\{longint};$\5
+\C{ Creator for file }\6
+$\}$ $;$\6
+\8$\#{\let\\=\bf \\{endif}}$\1{} \2\6
+\8$\#{\let\\=\bf \\{endif}}$\1{} \2\6
+$\}$ $;$\par
+\fi
+
+\M141. To keep backwards compatible, the preference version is included, and
+you are free to
+use whatever version of the preferences you want by defining \CD{}$\\{GUSI%
+\_PREF\_VERSION}$\DC{}.
+
+\fi
+
+\M142. The first two fields define the file type and creator, respectively, to
+be used
+for files created by \.{GUSI}. The type and creator of existing files will
+never
+be changed unless explicitely requested with fsetfileinfo(). The default is to
+create text files (type `TEXT') owned by the \.{MPW Shell} (creator `MPS '). If
+you
+request a preference version of 1.2.0 and higher, you are also allowed to
+specify
+a list of suffixes that are given different types. An example of such a list
+would be:
+\Y\P $\{\1$' $\\{SYM}$' $,\;$' $\\{MPSY}$' $,\;$' $\\{sade}$' $\}$\par
+\fi
+
+\M143. The \CD{}$\\{autoSpin}$\DC{} value, if nonzero, makes \.{GUSI} call the
+spin routine for every
+call to \CD{}$\\{read}(\,)$\DC{}, \CD{}$\\{write}(\,)$\DC{}, \CD{}$\\{send}(%
+\,)$\DC{}, or \CD{}$\\{recv}(\,)$\DC{}. This is useful for making
+an I/O bound program MultiFinder friendly without having to insert explicit
+calls
+to \CD{}$\\{SpinCursor}(\,)$\DC{}. If you don't specify a preference resource, %
+\CD{}$\\{autoSpin}$\DC{} is assumed
+to be \CD{}$\O{1}$\DC{}. You may specify arbitrary values greater than one to
+make your program
+even friendlier; note, however, that this will hurt performance.
+
+\fi
+
+\M144. The \CD{}$\\{useChdir}$\DC{} flag tells \.{GUSI} whether you change
+directories with the
+toolbox calls \CD{}$\\{PBSetVol}(\,)$\DC{} or \CD{}$\\{PBHSetVol}(\,)$\DC{} or
+with the \.{GUSI} call \CD{}$\\{chdir}(\,)$\DC{}.
+The current directory will start with the directory your application resides in
+or the current \.{MPW} directory, if you're running an \.{MPW} tool.
+If \CD{}$\\{useChdir}$\DC{} is specified, the current directory will only
+change with \CD{}$\\{chdir}(\,)$\DC{}
+calls. If \CD{}$\\{dontUseChdir}$\DC{} is specified, the current directory will
+change with
+toolbox calls, until you call \CD{}$\\{chdir}(\,)$\DC{} the first time. This
+behaviour is more
+consistent with the standard \.{MPW} library, but has IMHO no other redeeming
+value. If you don't specify a preference resource, \CD{}$\\{useChdir}$\DC{} is
+assumed.
+
+\fi
+
+\M145. If \CD{}$\\{approxStat}$\DC{} is specified, \CD{}$\\{stat}(\,)$\DC{} and
+\CD{}$\\{lstat}(\,)$\DC{} for directories return in
+\CD{}$\\{st\_nlink}$\DC{} the number of {\it items} in the directory \CD{}${+}%
+\O{2}$\DC{}. If \CD{}$\\{accurateStat}$\DC{} is
+specified, they return the number of {\it subdirectories} in the directory. The
+latter has probably the best chances of being compatible with some Unix
+software,
+but the former is often a sufficient upper bound, is much faster, and most
+programs
+don't care about this value anyway. If you don't specify a preference resource,
+\CD{}$\\{approxStat}$\DC{} is assumed.
+
+\fi
+
+\M146. The \CD{}$\\{isTCPDaemon}$\DC{} and \CD{}$\\{isUDPDaemon}$\DC{} flags
+turn \.{GUSI} programs into clients
+for David Petersons \.{inetd}, as discussed below. If you don't specify a
+preference
+resource, \CD{}$\\{noTCPDaemon}$\DC{} and \CD{}$\\{noUDPDaemon}$\DC{} are
+assumed.
+
+\fi
+
+\M147. The \CD{}$\\{hasConsole}$\DC{} flag should be set if you are overriding
+the default "dev:console",
+as discussed below.
+
+\fi
+
+\N148. = Advanced techniques. This section discusses a few techniques that
+probably not
+every user of \.{GUSI} needs.
+
+\fi
+
+\N149. 2 FSSpec routines. If you need to do complicated things with the Mac
+file system,
+the normal \.{GUSI} routines are probably not sufficient, but you still might
+want to use the internal mechanism \.{GUSI} uses. This mechanism is provided in
+the header file \.{TFileSpec.h}, which defines both \CD{}$\|C$\DC{} and \CD{}$%
+\|C\PP$\DC{} interfaces.
+In the following, the \CD{}$\|C\PP$\DC{} member functions will be discussed and
+\CD{}$\|C$\DC{} equivalents
+will be mentioned where available.
+
+\fi
+
+\M150. \CD{}$\\{OSErr}$ $\\{TFileSpec}:$ $:$ $\\{Error}(\,)$\DC{} returns the
+last error provoked by a \CD{}$\\{TFileSpec}$\DC{} member
+function.
+
+\fi
+
+\M151. \CD{}$\\{TFileSpec}:$ $:$ $\\{TFileSpec}($ $\&{const}\ \\{FSSpec}\ {%
+\amp}\\{spec},\;\ \\{Boolean}\ \\{useAlias}\leftarrow$ $\\{false}$ $)$\DC{}
+constructs
+a \CD{}$\\{TFileSpec}$\DC{} from an \CD{}$\\{FSSpec}$\DC{} and resolves alias
+files unless \CD{}$\\{useAlias}$\DC{} is \CD{}$\\{true}$\DC{}.
+(The \CD{}$\\{useAlias}$\DC{} parameter is also present in the following
+routines, but will not
+be shown anymore).
+
+\fi
+
+\M152. \CD{}$\\{TFileSpec}($ $\&{short}\ \\{vRefNum},\;\ \&{long}\ \\{parID},\;%
+\ \\{ConstStr31Param}$ $\\{name}$ $)$\DC{}
+constructs a \CD{}$\\{TFileSpec}$\DC{} from its components.
+
+\fi
+
+\M153. \CD{}$\\{TFileSpec}($ $\&{short}\ \\{wd},\;\ \\{ConstStr31Param}$ $%
+\\{name}$ $)$\DC{} constructs
+a \CD{}$\\{TFileSpec}$\DC{} from a working directory reference number and a
+path component.
+
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{WD2FSSpec}(\&{short}\ \\{wd},\;\\{ConstStr31Param}\ %
+\\{name},\;$ $\\{FSSpec}$ ${{*}}\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M154. \CD{}$\\{TFileSpec}($ $\&{const}\ \&{char}$ ${{*}}\\{path}$ $)$\DC{}
+constructs a
+\CD{}$\\{TFileSpec}$\DC{} from a full or relative path name.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{Path2FSSpec}(\&{const}\ \&{char}\ {*}\\{path},\;$ $%
+\\{FSSpec}$ ${{*}}\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M155. \CD{}$\\{TFileSpec}($ $\\{OSType}\ \\{object}$ $,\;$ $\&{short}\ \\{vol}%
+\leftarrow\\{kOnSystemDisk},\;\ \&{long}\ \\{dir}\leftarrow$ $\O{0}$ $)$\DC{}
+constructs
+special \CD{}$\\{TFileSpec}$\DC{}s, depending on \CD{}$\\{object}$\DC{}.
+
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{Special2FSSpec}(\\{OSType}\ \\{object},\;\&{short}\ %
+\\{vol},\;\&{long}\ \\{dirID},\;$ $\\{FSSpec}$ ${{*}}\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M156. All constants in \.{Folders.h} acceptable
+for \CD{}$\\{FindFolder}(\,)$\DC{} can be passed, e.g. the following:
+\medskip\plaintwocol{
+kSystemFolderType   & The system folder.\cr
+kDesktopFolderType  & The desktop folder; objects in this folder show on the
+desk top.\cr
+kExtensionFolderType  & Finder extensions go here.\cr
+kPreferencesFolderType & Preferences for applications go here.\cr
+}
+
+\fi
+
+\M157. Furthermore, the value \CD{}$\\{kTempFileType}$\DC{} is defined, which
+creates a temporary
+file in the temporary folder, or, if \CD{}$\\{dir}$\DC{} is nonzero, in the
+directory you
+specify.
+
+\fi
+
+\M158. In principle, a \CD{}$\\{TFileSpec}$\DC{} should be compatible with an %
+\CD{}$\\{FSSpec}$\DC{}. However, to
+be absolutely sure, you can call \CD{}$\\{TFileSpec}:$ $:$ $\\{Bless}(\,)$\DC{}
+which will call
+\CD{}$\\{FSMakeFSSpec}(\,)$\DC{} before passing the TFileSpec to a \CD{}$%
+\\{FSp}$\DC{} file system routine.
+
+\fi
+
+\M159. \CD{}$\&{char}$ ${{*}}\\{TFileSpec}$ $:$ $:$ $\\{FullPath}(\,)$\DC{}
+returns the full path name of the file. The
+address returned points to a static buffer, so it will be overwritten on
+further calls.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\&{char}$ ${{*}}\\{FSp2FullPath}$ $($ $\&{const}$ $\\{FSSpec}$ ${{*}}%
+\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M160. \CD{}$\&{char}$ ${{*}}\\{TFileSpec}$ $:$ $:$ $\\{RelPath}(\,)$\DC{}
+works like \CD{}$\\{FullPath}(\,)$\DC{}, but when the current
+folder given by \CD{}$\\{chdir}(\,)$\DC{} is a pparent folder of the object, a
+relative path
+name will be returned. The address returned points to a static buffer, so it
+will be overwritten on further calls.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\&{char}$ ${{*}}\\{FSp2RelPath}$ $($ $\&{const}$ $\\{FSSpec}$ ${{*}}%
+\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M161. \CD{}$\&{char}$ ${{*}}\\{TFileSpec}$ $:$ $:$ $\\{Encode}(\,)$\DC{}
+returns an ASCII encoding which may be passed
+to all \.{GUSI} routines taking path names. The address returned points to a
+static buffer, so it will be overwritten on further calls. This generates
+short names which may be parsed rather quickly.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\&{char}$ ${{*}}\\{FSp2Encoding}$ $($ $\&{const}$ $\\{FSSpec}$ ${{*}}%
+\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M162. \CD{}$\\{OSErr}$ $\\{TFileSpec}:$ $:$ $\\{CatInfo}(\\{CInfoPBRec}\amp%
+\\{info},\;$$\\{Boolean}\ \\{dirInfo}\leftarrow\\{false})$\DC{} Gives
+information about the current object. If \CD{}$\\{dirInfo}$\DC{} is \CD{}$%
+\\{true}$\DC{}, gives information
+about the current object's directory.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{FSpCatInfo}(\&{const}\ \\{FSSpec}\ {{*}}\\{desc},\;$ $%
+\\{CInfoPBRec}$ ${{*}}\\{info}$ $)$\DC{}.
+
+\fi
+
+\M163.  \CD{}$\\{OSErr}$ $\\{TFileSpec}:$ $:$ $\\{Resolve}(\\{Boolean}\ %
+\\{gently}\leftarrow\\{true})$\DC{} resolve the object if it is an alias file.
+If gently is \CD{}$\\{true}$\DC{} (the default), nonexisting files are
+tolerated.
+
+\fi
+
+\M164. \CD{}$\\{Boolean}$ $\\{TFileSpec}:$ $:$ $\\{Exists}(\,)$\DC{} returns %
+\CD{}$\\{true}$\DC{} if the object exists.
+
+\fi
+
+\M165. \CD{}$\\{Boolean}$ $\\{TFileSpec}:$ $:$ $\\{IsParentOf}($ $\&{const}$ $%
+\\{TFileSpec}$ ${\amp}\\{other}$ $)$\DC{} returns \CD{}$\\{true}$\DC{} if the
+object is
+a parent of \CD{}$\\{other}$\DC{}.
+
+\fi
+
+\M166. \CD{}$\\{TFileSpec}$ $\\{TFileSpec}:$ $:$ $\\{operator}\MM(\,)$\DC{}
+replaces the object with its parent directory.
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{FSpUp}($ $\\{FSSpec}$ ${{*}}\\{desc}$ $)$\DC{}.
+
+\fi
+
+\M167. \CD{}$\\{TFileSpec}$ $\\{FileSpec}:$ $:$ $\\{operator}$ $\buildrel-%
+\over{\leftarrow}$ $($ $\&{int}$ $\\{levels}$ $)$\DC{} is equivalent to calling
+\CD{}$\MM$\DC{}
+\CD{}$\\{levels}$\DC{} times and \CD{}$\\{TFileSpec}$ $\\{FileSpec}:$ $:$ $%
+\\{operator}$ $-$ $($ $\&{int}$ $\\{levels}$ $)$\DC{} is equivalent
+to calling \CD{}$\buildrel-\over{\leftarrow}$\DC{} on a {\it copy} of the
+current object.
+
+\fi
+
+\M168. \CD{}$\\{TFileSpec}$ $\\{TFileSpec}:$ $:$ $\\{operator}\buildrel+\over{%
+\leftarrow}(\\{ConstStr31Param}\ \\{name})$\DC{},
+\CD{}$\\{TFileSpec}$ $\\{TFileSpec}:$ $:$ $\\{operator}$ $\buildrel+\over{%
+\leftarrow}$ $($ $\&{const}\ \&{char}$ ${{*}}\\{name}$ $)$\DC{}, and their
+non-destructive
+counterparts \CD{}$+$\DC{} add a further component to the current object, which
+must be
+an existing directory.
+
+This routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{FSpDown}(\\{FSSpec}\ {{*}}\\{desc},\;\\{ConstStr31Param}\ %
+\\{name})$\DC{}.
+
+\fi
+
+\M169. \CD{}$\\{TFileSpec}$ $\\{TFileSpec}:$ $:$ $\\{operator}[]$ $($ $%
+\&{short}$ $\\{index}$ $)$\DC{} returns the \CD{}$\\{index}$\DC{}th object in
+the parent folder of the current object.
+
+A destructive version of this routine is available to \CD{}$\|C$\DC{} users as
+\CD{}$\\{OSErr}\ \\{FSpIndex}(\\{FSSpec}\ {{*}}\\{desc},\;\&{short}\ %
+\\{index})$\DC{}.
+
+\fi
+
+\M170. Furthermore, the \CD{}$\S$\DC{} and \CD{}$\I$\DC{} operators are defined
+to test \CD{}$\\{TFileSpec}$\DC{}s for
+equality.
+
+\fi
+
+\M171. \CD{}$\\{OSErr}\ \\{FSpSmartMove}(\&{const}\ \\{FSSpec}\ {{*}}\\{from},%
+\;$ $\&{const}$ $\\{FSSpec}$ ${{*}}\\{to}$ $)$\DC{} does all the work
+of moving and renaming a file (within the same volume), handling (I hope) all
+special cases (You might be surprised how many there are).
+
+\fi
+
+\N172. 2 Adding your own socket families. It is rather easy to add your own
+socket
+types to \.{GUSI}:
+\medskip\onecollist{
+Pick an unused number between 17 and \CD{}$\\{GUSI\_MAX\_DOMAINS}$\DC{} to use
+for your address family.\cr
+Include \.{GUSI\_P.h}.\cr
+Write a subclass of \CD{}$\\{SocketDomain}$\DC{} and override \CD{}$\\{socket}(%
+\,)$\DC{} and optionally \CD{}$\\{choose}(\,)$\DC{}.\cr
+Write a subclass of \CD{}$\\{Socket}$\DC{} and override whatever you want. If
+you override
+\CD{}$\\{recvfrom}(\,)$\DC{} and \CD{}$\\{sendto}(\,)$\DC{}, \CD{}$\\{read}(%
+\,)$\DC{} and \CD{}$\\{write}(\,)$\DC{} are automatically defined.\cr
+For more information, study the code in \.{GUSIDispatch.cp} and %
+\.{GUSISocket.cp},
+which implement the generic socket code. The easiest actual socket
+implementation
+to study is probably \.{GUSIUnix.cp}.\cr
+}
+
+\fi
+
+\N173. 2 Adding your own file families. \.{GUSI} also supports adding special
+treatment for
+certain file names to almost all (tell me if I have forgotten one) standard %
+\CD{}$\|C$\DC{} library
+routines dealing with file names. To avoid countless rescanning of file names, %
+\.{GUSI}
+preprocesses the names:
+\medskip\onecollist{
+If the file name starts with \CD{}$\.{"Dev:"}$\DC{} (case insensitive), the
+file name is considered
+a {\it device name}, and the rest of the name can have any structure you like.%
+\cr
+Otherwise, the name is translated into a \CD{}$\\{FSSpec}$\DC{}, and therefore
+should refer to a real
+file system object (all intermediate path name components should refer to
+existing
+directories).\cr
+}
+
+\fi
+
+\M174. To create a file family:
+\medskip\onecollist{
+Pick an address family, as described above. However, if you don't plan on
+creating sockets
+of this family with socket(), just specify \CD{}$\\{AF\_UNSPEC}$\DC{}.\cr
+Include \.{GUSIFile\_P.h}.\cr
+Write a subclass of \CD{}$\\{FileSocketDomain}$\DC{}, specifying whether you
+are interested in device
+names, file names, or both, and override \CD{}$\\{Yours}(\,)$\DC{} and other
+calls.\cr
+Write a subclass of \CD{}$\\{Socket}$\DC{} and override whatever you want.\cr
+For more information, study the code in \.{GUSIFile.cp}, which implements the
+generic
+file socket code.\cr
+}
+
+\fi
+
+\M175. In your \CD{}$\\{Yours}(\,)$\DC{} member function, you specify whether
+you are prepared to handle
+one of the following functions for a given file name:
+\Y\P $\&{enum}\ \\{Request}\ \{\1$ $\\{willOpen}$ $,\;$ $\\{willRemove}$ $,\;$
+$\\{willRename}$ $,\;$ $\\{willGetFileInfo}$ $,\;$ $\\{willSetFileInfo}$ $,\;$
+$\\{willFAccess}$ $,\;$ $\\{willStat}$ $,\;$ $\\{willChmod}$ $,\;$ $%
+\\{willUTime}$ $\}$ $;$\par
+\fi
+
+\M176. If you return \CD{}$\\{true}$\DC{} for a request, your corresponding
+member function will be called.
+Member functions are similar to the corresponding \CD{}$\|C$\DC{} library
+functions, except that
+their first parameter is a \CD{}$\\{GUSIFileRef}$ $\amp$\DC{} instead of a %
+\CD{}$\&{const}\ \&{char}$ ${*}$\DC{} (but further
+file name parameters, as in \CD{}$\\{rename}(\,)$\DC{}, will be left
+untouched). You might also return
+\CD{}$\\{true}$\DC{} but {\it not} override the member function to indicate
+that standard file treatment
+(\CD{}$\\{EINVAL}$\DC{} for many routines) is OK.
+
+\fi
+
+\M177. The member function will always be called immediately after the \CD{}$%
+\\{Yours}(\,)$\DC{} function, so
+you may want to pre-parse the file name in the \CD{}$\\{Yours}(\,)$\DC{}
+function and keep the information
+for the member function.
+
+\fi
+
+\N178. = Known problems, words of warning. \medskip\onecollist{
+\CD{}$\\{O\_NRESOLVE}$\DC{}, as introduced in the E.T.O \#8 Prerelease
+libraries, is interpreted
+the same way as \CD{}$\\{O\_ALIAS}$\DC{}, i.e. intermediate aliases are
+silently resolved. On the
+other hand, I can't think of a good reason why anybody would use \CD{}$\\{O%
+\_NRESOLVE}$\DC{}.\cr
+\CD{}$\\{getsockname}(\,)$\DC{} for TCP/IP sockets for which neither \CD{}$%
+\\{bind}(\,)$\DC{} with a nonzero port
+number nor \CD{}$\\{connect}(\,)$\DC{} or \CD{}$\\{listen}(\,)$\DC{} have been
+called returns zero.\cr
+\CD{}$\\{bind}(\,)$\DC{} for TCP/IP sockets doesn't check for duplicate port
+numbers.\cr
+}
+
+\fi
+
+\N179. = References. The following books might provide you with more
+information about
+various aspects of \.{GUSI}.
+
+\medskip\bibliolist{
+Appl85&Apple Computer, Inc., {\it Inside Macintosh Series}, Addison
+Wesley, 1985--94\cr
+Appl88&Apple Computer, Inc., {\it Macintosh Programmer's Workshop C}, 1988\cr
+Crow13&Aleister Crowley, {\it The Book of Lies}, 1913\cr
+Holz91&David A.~Holzgang, {\it Programming the LaserWriter}, Addison-Wesley
+1991\cr
+LMKQ89&Samuel J.~Leffler, Marshall Kirk McKusick, Michael J.~Karels, John
+S.~Quarterman, {\it The Design and Implementation of the 4.3BSD UNIX Operating
+System}, Addison Wesley, 1989\cr
+Stev90&W.~Richard Stevens, {\it UNIX Network Programming}, Prentice Hall,
+1990\cr
+Stev92&W.~Richard Stevens, {\it Advanced Programming in the UNIX Environment},
+Prentice Hall,
+1992\cr
+Sun88&Sun Microsystems, Inc., {\it SunOS Reference Manual}, 1988\cr
+}
+
+\fi
+
+\N180. = Index.
+\fi
+
+
+\inx
+\:\\{accept}, 19, \[22], 50.
+\:\\{accurateStat}, \[140], 145.
+\:\\{actime}, \[61], 62.
+\:\\{addr}, \[22], \[23], \[95].
+\:\\{AddrBlock}, 95.
+\:\\{address}, \[112].
+\:\\{addrlen}, \[22], \[23].
+\:\\{addrP}, \[110].
+\:\\{af}, \[15].
+\:\\{AF\_APPLETALK}, 15, 95.
+\:\\{AF\_INET}, 15, 106, 108.
+\:\\{AF\_PPC}, 15, 100.
+\:\\{AF\_UNIX}, 15, 91.
+\:\\{AF\_UNSPEC}, 174.
+\:\\{approxStat}, \[140], 145.
+\:\\{arg}, \[42], \[70].
+\:\\{argp}, \[41].
+\:\\{array}, 140.
+\:\\{ATALK\_SYMADDR}, 96.
+\:\\{autoSpin}, \[140], 143.
+\:\\{bcmp}, \[134].
+\:\\{bcopy}, \[133].
+\:\\{bfill}, 132.
+\:\\{bind}, 18, 19, \[20], 50, 96, 178.
+\:\\{bit}, \[140].
+\:\\{Bless}, 158.
+\:\\{boolean}, 140.
+\:\\{Boolean}, 151, 162, 163, 164, 165.
+\:\\{buf}, \[56], \[58], \[59], \[74], \[78], 127.
+\:\\{buffer}, \[25], \[27], \[28], \[30], \[32], \[33], 113.
+\:\\{buflen}, \[25], \[27], \[28], \[30], \[32], \[33], \[113].
+\:\\{bufsiz}, \[74].
+\:\\{byte}, 140.
+\:\\{bzero}, \[131].
+\:\\{caddr\_t}, 26, 29.
+\:\\{CatInfo}, 162.
+\:\\{chdir}, 1, 70, \[77], 144, 160.
+\:\\{chmod}, \[60].
+\:\\{choose}, 17, \[18], 20, 52, 92, 97, 101, 172.
+\:\\{CHOOSE\_DEFAULT}, 18.
+\:\\{CHOOSE\_DIR}, 52.
+\:\\{CHOOSE\_NEW}, 18.
+\:\\{CInfoPBRec}, 162.
+\:\\{close}, 14, \[16], 127.
+\:\\{closedir}, \[85].
+\:\\{cmd}, \[42], \[70].
+\:\\{compat}, 130.
+\:\\{connect}, 18, 19, \[23], 50, 96, 103, 178.
+\:\\{constraint}, \[18], 52, 97, 101.
+\:\\{ConstStr31Param}, 152, 153, 168.
+\:\\{count}, \[26], \[31].
+\:\\{Countof}, 140.
+\:\\{creat}, \[69].
+\:\\{d\_fileno}, \[79].
+\:\\{d\_name}, \[79].
+\:\\{d\_namlen}, \[79].
+\:\\{d\_reclen}, \[79].
+\:\\{define}, 79, 140.
+\:\\{desc}, 153, 154, 155, 159, 160, 161, \[162], 166, \[168], \[169].
+\:\\{dev\_t}, 56.
+\:\\{dir}, \[155], 157.
+\:\\{DIR}, 80, 81, 82, 83, 84, 85.
+\:\\{dirent}, \[79], 81, 86.
+\:\\{dirID}, \[155].
+\:\\{dirInfo}, 162.
+\:\\{dirname}, 80.
+\:\\{dirp}, 81, 82, \[83], 84, 85.
+\:\\{do\_something}, 127.
+\:\\{dom}, \[18].
+\:\\{dontUseChdir}, \[140], 144.
+\:\\{dup}, 38, \[45].
+\:\\{dup2}, 38, \[46].
+\:\\{EADDRINUSE}, 20.
+\:\\{EADDRNOAVAIL}, 23.
+\:\\{EAFNOSUPPORT}, 20, 23.
+\:\\{EBADF}, 13, 36.
+\:\\{ECONNREFUSED}, 23.
+\:\\{EINPROGRESS}, 23.
+\:\\{EINTR}, 13, 18.
+\:\\{EINVAL}, 15, 18, 176.
+\:\\{EISCONN}, 23.
+\:\\{EMFILE}, 15.
+\:\\{ENAMETOOLONG}, 78.
+\:\\{Encode}, 161.
+\:\\{endif}, 140.
+\:\\{endservent}, 115, \[116].
+\:\\{ENOMEM}, 13, 78.
+\:\\{ENOTCONN}, 13, 22.
+\:\\{EntityName}, 96.
+\:\\{entries}, \[86].
+\:\\{EOPNOTSUPP}, 41, 42, 50.
+\:\\{errno}, 13.
+\:\\{Error}, 150.
+\:\\{ESPIPE}, 64.
+\:\\{ev}, 139.
+\:\\{EventRecord}, 139.
+\:\\{EWOULDBLOCK}, 22, 25, 30.
+\:\\{exceptfds}, \[36].
+\:\\{exceptfs}, 36.
+\:\\{Exists}, 164.
+\:\\{F\_DUPFD}, 42.
+\:\\{F\_GETFL}, 42.
+\:\\{F\_SETFL}, 42.
+\:\\{faccess}, \[70].
+\:\\{false}, 151, 162.
+\:\\{family}, \[95], \[96], \[100].
+\:\\{fcntl}, 38, \[42], 54.
+\:\\{fd}, \[16], \[45], \[59], \[63], \[88].
+\:\\{FD\_CLR}, 37.
+\:\\{FD\_ISSET}, 37.
+\:\\{FD\_SET}, 37.
+\:\\{fd\_set}, 36.
+\:\\{FD\_ZERO}, 37.
+\:\\{fds}, 37.
+\:\\{fgetfileinfo}, \[71].
+\:\\{file}, \[61], 62.
+\:\\{filename}, \[60], \[65], \[66], \[70], \[71], \[72].
+\:\\{FileSocketDomain}, 174.
+\:\\{FileSpec}, \[167].
+\:\\{fill}, 140.
+\:\\{FindFolder}, 156.
+\:\\{FIONBIO}, 41.
+\:\\{FIONREAD}, 41.
+\:\\{flags}, \[18], \[27], \[28], \[29], \[32], \[33], \[34], \[68], \[101],
+102, 124.
+\:\\{FNDELAY}, 42.
+\:\\{from}, \[28], 29, \[131], \[132], \[133], \[171].
+\:\\{fromlen}, \[28], 29.
+\:\\{fsetfileinfo}, \[72].
+\:\\{FSMakeFSSpec}, 158.
+\:\\{FSp}, 158.
+\:\\{FSpCatInfo}, \[162].
+\:\\{FSpDown}, \[168].
+\:\\{FSpIndex}, \[169].
+\:\\{FSpSmartMove}, \[171].
+\:\\{FSpUp}, \[166].
+\:\\{FSp2Encoding}, 55, 161.
+\:\\{FSp2FullPath}, 159.
+\:\\{FSp2RelPath}, 160.
+\:\\{FSSpec}, 7, 55, 151, 153, 154, 155, 158, 159, 160, 161, 162, 166, 168,
+169, 171, 173.
+\:\\{fstat}, \[59].
+\:\\{ftruncate}, \[88].
+\:\\{FullPath}, 159, 160.
+\:\\{gently}, 163.
+\:\\{getcwd}, 1, 78.
+\:\\{gethostbyaddr}, 110.
+\:\\{gethostbyname}, 109.
+\:\\{gethostname}, \[113].
+\:\\{GetNextEvent}, 138, 139.
+\:\\{getpeername}, 38, \[40], 50.
+\:\\{getprotobyname}, 121.
+\:\\{getservbyname}, 115, 118.
+\:\\{getservbyport}, 115, 119.
+\:\\{getservent}, 117, 118, 119.
+\:\\{getsockname}, 38, \[39], 50, 178.
+\:\\{getsockopt}, 38, \[43], 50.
+\:\\{GUSI\_MAX\_DOMAINS}, 172.
+\:\\{GUSI\_PREF\_VERSION}, 140, 141.
+\:\\{GUSIEvtHandler}, 138, \[139].
+\:\\{GUSIEvtHandlers}, 139.
+\:\\{GUSIEvtTable}, 138, \[139].
+\:\\{GUSIFileRef}, 176.
+\:\\{GUSIGetEvents}, \[138].
+\:\\{GUSIGetSpin}, \[137].
+\:\\{GUSIRsrcID}, 140.
+\:\\{GUSISetEvents}, \[138].
+\:\\{GUSISetSpin}, \[137].
+\:\\{GUSISIOWEvents}, \[139].
+\:\\{GUSISpinFn}, 136, 137.
+\:\\{h\_addr\_list}, \[108].
+\:\\{h\_addrtype}, \[108].
+\:\\{h\_aliases}, \[108].
+\:\\{h\_length}, \[108].
+\:\\{h\_name}, \[108].
+\:\\{hasConsole}, \[140], 147.
+\:\\{hostent}, \[108], 109, 110.
+\:\\{ifndef}, 140.
+\:\\{in\_addr}, \[106], 110, 111, 112.
+\:\\{inaddr}, 111.
+\:\\{include}, 130.
+\:\\{index}, \[169].
+\:\\{inet\_addr}, \[112].
+\:\\{inet\_ntoa}, 111, 112.
+\:\\{info}, 162.
+\:\\{InitCursor}, 8.
+\:\\{InitDialogs}, 8.
+\:\\{InitFonts}, 8.
+\:\\{InitGraf}, 8.
+\:\\{InitMenus}, 8.
+\:\\{InitWindows}, 8.
+\:\\{ino\_t}, 56.
+\:\\{integer}, 140.
+\:\\{ioctl}, 7, 38, \[41], 54.
+\:\\{iov}, \[26], \[31].
+\:\\{iov\_base}, \[26].
+\:\\{iov\_len}, \[26].
+\:\\{iovec}, \[26], 29, 31.
+\:\\{isatty}, \[63].
+\:\\{IsParentOf}, 165.
+\:\\{isTCPDaemon}, \[140], 146.
+\:\\{isUDPDaemon}, \[140], 146.
+\:\\{kOnSystemDisk}, 155.
+\:\\{kTempFileType}, 157.
+\:\\{len}, 127, \[131], \[132], \[133], \[134].
+\:\\{length}, \[87], \[88].
+\:\\{level}, \[43], \[44].
+\:\\{levels}, 167.
+\:\\{linkname}, \[73].
+\:\\{linkto}, \[73].
+\:\\{listen}, 19, \[21], 22, 50, 178.
+\:\\{literal}, 140.
+\:\\{loc}, \[83].
+\:\\{location}, \[100].
+\:\\{LocationNameRec}, 100.
+\:\\{longint}, \[140].
+\:\\{lseek}, \[64].
+\:\\{lstat}, \[58], 145.
+\:\\{machname}, \[113].
+\:\\{malloc}, 78.
+\:\\{match}, \[101], 102.
+\:\\{MAXNAMLEN}, 79.
+\:\\{mkdir}, \[75].
+\:\\{mode}, \[60].
+\:\\{mode\_t}, 60.
+\:\\{modtime}, \[61], 62.
+\:\\{MPS}, 140.
+\:\\{MPSY}, 142.
+\:\\{mpw}, \[140].
+\:\\{msg}, \[29], \[34], 136.
+\:\\{msg\_accrights}, \[29].
+\:\\{msg\_accrightslen}, \[29].
+\:\\{msg\_iov}, \[29].
+\:\\{msg\_iovlen}, \[29].
+\:\\{msg\_name}, \[29].
+\:\\{msg\_namelen}, \[29].
+\:\\{MSG\_OOB}, 27, 32.
+\:\\{msghdr}, \[29], 34.
+\:\\{name}, \[18], \[20], 23, \[39], \[40], 52, \[69], \[96], 102, 109, \[118],
+121, 152, \[153], \[168].
+\:\\{namelen}, \[20], \[39], \[40].
+\:\\{nbpType}, \[101], 102.
+\:\\{newcreator}, \[71], \[72].
+\:\\{newfd}, \[46].
+\:\\{newname}, \[67].
+\:\\{newtype}, \[71], \[72].
+\:\\{nil}, 8.
+\:\\{nlen}, \[18].
+\:\\{NLType}, 97.
+\:\\{noAutoSpin}, \[140].
+\:\\{noConsole}, \[140].
+\:\\{noTCPDaemon}, \[140], 146.
+\:\\{noUDPDaemon}, \[140], 146.
+\:\\{NULL}, 22, 28, 36, 78, 80, 81, 86, 109, 110, 117, 120.
+\:\\{numTypes}, \[52], \[97].
+\:\\{O\_ALIAS}, 68, 178.
+\:\\{O\_APPEND}, 68.
+\:\\{O\_CREAT}, 68, 69.
+\:\\{O\_EXCL}, 68.
+\:\\{O\_NRESOLVE}, 178.
+\:\\{O\_RDONLY}, 68.
+\:\\{O\_RDWR}, 68, 127.
+\:\\{O\_RSRC}, 68.
+\:\\{O\_TRUNC}, 68, 69.
+\:\\{O\_WRONLY}, 69.
+\:\\{object}, \[155].
+\:\\{off\_t}, 56, 87, 88.
+\:\\{oldfd}, \[46].
+\:\\{oldname}, \[67].
+\:\\{open}, \[68], 69, 123, \[124], 127.
+\:\\{opendir}, 80.
+\:\\{operator}, 166, 167, 168, 169.
+\:\\{optlen}, \[43], \[44].
+\:\\{optname}, \[43], \[44].
+\:\\{optval}, \[43], \[44].
+\:\\{OSErr}, 150, 153, 154, 155, 162, 163, 166, 168, 169, 171.
+\:\\{OSType}, 155.
+\:\\{other}, 165.
+\:\\{p\_aliases}, \[120].
+\:\\{p\_name}, \[120].
+\:\\{p\_proto}, \[120].
+\:\\{param}, 136.
+\:\\{parID}, \[152].
+\:\\{path}, \[56], \[58], \[74], \[75], \[76], \[77], \[86], \[87], \[154].
+\:\\{Path2FSSpec}, \[154].
+\:\\{PBHSetVol}, 144.
+\:\\{PBSetVol}, 144.
+\:\\{port}, \[100], \[119].
+\:\\{portType}, 102.
+\:\\{PPC\_CON\_MATCH\_NAME}, 102.
+\:\\{PPC\_CON\_MATCH\_NBP}, 102.
+\:\\{PPC\_CON\_MATCH\_TYPE}, 102.
+\:\\{PPC\_CON\_NEWSTYLE}, 102.
+\:\\{PPCPortRec}, 100, 101.
+\:\\{prompt}, \[18].
+\:\\{proto}, 118, 119.
+\:\\{protocol}, \[15].
+\:\\{protoent}, \[120], 121.
+\:\\{Ptr}, 8.
+\:\\{qd}, 8.
+\:\\{qlen}, \[21].
+\:\\{qsort}, 86.
+\:\\{read}, 24, \[25], 27, 30, 127, 143, 172.
+\:\\{readdir}, 81.
+\:\\{readfds}, \[36].
+\:\\{readfs}, 36.
+\:\\{readlink}, 1, \[74].
+\:\\{readv}, 24, \[26], 29.
+\:\\{recv}, 24, \[27], 28, 51, 143.
+\:\\{recvfrom}, 24, \[28], 29, 51, 172.
+\:\\{recvmsg}, 24, \[29], 51.
+\:\\{RelPath}, 160.
+\:\\{remove}, \[65], 66.
+\:\\{rename}, \[67], 176.
+\:\\{request}, \[41].
+\:\\{Request}, \[175].
+\:\\{Resolve}, 163.
+\:\\{rewinddir}, \[84].
+\:\\{rmdir}, \[76].
+\:\\{routine}, \[137].
+\:\\{s\_addr}, \[106].
+\:\\{s\_aliases}, \[114].
+\:\\{S\_IFCHR}, 57.
+\:\\{S\_IFDIR}, 57.
+\:\\{S\_IFLNK}, 57.
+\:\\{S\_IFREG}, 57.
+\:\\{S\_IFSOCK}, 57, 59.
+\:\\{s\_name}, \[114].
+\:\\{s\_port}, \[114].
+\:\\{s\_proto}, \[114].
+\:\\{sa\_constr\_atlk}, \[97].
+\:\\{sa\_constr\_file}, \[52].
+\:\\{sa\_constr\_ppc}, \[101].
+\:\\{sade}, 142.
+\:\\{scandir}, \[86].
+\:\\{seekdir}, \[83].
+\:\\{select}, 22, 23, \[36], 53.
+\:\\{send}, 24, \[32], 33, 51, 143.
+\:\\{sendmsg}, 24, \[34], 51.
+\:\\{sendto}, 24, \[33], 34, 51, 172.
+\:\\{servent}, \[114], 117, 118, 119.
+\:\\{setservent}, \[115].
+\:\\{setsockopt}, 38, \[44], 50.
+\:\\{SFTypeList}, 52.
+\:\\{shutdown}, 127.
+\:\\{sin\_addr}, \[106].
+\:\\{sin\_family}, \[106].
+\:\\{sin\_len}, \[106].
+\:\\{sin\_port}, \[106].
+\:\\{sin\_zero}, \[106].
+\:\\{size}, 78.
+\:\\{SOCK\_DGRAM}, 15.
+\:\\{SOCK\_STREAM}, 15.
+\:\\{sockaddr}, 20, 22, 23, 39, 40.
+\:\\{sockaddr\_atlk}, \[95].
+\:\\{sockaddr\_atlk\_sym}, \[96].
+\:\\{sockaddr\_in}, \[106].
+\:\\{sockaddr\_ppc}, \[100].
+\:\\{sockaddr\_un}, \[91].
+\:\\{Socket}, 172, 174.
+\:\\{socket}, 14, \[15], 18, 50, 123, 172.
+\:\\{SocketDomain}, 172.
+\:\\{sort}, 86.
+\:\\{SP\_ADDR}, 136.
+\:\\{SP\_AUTO\_SPIN}, 136.
+\:\\{SP\_DGRAM\_READ}, 136.
+\:\\{SP\_DGRAM\_WRITE}, 136.
+\:\\{SP\_MISC}, 136.
+\:\\{SP\_NAME}, 136.
+\:\\{SP\_SELECT}, 136.
+\:\\{SP\_SLEEP}, 136.
+\:\\{SP\_STREAM\_READ}, 136.
+\:\\{SP\_STREAM\_WRITE}, 136.
+\:\\{spec}, \[151].
+\:\\{Special2FSSpec}, \[155].
+\:\\{spin\_msg}, \[136].
+\:\\{SpinCursor}, 143.
+\:\\{st\_atime}, \[56].
+\:\\{st\_blksize}, \[56].
+\:\\{st\_blocks}, \[56].
+\:\\{st\_ctime}, \[56].
+\:\\{st\_dev}, \[56].
+\:\\{st\_gid}, \[56].
+\:\\{st\_ino}, \[56].
+\:\\{st\_mode}, \[56], 57, 59.
+\:\\{st\_mtime}, \[56].
+\:\\{st\_nlink}, \[56], 145.
+\:\\{st\_rdev}, \[56].
+\:\\{st\_size}, \[56].
+\:\\{st\_uid}, \[56].
+\:\\{stat}, \[56], 58, 59, 60, 145.
+\:\\{stayopen}, \[115].
+\:\\{Str32}, 101.
+\:\\{SuffixArray}, 140.
+\:\\{sun\_family}, \[91].
+\:\\{sun\_path}, \[91].
+\:\\{SYM}, 142.
+\:\\{symlink}, 1, \[73].
+\:\\{s1}, \[134].
+\:\\{s2}, \[134].
+\:\\{table}, \[138].
+\:\\{TEInit}, 8.
+\:\\{telldir}, \[82].
+\:\\{text}, \[140].
+\:\\{TEXT}, 140.
+\:\\{TFileSpec}, \[150], \[151], 152, 153, 154, 155, \[158], 159, 160, 161, %
+\[162], \[163], \[164], \[165], \[166], 167, \[168], \[169], 170.
+\:\\{thePort}, 8.
+\:\\{tim}, \[61], 62.
+\:\\{time\_t}, 56, 61.
+\:\\{timeout}, \[36].
+\:\\{timeval}, 36.
+\:\\{to}, \[33], \[133], 171.
+\:\\{tolen}, \[33].
+\:\\{true}, 151, 162, 163, 164, 165, 176.
+\:\\{truncate}, \[87].
+\:\\{type}, \[15], \[18].
+\:\\{types}, \[52], \[97].
+\:\\{u\_char}, 106.
+\:\\{u\_long}, 79, 106.
+\:\\{u\_short}, 56, 79, 106.
+\:\\{unlink}, \[66].
+\:\\{useAlias}, \[151].
+\:\\{useChdir}, \[140], 144.
+\:\\{utimbuf}, \[61].
+\:\\{utime}, \[61].
+\:\\{vol}, \[155].
+\:\\{vRefNum}, \[152].
+\:\\{WaitNextEvent}, 138, 139.
+\:\\{want}, \[86].
+\:\\{wd}, \[153].
+\:\\{WD2FSSpec}, \[153].
+\:\\{wide}, 140.
+\:\\{width}, \[36].
+\:\\{willChmod}, 175.
+\:\\{willFAccess}, 175.
+\:\\{willGetFileInfo}, 175.
+\:\\{willOpen}, 175.
+\:\\{willRemove}, 175.
+\:\\{willRename}, 175.
+\:\\{willSetFileInfo}, 175.
+\:\\{willStat}, 175.
+\:\\{willUTime}, 175.
+\:\\{WR\_ONLY}, 68.
+\:\\{write}, 24, \[30], 32, 127, 143, 172.
+\:\\{writefds}, \[36].
+\:\\{writefs}, 36.
+\:\\{writev}, 24, \[31], 34.
+\:\\{Yours}, 174, 175, 177.
+\fin
+\con

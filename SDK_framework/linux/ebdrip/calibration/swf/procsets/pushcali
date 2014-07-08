@@ -1,0 +1,2609 @@
+%!PS-Adobe-3.0
+%%Title: HqnPushCalibration
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Jan 2011
+%%VMusage: -1 -1
+% Copyright (c) Harlequin Limited, 2011-2013 All Rights Reserved.
+%%EndComments
+% $Revision: 1.27.1.2.1.1 $
+
+%%BeginProcSet: (HqnPushCalibration) 1 1
+
+% $HopeName: SWcalibration!swf:procsets:pushcali(EBDSDK_P.1) $
+
+
+% API to push calibration derived from third party s/w into the Rip
+
+currentglobal false setglobal
+
+%<< >> /HqnErrorHandler /ProcSet findresource /LoadErrorHandler get exec
+
+% the resource:
+15 dict begin
+  /globalness exch def
+  /WorkSpace 50 dict def
+
+  /DefaultCalSet <<
+
+    /ForceSolids true
+    /ScreenFrequencyRange [ ]
+    /ChannelType [
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+      0
+    ]
+    /MeasurementSystems [
+    ]
+    /NumberOfChannels 0
+    /Exposure 0
+    /MatchExposure false
+    /EditStatus 3
+    /HWResolution [ ]
+    /DotgainData [ ]
+    /ScreenFreqUnits (lpi)
+    /MatchScreenName true
+    /CalibrationDataType 2
+    /WhitePoint [
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+    ]
+    /Name ()
+    /MatchScreenFrequency false
+    /ChannelColors [ ]
+    /ViewingChannelName ()
+    /ProfileTimestamp 0
+    /MatchResolution true
+    /NegativeMedia false
+    /ResolutionUnits (dpi)
+    /MatchSign false
+    /ScreenName ()
+    /MeasurementParams [
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+      0.0
+    ]
+    /Enabled true
+    /Profile (Linear)
+    /Smoothed false
+    /ColorSpace ()
+    /CalibrationData []
+    /MeasurementData []
+  >> def
+
+  WorkSpace begin
+
+    /GUIrip true def
+    /LoadProfileCommon {} def
+    /EscapedHCMSDevice () def
+
+    { /HqnPageSetupConf /ProcSet findresource } stopped not
+
+    % If we found the HqnPageSetupConf procset we must be in a GUI rip and will
+    % need the EscapedHCMSDevice and LoadProfileCommon definitions which come
+    % from the page setup.  Otherwise it is not an error as we will not use them
+    % anyway, but will need LoadProfileCommonDoLoad instead.
+    {
+      dup
+
+      /HqnTargetExports get [
+        /EscapedHCMSDevice
+      ]
+      {2 copy get exec def} forall
+      pop       % HqnTargetExports dict
+
+      /HqnCalibrateExports get [
+        /LoadProfileCommon
+      ]
+      {2 copy get def} forall
+      pop       % HqnCalibrateExports dict
+    } {
+      % Assume we cannot be in a GUI rip
+      pop pop   % arguments to findresource
+      $error /newerror false put
+
+      /HqnCalibrate /ProcSet findresource
+      /HqnPushCalibrationExports get [
+        /LoadProfileCommonDoLoad
+      ]
+      {2 copy get def} forall
+      pop       % HqnPushCalibrationExports dict
+
+      /GUIrip false def
+    } ifelse
+
+
+    /Messages <<
+      % UVM(%%%%[ Error: %t)
+      /Error       (%%[ Error: )
+      % UVM(%%%%[ Warning: %t)
+      /Warning     (%%[ Warning: )
+      /CloseError    ( ]%%\n)
+
+      /CalSetMisMatch         UVS ( The calset we are updating does not match the info_dictionary]%%\n)
+      /CalSetMissingColorant  ( The calset does not contain colorant: )
+      /CalSetNotFound         ( Unable to find calset: )
+      /CalSetFileNotFound     ( Unable to find calset file: )
+      /CalDataWrongLength     ( The updated calibration data curve has the wrong length for colorant: )
+      /DeviceMisMatch         UVS ( The HqnPushCalibration procset should only be used with a Page Setup\n that refers to the same Device as the one that was used to print the Target ]%%\n)
+      /DictExpected           UVS ( Dictionary expected  ]%%\n )
+      /ArrayExpected          UVS ( Array expected  ]%%\n )
+      /MissingKey             ( Missing key: )
+      /WrongNoColorants       UVS ( Wrong number of colorants given ]%%\n)
+      /UnknownColorSpace      ( Unknown ColorSpace: )
+      /UnknownColorant        ( Unknown Colorant: )
+      /ColorSpaceMatch        ( NumberOfChannels does not match ColorSpace: )
+      /NumberChannelColorsMatch UVS ( NumberOfChannels does not match ChannelColors ]%%\n)
+      /TargetColorSpaceMatch    UVS( Target ColorSpace mismatch ]%%\n)
+      /ResFormat              UVS ( HWResolution has the wrong format ]%%\n)
+      /ScreenFreqFormat       UVS ( ScreenFrequencyRange has the wrong format ]%%\n)
+      /ColorantsInDict        UVS ( Invalid number of measurement or patch value channels ]%%\n)
+      /ForColorant            ( for colorant: )
+      /UnequalChannels        UVS ( Different channels have different numbers of patches or measurements ]%%\n)
+      /NumPatchValues         UVS ( The number of patch values does not correspond to the number of measurements ]%%\n)
+      /NumMeasChannels        UVS ( The number of measured channels does not correspond to the number of color_array channels ]%%\n)
+      /NumMeasSystems         UVS ( The number of measurement systems does not correspond to the number of channels ]%%\n)
+      /NumUpdateColors        UVS ( The UpdateColors array has too few or too many colors]%%\n)
+      /ProfileNotFound        ( Unable to find profile: )
+      /ProfileColorantNotFound ( Unable to find profile colorant: )
+      /ProfileMeasNotFound    ( Profile does not have measurementsystem: )
+      /AssumeMeasSystem       ( Assuming measurementsystem: )
+      /InstallingProfile      ( Installing linearization profile: )
+      /IgnoringProfile        ( Ignoring profile: )
+      /IgnoringToneCurves     UVS ( Ignoring tone curves ]%%\n)
+      /InvalidMatchRes        UVS ( Ignoring invalid MatchResolution ]%%\n)
+      /InvalidMatchScreenName UVS ( Ignoring invalid MatchScreenName ]%%\n)
+      /InvalidMatchScreenFreq UVS ( Ignoring invalid MatchScreenFrequency ]%%\n)
+      /InvalidMatchSign       UVS ( Ignoring invalid MatchSign ]%%\n)
+      /MeasIgnoringProfile    UVS ( Ignoring linearization profile as measurement data is provided ]%%\n)
+      /MissingConvTables      UVS ( Profile has missing ConversionTables ]%%\n)
+      /MissingConvDict        ( The required ConversionMethod dict was not found for channel: )
+      /MissingMeasChannel     UVS ( A colorant from color_array is missing in the measurements dictionary ]%%\n)
+      /MissingPatchChannel    UVS ( A colorant from color_array is missing in the patch values dictionary ]%%\n)
+      /MissingUpdateMeasChannel  UVS ( A colorant from UpdateColors is missing in the measurements dictionary ]%%\n)
+      /MissingPreviousData    ( Trying to update but there is no existing data for channel: )
+      /MissingProfile         UVS ( No linearization profile was found - assuming Linear ]%%\n)
+      /NoPatchValues          UVS ( A PatchValues dictionary must be supplied for HHR rip ]%%\n)
+      /NoUpdateData           UVS ( Updating calset but no measurement data found ]%%\n)
+      /IgnorePatchValues      UVS ( The PatchValues dictionary will be ignored for GUI rip]%%\n)
+      /NonIntPatchesPerChannel UVS ( The number of patches per channel is not an integer ]%%\n)
+      /DuplicateName          ( This calibration name is already in use: )
+      /NewName                ( The calibration set has been given the unique name: )
+      /NoWhitePatch           UVS ( Target doesn't include white patch ]%%\n)
+      /CalGroup               UVS ( Internal error in CalibrationGroup ]%%\n)
+      /CalFile                ( The calibration file cannot be located: )
+      /PatchValuesCopied      ( The patch values will all be copied from this channel: )
+      /ReadTarget             ( Reading Target: )
+      /UnknownUpdateColors    UVS ( Updating but no UpdateColors entry found in the info_dictionary ]%%\n)
+      /UnknownCalCurve        ( No updated calibration data curve found for colorant: )
+      /UnsupportedDotGain     UVS ( The Dot Gain MeasurementSystem is not supported ]%%\n)
+      /UnsupportedPressProfile UVS ( Only the Linear profile is supported for Press ]%%\n)
+      /UpdatingCalset         ( Updating calset: )
+    >> def
+
+    /ShowMessage {
+      //Messages exch 2 copy known {
+        get print
+      }  {
+        UVS(%%[ Error: Missing Message in HqnPushCalibration procset: )print
+        =print
+        ( ]%%)=
+        pop
+      } ifelse
+    } bind def
+
+
+    /abortjobnow {
+      /HqnPushCalibration errordict /undefinedresult get exec
+      serverdict /abortjobnow get exec
+    } bind def
+
+    % ----------------------------------------------------------------------
+
+    % (string) -> UpperCase -> (STRING)
+    /UpperCase {
+      0 1 2 index length 1 sub {
+        % str i
+        2 copy get
+        % str i c
+        dup 97 ge 1 index 122 le and {
+          % str i c
+          2 index 3 1 roll 32 sub put
+        } { pop pop } ifelse
+      } for
+    } bind def
+
+
+    % Strip out all except characters and numbers
+    % (STRINGabc123%\456) -> StripString -> (STRINGabc123456)
+    /StripString {
+      //WorkSpace begin
+        /OrigString exch def
+        /savepos 0 def
+
+        0 1 OrigString length 1 sub {
+
+          OrigString exch get                    % c
+
+          dup 48 ge 1 index 57 le and exch       % bool c
+          dup 65 ge 1 index 90 le and exch       % bool bool c
+          dup 97 ge 1 index 122 le and exch      % bool bool bool c
+          4 1 roll                               % c bool bool bool
+          or or
+          {
+            % We have either a character or a number so save it
+            % c
+            OrigString savepos 3 -1 roll put
+            /savepos savepos 1 add def
+          } {
+            pop
+          } ifelse
+        } for
+
+        % OrigString is still the same length e.g. (STRINGabc12345656)
+        % So only return the bit we are interested in
+        OrigString 0 savepos getinterval
+
+        currentdict /OrigString undef
+      end % WorkSpace
+    } bind def
+
+
+    % Compare 2 strings stripped of any characters that are not letters
+    % or numbers, and with an letters converted to uppercase.
+    % The original strings are copied before any conversions take place
+    % so are left unaffected.
+    % Return true if they are then the same, else false.
+    %
+    % E.g. (Status T (X-Rite)) is the same as (Status-T X-Rite) since
+    % both would be converted to (STATUSTXRITE).
+    %
+    % (String1) (String2) -> bool
+    /AreEqualSimplifiedStrings {
+      dup length string copy exch
+      dup length string copy
+      StripString UpperCase exch
+      StripString UpperCase eq
+    } bind def
+
+
+    % convert % dot values in calibration curves to SNV form
+    % N.B. Although this is just doing a linear scaling so is not explicitly
+    %      for % dot, this is effectively implied.  (This is also the system
+    %      currently used in the Linear profiles).
+
+    % curve value |-> interpolated_value
+    % For now, we assume that we have a linear curve [ [0.0 0.0 ] [ 1.0 1.0 ] ]
+    % or for MVtoSNV [[0.0 1.0] [100.0 0.0]]
+    /InterpolateValue {
+      %  (InterpolateValue+ ) =print% dup ==
+      /xv exch def
+      /y1 /x1 /y0 /x0
+      4 index 0 get  aload pop 3 1 roll def def
+      2 index 1 get  aload pop 3 1 roll def def
+
+      % if x = x0 then y = y0
+      % if x = x1 then y = y1
+      xv x0 eq { y0 }
+      {
+        xv x1 eq { y1 }
+        {
+          %  (xv= ) =print xv ==
+          y0 y1 y0 sub xv x0 sub x1 x0 sub div mul add } ifelse
+      } ifelse
+      % y[i-1] + (y[i] - y[i-1]) * ( value -x[i - 1]) / ( x[i] - x[i-1])
+      %(InterpolateValue- ) =print% dup ==
+      exch pop
+    } bind def
+
+    % x |-> y
+    /ConvertMVtoSNV {
+      [ [0.0 1.0] [100.0 0.0] ]
+      exch
+      %//InterpolateValue exec
+      InterpolateValue
+    } bind def
+
+    % ----------------------------------------------------------------------
+
+    /ColorModelToDict <<
+      /DeviceCMYK << /Cyan 0
+                     /Magenta 0
+                     /Yellow 0
+                     /Black 0
+                  >>
+      /DeviceGray << /Gray 0 >>
+      /DeviceRGB  << /Red 0
+                     /Green 0
+                     /Blue 0
+                  >>
+    >> def
+
+    /ColorModelToNumber <<
+      /DeviceCMYK 4
+      /DeviceGray 1
+      /DeviceRGB  3
+    >> def
+
+    /ColorToIndex <<
+      /Cyan    0
+      /Magenta 1
+      /Yellow  2
+      /Black   3
+      /Red     0
+      /Green   1
+      /Blue    2
+    >> def
+
+    % ----------------------------------------------------------------------
+
+    % Find the calset file if it exists and keep a backup just in case.
+    % If it does not yet exist create it unless we are trying to update
+    % an existing calset, in which case it is an error.
+    % This assumes CalFileName is already defined in the WorkSpace and
+    % has the result of defining the CalibrationGroup.
+    %
+    % |->
+    /ReadAndBackupCalFile {
+      //WorkSpace begin
+
+        CalFileName dup status {
+          pop pop pop pop
+          mark exch run
+          counttomark 2 ne 1 index type /arraytype ne or {
+            /Error ShowMessage /CalGroup ShowMessage
+            abortjobnow
+          } if
+          def  % We will have /CalibrationGroup [ <<..>> .. <<..>>]
+          pop % mark
+
+          % Keep a backup just in case ...
+          512 string mark (_backup) CalFileName 1183615869 internaldict /concattomark get exec (w) file
+          dup (/CalibrationGroup\n) writestring
+          dup CalibrationGroup emit
+          closefile
+        } {
+          Update not {
+            % The Default file is not there yet, we will create it
+            pop % CalFileName
+            /CalibrationGroup [] def
+
+            %/Error ShowMessage /CalFile ShowMessage
+            % =print /CloseError ShowMessage
+            %abortjobnow
+          } {
+            /Error ShowMessage /CalSetFileNotFound ShowMessage CalFileName =print
+            /CloseError ShowMessage
+            abortjobnow
+          } ifelse
+        } ifelse
+
+      end % WorkSpace
+    } bind def
+
+
+    % Create the calset filename from the /Name, /DeviceName, /ColorSpace
+    % and /PushToneCurves from the info_dictionary and leave it on the stack.
+    % |-> calfilenamestring
+    /MakeCalFileName {
+      //WorkSpace begin
+        512 string
+        mark
+
+        GUIrip {
+          PushToneCurves {
+            (/Calibration/Original/Curves/Default)
+          }{
+            (/Default) CalDevice
+            (/Calibration/Original/)
+          } ifelse
+        //DefaultCalSet /ColorSpace get
+        (%fs%)
+        } {
+          % For HHR rip we must create the full path
+          (/Default) //DefaultCalSet /ColorSpace get  % e.g. (DeviceCMYK)
+
+          % If (Device) is not found the string will be pushed on the stack untouched
+          (Device) anchorsearch {
+            pop % (Device) leaving e.g. (CMYK)
+          } if
+
+          PushToneCurves {
+            (Curves/)
+          } {
+            (/) CalDevice
+          } ifelse
+
+          (%os%Config/Calibration/)
+        } ifelse
+
+        1183615869 internaldict /concattomark get exec
+        (CalFileName= ) =print dup =print (\n) =print
+
+      end % WorkSpace
+    } bind def
+
+
+    % Write out the new calset which is assumed to be in DefaultCalSet
+    % Read in the appropriate Default file and add it in.
+    % |->
+    /WriteCalSet {
+      //WorkSpace begin
+
+        % Define the name of the calibration file then get hold of it
+        % and back it up just in case.
+        /CalFileName //WorkSpace /MakeCalFileName get exec def
+        //WorkSpace /ReadAndBackupCalFile get exec
+
+        % Test uniqueness of calset Name and construct a unique name if necessary
+        //DefaultCalSet /Name get
+        CalibrationGroup CheckUniqueCalSetName {
+          /UniqueCalSetName true def
+        }{
+          /UniqueCalSetName false def
+          /CalSetPosition exch def
+        } ifelse
+
+        UniqueCalSetName not {
+          Replace not {
+            /Warning ShowMessage /DuplicateName ShowMessage
+            (") =print //DefaultCalSet /Name get =print (") =print
+            /CloseError ShowMessage
+
+            ResetUniqueCounter
+            //DefaultCalSet /Name get CalibrationGroup GetUniqueCalSetName
+
+            /Warning ShowMessage /NewName ShowMessage
+            (") =print dup =print (") =print
+            /CloseError ShowMessage
+
+            % Set new unique name
+            //DefaultCalSet /Name 3 -1 roll put
+          } if
+        } if % UniqueCalSetName not
+
+        UniqueCalSetName UniqueCalSetName not Replace not and or {
+          % If we have a new calset name, or the calset name is already there
+          % but we are not replacing it
+          % (ADD)=
+          % Add new dictionary
+          [
+            CalibrationGroup aload pop
+            //DefaultCalSet  % add new dict
+          ]
+        } {
+          % We are replacing an existing calset
+          % (REPLACE at index ) =print CalSetPosition ==
+          % Replace
+          CalibrationGroup CalSetPosition //DefaultCalSet put
+          CalibrationGroup
+        } ifelse
+
+        % Save
+        /CalFile CalFileName (w) file def
+
+        CalFile (/CalibrationGroup\n) writestring
+        CalFile exch emit
+        CalFile closefile
+
+      end % WorkSpace
+    } bind def
+
+    % ----------------------------------------------------------------------
+
+    % Check that the colorspace passed to us, matches that of the target
+    % that we are reading
+    % Target_dict |->
+    /EnsureCorrectTarget {
+      //WorkSpace begin
+        /PatchColorSpace get
+        dup type /arraytype eq {
+          % array
+          dup length dict exch
+          1 index begin
+            {
+              cvn 0 def
+            } forall
+          end
+          % dict
+          //DefaultCalSet /ChannelColors get {
+            1 index exch cvn known not {
+              /Error ShowMessage /TargetColorSpaceMatch ShowMessage
+              abortjobnow
+            } if
+          } forall
+          pop % dict
+        } {
+          % name
+          //DefaultCalSet /ColorSpace get cvn ne {
+            /Error ShowMessage /TargetColorSpaceMatch ShowMessage
+            abortjobnow
+          } if
+        } ifelse
+      end % WorkSpace
+    } bind def
+
+
+    % | -> target_dictionary
+    /ReadTarget {
+      1000 string mark
+      //WorkSpace /PushToneCurves get {
+        (/Curves)
+      } if
+      (/Target)
+      currentpagedevice /CalibrationColorModel get
+      dup null eq {
+        pop currentpagedevice /Separations get {
+          % When doing separations, we need to trust the ColorSpace passed
+          % to us by the caller. If it is DeviceGray, we assume traditional
+          % monochrome calibration. If is is DeviceCMYK, we assume that the caller
+          % used the Print for Process Colors target and requires
+          % separate calibrations for each of the C,M,Y,K.
+          //DefaultCalSet /ColorSpace get (DeviceCMYK) eq {
+            /DeviceCMYK
+          } {
+            /DeviceGray
+          } ifelse
+        } {
+          currentpagedevice /Private get /ColorantFamilyName get
+        } ifelse
+      } if
+      (%fs%)
+      1183615869 internaldict /concattomark get exec
+      run
+      exch pop % /Target
+
+      /ReadTarget ShowMessage dup /TargetName get ==
+
+      dup EnsureCorrectTarget
+
+      %exch pop % mark
+    } bind def
+
+    % | -> no_of_colorants
+    /TarGetNumColors {
+      Target /PatchColorSpace get dup
+      type /arraytype eq {
+        length
+      } {
+        % it's a name
+        ColorModelToNumber exch 2 copy known {
+          get
+        }{
+          pop pop
+          (Unknown Color Model) ==
+        } ifelse
+      } ifelse
+    } bind def
+
+    % N.B. It is currently assumed throughout that each channel has the same
+    % number of patches, measurements, etc.
+    % | -> no_of_patches_per_channel
+    /TarGetNumPatchesPerChannel {
+      Target /NumberOfPatches get TarGetNumColors div
+      dup dup floor ne {
+        % We do not seem to have an integer number of patches per channel
+        /Error ShowMessage /NonIntPatchesPerChannel ShowMessage
+        abortjobnow
+      } if
+      cvi
+    } bind def
+
+    % |-
+    % Amend PatchColorIndex if necessary to get the start index in the
+    % PatchColorant array for the particular Channel
+    /TarGetPatchColorIndex {
+      //WorkSpace begin
+        Target /PatchColorant get
+        % array
+        {
+          Channel eq {
+            exit
+          } {
+            % increase the index value
+            /PatchColorIndex PatchColorIndex  1 add def
+          } ifelse
+        } forall
+      end
+    } bind def
+
+
+    % Decide whether to flip the patch color values
+    % For GUI rip the target must have been read before this is called
+    % For HHR we must have a DefaultCalSet already
+    % | -> true | false
+    /ShouldFlipPatchValues {
+      //WorkSpace begin
+
+        GUIrip {
+          Target /PatchColorSpace get dup
+          type /nametype eq {
+            /DeviceCMYK eq { true } { false } ifelse
+          }{
+            pop
+            true
+          } ifelse
+        } {
+          % For HHR rip decide based on the ColorSpace parameter 
+          //DefaultCalSet /ColorSpace get cvn
+          /DeviceCMYK eq { true } { false } ifelse
+        } ifelse
+
+      end % WorkSpace
+    } bind def
+
+    
+    % Get or make an array of patch values for the Channel
+    % |-> array
+    /GetPatchValues {
+      //WorkSpace begin
+
+        /PatchColorIndex 0 def % the start index into an array of patch values for the Channel
+
+        GUIrip {
+          % We know which colorant we have measured, so go into /PatchColorant and find
+          % the start index for that colorant.
+          % Set PatchColorIndex to this index value.
+          % We can then access the PatchColor array and retrieve the patch value.
+                
+          TarGetPatchColorIndex  % may amend PatchColorIndex
+          Target /PatchColor get % array
+        } {
+          % Find the actual patch value array for the colorant
+          CopyPatches {
+            % Use the same array for all the channels
+            PatchValueDict FirstColorArrayColorant get % array
+          } {
+            PatchValueDict Channel get % array
+          } ifelse
+        } ifelse
+
+      end % WorkSpace
+    } bind def
+
+
+    % Reserve WorkSpace memory for a MeasuredCurve and a CalibratedCurve
+    % |->
+    /CreateCurves {
+      //WorkSpace begin
+
+        MeasurementsFromProfile {
+          % If we have a /PatchValueArrayLength use that as the
+          % /MeasuredArrayLength, otherwise find out from the target.
+          //WorkSpace /PatchValueArrayLength known {
+              /MeasuredArrayLength PatchValueArrayLength def
+          } {
+              /MeasuredArrayLength TarGetNumPatchesPerChannel def
+          } ifelse
+        
+          % If installing a linearization profile the calibrated curve
+          % is just the default linear curve.
+          //WorkSpace /CalibratedCurve 4 array put
+        } {
+          % We should already have a /MeasuredArrayLength
+          //WorkSpace /CalibratedCurve MeasuredArrayLength 2 mul array put
+        } ifelse
+
+        //WorkSpace /MeasuredCurve MeasuredArrayLength 2 mul array put
+
+      end % WorkSpace
+   } bind def
+
+
+    % Form the MeasuredCurve for the Channel as an array of
+    % patch_value value pairs.
+    %
+    % for i=0; i less than MeasuredArrayLength; i++
+    % Get the patch value from /PatchColor or from /PatchValueDict
+    % Get the value from the array (MeasurementsArrayPerChannel) we were passed.
+    % Form the curve as an array of patch_value value pairs
+    % | ->
+    /MakeMeasurementCurve {
+      //WorkSpace begin
+
+         % Get or form an array of patch values
+         //WorkSpace /GetPatchValues get exec % array
+
+          % Get the patch values from the array using the PatchColorIndex and store them
+          0 1 MeasuredArrayLength 1 sub {
+            dup
+            PatchColorIndex add 2 index exch get
+            % if the elements of /PatchColor are arrays, then get the correct value from them
+            % N.B. this should not be the case with PatchValueDict
+            dup type /arraytype eq {
+              ColorToIndex Channel get get % Gets the correct index into the subarray eg. [ 0.00 0.95 0.00 0.00 ]
+            } if
+            flipColorValues true eq {
+              1.0 exch sub % convert patch colors to be additive for DeviceN, Separation, CMY and CMYK spaces
+            } if
+            MeasuredCurve 3 1 roll exch 2 mul exch put
+          } for
+
+          pop % PatchColor array or the array from the PatchValueDict for the Channel
+
+          % Store the measurements
+          0 1 MeasuredArrayLength 1 sub {
+            MeasurementsArrayPerChannel 1 index get
+            MeasuredCurve 3 1 roll exch 2 mul 1 add exch
+            put
+          } for
+
+      end % WorkSpace
+    } bind def
+
+    /ValidateDictArray [/Name /ColorSpace /NumberOfChannels /ChannelColors /HWResolution /ScreenName /ScreenFrequencyRange ] def
+    /ValidateUpdateDictArray [/Name /ColorSpace /NumberOfChannels /ChannelColors ] def
+
+    % |->
+    /ValidateDictKeys {
+      CalDict
+      Update not {
+        //ValidateDictArray
+      } {
+        //ValidateUpdateDictArray
+      } ifelse
+
+      {
+        dup
+        2 index exch known not {
+          /Error ShowMessage
+          /MissingKey ShowMessage =print
+          /CloseError ShowMessage
+          exch pop false exch
+          exit
+        }{
+          pop % key
+        } ifelse
+      } forall
+      pop % CalDict
+    } bind def
+
+
+    % measurement_system_string tablename |-> bool
+    % true if the meausurement_system_string is equivalent to
+    % the tablename in the profile, false otherwise
+    /IsEquivMeasurementSystem {
+      //WorkSpace begin
+        /TempTableName exch def
+        /TempMeasSystem exch def
+        false % assume no match
+
+        TempTableName TempMeasSystem AreEqualSimplifiedStrings {
+          pop true % found match
+        } {
+          /EquivArray [[(% Dot) (Positive % Dot)]] def
+
+          EquivArray {
+            % array containing a pair which we may regard as equivalent
+            dup dup dup
+            0 get TempTableName AreEqualSimplifiedStrings exch
+            1 get TempMeasSystem AreEqualSimplifiedStrings and exch
+            0 get TempMeasSystem AreEqualSimplifiedStrings
+            3 -1 roll 1 get TempTableName AreEqualSimplifiedStrings and or
+
+            {
+              pop true % we have a match
+              exit
+            } if
+          } forall
+
+          //WorkSpace /EquivArray undef
+        } ifelse
+
+        //WorkSpace /TempTableName undef
+        //WorkSpace /TempMeasSystem undef
+
+      end % WorkSpace
+    } bind def
+
+
+    % Get the conversion dictionary for a particular MeasurementSystem
+    % from the dict for the particular colorant from the profile.
+    %
+    % measurement_system_string colorantdict -> dict true | false
+    /GetConversionDict
+    {
+      %(GetConversionDict+)=
+      //WorkSpace begin
+        /FoundConversionMethodDict false def
+
+        /ConversionTables 2 copy known {
+          get % measurement_system_string conversion_array
+
+          % Find the conversionmethod_dict for our measurement system
+          {
+            % measurement_system_string conversionmethod_dict
+            dup /TableName 2 copy known {
+              get 2 index AreEqualSimplifiedStrings {
+                % looks like we have found the right conversionmethod_dict
+                exch pop % the measurement_system_string
+                /FoundConversionMethodDict true def
+                exit
+              } {
+                % Not the dict we want
+                pop % the dict
+              } ifelse
+            } {
+              % No TableName in dict
+              % This is not good but maybe we do not need this dict anyway.
+              % The caller will still error if we finish this proc without
+              % finding a suitable conversionmethod dictionary.
+              pop pop % dict key
+              pop     % dict
+            } ifelse
+          } forall
+        } {
+          % No ConversionTables found - we will error but not yet
+          pop pop pop
+          /Warning ShowMessage MissingConvTables ShowMessage
+        } ifelse
+
+        % Indicate result
+        FoundConversionMethodDict
+
+      end % WorkSpace
+      %(GetConversionDict-)=
+    } bind def
+
+
+    % Get the dictionary for a particular ChannelName from the profile
+    %
+    % colorname_string linearization_array -> dict true | false
+    /GetLinearizationChannel
+    {
+      %(GetLinearizationChannel+)=
+      //WorkSpace begin
+        /FoundLinearizationColor false def
+
+        {
+          % colorname dict
+          dup /ChannelName 2 copy known {
+            get
+            2 index eq {
+              % colorname dict
+              % (Found Colour ) =print 1 index ==
+              exch pop
+              /FoundLinearizationColor true def
+              exit
+            } {
+              % Not the color we want
+              pop % dict
+            } ifelse
+          } {
+            % ChannelName not known
+            pop pop % dict key
+            pop     % dict
+          } ifelse
+        } forall
+
+        % Indicate result
+        FoundLinearizationColor % dict true | false
+
+      end % WorkSpace
+      %(GetLinearizationChannel-)=
+    } bind def
+
+
+    % Check whether the desired measurement system provided on the stack is
+    % available in the ConversionTables_array provided.  If it is, leave it
+    % on the stack, otherwise leave an alternative on the stack and warn.
+    %
+    % colorname measurement_system_string ConversionTables_array |-> TableName_string
+    /GetTableName {
+      % (GetTableName+)=
+      //WorkSpace begin
+      /colorname 4 -1 roll def
+      /desiredMeasurementSystem 3 -1 roll def
+      /foundMeasurementSystem false def
+      /someTableName 1 index 0 get /TableName get def % in case we don't find what we're looking for
+      
+      % Make an array containing our preferred measurement system and a 2nd choice
+      % which is whatever we chose for the 1st colorant channel.  If this is the first
+      % colorant channel this value will still be the desired system for the 1st channel
+      % so the values will be the same and we will just make a single array entry.
+      % The same is true if the values are the same for any other reason.
+
+      /fallbackMeasurementSystem //DefaultCalSet /MeasurementSystems get 0 get def
+
+      desiredMeasurementSystem fallbackMeasurementSystem AreEqualSimplifiedStrings {
+        /measurementsystemsarray desiredMeasurementSystem 1 array astore def
+      } {
+        /measurementsystemsarray
+        desiredMeasurementSystem fallbackMeasurementSystem 2 array astore def
+      } ifelse
+
+      /j 0 def
+      measurementsystemsarray
+      {
+        % ConversionTables_array measurementsystem
+        1 index
+        {
+          % array measurementsystem conversiondict
+          /TableName get  % array measurementsystem tablename
+          2 copy //IsEquivMeasurementSystem exec {
+            //WorkSpace /foundMeasurementSystem true put
+
+            % Need to hang on to the tablename version of the string
+            exch pop      % array tablename
+            exch          % tablename array
+            exit
+          } if
+          pop             % the tablename
+        } forall
+
+        pop               % pops either the array or the measurementsystem
+        
+        foundMeasurementSystem {
+          j 0 gt {
+            /Warning ShowMessage /ProfileMeasNotFound ShowMessage
+            desiredMeasurementSystem =print /ForColorant ShowMessage colorname =print (\n) =print
+            /AssumeMeasSystem ShowMessage dup =print /CloseError ShowMessage
+          } if
+          exit            % measurementsystem
+        } if
+
+        /j j 1 add def
+      } forall
+      /j 0 def % reset
+
+      foundMeasurementSystem not {
+        pop               % the array
+        someTableName
+
+        /Warning ShowMessage /ProfileMeasNotFound ShowMessage
+        desiredMeasurementSystem =print /ForColorant ShowMessage colorname =print (\n) =print
+        /AssumeMeasSystem ShowMessage dup =print /CloseError ShowMessage
+      } if
+
+      //WorkSpace /desiredMeasurementSystem undef
+      //WorkSpace /foundMeasurementSystem undef
+      //WorkSpace /someTableName undef
+      //WorkSpace /fallbackMeasurementSystem undef
+      //WorkSpace /colorname undef
+     
+      end % WorkSpace
+      % (GetTableName-)=
+    } bind def
+
+
+    % Check whether we can use this measurement system for this colorant, and
+    % either leave it on the stack, or leave one that we can.
+    %
+    % measurement_system_string colorname_string linearization_array |-> measurement_system_string
+    /GetMeasurementSystem {
+      % (GetMeasurementSystem+)=
+      //WorkSpace begin
+        /foundTableName false def
+
+        1 index 4 1 roll
+        % colorname_string measurement_system_string colorname_string linearization_array
+   
+        % Get the dictionary for this colorname_string
+        //WorkSpace /GetLinearizationChannel get exec
+
+        % colorname_string measurement_system_string dict true |
+        % colorname_string measurement_system_string false
+        {
+          /ConversionTables 2 copy known {
+            get  % colorname measurement_system_string conversion_array
+            //GetTableName exec % this will always return a string
+            /foundTableName true def
+          } {
+            pop pop % dict key
+          } ifelse
+        } if
+
+        foundTableName not {  
+          % colorname_string measurement_system_string
+          % We did not find the colorant so error
+          pop
+          /Error ShowMessage /ProfileColorantNotFound ShowMessage =print
+          /CloseError ShowMessage
+          abortjobnow
+        } if
+
+        //WorkSpace /foundTableName undef
+
+      end % WorkSpace
+      % (GetMeasurementSystem-)=print
+    } bind def
+
+
+    % dict -> true/false
+    /SingleColorantNeedsCopying {
+      //WorkSpace begin
+        false
+
+        exch length dup
+
+        % false length length
+        Update not {
+          CalDict /NumberOfChannels get ne
+        } {
+          UpdateColors length ne
+        } ifelse
+
+        % false length bool
+        {
+          1 eq {
+            pop true
+          }{
+            /Error ShowMessage /ColorantsInDict ShowMessage
+            abortjobnow
+          } ifelse
+        } {
+          pop % the length
+        } ifelse
+
+      end % WorkSpace
+    } bind def
+
+
+    % Figure out whether we are going to need to copy measurements and/or patch
+    % values between channels.  Warn if we have only a single set of
+    % measurements but multiple sets of patch values as this may not make sense
+    % e.g. if the patch values for the different channels are different.
+    % |-
+    /CopyChannels {
+      //WorkSpace begin
+
+        % If we are not updating an existing calset, the MeasurementDict
+        % and PatchValueDict must have either a single colorant or the
+        % same number of colorants as the NumberOfChannels.  If we are
+        % updating an existing calset, they may alternatively have the
+        % same number of colorants as there are in UpdateChannels.
+        %
+        /CopyMeasurements false def
+        /CopyPatches false def
+
+        MeasurementsFromProfile not {
+          MeasurementDict //WorkSpace /SingleColorantNeedsCopying get exec {
+            /CopyMeasurements true def
+          } if
+        } if
+
+        PatchValueDict null ne {
+          PatchValueDict //WorkSpace /SingleColorantNeedsCopying get exec {
+            /CopyPatches true def
+          } if
+        
+          CopyMeasurements CopyPatches not and {
+            /Warning ShowMessage /PatchValuesCopied ShowMessage
+            //WorkSpace /FirstColorArrayColorant get dup length string cvs =print
+            /CloseError ShowMessage
+          } if
+        } if
+
+      end % WorkSpace
+    } bind def
+
+
+    % |-> true/false
+    /ValidateData {
+      %(ValidateData+)=
+      //WorkSpace begin
+        true
+
+        % The colorants in the colors_array must be the same as those in the
+        % measurements_dictionary.
+        ArrayOfMeasuredColorants length MeasurementDict length ne {
+          pop false
+          /Error ShowMessage /NumMeasChannels ShowMessage
+        } if
+
+        % Now check they are actually the same - although we do not check for
+        % a duplicated color in the ArrayOfMeasuredColorants.
+        ArrayOfMeasuredColorants {
+          MeasurementDict exch known not {
+            pop false
+            /Error ShowMessage /MissingMeasChannel ShowMessage
+          } if
+        } forall
+
+        % We must have the same number of measurements as patch values
+        PatchValueDict null ne {
+          MeasuredArrayLength PatchValueArrayLength ne {
+            pop false
+            /Error ShowMessage /NumPatchValues ShowMessage
+          } if
+        } if
+
+        Update {
+          % Measurement data must be available for every key in UpdateColors
+          % unless only a single set of measurement data is provided in which
+          % case we need to check that every key in UpdateColors is a member
+          % of ChannelColors.  (If there is measurement data available for
+          % every key, then it follows automatically that the key is a member
+          % of ChannelColors as we have already checked that all of the
+          % measurement data sets correspond to ChannelColors).
+
+          MeasurementDict length 1 eq {
+            UpdateColors {
+              /UpdateColor exch def
+              /FoundChannelColor false def
+              0 1 CalDict /ChannelColors get length 1 sub {
+                CalDict /ChannelColors get exch get UpdateColor eq
+                {
+                  /FoundChannelColor true def
+                } if
+              } for
+              FoundChannelColor not {
+                /Error ShowMessage /UnknownColorant ShowMessage
+                UpdateColor =print
+                /CloseError ShowMessage
+              } if
+            } forall
+          } {
+            UpdateColors {
+              cvn MeasurementDict exch known not {
+                pop false
+                /Error ShowMessage /MissingUpdateMeasChannel ShowMessage
+              } if
+            } forall
+          } ifelse
+        } if  % Update
+
+      end % WorkSpace
+      %(ValidateData-)=
+    } bind def
+
+
+    % dict -> true/false
+    /ValidateConsistentChannels {
+      %(ValidateConsistentChannels+)=
+      //WorkSpace begin
+      true
+      /previouschannellength -1 def
+
+      % Every key (in the measurements_dictionary and the PatchValueDict)
+      % must match one of the /ChannelColors array entries
+      % N.B. We should already have checked that /ChannelColors is defined
+      % In addition we currently require all channels to have equal numbers
+      % of measurements or of patches.
+      exch {
+        /foundcolor false def
+
+        % bool key value
+        exch dup length string cvs CalDict /ChannelColors get % e.g. bool value (Magenta) [ (Cyan) (Magenta) (Yellow) (Black) ]
+
+        {
+          exch dup 3 1 roll eq {
+            /foundcolor true def
+            exit
+          } if
+        } forall
+
+        % bool value colorant
+
+        foundcolor not {
+          % The color is not one of the ones we know about from /ChannelColors
+          /Error ShowMessage /UnknownColorant ShowMessage =print /CloseError ShowMessage
+          pop pop false
+        } {
+          pop % the colorant that we were looking for and have found
+        } ifelse
+
+        length dup previouschannellength ne previouschannellength -1 ne and {
+          pop pop false
+          /Error ShowMessage /UnequalChannels ShowMessage
+        } {
+          /previouschannellength exch def
+        } ifelse
+      } forall
+
+      currentdict /foundcolor undef
+
+      end
+      %(ValidateConsistentChannels-)=
+    } bind def
+
+
+    % |-> true/false
+    /ValidateParameters {
+      %(ValidateParameters+)=
+      true
+
+      ValidateDictKeys
+
+      CalDict /ColorSpace get
+      ColorModelToNumber exch known not {
+        pop false
+        /Error ShowMessage /UnknownColorSpace ShowMessage CalDict /ColorSpace get =print /CloseError ShowMessage
+      } if
+
+      CalDict /NumberOfChannels get
+      ColorModelToNumber CalDict /ColorSpace get get
+      gt {
+        pop false
+        /Error ShowMessage /ColorSpaceMatch ShowMessage
+        CalDict /ColorSpace get =print (  ) =print CalDict /NumberOfChannels get =print /CloseError ShowMessage
+      } if
+
+      CalDict /ChannelColors get length
+      CalDict /NumberOfChannels get ne {
+        pop false
+        /Error ShowMessage /NumberChannelColorsMatch ShowMessage
+      } if
+
+      Update {
+        CalDict /UpdateColors known {
+          CalDict /UpdateColors get length dup 1 lt exch
+          CalDict /NumberOfChannels get gt or {
+            pop false
+            /Error ShowMessage /NumUpdateColors ShowMessage
+          } if
+        } {
+          % The default
+          CalDict /UpdateColors CalDict /ChannelColors get put
+        } ifelse
+      } if
+
+      Update not {
+        CalDict /MeasurementSystems known {
+          CalDict /MeasurementSystems get length dup
+          CalDict /NumberOfChannels get ne exch 1 ne and {
+            pop false
+            /Error ShowMessage /NumMeasSystems ShowMessage
+          } {
+            % We currently do not support (Dot Gain) at any time
+            0 1 CalDict /MeasurementSystems get length 1 sub {
+              CalDict /MeasurementSystems get exch get (Dot Gain)
+              AreEqualSimplifiedStrings {
+                pop false
+                /Error ShowMessage /UnsupportedDotGain ShowMessage
+                exit
+              } if
+            } for
+          } ifelse
+        } if
+
+        CalDict /HWResolution known {
+          CalDict /HWResolution get dup type /arraytype ne
+          exch length 2 ne or
+          {
+            pop false
+            /Error ShowMessage /ResFormat ShowMessage
+          } {
+            % Repair array if needed
+            CalDict /HWResolution get dup 0 get type /realtype ne
+            1 index 1 get type /realtype ne or {
+              % array
+              dup 0 2 copy get cvr put
+              % array
+              1 2 copy get cvr put
+            } {
+              % everything is fine
+              pop % array
+            } ifelse
+          } ifelse
+        } if
+
+        CalDict /ScreenFrequencyRange known {
+          CalDict /ScreenFrequencyRange get dup type /arraytype ne
+          exch length 2 ne or
+          {
+            pop false
+            /Error ShowMessage /ScreenFreqFormat ShowMessage
+          } {
+            % Repair array if needed
+            CalDict /ScreenFrequencyRange get dup 0 get type /realtype ne
+            1 index 1 get type /realtype ne or {
+              % array
+              dup 0 2 copy get cvr put
+              % array
+              1 2 copy get cvr put
+            } {
+              % everything is fine
+              pop % array
+            } ifelse
+          } ifelse
+        } if
+
+        % The following keys are optional so warn and ignore
+        % if they are the wrong type
+        CalDict /MatchResolution known {
+          CalDict /MatchResolution get type /booleantype ne {
+            /Warning ShowMessage /InvalidMatchRes ShowMessage
+            CalDict /MatchResolution undef
+          } if
+        } if
+
+        CalDict /MatchScreenName known {
+          CalDict /MatchScreenName get type /booleantype ne {
+            /Warning ShowMessage /InvalidMatchScreenName ShowMessage
+            CalDict /MatchScreenName undef
+          } if
+        } if
+
+        CalDict /MatchScreenFrequency known {
+          CalDict /MatchScreenFrequency get type /booleantype ne {
+            /Warning ShowMessage /InvalidMatchScreenFreq ShowMessage
+            CalDict /MatchScreenFrequency undef
+          } if
+        } if
+
+        CalDict /MatchSign known {
+          CalDict /MatchSign get type /booleantype ne {
+            /Warning ShowMessage /InvalidMatchSign ShowMessage
+            CalDict /MatchSign undef
+          } if
+        } if
+      } if % Update not
+
+      %(ValidateParameters-)=
+    } bind def
+
+
+    %|-
+    /ResetUniqueCounter
+    {
+      //WorkSpace begin
+        /UniqueCounter 0  def
+      end
+    } bind def
+
+    %|-
+    /GetUniqueCounter
+    {
+      //WorkSpace begin
+        UniqueCounter
+        /UniqueCounter 1 index 1 add def
+      end
+    } bind def
+
+    %string |-> newstring
+    /GetUniqueName
+    {
+      dup length 4 add string      % hopefully nobody will attempt using the same named calset more than 999 times
+      exch
+      mark
+      GetUniqueCounter (_) 4 -1 roll
+      1183615869 internaldict /concattomark get exec
+    } bind def
+
+
+    % name array |-> true / position false
+    /CheckUniqueCalSetName {
+      true 3 1 roll % true name array
+      dup length
+      0 1 3 -1 roll 1 sub {
+        2 copy get /Name get 3 index eq { % true name array index
+          4 -1 roll pop % true
+          false 4 1 roll
+          4 1 roll % index false name array
+          exit
+        } {
+          pop % index
+        } ifelse
+      } for
+
+      pop pop % name array
+    } bind def
+
+    % name array |-> true/false
+    /IsUniqueCalSetName {
+      CheckUniqueCalSetName {
+        true
+      } {
+        pop false
+      } ifelse
+    } bind def
+
+    % calset_name CalibrationGroup_array  |-> newname
+    /GetUniqueCalSetName {
+      {
+        2 copy % name array name array
+        exch GetUniqueName dup 3 -1 roll %name array uname uname array
+        IsUniqueCalSetName {
+          % name array uname
+          exit % the loop
+        }{
+          % name array uname
+          pop
+        } ifelse
+      } loop
+      exch pop exch pop % pop name and array
+    } bind def
+
+    % Make sure that x is increasing
+    /SortCurve {
+      //WorkSpace begin
+        CalibratedCurve dup
+        % if x0 > xn then swap round
+        0 get exch dup length 2 sub get gt {
+          /CalibratedCurveLength CalibratedCurve length def
+          /NewCalibratedCurve CalibratedCurveLength array def
+          1 2 CalibratedCurveLength 1 sub {
+            /k exch def
+            CalibratedCurve k 1 sub get NewCalibratedCurve CalibratedCurveLength k sub 1 sub 3 -1 roll put
+            CalibratedCurve k get NewCalibratedCurve CalibratedCurveLength k sub 3 -1 roll put
+          } for
+          % replace
+          /CalibratedCurve NewCalibratedCurve def
+        } if
+      end
+    } bind def
+
+    % MeasuredCurve |->
+    /BuildCalibrationDataCurve {
+      //WorkSpace begin
+        % MeasuredCurve
+        1 2 2 index length 1 sub {
+          /i exch def
+          dup i get ConvertMVtoSNV
+          CalibratedCurve i 1 sub 3 -1 roll
+          put
+        } for
+
+        % MeasuredCurve
+
+        0 2 2 index length 1 sub {
+          /i exch def
+          dup i get
+          CalibratedCurve i 1 add 3 -1 roll
+
+          % Invert patch color for NegativeMedia
+          //DefaultCalSet /NegativeMedia get
+          {
+            1.0 exch sub
+          } if
+
+          put
+        } for
+
+        pop % MeasuredCurve
+        SortCurve
+      end
+    } bind def
+
+
+    % Set the dot gain data in the DefaultCalSet
+    % |-
+    /SetDotGainData {
+      //WorkSpace begin
+        
+        //DefaultCalSet begin
+          /DotgainData
+          NumberOfChannels 1 gt {
+            [
+              0 1 NumberOfChannels 1 sub {
+                pop []
+              } for
+            ] def
+          } {
+          [] def
+          } ifelse
+        end % DefaultCalSet
+
+      end % WorkSpace
+    } bind def
+
+
+    % Switch off various parameters as we are pushing Tone Curves
+    % | -
+    /UpdateDefaultCalSetForToneCurves {
+      //WorkSpace begin
+
+        % Although ForceSolids is greyed out for Tone Curves, HqnCalibrate sets
+        % it if true, so we don't force it to false
+        % Those below are ignored for Tone Curves
+        //DefaultCalSet /NegativeMedia false put
+        //DefaultCalSet /MatchResolution false put
+        //DefaultCalSet /MatchScreenName false put
+        //DefaultCalSet /MatchSign false put
+        //DefaultCalSet /MatchScreenFrequency false put
+
+      end
+    } bind def
+
+
+    % Retrieve the linearization profile dict and leave it on the stack
+    % This is slightly different for GUIrip and HHR as we need to create
+    % the profile path ourselves in HHR, whereas LoadProfileCommon does
+    % this for GUI rip.
+    % |->profiledict
+    /LoadProfile {
+      //WorkSpace begin
+        
+        true
+
+        GUIrip {
+          //DefaultCalSet /ColorSpace get (DeviceGray) eq
+          //DefaultCalSet /Profile get
+          EscapedHCMSDevice
+          //WorkSpace /LoadProfileCommon get exec
+        } {
+          256 string mark
+          //DefaultCalSet /Profile get
+
+          CalDevice (Press) eq
+          {
+            (Press/)
+          } if
+
+          (/)
+          //DefaultCalSet /ColorSpace get % e.g. (DeviceCMYK)
+          
+          % If (Device) is not found the string will be pushed on the stack untouched
+          (Device) anchorsearch {
+            pop % (Device) leaving e.g. (CMYK)
+          } if
+          
+          CalDevice (Press) eq
+          {
+            (%os%Config/Press/Profiles/)
+          } {
+            (%os%Config/Profiles/)
+          } ifelse
+
+          1183615869 internaldict /concattomark get exec
+          (ProfileFileName= ) =print dup =print (\n) =print
+          //WorkSpace /LoadProfileCommonDoLoad get exec
+        } ifelse
+
+      end % WorkSpace
+    } bind def
+
+
+    % Check the desired MeasurementSystems entry in the DefaultCalSet against
+    % the TableName conversion table entries.  Copy the MeasurementSystems
+    % value provided in the parameter dictionary for the first channel to all
+    % channels if necessary.
+    % 
+    % We should try hard to find this measurement system in the profile, as
+    % this is the system in which the user is expecting to make measurements.
+    %
+    % Errors and Warnings:
+    %
+    % If the Linear profile is not found, warn and assume % Dot throughout
+    % If any other profile is not found, error.
+    %
+    % If the colorant is not found in the profile, error.
+    % N.B. The default colorant could be used for any spots but those are not
+    % currently supported in PushCalibration.
+    %
+    % If the measurement system is not found for the colorant, warn and:
+    % a) See if we can swap (% Dot) and (Positive % Dot) or vice-versa, or
+    % b) if doing the first channel:
+    % take the first measurement system for the colorant, or
+    % c) if doing a later channel:
+    % see if the measurement system chosen for the first colorant is
+    % available, or
+    % d) take the first measurement system for the colorant.
+
+    % |-
+    /SetMeasurementSystems {
+      //WorkSpace begin
+
+        % Copy the value for the first channel to all the channels if necessary
+        //DefaultCalSet /MeasurementSystems get length //DefaultCalSet /NumberOfChannels get lt {
+          /TempSystem //DefaultCalSet /MeasurementSystems get 0 get def
+          //DefaultCalSet /MeasurementSystems //DefaultCalSet /NumberOfChannels get array put
+
+          0 1 //DefaultCalSet /NumberOfChannels get 1 sub {
+            //DefaultCalSet /MeasurementSystems get exch TempSystem put
+          } for
+          currentdict /TempSystem undef
+        } if
+
+        % Retrieve the linearization Profile
+        /ProfileDict //WorkSpace /LoadProfile get exec def
+
+        ProfileDict dup null ne {
+          /Linearization get /Linearization exch def
+
+          /i 0 def
+          //DefaultCalSet /ChannelColors get {
+            Linearization //DefaultCalSet /MeasurementSystems get i get 3 1 roll
+            
+            % measurement_system_string colorname_string linearization_array
+            //GetMeasurementSystem exec % tablename
+            //DefaultCalSet /MeasurementSystems get i 3 -1 roll put
+            /i i 1 add def
+          } forall
+          /i 0 def % reset
+        } {
+          % If we could not retrieve the Linear Profile we assume % Dot
+          % but for any other Profile we error.
+          //DefaultCalSet /Profile get (Linear) eq {
+            
+            /Warning ShowMessage /ProfileNotFound ShowMessage
+            //DefaultCalSet /Profile get =print /CloseError ShowMessage
+            /Warning ShowMessage /AssumeMeasSystem ShowMessage
+            (% Dot) =print /CloseError ShowMessage
+
+            pop % null profile
+            //DefaultCalSet /MeasurementSystems get dup length 1 sub
+            0 1 3 -1 roll { 1 index exch (% Dot) put } for
+            pop % MeasurementSystems
+          } {
+            /Error ShowMessage /ProfileNotFound ShowMessage
+            //DefaultCalSet /Profile get =print /CloseError ShowMessage
+            abortjobnow
+          } ifelse
+        } ifelse
+
+        %(^^^ MeasurementSystems = ) =print //DefaultCalSet /MeasurementSystems get { ==  } forall
+
+      end % WorkSpace
+    } bind def
+
+
+    % Values on the stack at the start are as for /PushCalibration.
+    % Here we validate them and define them in the WorkSpace, most
+    % significantly as CalDict, MeausurementDict and ArrayOfMeasuredColorants.
+    % If /PatchValues is supplied in the info_dictionary we will define a
+    % PatchValueDict.  Various other items are also defined for later use.
+    % If /Profile is supplied in the info_dictionary, the info_dictionary is
+    % the only thing expected on the stack at the start.
+    %
+    % color_array measurements_dictionary info_dictionary|->
+    /PushCalibrationGetParameters {
+      %(PushCalibrationGetParameters+)=
+      //WorkSpace begin
+
+        % Grab the parameters
+
+        % The parameter dict passed to us
+        dup type /dicttype ne {
+          /Error ShowMessage /DictExpected ShowMessage
+          abortjobnow
+        } if
+        /CalDict exch def
+
+        % The measurements_dictionary
+        dup type /dicttype ne {
+          /Error ShowMessage /DictExpected ShowMessage
+          abortjobnow
+        } if
+        /MeasurementDict exch def %    << /Cyan [100.0 .... 0.0] >>
+
+        % The color_array
+        dup type /arraytype ne {
+          /Error ShowMessage /ArrayExpected ShowMessage
+          abortjobnow
+        } if
+        /ArrayOfMeasuredColorants exch def  % eg.  [/Cyan] if we have only measured the Cyan strip [/Cyan /Magenta /Yellow /Black]
+                                            % if we have measured all 4 strips etc.
+
+        % Validate the parameters in the info_dictionary
+        //WorkSpace /ValidateParameters get exec not {
+          abortjobnow
+        } if
+
+        % If the measurements_dictionary and color_array are not empty
+        % we cannot currently install linearization data at the same time.
+        % We do a full validation later so for now just do some basic checks
+        % and see whether to assume we are doing MeasurementsFromProfile.
+        % If necessary we also replace the CalDict /Profile with (Linear).
+        % We will define /Profile in the WorkSpace later, (unless we are
+        % updating an existing calset).
+        
+        MeasurementDict length 0 gt {
+          % It seems we have a non-trivial measurements_dictionary
+          ArrayOfMeasuredColorants length 1 lt {
+            % We have no matching color_array
+            /Error ShowMessage /NumMeasChannels ShowMessage
+            abortjobnow
+          } {
+            % We have non-trivial measurements_dictionary and color_array,
+            % so assume we are not installing linearization data.
+            % If we are updating a calset we will silently ignore any
+            % /Profile entry.  Otherwise warn if a /Profile entry
+            % other than (Linear) is provided in the info_dictionary.
+            % Remove the /Profile entry in any case.
+            CalDict /Profile known {
+              Update not {
+                CalDict /Profile get (Linear) ne {
+                  /Warning ShowMessage /MeasIgnoringProfile ShowMessage
+                } if
+              } if
+              CalDict /Profile undef
+            } if
+          } ifelse
+        } {
+          % We lack a non-trivial measurements_dictionary
+          ArrayOfMeasuredColorants length 0 gt {
+            % We do have a real color_array
+            /Error ShowMessage /NumMeasChannels ShowMessage
+            abortjobnow
+          } {
+            % We have neither a meaningful measurements_dictionary nor a
+            % color_array.  It currently does not make sense to try to
+            % update a calset under these circumstances.  If not updating,
+            % assume we are installing linearization data from a profile.
+            % If no /Profile entry is then supplied, warn that we will
+            % assume (Linear).
+            Update {
+              /Error ShowMessage /NoUpdateData ShowMessage
+              abortjobnow
+            } {
+              CalDict /Profile known not {
+                /Warning ShowMessage /MissingProfile ShowMessage
+                CalDict /Profile (Linear) def
+              } if
+              /MeasurementsFromProfile true def
+            } ifelse
+          } ifelse
+        } ifelse
+
+        % The device name
+        % For HHR this can be a name of the users choice although
+        % Press has the same meaning as for GUI rip.
+        CalDict /DeviceName known {
+          /CalDevice CalDict /DeviceName get def
+          CalDict /DeviceName undef
+        }{
+           /Error ShowMessage /MissingKey ShowMessage
+           (DeviceName) =print /CloseError ShowMessage
+           abortjobnow 
+        } ifelse
+
+        % We do not require device names such as LE or HVDNone to be
+        % supplied for HHR although they may be pagebuffer types.
+        GUIrip CalDevice (Press) ne and {
+          currentpagedevice /PageBufferType get CalDevice ne {
+            /Error ShowMessage /DeviceMisMatch ShowMessage
+            abortjobnow
+          } if
+        } if
+
+        % define Replace
+        /Replace
+        CalDict /Replace known {
+          CalDict /Replace get
+          CalDict /Replace undef
+        } {
+          false  % the default
+        } ifelse
+        def
+
+        % Define UpdateColors if updating a calset
+        Update {
+          % We have already confirmed this key is present
+          % or defaulted it to ChannelColors.
+          /UpdateColors
+          CalDict /UpdateColors get
+          CalDict /UpdateColors undef
+          def
+        } if
+
+        % We do not look at the following when updating a CalSet as these
+        % should already be defined.
+        Update not {
+          % define Profile and hang on to it
+          /Profile
+          CalDict /Profile known {
+            CalDict /Profile get
+          } {
+            (Linear) % the default
+          } ifelse
+          def
+
+          % We currently only support the Linear profile for Press
+          % since we do not compute dot gain curves.
+          CalDevice (Press) eq Profile (Linear) ne and {
+            /Error ShowMessage /UnsupportedPressProfile ShowMessage
+            abortjobnow
+          } if
+
+          % Default the MeasurementSystems if necessary
+          % in CalDict as we will need it in DefaultCalSet.
+          CalDict /MeasurementSystems known not {
+            CalDict /MeasurementSystems [(% Dot)] put
+          } {
+            MeasurementsFromProfile not {
+              % The ConvertMVtoSNV procedure used in this simple case has an
+              % assumption of % Dot built in to it, so make sure we use this.
+              % Warn if anything else is given.
+
+              0 1 CalDict /MeasurementSystems get length 1 sub {
+                CalDict /MeasurementSystems get exch get (% Dot)
+                AreEqualSimplifiedStrings not {
+                  /Warning ShowMessage /AssumeMeasSystem ShowMessage
+                  (% Dot) =print /CloseError ShowMessage
+                  exit
+                } if
+              } for
+
+              CalDict /MeasurementSystems [(% Dot)] put
+            } if
+          } ifelse
+
+          % define MeasurementSystems and hang on to it
+          /MeasurementSystems CalDict /MeasurementSystems get def
+        } if
+
+        % define PushToneCurves
+        /PushToneCurves
+        CalDict /PushToneCurves known {
+          MeasurementsFromProfile not {
+            CalDict /PushToneCurves get
+            CalDict /PushToneCurves undef
+          } {
+            % Ignore tone curves as we are installing a linearization profile
+            false % the default
+            CalDict /PushToneCurves undef
+            /Warning ShowMessage /InstallingProfile ShowMessage Profile =print
+            /IgnoringToneCurves ShowMessage
+          } ifelse
+        } {
+            false  % the default
+        } ifelse
+        def
+
+        GUIrip {
+          CalDict /PatchValues known {
+            % We currently ignore the PatchValues dict for GUI rip as
+            % the Cal Edit Dialog will not update the patch values.
+            CalDict /PatchValues undef
+            /Warning ShowMessage /IgnorePatchValues ShowMessage
+          } if
+        } {
+          % HHR rip
+          CalDict /PatchValues known {
+            /PatchValueDict
+            CalDict /PatchValues get
+
+            % Validate the patch value dict
+            dup type /dicttype ne {
+              /Error ShowMessage /DictExpected ShowMessage
+              abortjobnow
+            } if
+            CalDict /PatchValues undef
+            def % define /PatchValueDict
+          } {
+            % We currently need the PatchValueDict for HHR rip
+            /Error ShowMessage /NoPatchValues ShowMessage
+            abortjobnow
+          } ifelse
+        } ifelse
+
+        % Ensure the PatchValueDict is consistent with the ChannelColors
+        PatchValueDict null ne {
+          PatchValueDict //WorkSpace /ValidateConsistentChannels get exec not {
+            abortjobnow
+          } if
+        } if
+
+        MeasurementsFromProfile {
+          % We do not have a meaningful array of measured colorants but assume
+          % the profile has information for all the colorants contained in the
+          % /ChannelColors array.  Convert the strings to names for consistency
+          % with the case where we are not installing a linearization profile.
+
+          /ArrayOfMeasuredColorants CalDict /ChannelColors get length array def
+          
+          /i 0 def
+          CalDict /ChannelColors get {
+            ArrayOfMeasuredColorants i 3 -1 roll cvn put
+          /i i 1 add def
+          } forall
+          /i 0 def % reset
+
+          /FirstColorArrayColorant ArrayOfMeasuredColorants 0 get def
+        } {
+          % The measurements_dictionary
+          % In this case we have already confirmed this is non-trivial so just
+          % validate it here.
+          MeasurementDict //WorkSpace /ValidateConsistentChannels get exec not {
+            abortjobnow
+          } if
+
+          % The color_array
+          % In this case we have already confirmed this is non-trivial so just
+          % confirm that the measurements_dictionary at least contains the 1st
+          % array colorant.
+          /FirstColorArrayColorant ArrayOfMeasuredColorants 0 get def
+
+          % We have already checked that all channels within each dictionary have the
+          % same number of array entries, e.g. cyan has the same number as magenta.
+          /MeasuredArrayLength
+          MeasurementDict FirstColorArrayColorant known not {
+            pop
+            /Error ShowMessage /MissingMeasChannel ShowMessage
+            abortjobnow
+          } {
+            MeasurementDict FirstColorArrayColorant get length def
+          } ifelse
+        } ifelse % MeasurementsFromProfile
+
+        % This currently needs to be the same as the MeasuredArrayLength
+        % It will be checked in ValidateData
+        PatchValueDict null ne {
+          /PatchValueArrayLength
+          PatchValueDict FirstColorArrayColorant known not {
+            pop
+            /Error ShowMessage /MissingPatchChannel ShowMessage
+            abortjobnow
+          } {
+            PatchValueDict FirstColorArrayColorant get length def
+          } ifelse
+        } if
+
+        MeasurementsFromProfile not {
+          % Confirm the color_array, measurements_dictionary and PatchValueDict
+          % are compatible.
+          //WorkSpace /ValidateData get exec not {
+             abortjobnow
+          } if
+        } if
+
+        % Figure out if we will need to copy measurement and/or patch value data
+        % between channels.
+        //WorkSpace /CopyChannels get exec
+
+      end % WorkSpace
+      %(PushCalibrationGetParameters-)=
+    } bind def
+
+    /procsetversion ($Revision: 1.27.1.2.1.1 $) 11 1 index length 13 sub getinterval def
+
+  end % WorkSpace
+
+  /ProcSetVersion //WorkSpace /procsetversion get def
+
+  /PushCalibration {
+    % See also Technical Note Hqn081 Push Calibration
+    %
+    % on the stack:
+    % color_array:             array of color names. If 1 color given eg [/Cyan] we assume that the other colorants
+    %                          have the same measurements.
+    %                          N.B. If installing linearization data from a profile this should be empty i.e. []
+    %
+    %
+    % measurements_dictionary  a dictionary of the form
+    % <<
+    %    /Cyan    [ 0.0 .... 100.0 ]
+    %    /Magenta [ 0.0 .... 100.0 ]
+    % >>
+    %
+    %                          where the keys are the elements of the color_array above, and the arrays are the measured
+    %                          values for each color.  Currently all the measured value arrays must be the same length.
+    %                          N.B. If installing linearization data from a profile this should be empty i.e. <<>>
+    %
+    %
+    %  info_dictionary of the form:
+    %  <<
+    %    /DeviceName:          (String)                                % The device name as it appears in the Page Setup that
+    %                                                                  % we used to print the Target or Press if using a Press
+    %                                                                  % setup.  For HHR use Press or a name of your choice.
+    %                                                                  % The device name will become part of the path to the
+    %                                                                  % calset.
+    %
+    %    /Name                 (example)                               % Name of the new calset
+    %    /ColorSpace           (DeviceCMYK)                            % One of DeviceGray, DeviceCMYK
+    %    /NumberOfChannels     4                                       % 1 for Gray, 4 for CMYK etc.
+    %    /ChannelColors        [(Cyan) (Magenta) (Yellow) (Black)]     % or [ (Cyan) (Magenta) (Yellow) ]
+    %                                                                  % or [ (Gray) ]
+    %    /HWResolution         [1200 1200]                             % horz vert in dpi
+    %    /ScreenName           (Euclidean)                             % eg. Euclidean
+    %    /ScreenFrequencyRange [100 150]                               % eg. [100 150]
+    %
+    %    /NegativeMedia        false                                   % true or false - optional - default false
+    %    /ForceSolids          true                                    % true or false - optional - default true
+    %    /PushToneCurves       false                                   % true or false - optional - default false
+    %
+    %    /MatchResolution      true                                    % true or false - optional - default true
+    %    /MatchScreenName      true                                    % true or false - optional - default true
+    %    /MatchScreenFrequency false                                   % true or false - optional - default false
+    %    /MatchSign            false                                   % true or false - optional - default false
+    %
+    %    /Replace              false                                   % Replace the calset rather than add a new one - optional
+    %                                                                  % default false
+    %
+    %    /PatchValues          << /Cyan    [100 .... 0]                % A dict containing nominal values where the measurements
+    %                             /Magenta [100 .... 0]                % were taken.  If the patch values are the same for all
+    %                             /Yellow  [100 .... 0]                % the channels it is only necessary to supply the first
+    %                             /Black   [100 .... 0]                % channel.  If installing a gray balance profile for HHR
+    %                          >>                                      % these values will not yet have been used but it is
+    %                                                                  % recommended that they are filled in with the patchValues
+    %                                                                  % where future measurements will be made to update the
+    %                                                                  % calset.  Currently required for HHR rip and optional and
+    %                                                                  % ignored for GUI rip.
+    %
+    %    /MeasurementSystems   [(% Dot) (% Dot) (% Dot) (% Dot)]       % or [(%Dot)] - optional, default [(%Dot)]
+    %                                                                  % Measurements will be stored in the calset in these
+    %                                                                  % units.  Conversions between measurement systems are
+    %                                                                  % currently not supported, so measurements must also
+    %                                                                  % be made in the units specified here.  If all the channels
+    %                                                                  % use the same measurement system, only the first channel
+    %                                                                  % need be specified.  N.B. The corresponding conversion
+    %                                                                  % tables should also be present in the profile (if any).
+    %
+    %    /Profile              (SWOP \(CGATS TR001\)) or               % Name of the linearization profile - optional
+    %                          (SetGold Pro Gray Bal) or               % Default (Linear)
+    %                          (Linear)                                % N.B. This entry will be ignored if the color_array or
+    %                                                                  % measurements_dictionary are not empty.
+    %  >>
+    %
+    % PushCalibration constructs the calset from the given values, assigns a unique name to the calset
+    % and adds the calset to the calibrations for the given device (or folder for HHR rip).
+    %
+
+    //WorkSpace begin
+
+      /Update false def
+      /ProfileDict null def
+      /Target null def
+      /PatchValueDict null def
+      /MeasurementsFromProfile false def
+      /LinearCalCurve [0.0 0.0 1.0 1.0] def
+
+      % First pick up and validate the parameters
+      //WorkSpace /PushCalibrationGetParameters get exec
+
+      % Update the DefaultCalSet with that passed to us
+      % N.B. This relies on various keys such as /Replace which are not wanted
+      % in the DefaultCalSet having been removed from the CalDict by now.
+      //DefaultCalSet begin
+        CalDict {
+          % key value
+          def
+        } forall
+      end % DefaultCalSet
+
+      % If we are pushing Tone Curves, we need to switch off various parameters
+      PushToneCurves {
+        //WorkSpace /UpdateDefaultCalSetForToneCurves get exec
+      } if
+
+      % Check the MeasurementSystems entry in the DefaultCalSet
+      % against what is available in the profile and if necessary
+      % amend the entry in the DefaultCalSet.
+      //WorkSpace /SetMeasurementSystems get exec
+
+      % Set the DotgainData in the DefaultCalSet
+      //WorkSpace /SetDotGainData get exec
+
+      % Create the patchvalue/value array from the measurements and Target
+      % or for HHR the PatchValues dict that we were given.
+
+      % Read in the Target for the GUIrip.
+      GUIrip {
+        /Target ReadTarget def
+      } if
+
+      % Decide whether to flip the patch color values
+      /flipColorValues //WorkSpace /ShouldFlipPatchValues get exec def
+
+      % Reserve WorkSpace memory for a MeasuredCurve and a CalibratedCurve
+      //WorkSpace /CreateCurves get exec
+
+      % Create MeasurementData and CalibrationData arrays  
+      //DefaultCalSet begin
+        NumberOfChannels 1 gt {
+          /MeasurementData NumberOfChannels array def
+          /CalibrationData NumberOfChannels array def
+        } if
+      end
+
+      % Now recurse over the measured colorants
+      0 1 ArrayOfMeasuredColorants length 1 sub {
+        % for each measured colorant
+        //WorkSpace begin
+          /ColorantsIndex exch def % the index into the ArrayOfMeasuredColorants array
+          /Channel ArrayOfMeasuredColorants ColorantsIndex get def % eg. /Cyan
+
+          MeasurementsFromProfile not {
+            /MeasurementsArrayPerChannel MeasurementDict Channel get def % the array of measured values
+          } {
+            % We currently store the value -101.0 which is our marker for an
+            % invalid value.  Although the GUI rip would fill in this value
+            % from the profile measurements, it is just there for information
+            % so is alright to omit.
+            /MeasurementsArrayPerChannel -101.0 0 1 MeasuredArrayLength 2 sub { pop dup } for
+            MeasuredArrayLength array astore def
+          } ifelse
+
+          % for i=0; i less than MeasuredArrayLength; i++
+          % Get the patch value from /PatchColor or from /PatchValueDict
+          % Get the value from the array (MeasurementsArrayPerChannel) we were passed.
+          % Form the curve as an array of patch_value value pairs
+
+          //WorkSpace /MakeMeasurementCurve get exec
+        end % WorkSpace
+
+        % We have the curve MeasuredCurve for Channel. Put it into the calset.
+        //DefaultCalSet /NumberOfChannels get 1 gt {
+          //DefaultCalSet /MeasurementData get ColorantsIndex MeasuredCurve dup length array copy put
+        }{
+          //DefaultCalSet /MeasurementData MeasuredCurve dup length array copy put
+        } ifelse
+
+        % Find the WhitePoint for the channel
+        % This must always be present on the Target or in the PatchValueDict arrays
+        MeasuredCurve
+        0 2 2 index length 1 sub {
+          /i exch def
+          dup i get 1.0 eq {
+            exit
+          } if
+        } for
+
+        i 1 index length eq {
+          /Error ShowMessage /NoWhitePatch ShowMessage
+          abortjobnow
+        } {
+          % MeasuredCurve on the stack
+          MeasurementsFromProfile not {
+            dup i 1 add get //WorkSpace /ConvertMVtoSNV get exec
+            //DefaultCalSet /WhitePoint get ColorantsIndex 3 -1 roll put
+          } {
+            % By definition the ScriptWorks Nominal Value (SNV) of the
+            % whitepoint is 1.0 in this case.
+            pop % the MeasuredCurve
+            //DefaultCalSet /WhitePoint get ColorantsIndex 1.0 put
+          } ifelse
+        } ifelse
+
+        % Now construct the CalibrationData curve for the current channel
+        MeasurementsFromProfile not {
+          % The MeasuredCurve is still on the stack in this case
+          BuildCalibrationDataCurve
+        } {
+          % The CalibratedCurve is just the linear curve
+          LinearCalCurve CalibratedCurve copy
+          pop % the CalibratedCurve
+        } ifelse
+
+        //DefaultCalSet /NumberOfChannels get 1 gt {
+          //DefaultCalSet /CalibrationData get ColorantsIndex CalibratedCurve dup length array copy put
+        }{
+          //DefaultCalSet /CalibrationData CalibratedCurve dup length array copy put
+        } ifelse
+
+      } for  % 0 1 ArrayOfMeasuredColorants length 1 sub
+
+
+      % if we only took one measurement but we have more than one channels,
+      % use the same measurements for all channels
+      CopyMeasurements //DefaultCalSet /NumberOfChannels get 1 gt and {
+        % the measurement curves
+        //DefaultCalSet begin
+          MeasurementData
+          1 1 NumberOfChannels 1 sub {
+            1 index exch MeasuredCurve dup length array copy put
+          } for
+          pop % MeasurementData
+        end
+
+        % the calibration curves
+        //DefaultCalSet begin
+          CalibrationData
+          1 1 NumberOfChannels 1 sub {
+            1 index exch CalibratedCurve dup length array copy put
+          } for
+          pop % CalibrationData
+        end
+
+        % use the same whitepoint for all channels
+        //DefaultCalSet begin
+          WhitePoint
+          1 1 NumberOfChannels 1 sub {
+            1 index exch 1 index 0 get put
+          } for
+          pop % WhitePoint
+        end
+      } if % CopyMeasurements
+
+      % DefaultCalSet is now a complete new CalSet.
+      % Read in the appropriate Default file and add it in.
+      //WorkSpace /WriteCalSet get exec
+
+      % Success - write out some info about what we have done
+      (") =print //DefaultCalSet /Name get  =print (" has been added to ) =print
+      PushToneCurves {
+        (Tone Curves ) =print
+      }{
+        (calibration for device \() =print CalDevice =print (\)) =print
+      } ifelse
+      ( and colorspace ) =print //DefaultCalSet /ColorSpace get ==
+
+    end % WorkSpace
+  } bind def
+
+
+  /PushCalibrationUpdate {
+
+    % See also Technical Note Hqn081 Push Calibration
+    %
+    % on the stack:
+    % color_array:             array of color names. If 1 color given eg [/Cyan] we assume
+    %                          that the other colorants have the same measurements.  For
+    %                          updating a calset this must agree with the colorants given
+    %                          in the measurements dict but may be e.g. [/Cyan /Magenta /Black].
+    %                          
+    %
+    % measurements_dictionary  a dictionary of the form
+    % <<
+    %    /Cyan    [ 0.0 .... 100.0 ]
+    %    /Magenta [ 0.0 .... 100.0 ]
+    % >>
+    %                          where the keys are the elements of the color_array above, and the arrays are the measured
+    %                          values for each color.  Currently all the measured value arrays must be the same length.
+    %
+    %
+    %  info_dictionary of the form:
+    %  <<
+    %    /DeviceName:          (String)                                % The device name as it appears in the Page Setup that
+    %                                                                  % we used to print the Target or Press if using a Press
+    %                                                                  % setup.  For HHR use Press or a name of your choice.
+    %                                                                  % The device name will become part of the path to the
+    %                                                                  % calset, so for updating this is part of the path to
+    %                                                                  % calset to update.
+    %
+    %    /Name                 (example)                               % Name of the calset to update
+    %    /SaveAsName           (my new example)                        % Name of the updated calset
+    %
+    %    /ColorSpace           (DeviceCMYK)                            % One of DeviceGray, DeviceCMYK
+    %    /NumberOfChannels     4                                       % 1 for Gray, 4 for CMYK etc.
+    %    /ChannelColors        [(Cyan) (Magenta) (Yellow) (Black)]     % or [ (Cyan) (Magenta) (Yellow) ]
+    %                                                                  % or [ (Gray) ]
+    %
+    %    /UpdateColors         [(Cyan) (Magenta) (Black)]              % The channels to update with the new measurement data.
+    %                                                                  % These channels must previously have had some measurement
+    %                                                                  % applied.  This will automatically be the case unless the
+    %                                                                  % calset was created with the editor in the GUI rip.
+    %                                                                  % All other channels will remain unaffected.
+    %                                                                  % Optional key - defaults to ChannelColors.
+    %
+    %    /PushToneCurves       false                                   % true or false - optional - default false
+    %                                                                  % Must be true to update a tone curves calset, otherwise
+    %                                                                  % false.
+    %
+    %    /Replace              false                                   % Replace the calset rather than add a new one - optional
+    %                                                                  % default false
+    %
+    %    /PatchValues          << /Cyan    [100 .... 0]                % A dict containing nominal values where the measurements
+    %                             /Magenta [100 .... 0]                % were taken.  If the patch values are the same for all
+    %                             /Yellow  [100 .... 0]                % the channels it is only necessary to supply the first
+    %                             /Black   [100 .... 0]                % channel.  Currently required for HHR rip and optional
+    %                          >>                                      % and ignored for GUI rip.
+    %  >>
+    %
+    % PushCalibrationUpdate finds the calset, updates it from the new measurement data,
+    % and uses the SaveAsName to save it, creating a unique name if necessary.  The calset
+    % is added to the calibrations for the given device (or folder for HHR rip).
+    %
+
+    //WorkSpace begin
+
+      /Update true def
+      /ProfileDict null def
+      /Target null def
+      /PatchValueDict null def
+      /MeasurementsFromProfile false def
+      /LinearCalCurve [0.0 0.0 1.0 1.0] def
+
+      % First pick up and validate the parameters
+      //WorkSpace /PushCalibrationGetParameters get exec
+
+      % Procedures below make use of these parameters
+      //DefaultCalSet /ColorSpace CalDict /ColorSpace get put
+      //DefaultCalSet /Name CalDict /Name get put
+
+      % Read in the Target for the GUIrip.
+      GUIrip {
+        /Target ReadTarget def
+      } if
+
+      % Do we need to flip the patch color values?
+      /flipColorValues //WorkSpace /ShouldFlipPatchValues get exec def
+
+      % Define the name of the calibration file then get hold of it
+      % and back it up just in case.
+      % N.B. This defines the CalibrationGroup in the WorkSpace
+      /CalFileName //WorkSpace /MakeCalFileName get exec def  % define filename
+      //WorkSpace /ReadAndBackupCalFile get exec
+
+      % See if we can find the calset - n.b. we hope the name is not unique
+      % meaning the calset we are trying to update does exist.
+      //DefaultCalSet /Name get CalibrationGroup CheckUniqueCalSetName
+      % true | position false
+      {
+        % We were unable to find the calset
+        /Error ShowMessage /CalSetNotFound ShowMessage
+        //DefaultCalSet /Name get =print /CloseError ShowMessage
+        abortjobnow
+      } {
+        % We found it so grab it
+        /FoundCalSet CalibrationGroup 3 -1 roll get def
+      } ifelse
+
+      % Do some very basic sanity checking on the calset we found
+      FoundCalSet /ColorSpace get //DefaultCalSet /ColorSpace get ne
+      FoundCalSet /NumberOfChannels get CalDict /NumberOfChannels get ne or
+      {
+        /Error ShowMessage /CalSetMisMatch ShowMessage
+        abortjobnow
+      } if
+
+      % We currently only support the Linear profile for Press since we do not
+      % compute dot gain curves.  If the calset we found was created with
+      % PushCalibration it can only have a Linear Press profile but check in
+      % case we are trying to update a calset created in the GUI editor.
+      CalDevice (Press) eq {
+        FoundCalSet /Profile get (Linear) ne {
+          /Error ShowMessage /UnsupportedPressProfile ShowMessage
+          abortjobnow
+        } if
+      } if
+
+      % Retrieve the linearization profile from the calset as we will need
+      % conversion tables from this.
+      % N.B. LoadProfile expects the Profile to be in //DefaultCalSet.
+      //DefaultCalSet /Profile FoundCalSet /Profile get put
+      /ProfileDict //WorkSpace /LoadProfile get exec def
+
+      ProfileDict dup null ne {
+        /Linearization get /Linearization exch def
+      } {
+        /Error ShowMessage /ProfileNotFound ShowMessage
+        //DefaultCalSet /Profile get =print /CloseError ShowMessage
+        abortjobnow
+      } ifelse
+
+
+      % For each channel that we want to update we now need to assemble all the
+      % information we need for UpdateCalCurveDict, which is the dictionary
+      % parameter to calibrationop.  This will then do all the maths and give us
+      % back a new calibration data curve array for each channel.
+      %
+      % The UpdateCalCurveDict has the following form:
+      %
+      % << /MeasurementCurve array
+      %    /CalDataCurve     array
+      %    /ConversionMethod dict
+      %    /NegativeMedia    bool
+      % >>
+      %
+      % where
+      % the MeasurementCurve is from the new measurement data,
+      % the CalDataCurve is the calibration data from the calset being updated,
+      % the ConversionMethod is from the profile in the calset being updated,
+      % and NegativeMedia is from the profile in the calset being updated.
+
+      UpdateColors {
+
+        % e.g. (Magenta)
+
+        /UpdateCalCurveDict << >> def
+        /FoundChannelColor false def
+        /FoundLinearizationColor false def
+        /FoundConversionMethodDict false def
+        /Channel /NotDef def
+        /CalibratedCurve [] def
+
+        % Get the index of the channel we are dealing with
+      
+        /i 0 def
+        FoundCalSet /ChannelColors get {        % (Magenta) (Cyan)
+          1 index eq {                          % (Magenta)
+            /FoundChannelColor true def
+            exit
+          } if
+          /i i 1 add def
+        } forall
+
+        FoundChannelColor false eq {
+          % We did not find the channel we want in the calset
+          /Error /CalSetMissingColorant ShowMessage =print
+          /CloseError ShowMessage
+          abortjobnow
+        } if
+      
+        dup /Channel exch cvn def % (Magenta) on stack
+
+
+        % Define the measurement data in the UpdateCalCurveDict.
+      
+        % Reserve memory for the patchValue measuredValue pairs
+        //WorkSpace /MeasuredCurve MeasuredArrayLength 2 mul array put
+
+        % Copy the measurements from another channel if needed but only
+        % if the MeasurementDict just has a single channel.
+        MeasurementDict length 1 eq UpdateColors length 1 gt and {
+          //WorkSpace /MeasurementsArrayPerChannel MeasurementDict {exch pop} forall put
+        } {
+          //WorkSpace /MeasurementsArrayPerChannel MeasurementDict Channel get put
+        } ifelse
+      
+        % Form the measurement curve as an array of patch_value value pairs
+        % and define it in the dict.
+        //WorkSpace /MakeMeasurementCurve get exec
+        UpdateCalCurveDict /MeasurementCurve MeasuredCurve put
+
+
+        % Define the existing calibration data for this channel in the
+        % UpdateCalCurveDict.
+        % N.B. The calibration data is stored as an array of arrays unless
+        %      there is only 1 channel when it is just an array.
+        FoundCalSet /ChannelColors get length 1 gt {
+          UpdateCalCurveDict /CalDataCurve FoundCalSet /CalibrationData get i get put
+        } {
+          UpdateCalCurveDict /CalDataCurve FoundCalSet /CalibrationData get put
+        } ifelse
+      
+        % Now for the conversionmethod-dict from the profile
+        % We currently choose the one corresponding to the measurement system in
+        % the FoundCalSet.
+
+        % First get the dict for the right colorant from the profile
+        Linearization //WorkSpace /GetLinearizationChannel get exec
+        % dict true | false  
+        {
+          % We have the colorant dict so now get the right conversionmethod-dict
+          FoundCalSet /MeasurementSystems get i get  % dict measurement_system_string
+
+          dup () eq {
+            /Error ShowMessage /MissingPreviousData ShowMessage
+            FoundCalSet /ChannelColors get i get =print
+            /CloseError ShowMessage
+            abortjobnow
+          } if
+
+          exch  % measurement_system_string dict
+
+          % Get the conversionmethod_dict for this measurementsystem from the dict
+          % for this colorant.
+
+          //WorkSpace /GetConversionDict get exec
+          % dict true | false
+          {
+            % Define the conversionmethod_dict in the UpdateCalCurveDict
+            UpdateCalCurveDict /ConversionMethod 3 -1 roll put
+          } {
+            /Error ShowMessage /MissingConvDict ShowMessage
+            FoundCalSet /ChannelColors get i get =print
+            /CloseError ShowMessage
+            abortjobnow
+          } ifelse
+        } {
+          % We currently error if we did not find the right colorant in the
+          % profile.
+          /Error ShowMessage /ProfileColorantNotFound ShowMessage
+          FoundCalSet /ChannelColors get i get =print
+          /CloseError ShowMessage
+          abortjobnow
+        } ifelse
+
+
+        % Finally NegativeMedia - currently we take what is in the profile
+        UpdateCalCurveDict /NegativeMedia FoundCalSet /NegativeMedia get put
+
+
+        % All being well, we should now have a filled in UpdateCalCurveDict.
+        % Push it on the stack along with the action-name /UpdateCalCurve
+        % and call the calibrationop.  This should leave the new calibration
+        % data curve dictionary on the stack.
+        % (The UpdateCalCurveDict is) =print UpdateCalCurveDict { exch == == } forall
+
+        UpdateCalCurveDict /UpdateCalCurve
+        1183615869 internaldict /calibrationop get exec
+
+        dup type /dicttype ne {
+          /Error ShowMessage /DictExpected ShowMessage
+          abortjobnow
+        } if
+
+        /NewCalCurve 2 copy known not {
+          /Error ShowMessage /UnknownCalCurve ShowMessage
+          FoundCalSet /ChannelColors get i get =print
+          /CloseError ShowMessage
+          abortjobnow
+        } if
+
+        get /CalibratedCurve exch def
+        %(The new calcurve is) =print CalibratedCurve { == } forall
+
+        % We expect the new calibration data curve to be the same length as
+        % our measurement curve so this is a simple sanity check.
+        CalibratedCurve length MeasuredCurve length ne {
+          /Error ShowMessage /CalDataWrongLength ShowMessage
+          FoundCalSet /ChannelColors get i get =print
+          /CloseError ShowMessage
+          abortjobnow
+        } if
+
+        % Ensure it is at least weakly monotonic
+        //WorkSpace /SortCurve get exec
+
+        % Store the new curve back into the calset
+        FoundCalSet /ChannelColors get length 1 gt {
+          FoundCalSet /CalibrationData get i CalibratedCurve put
+        } {
+          FoundCalSet /CalibrationData CalibratedCurve put
+        } ifelse
+
+        % Now we have an updated calibration data curve the measurement data in
+        % the FoundCalSet is no longer meaningful and we set this to -101.0
+        % which is an out of range value.
+
+        /MeasurementsArrayPerChannel -101.0 0 1 MeasuredArrayLength 2 sub { pop dup } for
+        MeasuredArrayLength array astore def
+        //WorkSpace /MakeMeasurementCurve get exec
+
+        % We have a new curve MeasuredCurve for Channel. Put it into the calset.
+        FoundCalSet /NumberOfChannels get 1 gt {
+          FoundCalSet /MeasurementData get i MeasuredCurve dup length array copy put
+        }{
+          FoundCalSet /MeasurementData MeasuredCurve dup length array copy put
+        } ifelse
+
+      } forall % UpdateColors
+      /i 0 def % reset
+
+      % Update the EditSatus for consistency with using the GUI editor
+      FoundCalSet /EditStatus 2 put
+
+      % Copy our newly updated FoundCalSet into DefaultCalSet as this is
+      % where we need it to be to write it out.
+      //DefaultCalSet { pop //DefaultCalSet exch undef } forall
+      //DefaultCalSet begin FoundCalSet { def } forall end
+      //DefaultCalSet /Name CalDict /SaveAsName get put
+
+      % DefaultCalSet is now a complete new calset.
+      % Read in the appropriate Default file again and add it in
+      //WorkSpace /WriteCalSet get exec
+
+      % Success - write out some info about what we have done
+      (") =print //DefaultCalSet /Name get  =print (" has been added to ) =print
+      PushToneCurves {
+        (Tone Curves ) =print
+      }{
+        (calibration for device \() =print CalDevice =print (\)) =print
+      } ifelse
+      ( and colorspace ) =print //DefaultCalSet /ColorSpace get =print
+      
+
+    end % WorkSpace
+  } bind def
+
+  currentdict
+end
+
+/HqnPushCalibration exch /ProcSet defineresource
+
+/globalness get setglobal
+
+%%EndProcSet

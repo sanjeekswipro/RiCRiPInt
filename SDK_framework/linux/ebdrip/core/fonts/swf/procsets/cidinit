@@ -1,0 +1,962 @@
+%!PS-Adobe-3.0
+%%Title: CIDInit
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 16, 1997
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (CIDInit) 1 0
+
+
+currentglobal true setglobal 15 dict begin
+  /globalness exch def
+
+  /cidcode 0 def
+  /bfcode 1 def
+
+  % These two *should* not be necessary according to the CID specs,
+  % but CID fonts from some vendors will not run without them.
+  /cid_version 2025.01 def
+  /cid_Setup {} def
+
+  % Support routines
+
+  % Given: o1 o2
+  % Return bool, where bool is true iff both objects are strings AND both
+  % strings have the same length AND o1[x] <= o2[x] for 0 <= x <= len(o1)-1.
+  /verify_strings {
+    2 copy type /stringtype eq exch type /stringtype eq and {
+      2 copy length dup 3 -1 roll length eq {
+        % S: o1 o2 len
+        1 sub 3 1 roll
+        verify_range
+      } {
+        pop pop pop false
+      } ifelse
+    } {
+      pop pop false
+    } ifelse
+  } bind def
+
+
+  % Given: index s1 s2, return s2[index] - s1[index] + 1, unless this is < 1,
+  % in which case, return false or 0 or something.
+  /get_c_range {
+    2 index get
+    3 1 roll exch get
+    sub 1 add dup 1 lt {
+      pop 0
+    } if
+  } bind def
+
+  % Given: index s1 s2, calculate the # of elements in the range.
+  % ie: if we're given a pair of input codes that specify a range
+  % (the srcLo srcHi [ destcodes .... ] variant of beginbfrange for instance)
+  % we need to calculate how many elements should be in the array, as specified
+  % by the range that srcLo and srcHi describe.
+  % since srcLo/Hi are multibyte, the range needs to be calculated by
+  % multiplying together the difference in corresponding byte pairs:
+  % Given <a1b1c1> <a2b2c2>, the #elements in the range is
+  % a2-a1 * b2-b1 *  c2-c1
+  /calculate_range {
+    2 index 0 lt {
+      pop pop pop 1
+    } {
+      3 copy get_c_range
+      4 -1 roll 1 sub  % decrement index
+      4 2 roll
+      calculate_range mul
+    } ifelse
+  } bind def
+
+  % This is similar to the above, but just verifies that each pair of input
+  % bytes are valid.
+  /verify_range {
+    2 index 0 lt {
+      % Recursion finished, so we're done
+      pop pop pop true
+    } {
+      3 copy get_c_range
+      0 eq {
+        % problem with the byte pairs, return failure
+        pop pop pop false
+      } {
+        3 -1 roll 1 sub  % decrement index
+        3 1 roll
+        verify_range
+      } ifelse
+    } ifelse
+  } bind def
+
+
+  
+  % Given: any array
+  % Return: array extended by 1 element, with anyobj as the new last element
+  /extend_array { 
+    dup length 3 1 roll 2 index %S: len any array len
+    1 add array dup 5 2 roll 3 index %S: new new len any array new
+    copy pop put
+  } bind def
+
+  % Given: x1 x2 ... xn array n
+  % Return: array extended by n, with x1..xn as first n elements
+  /extend_array_n_at_start {
+    3 dict begin
+      /num exch def
+      dup length num add dup /newlen exch def
+      %S: x1 .. xn array newlen
+      array dup /newarray exch def
+      num 3 -1 roll putinterval  % Copy old array into upper reaches of new.
+      num array astore newarray 0 3 -1 roll putinterval
+      newarray
+    end
+  } bind def
+
+  % Takes operatorname errorname, and invokes the error handler
+  /throw_error {
+    //systemdict /.error get exec
+  } bind def
+
+  % Takes operatorname, raises the current error from $error
+  /throw_last_error {
+    $error /errorname get throw_error
+  } bind def
+  
+  
+  % --------------------------------------------------------------------
+  % The routines that need to be externally visible.
+  
+  /begincmap {
+    % We want a clean dictionary to work in
+    currentdict length 0 ne {
+      /begincmap /invalidaccess throw_error
+    } if
+
+    /cid_internal 5 dict begin
+      /codespacerangeblock 0 array def
+      /notdefrangeblock 0 array def
+      /mappingblock 0 array def
+      /usematrixblock 0 array def
+      /using_font 0 def
+      currentdict
+    end def
+
+    /ToUnicode true def % Until proven otherwise
+  } bind def
+
+
+  %
+  % CODESPACERANGES
+
+  /begincodespacerange {
+    count 1 lt {
+      /begincodespacerange /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /begincodespacerange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /begincodespacerange /rangecheck throw_error
+    } if
+    mark
+  } bind def
+
+
+  /endcodespacerange { % num mark <ranges> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endcodespacerange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endcodespacerange /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <ranges> counttomark num
+    2 copy 2 mul ne {
+      /endcodespacerange /rangecheck throw_error
+    } if
+
+    1 dict begin
+      % Group into pairs
+      /rollitems 3 -1 roll def
+      {
+        2 copy verify_strings not {
+          /endcodespacerange /typecheck throw_error
+        } if 
+  
+        2 array astore
+        /rollitems rollitems 1 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the pairs together
+      rollitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newranges
+      cid_internal /codespacerangeblock get
+      extend_array
+      cid_internal /codespacerangeblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+
+  % --------------------------------------------------------------------
+  %
+  % CIDRANGES
+
+  /begincidrange {
+    count 1 lt {
+      /begincidrange /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /begincidrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /begincidrange /rangecheck throw_error
+    } if
+    /ToUnicode false store
+    mark
+  } bind def
+
+
+  /endcidrange { % num mark <ranges> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endcidrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endcidrange /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <ranges> counttomark num
+    2 copy 3 mul ne {
+      /endcidrange /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into triples, and reverse the ordering of the triples as we do so.
+      /rollitems 3 -1 roll 1 add def
+      /numitems 1 index def
+      % repeat num times.
+      {
+        % Verify the types of the triple
+        3 copy type /integertype ne {
+          /endcidrange /typecheck throw_error
+        } if
+        verify_strings not {
+          /endcidrange /typecheck throw_error
+        } if 
+  
+        3 array astore
+        /rollitems rollitems 3 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the triples together
+      numitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newranges
+      cid_internal dup /using_font get 3 1 roll
+      /mappingblock get
+      cidcode 3 1 roll
+      3
+      extend_array_n_at_start
+      cid_internal /mappingblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+  % And CIDCHARS: Turn them into ranges for now.
+
+  /begincidchar {
+    count 1 lt {
+      /begincidchar /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /begincidchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /begincidchar /rangecheck throw_error
+    } if
+    /ToUnicode false store
+    mark
+  } bind def
+
+
+  /endcidchar { % num mark <chars> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endcidchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endcidchar /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <chars> counttomark num
+    2 copy 2 mul ne {
+      /endcidchar /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into pairs, reverse the ordering.
+      /rollitems 3 -1 roll 1 add def
+      /numitems 1 index def
+      % Repeat num times.
+      {
+        2 copy type /integertype eq exch type /stringtype eq and not {
+          /endcidchar /typecheck throw_error
+        } if  
+
+        % Turn into a range: x y becomes the same as a cidrange x x y.
+        1 index 3 1 roll
+        3 array astore
+        /rollitems rollitems 2 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the pairs together
+      numitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newchars
+      cid_internal dup /using_font get 3 1 roll
+      /mappingblock get
+      cidcode 3 1 roll
+      3
+      extend_array_n_at_start
+      cid_internal /mappingblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+
+  % --------------------------------------------------------------------
+  %
+  % NOTDEF
+
+  /beginnotdefrange {
+    count 1 lt {
+      /beginnotdefrange /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /beginnotdefrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /beginnotdefrange /rangecheck throw_error
+    } if
+    /ToUnicode false store
+    mark
+  } bind def
+
+
+  /endnotdefrange { % num mark <ranges> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endnotdefrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endnotdefrange /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <ranges> counttomark num
+    2 copy 3 mul ne {
+      /endnotdefrange /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into triples, and reverse the ordering of the triples as we do so.
+      /rollitems 3 -1 roll 1 add def
+      /numitems 1 index def
+      % repeat num times.
+      {
+        3 copy type /integertype ne {
+          /endnotdefrange /typecheck throw_error
+        } if
+        verify_strings not {
+          /endnotdefrange /typecheck throw_error
+        } if 
+  
+        3 array astore
+        /rollitems rollitems 3 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the triples together
+      numitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newranges
+      cid_internal dup /using_font get 3 1 roll
+      /notdefrangeblock get
+      2
+      extend_array_n_at_start
+      cid_internal /notdefrangeblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+  % And NOTDEFCHARS: Turn them into ranges for now.
+
+  /beginnotdefchar {
+    count 1 lt {
+      /beginnotdefchar /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /beginnotdefchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /beginnotdefchar /rangecheck throw_error
+    } if
+    /ToUnicode false store
+    mark
+  } bind def
+
+
+  /endnotdefchar { % num mark <chars> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endnotdefchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endnotdefchar /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <chars> counttomark num
+    2 copy 2 mul ne {
+      /endnotdefchar /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into pairs, reversing order.
+      /rollitems 3 -1 roll def
+      {
+        2 copy type /integertype eq exch type /stringtype eq and not {
+          /endcidchar /typecheck throw_error
+        } if  
+
+        % Turn into a range: x y becomes the same as a cidrange x x y.
+        1 index 3 1 roll
+        3 array astore
+        /rollitems rollitems 1 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the pairs together
+      rollitems array astore
+
+      % Finally, store this new array in the notdef_internal dictionary
+      % Stack: num mark newchars
+      cid_internal dup /using_font get 3 1 roll
+      /notdefrangeblock get
+      2
+      extend_array_n_at_start
+      cid_internal /notdefrangeblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+
+  % --------------------------------------------------------------------
+  % ENDCMAP
+  
+  /endcmap {
+    cid_internal /using_font undef
+    cid_internal /usematrixblock get length 0 eq {
+      cid_internal /usematrixblock undef
+    } if
+    /CodeMap cid_internal def
+    currentdict /cid_internal undef
+    % It's too dangerous to change CMapType based on this guess, so set the
+    % ToUnicode flag based on a definition CMapType:
+    currentdict /CMapType known {CMapType 2 eq { /ToUnicode true store } if} if
+  } bind def
+
+  % --------------------------------------------------------------------
+  % USECMAP
+
+  /usecmap {
+    count 1 lt {
+      /usecmap /stackunderflow throw_error
+    } if
+    dup type /nametype ne {
+      /usecmap /typecheck throw_error
+    } if
+
+    /CMap findresource
+    dup /ToUnicode get ToUnicode and /ToUnicode exch store
+    [ /CMapType /CIDSystemInfo ] { % add required keys if not already defined
+      2 copy known currentdict 2 index known not and {
+	2 copy get def
+      } {
+        pop
+      } ifelse
+    } forall
+    /CodeMap get
+    cid_internal /codespacerangeblock 2 index 1 index get
+    dup length array copy put
+
+    cid_internal /notdefrangeblock 2 index 1 index get
+    dup length array copy put
+
+    cid_internal /mappingblock 2 index 1 index get
+    dup length array copy put
+
+    cid_internal /usematrixblock 2 index 1 index 2 copy known {
+      get dup length array copy put
+    } {
+      pop pop pop pop
+    } ifelse
+    pop
+  } bind def
+
+  % --------------------------------------------------------------------
+  % USEFONT
+
+  /usefont {
+    count 1 lt {
+      /usefont /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /usefont /typecheck throw_error
+    } if
+    cid_internal /using_font 3 -1 roll put
+    /ToUnicode false store
+  } bind def
+
+
+
+  % --------------------------------------------------------------------
+  %
+  % BFRANGE
+
+  /beginbfrange {
+    count 1 lt {
+      /beginbfrange /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /beginbfrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /beginbfrange /rangecheck throw_error
+    } if
+    mark
+  } bind def
+
+
+  /endbfrange { % num mark <ranges> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endbfrange /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endbfrange /rangecheck throw_error
+    } if
+
+    % Make sure the number of object's we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <ranges> counttomark num
+    2 copy 3 mul ne {
+      /endbfrange /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into triples, and reverse the ordering of the triples as we do so.
+      /rollitems 3 -1 roll 1 add def
+      /numitems 1 index def
+      % repeat num times.
+      {
+        % Allowed a pair of strings, followed by either another string, or
+        % an array of names, which must have at least as many elements as there
+        % are items in the range.  Adobe don't appear to typecheck surplus
+        % elements.
+        3 copy 3 1 roll
+        verify_strings not {
+          /endbfrange /typecheck throw_error
+        } if 
+  
+        type dup /stringtype ne {
+          /arraytype ne {
+            /endbfrange /typecheck throw_error
+          } {
+            % How big should the array be?
+            3 copy 3 1 roll dup length 1 sub 3 1 roll
+            % S: srcLo srcHi Array Array len(srcHi)-1 srcLo srcHi
+            calculate_range dup 0 eq {
+              /endbfrange /typecheck throw_error
+            } if
+            % Need to check that the array is long enough, and that the
+            % elements of the array are names.
+            %S: srcLo srcHi Array Array #inrange
+            dup 2 index length gt {
+              /endbfrange /rangecheck throw_error
+            } if
+            0 1 3 -1 roll 1 sub  % for 0 1 inrange-1
+            {
+              1 index exch get dup type /nametype eq {
+                pop /ToUnicode false store
+              } { % Not a name, must be an even-length string for ToUnicode
+                ToUnicode 1 index type /stringtype eq and {
+                  length 1 and 0 ne
+                } { true } ifelse
+                {
+                  /endbfrange /typecheck throw_error
+                } if
+              } ifelse
+            } for
+            pop % spare array object
+          } ifelse
+        } {
+          pop % clean up spare type object
+          % ToUnicode strings are held in UCS2
+          dup length 1 and 0 ne { /ToUnicode false store } if
+        } ifelse
+        
+        3 array astore
+        /rollitems rollitems 3 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the triples together
+      numitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newranges
+      cid_internal dup /using_font get 3 1 roll
+      /mappingblock get
+      bfcode 3 1 roll
+      3
+      extend_array_n_at_start
+      cid_internal /mappingblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+  % And BFCHARS: Turn them into ranges for now.
+
+  /beginbfchar {
+    count 1 lt {
+      /beginbfchar /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /beginbfchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /beginbfchar /rangecheck throw_error
+    } if
+    mark
+  } bind def
+
+
+  /endbfchar { % num mark <chars> 
+    counttomark
+    dup 2 add index % get value below mark on stack
+    
+    dup type /integertype ne {
+      /endbfchar /typecheck throw_error
+    } if
+    dup dup 1 lt exch 200 gt or {
+      /endbfchar /rangecheck throw_error
+    } if
+
+    % Make sure the number of objects we've got tallies with the number we're
+    % expecting.
+    % stack: num mark <chars> counttomark num
+    2 copy 2 mul ne {
+      /endbfchar /rangecheck throw_error
+    } if
+
+    2 dict begin
+      % Group into pairs, reverse the ordering.
+      /rollitems 3 -1 roll 1 add def
+      /numitems 1 index def
+      % Repeat num times.
+      {
+        % 1st object in the pair must be a string, second can be a string
+        % representing the charcode or a name.
+        dup type dup /nametype eq dup {
+          /ToUnicode false store
+        } if
+        exch /stringtype eq dup {
+          2 index length 1 and 0 ne { /ToUnicode false store } if
+        } if
+        or 2 index type /stringtype eq and not {
+          /endbfchar /typecheck throw_error
+        } if  
+        
+        % Turn into a range: x y becomes the same as a bfrange x x y.
+        1 index 3 1 roll
+        3 array astore
+        /rollitems rollitems 2 sub def
+        rollitems 1 roll
+      } repeat
+      % And group the pairs together
+      numitems array astore
+
+      % Finally, store this new array in the cid_internal dictionary
+      % Stack: num mark newchars
+      cid_internal dup /using_font get 3 1 roll
+      /mappingblock get
+      bfcode 3 1 roll
+      3
+      extend_array_n_at_start
+      cid_internal /mappingblock 3 -1 roll put
+      pop pop
+    end
+  } bind def
+
+
+  % --------------------------------------------------------------------
+  %
+  % USEMATRIX
+
+  /beginusematrix {
+    count 1 lt {
+      /beginusematrix /stackunderflow throw_error
+    } if
+    dup type /integertype ne {
+      /beginusematrix /typecheck throw_error
+    } if
+    /ToUnicode false store
+    mark
+  } bind def
+
+  /endusematrix {
+    count 3 lt { % should be fontid mark matrix
+      /endusematrix /stackunderflow throw_error
+    } if
+    counttomark 1 ne {
+      /endusematrix /undefined throw_error
+    } if
+    dup type /arraytype ne {
+      /endusematrix /typecheck throw_error
+    } if
+
+    3 1 roll pop cid_internal /usematrixblock get % S: matrix fid list
+    2 copy length lt { % Fid < matrix list -> just insert
+      3 1 roll exch put
+    } { % Matrixlist needs extending
+      1 index 1 add array dup 3 1 roll copy pop
+      dup 4 2 roll exch put
+      cid_internal /usematrixblock 3 -1 roll put
+    } ifelse
+    
+  } bind def
+  
+  % --------------------------------------------------------------------
+  %
+  % REARRANGEDFONT
+  
+
+  /beginrearrangedfont {
+    count 2 lt {
+      /beginrearrangedfont /stackunderflow throw_error
+    } if
+    dup length 1 lt {
+      /beginrearrangedfont /rangecheck throw_error
+    } if
+    % Let's leave the typechecking to composefont
+    5 dict begin % create the CMap dictionary
+    begincmap    % start the cmap.
+    dup 0 get findfont % incorporate template's cmap definitions
+    2 copy /FDepVector get 0 get 0 exch put % compose template's base CID font
+    /CMap get
+    /CIDSystemInfo 2 copy get def
+    /CMapType 2 copy get def
+    /WMode 2 copy known {2 copy get def} {pop} ifelse
+    % Don't copy CMapName in case defineresource confuses resource machinery
+    /CMapName get usecmap
+  } bind def
+
+  /endrearrangedfont {
+    endcmap
+    % Stack should now have the 2 args to beginrearrangedfont on top...
+    2 copy mark 3 1 roll currentdict exch { composefont } stopped {
+      cleartomark /endrearrangedfont throw_last_error
+    } if
+    % Clear newfontdict mark fontarray newfontname closedict
+    pop pop pop pop end
+  } bind def
+
+  /percent (%)0 get def
+
+  % --------------------------------------------------------------------
+  %
+  % STARTDATA
+
+  /filenamestring 2048 string def
+  /resourcefilestring 300 string def
+
+  /StartData {
+    2 copy type /integertype ne {
+      /StartData /typecheck throw_error
+    } if
+    dup type /stringtype ne {
+      /StartData /typecheck throw_error
+    } {
+      dup (Binary) eq exch (Hex) eq or not {
+        /StartData /typecheck throw_error
+      } if
+    } ifelse
+
+    % Make sure we've got a name for the CIDFont resource we're defining
+    currentdict /CIDFontName known not {
+      /StartData /undefined throw_error
+    } if
+
+    currentdict 
+    currentglobal false setglobal
+    5 dict begin % Local scratch space
+      /scratchglobalness exch def
+      /fontdict exch def
+      /size exch def
+      /mode exch def
+      /cf currentfile def
+            
+      % Now, is the font data in an installed font, 
+      % or embedded in the incoming job?
+      mode (Hex) eq {
+        % assumed to be embedded in job
+        /cf
+          scratchglobalness {true setglobal} if
+          cf /ASCIIHexDecode filter
+          scratchglobalness {false setglobal} if
+        def
+        true
+      } { % Binary
+        cf (%stdin)(r) file eq {
+          % It's in the job
+          true
+        } { % Not reading from stdin
+          cf statusdict /filekind get exec pop /realfile eq {
+            save
+            cf //filenamestring statusdict /filename get exec pop 
+            dup status {
+              % save fname x x x x
+              pop pop pop pop 
+              mark { cf fileposition } stopped {
+                % not positionable
+                % save fname mark ...
+                cleartomark pop 
+                true
+              } {
+                cleartomark
+                % save fname
+                
+                % OK - it's a disk file, but is it a font file?
+                /CIDFont /Category findresource begin 
+                CIDFontName //resourcefilestring ResourceFileName 
+                end
+                
+                % resource file name must be substring of file name.
+                % post must be empty.
+                % pre must be empty or a device name.
+                
+                search  {
+                  % post match pre
+                  exch pop
+                  dup length 0 eq {
+                    false
+                  } {
+                    dup length 1 sub get //percent ne
+                  } ifelse
+                  exch length 0 ne
+                  or
+                } {
+                  % not found - must be embedded
+                  pop
+                  true
+                } ifelse
+              } ifelse
+            } { % status failed, must be embedded
+              % save fname
+              pop
+              true
+            } ifelse % status
+            
+            exch restore
+          } { % Not a realfile
+            true
+          } ifelse % realfile
+        } ifelse % stdin
+      } ifelse % Hex
+      scratchglobalness setglobal
+      {
+        size 0 lt { % Don't bother
+          /StartData /rangecheck throw_error
+        } if
+
+        size 0 eq {
+          ()
+        } {
+          4 dict begin % Scratch
+          /maxstringsize 65535 def
+          /fullblocks size maxstringsize idiv def
+          /extrabytes size fullblocks maxstringsize mul sub def
+          
+          /datain fullblocks extrabytes 0 eq { 0 } { 1 } ifelse add array def
+          
+          0 1 fullblocks 1 sub {
+            cf maxstringsize string readstring not {
+              /StartData /ioerror throw_error
+            } if
+            datain 3 1 roll put
+          } for
+          
+          extrabytes 0 ne {
+            cf extrabytes string readstring not {
+              /StartData /ioerror throw_error     
+            } if
+            datain fullblocks 3 -1 roll put
+          } if
+          
+          fullblocks 0 eq {
+            % If everything fits in a single string, lose the array.
+            datain 0 get
+          } {
+            datain
+          } ifelse
+          end % scratch
+        } ifelse
+        fontdict /GlyphData  3 -1 roll put
+        false % For currentfile closefile below
+      } {
+        fontdict
+        dup /GlyphData size put
+        dup /FontFile cf put
+        /FontOffset cf fileposition put
+        true % For currentfile closefile below
+      } ifelse
+
+    end % Closes local scratch dict
+    currentdict /CIDFontName get
+    currentdict /CIDFont defineresource pop
+    end % Matches the begin at the top of the font file. 
+    end % Closes /CIDInit /ProcSet findresource begin
+    { currentfile closefile } if
+
+  } bind def
+
+  currentdict
+end
+
+/CIDInit exch /ProcSet defineresource /globalness get setglobal
+
+%%EndProcSet

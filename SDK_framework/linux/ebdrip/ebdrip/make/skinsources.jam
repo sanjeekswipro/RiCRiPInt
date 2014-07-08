@@ -1,0 +1,498 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for SWebd_OIL
+#
+# $HopeName: SWprod_hqnrip!ebdrip:make:skinsources.jam(EBDSDK_P.1) $
+#
+ImplementsVariant ebd1bpp ebd2bpp ebd4bpp ;
+
+# Include or exclude 1, 2, and 4 bit screen table examples
+if ! $(Variant_ebd1bpp) {
+  RequiresVariant ebd1bpp : yes ;
+}
+if ! $(Variant_ebd2bpp) {
+  RequiresVariant ebd2bpp : yes ;
+}
+if ! $(Variant_ebd4bpp) {
+  RequiresVariant ebd4bpp : yes ;
+}
+
+AddToVar Local : SkinSources :
+  oil$/export$/oil_entry.h
+  oil$/src$/oil.h
+  oil$/src$/oil_ebddev.c
+  oil$/src$/oil_ebddev.h
+  oil$/src$/oil_psconfig.h
+  oil$/src$/oil_psconfig.c
+  oil$/src$/oil_entry.c
+  oil$/src$/oil_interface_oil2pms.c
+  oil$/src$/oil_interface_oil2pms.h
+  oil$/src$/oil_interface_skin2oil.c
+  oil$/src$/oil_interface_skin2oil.h
+  oil$/src$/oil_malloc.c
+  oil$/src$/oil_malloc.h
+  oil$/src$/oil_timing.c
+  oil$/src$/oil_timing.h
+  oil$/src$/oil_media.h
+  oil$/src$/oil_media.c
+  oil$/src$/oil_stream.h
+  oil$/src$/oil_stream.c
+  oil$/src$/oil_test.h
+  oil$/src$/oil_test.c
+  oil$/src$/oil_job_handler.h
+  oil$/src$/oil_job_handler.c
+  oil$/src$/oil_page_handler.h
+  oil$/src$/oil_page_handler.c
+  oil$/src$/oil_pjl.h
+  oil$/src$/oil_pjl.c
+  oil$/src$/oil_main.c
+  oil$/src$/oil_main.h
+  oil$/src$/oil_multithread.c
+  oil$/src$/oil_multithread.h
+  oil$/src$/oil_platform.h
+  oil$/src$/oil_probelog.c
+  oil$/src$/oil_probelog.h
+  oil$/src$/oil_progdev.c
+  oil$/src$/oil_progdev.h
+  oil$/src$/oil_cmm.c
+  oil$/src$/oil_cmm.h
+  oil$/src$/oil_pdfspool.c
+  oil$/src$/oil_pdfspool.h
+  oil$/src$/oil_pclcommon.c
+  oil$/src$/oil_pclcommon.h
+  oil$/src$/oil_pcl5rast.c
+  oil$/src$/oil_pcl5rast.h
+  oil$/src$/oil_pcl6rast.c
+  oil$/src$/oil_pcl6rast.h
+  oil$/src$/oil_rasthand.h
+  oil$/src$/oil_utils.c
+  oil$/src$/oil_utils.h
+  oil$/src$/oil_virtualfile.c
+  oil$/src$/oil_virtualfile.h
+;
+
+AddToVar Local : SkinSources :
+  oil$/src$/oil_ebd1bpp.h
+  oil$/src$/oil_ebd1bpp.c
+: Variant ebd1bpp=yes ;
+
+AddToVar Local : SkinSources :
+  oil$/src$/oil_htm.h
+  oil$/src$/oil_htm2bpp.c
+  oil$/src$/oil_scrn2bpp.c
+: Variant ebd2bpp=yes ;
+
+AddToVar Local : SkinSources :
+  oil$/src$/oil_htm.h
+  oil$/src$/oil_htm4bpp.c
+  oil$/src$/oil_scrn4bpp.c
+: Variant ebd4bpp=yes ;
+
+AddToVar Local : SkinSources :
+  ggetiff$/export$/gge_tiff.h
+  ggetiff$/src$/gge_tiff.c
+;
+
+AddToVar Local : SkinSources :
+  pms$/export$/pms_export.h
+  pms$/src$/pms.h
+  pms$/src$/pms_config.c
+  pms$/src$/pms_config.h
+  pms$/src$/pms_engine_simulator.c
+  pms$/src$/pms_engine_simulator.h
+  pms$/src$/pms_entry.c
+  pms$/src$/pms_file_in.c
+  pms$/src$/pms_file_in.h
+  pms$/src$/pms_filesys.c
+  pms$/src$/pms_filesys.h
+  pms$/src$/pms_input_hotfolder.c
+  pms$/src$/pms_input_hotfolder.h
+  pms$/src$/pms_input_manager.h
+  pms$/src$/pms_input_manager.c
+  pms$/src$/pms_input_socket.c
+  pms$/src$/pms_input_socket.h
+  pms$/src$/pms_interface_oil2pms.c
+  pms$/src$/pms_interface_oil2pms.h
+  pms$/src$/pms_main.c
+  pms$/src$/pms_malloc.c
+  pms$/src$/pms_malloc.h
+  pms$/src$/pms_page_handler.c
+  pms$/src$/pms_page_handler.h
+  pms$/src$/pms_platform.h
+  pms$/src$/pms_scrn.h
+  pms$/src$/pms_socket.c
+  pms$/src$/pms_socket.h
+  pms$/src$/pms_thread.c
+  pms$/src$/pms_thread.h
+  pms$/src$/pms_tiff_out.c
+  pms$/src$/pms_tiff_out.h
+  pms$/src$/pms_version.c
+;
+
+AddToVar Local : SkinSources :
+  pms$/src$/pms_scrn_1bpp_text.c
+  pms$/src$/pms_scrn_1bpp_gfx.c
+  pms$/src$/pms_scrn_1bpp_image.c
+: Variant ebd1bpp=yes ;
+
+AddToVar Local : SkinSources :
+  pms$/src$/pms_scrn_2bpp_text.c
+  pms$/src$/pms_scrn_2bpp_gfx.c
+  pms$/src$/pms_scrn_2bpp_image.c
+: Variant ebd2bpp=yes ;
+
+AddToVar Local : SkinSources :
+  pms$/src$/pms_scrn_4bpp_text.c
+  pms$/src$/pms_scrn_4bpp_gfx.c
+  pms$/src$/pms_scrn_4bpp_image.c
+: Variant ebd4bpp=yes ;
+
+if $(Variant_ebd_pdfout) = epdfouto || $(Variant_ebd_pdfout) = epdfouty
+{
+  AddToVar Local : SkinSources :
+    pms$/src$/pms_pdf_out.c
+    pms$/src$/pms_pdf_out.h
+  ;
+}
+
+AddToVar Local : SkinSources :
+  pdfspool$/export$/pdfspool.h
+  pdfspool$/src$/pdfspool.c
+  pdfspool$/src$/spooldev.c
+  pdfspool$/src$/spooldev.h
+  pdfspool$/src$/spooler.c
+  pdfspool$/src$/spooler.h
+;
+
+AddToVar Local : SkinSources :
+  pjl$/export$/pjlparser.h
+  pjl$/src$/pjlparser.c
+;
+
+if $(Variant_ebd_ufst) = eufst5o || $(Variant_ebd_ufst) = eufst5y || exportsrc in $(JAM_ARGUMENTS)
+{
+  # Only redistribute ufst5.lib and min headers needed for it
+  AddToVar Local : SkinSources :
+    ufst$/rts$/fco$/fc_da.h
+    ufst$/rts$/fco$/fc_dafil.h
+    ufst$/rts$/fco$/fc_intfl.h
+    ufst$/rts$/fco$/fc_syntl.h
+    ufst$/rts$/inc$/cgconfig.h
+    ufst$/rts$/inc$/cgif.h
+    ufst$/rts$/inc$/ifmem.h
+    ufst$/rts$/inc$/pcleomgt.h
+    ufst$/rts$/inc$/shareinc.h
+    ufst$/rts$/tt$/fnt.h
+    ufst$/rts$/tt$/fontmath.h
+    ufst$/rts$/tt$/fontscal.h
+    ufst$/rts$/tt$/fscdefs.h
+    ufst$/rts$/tt$/fserror.h
+    ufst$/rts$/tt$/fsglue.h
+    ufst$/rts$/tt$/sfnt.h
+    ufst$/rts$/tt$/sfntenum.h
+    ufst$/sys$/inc$/adj_skel.h
+    ufst$/sys$/inc$/if_type.h
+    ufst$/sys$/inc$/ix.h
+    ufst$/sys$/inc$/kanji.h
+    ufst$/sys$/inc$/pcleo.h
+    ufst$/sys$/inc$/sym.h
+    ufst$/sys$/inc$/ufstport.h
+    ufst$/sys$/inc$/ufst_hqn.h
+  ;
+
+  AddToVar Local : SkinSources :
+    pfinufst5$/export$/pfinufst5.h
+    pfinufst5$/src$/pfinufst5.c
+    pfinufst5$/src$/hqnpcleo.h
+    pms$/src$/pms_ufst.c
+    pms$/src$/pms_ufst.h
+    pms$/src$/ufstrom.c
+    pms$/src$/ufstrom_pcl45.c
+    pms$/src$/ufstrom_pclps2.c
+    pms$/src$/ufstrom_pclps3.c
+    pms$/src$/ufstrom_ps2.c
+    pms$/src$/ufstrom_ps3.c
+  ;
+}
+
+if $(Variant_ebd_ufst) = eufst7o || $(Variant_ebd_ufst) = eufst7y || exportsrc in $(JAM_ARGUMENTS)
+{
+  # Only redistribute ufst7.lib and min headers needed for it
+  AddToVar Local : SkinSources :
+    ufst7$/rts$/fco$/fc_da.h
+    ufst7$/rts$/fco$/fc_dafil.h
+    ufst7$/rts$/fco$/fc_intfl.h
+    ufst7$/rts$/fco$/fc_syntl.h
+    ufst7$/rts$/inc$/cgconfig.h
+    ufst7$/rts$/inc$/cgif.h
+    ufst7$/rts$/inc$/ifmem.h
+    ufst7$/rts$/inc$/pcleomgt.h
+    ufst7$/rts$/inc$/shareinc.h
+    ufst7$/rts$/inc$/mixmodel.h # \todo Review with build options
+    ufst7$/rts$/inc$/dbg_ufst.h # \todo Review with build options
+    ufst7$/rts$/tt$/fnt.h
+    ufst7$/rts$/tt$/fontmath.h
+    ufst7$/rts$/tt$/fontscal.h
+    ufst7$/rts$/tt$/fscdefs.h
+    ufst7$/rts$/tt$/fserror.h
+    ufst7$/rts$/tt$/fsglue.h
+    ufst7$/rts$/tt$/sfnt.h
+    ufst7$/rts$/tt$/sfntenum.h
+    ufst7$/sys$/inc$/adj_skel.h
+    ufst7$/sys$/inc$/if_type.h
+    ufst7$/sys$/inc$/ix.h
+    ufst7$/sys$/inc$/kanji.h
+    ufst7$/sys$/inc$/pcleo.h
+    ufst7$/sys$/inc$/sym.h
+    ufst7$/sys$/inc$/ufstport.h
+    ufst7$/sys$/inc$/ufst_hqn.h
+    ufst7$/sys$/inc$/cgmacros.h # \todo Review with build options
+  ;
+
+  AddToVar Local : SkinSources :
+    pfinufst7$/export$/pfinufst7.h
+    pfinufst7$/src$/pfinufst7.c
+    pfinufst7$/src$/hqnpcleo.h
+    pms$/src$/pms_ufst.c
+    pms$/src$/pms_ufst.h
+    pms$/src$/ufstrom.c
+    pms$/src$/ufstrom_pcl45.c
+    pms$/src$/ufstrom_pclps2.c
+    pms$/src$/ufstrom_pclps3.c
+    pms$/src$/ufstrom_ps2.c
+    pms$/src$/ufstrom_ps3.c
+  ;
+}
+
+if $(Variant_ebd_ff) = effo || $(Variant_ebd_ff) = effy
+{
+  AddToVar Local : SkinSources :
+    ff$/core$/agridint.h
+    ff$/core$/autogrid.h
+    ff$/core$/auxdata.h
+    ff$/core$/bdf.h
+    ff$/core$/config.h
+    ff$/core$/dtypes.h
+    ff$/core$/ffinclude.h
+    ff$/core$/fft1hint.h
+    ff$/core$/ff_hqn.h
+    ff$/core$/ff_incdemo.h
+    ff$/core$/ff_user.h
+    ff$/core$/fnt.h
+    ff$/core$/ghints.h
+    ff$/core$/glyph.h
+    ff$/core$/orion.h
+    ff$/core$/pclread.h
+    ff$/core$/pfrread.h
+    ff$/core$/rfork.h
+    ff$/core$/scodecdefs.h
+    ff$/core$/scoder.h
+    ff$/core$/sdecoder.h
+    ff$/core$/shapet.h
+    ff$/core$/spdread.h
+    ff$/core$/strkconv.h
+    ff$/core$/syshead.h
+    ff$/core$/t1.h
+    ff$/core$/t1order.h
+    ff$/core$/t2k.h
+    ff$/core$/t2kextra.h
+    ff$/core$/t2kotf.h
+    ff$/core$/t2ksbit.h
+    ff$/core$/t2ksc.h
+    ff$/core$/t2kstrk1.h
+    ff$/core$/t2kstrm.h
+    ff$/core$/t2ktt.h
+    ff$/core$/truetype.h
+    ff$/core$/tsimem.h
+    ff$/core$/tt_prvt.h
+    ff$/core$/util.h
+    ff$/core$/winfnt.h
+  ; 
+
+  AddToVar Local : SkinSources :
+    pfinff$/export$/pfinff.h
+    pfinff$/src$/pfinff.c
+    pfinff$/src$/ffhqnpcleo.h
+    pfinff$/src$/ff_platform.h
+    pms$/src$/ffrom.c
+    pms$/src$/ffrom_pcl45.c
+    pms$/src$/ffrom_pclps2.c
+    pms$/src$/ffrom_pclps3.c
+    pms$/src$/ffrom_ps3.c
+    # pms$/src$/pms_ff.c
+    pms$/src$/pms_ff.h
+  ;
+}
+
+if win_32 in $(TargetOS) || win_64 in $(TargetOS) {
+  AddToVar Local : SkinSources :
+    pms$/pc$/src$/pms_platform.c
+    oil$/pc$/src$/oil_platform.c
+  ;
+} else if linux in $(TargetOS) || macos_x in $(TargetOS) || unix in $(TargetOS) || netbsd in $(TargetOS) {
+  AddToVar Local : SkinSources :
+    pms$/unix$/src$/pms_platform.c
+    oil$/unix$/src$/oil_platform.c
+  ;
+} else if vxworks in $(TargetOS) {
+  AddToVar Local : SkinSources :
+    pms$/vxworks$/src$/pms_platform.c
+    oil$/vxworks$/src$/oil_platform.c
+  ;
+} else if threadx in $(TargetOS) {
+  AddToVar Local : SkinSources :
+    pms$/threadx$/src$/pms_platform.c
+    oil$/threadx$/src$/oil_platform.c
+  ;
+}
+
+# Include build script for OEM developers with exported files
+if $(NT) {
+  ExportSource $(CurrentPath)$/ebdrip$/scripts$/build.cmd : Text ;
+} else {
+  ExportSource $(CurrentPath)$/ebdrip$/scripts$/build.sh : Text ;
+}
+
+# Include build readme document
+ExportSource $(CurrentPath)$/ebdrip$/doc$/ReadMe.pdf : Binary ;
+
+
+if $(Variant_ebd1bpp) = yes {
+  AddUnique SW-Folder-Variants : ebd1bpp ;
+}
+
+if $(Variant_ebd2bpp) = yes {
+  AddUnique SW-Folder-Variants : ebd2bpp ;
+}
+
+if $(Variant_ebd4bpp) = yes {
+  AddUnique SW-Folder-Variants : ebd4bpp ;
+}
+
+# Special SW file preprocessing
+
+AddToVar Local : Unifdef-UnDefines : NEVER ; # why?
+AddToVar Local : Unifdef-UnDefines : HQN ; # why?
+AddToVar Local : Unifdef-Needs :
+    SDK_1BPP_EXAMPLE SDK_2BPP_EXAMPLE SDK_4BPP_EXAMPLE ;
+
+AddToVar Local : Unifdef-Defines : DUMMY ; # why?
+AddToVar Local : Unifdef-Defines : SDK_1BPP_EXAMPLE : Variant ebd1bpp=yes ;
+AddToVar Local : Unifdef-Defines : SDK_2BPP_EXAMPLE : Variant ebd2bpp=yes ;
+AddToVar Local : Unifdef-Defines : SDK_4BPP_EXAMPLE : Variant ebd4bpp=yes ;
+
+# SWF folder files
+local oilswftemp = $(GeneratedC-Directory)$/swf-oiltemp ;
+
+SWF oil swf : procsets                       : procsets                     :                : normalebdrip ;
+
+# ++++ procsets/HqnEmbedded - Preprocessed
+local oilswftemp-procsets ;
+MakeGristed oilswftemp-procsets : procsets : $(CurrentPath) $(oilswftemp) ;
+DirectoryFor $(oilswftemp-procsets) : $(CurrentPath) $(oilswftemp) ;
+SWF $(oilswftemp) : procsets : procsets : : normalebdrip ;
+Unifdef $(CurrentPath) $(oilswftemp) procsets hqnebd
+  : oil swf procsets hqnebd
+  : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines)
+  : ...Processing HQNEmbedded procset
+  : HQN $(Unifdef-Needs) ;
+SWF $(oilswftemp) : procsets hqnebd : HqnEmbedded : : normalebdrip ;
+ExportSource $(CurrentPath)$/oil$/swf$/procsets$/hqnebd : Text ;
+# ----
+
+SWF oil swf : sys                            : Sys                          :                : normalebdrip psebd ;
+SWF oil swf : sys extstart                   : ExtraStart                   : "EXTSTART"     : normalebdrip psebd ;
+
+# ++++ Sys/ExtraStart/HqnEmbedded - Preprocessed
+local oilswftemp-sys ;
+MakeGristed oilswftemp-sys : sys : $(CurrentPath) $(oilswftemp) ;
+DirectoryFor $(oilswftemp-sys) : $(CurrentPath) $(oilswftemp) ;
+local oilswftemp-sys-extstart ;
+MakeGristed oilswftemp-sys-extstart : sys extstart : $(CurrentPath) $(oilswftemp) sys ;
+DirectoryFor $(oilswftemp-sys-extstart) : $(CurrentPath) $(oilswftemp) sys ;
+
+SWF $(oilswftemp) : sys : Sys : : normalebdrip ;
+SWF $(oilswftemp) : sys extstart : ExtraStart : : normalebdrip ;
+Unifdef $(CurrentPath) $(oilswftemp) sys extstart hqnebd
+  : oil swf sys extstart hqnebd
+  : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines)
+  : ...Preprocessing HqnEmbedded ExtraStart file
+  : $(Unifdef-Needs) ;
+SWF $(oilswftemp) : sys extstart hqnebd : HqnEmbedded : : normalebdrip ;
+ExportSource $(CurrentPath)$/oil$/swf$/sys$/extstart$/hqnebd : Text ;
+# ----
+
+SWF oil swf : sys extdevic                   : ExtraDevices                 :                : normalebdrip ;
+SWF oil swf : sys extpgedk                   : ExtraPageDeviceKeys          :                : normalebdrip ;
+SWF oil swf : sys extstart commentparser     : CommentParser                :                : psebd ;
+SWF oil swf : usr                            : Usr                          :                : normalebdrip ebd1bpp ebd2bpp ebd4bpp ;
+SWF oil swf : usr hqnebd                     : HqnEmbedded                  :                : normalebdrip ebd1bpp ebd2bpp ebd4bpp ;
+SWF oil swf : usr hqnebd extdevic            : ExtraDevices                 :                : normalebdrip ;
+
+SWF oil swf : usr hqnebd htm1bpp             : Htm1bpp                      :                : ebd1bpp ;
+SWF oil swf : usr hqnebd irsdefault          : IrsDefault                   :                : ebd1bpp ;
+SWF oil swf : usr hqnebd htm2bpp             : Htm2bpp                      :                : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp             : Irs2bpp                      :                : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_text_c_inv.bin  : irs2bpp_Text_C_inv.bin  :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_text_m_inv.bin  : irs2bpp_Text_M_inv.bin  :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_text_y_inv.bin  : irs2bpp_Text_Y_inv.bin  :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_text_k_inv.bin  : irs2bpp_Text_K_inv.bin  :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_gfx_c_inv.bin   : irs2bpp_Gfx_C_inv.bin   :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_gfx_m_inv.bin   : irs2bpp_Gfx_M_inv.bin   :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_gfx_y_inv.bin   : irs2bpp_Gfx_Y_inv.bin   :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_gfx_k_inv.bin   : irs2bpp_Gfx_K_inv.bin   :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_photo_c_inv.bin : irs2bpp_Photo_C_inv.bin :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_photo_m_inv.bin : irs2bpp_Photo_M_inv.bin :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_photo_y_inv.bin : irs2bpp_Photo_Y_inv.bin :     : ebd2bpp ;
+SWF oil swf : usr hqnebd irs2bpp_photo_k_inv.bin : irs2bpp_Photo_K_inv.bin :     : ebd2bpp ;
+
+SWF oil swf : usr hqnebd htm4bpp             : Htm4bpp                      :                : ebd4bpp ;
+SWF oil swf : usr hqnebd irs4bpp             : Irs4bpp                      :                : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_text_c_inv.bin  : irScreen_4bpp_Text_C_inv.bin  :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_text_m_inv.bin  : irScreen_4bpp_Text_M_inv.bin  :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_text_y_inv.bin  : irScreen_4bpp_Text_Y_inv.bin  :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_text_k_inv.bin  : irScreen_4bpp_Text_K_inv.bin  :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_gfx_c_inv.bin   : irScreen_4bpp_Gfx_C_inv.bin   :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_gfx_m_inv.bin   : irScreen_4bpp_Gfx_M_inv.bin   :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_gfx_y_inv.bin   : irScreen_4bpp_Gfx_Y_inv.bin   :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_gfx_k_inv.bin   : irScreen_4bpp_Gfx_K_inv.bin   :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_photo_c_inv.bin : irScreen_4bpp_Photo_C_inv.bin :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_photo_m_inv.bin : irScreen_4bpp_Photo_M_inv.bin :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_photo_y_inv.bin : irScreen_4bpp_Photo_Y_inv.bin :     : ebd4bpp ;
+SWF oil swf : usr hqnebd irscreen_4bpp_photo_k_inv.bin : irScreen_4bpp_Photo_K_inv.bin :     : ebd4bpp ;
+
+SWF oil swf : usr hqnebd ebdprocs            : EbdProcedures                :                : normalebdrip ;
+
+SWF pdfspool swf : sys                       : Sys                          :                : normalebdrip ;
+SWF pdfspool swf : sys extstart              : ExtraStart                   : "EXTSTART"     : normalebdrip ;
+SWF pdfspool swf : sys extstart pdfspool     : PDFSpool                     :                : normalebdrip ;
+
+SWF pms swf : config                         : Config                       :                : normalebdrip shivafonts ebdffps3 ebdffpclps2 ebdffpcl45 ebdufst5 ebdufst7 ebdffsvpcl45 ;
+SWF pms swf : config fontsub                 : FontSubstitution             :                : ebdufst5 ;
+SWF pms swf : config fontsub                 : FontSubstitution             :                : ebdufst7 ;
+SWF pms swf : config svfntsubdb              : FontSubstitutionDB           :  "FNTSUBDB"    : shivafonts ;
+SWF pms swf : config ffps3fntsubdb           : FontSubstitutionDB           :  "FNTSUBDB"    : ebdffps3 ;
+SWF pms swf : config ffpclps2fntsubdb        : FontSubstitutionDB           :  "FNTSUBDB"    : ebdffpclps2 ;
+SWF pms swf : config ffpcl45fntsubdb         : FontSubstitutionDB           :  "FNTSUBDB"    : ebdffpcl45 ;
+SWF pms swf : config ffsvpcl45fntsubdb       : FontSubstitutionDB           :  "FNTSUBDB"    : ebdffsvpcl45 ;
+
+SWF oil swf : procsets                       : procsets                     :                : pcl5 ;
+SWF oil swf : procsets hqnebdpcl             : HqnEmbeddedPCL               :                : pcl5 ;
+
+SWF oil swf : procsets                       : procsets                     :                : pclxl ;
+
+# ++++ procsets/EBDPCLXLHalftone - Preprocessed
+SWF $(oilswftemp) : procsets : procsets : : pclxl ;
+Unifdef $(CurrentPath) $(oilswftemp) procsets ebdpclxlht
+  : oil swf procsets ebdpclxlht
+  : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines)
+  : ...Preprocessing EBDPCLXLHalftone procset
+  : $(Unifdef-Needs) ;
+SWF $(oilswftemp) : procsets ebdpclxlht : EBDPCLXLHalftone : : pclxl ;
+ExportSource $(CurrentPath)$/oil$/swf$/procsets$/ebdpclxlht : Text ;
+# ----
+
+
+#
+# Log stripped

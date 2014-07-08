@@ -1,0 +1,46 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP JBIG image filter
+#
+# $HopeName: COREjbig!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant jbig ;
+
+# Compilation rules
+
+    DependsOn all : jbig ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        objects
+        tables
+    : .. .. ;
+
+    IncludeExportDirectories Inherited Local :
+        ccitt
+    : .. ;
+
+    ReplaceVar Local : LIB_CFILES :
+        jbig2.c
+        jbig2i.c
+    : Variant jbig=yes ;
+
+    AddToVar Local : LIB_CFILES : nojbig.c : Variant jbig=no ;
+
+    Library jbig : $(LIB_CFILES) ;
+
+    if $(Variant_jbig) = yes {
+        # So that exported source can be built without jbig if required
+        ExportSource $(CurrentPath)$/src$/nojbig.c : C ;
+    }
+
+# Log stripped

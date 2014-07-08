@@ -1,0 +1,660 @@
+%!PS-Adobe-3.0
+%%Title: HqnOPICommon
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu, May 21, 2009
+% Copyright (c) 2009-2011 Global Graphics Software. All Rights Reserved.
+%%EndComments
+%%BeginProcSet: (HqnOPICommon) 1 1
+
+% $HopeName: SWv20!swf:procsets:opicom(EBDSDK_P.1) $
+
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Definitions that are needed for both FindExternalFile (in HqnExternalFile)
+% and the rest of the HqnOPI interface
+
+
+currentglobal false setglobal
+
+userdict /HqnOPICommonDict 20 dict put
+
+HqnOPICommonDict begin
+
+/globalness exch def
+
+
+/HqnAssert /ProcSet findresource
+{ /ErrPrint /ExtraError /StartStackCheck /StackCheck0 /StackCheck3 }{ 2 copy get def } forall
+
+/StripFileName_1 /HqnLocal /ProcSet findresource /StripFileName_1 get def
+/StripExtension_1 /HqnLocal /ProcSet findresource /StripExtension_1 get def
+
+/currentsystemparam 1183615869 internaldict /currentsystemparam get def
+/currentplatform
+  currentsystemparams /OperatingSystem get
+  dup (Win) eq {
+    pop (DOS)
+  } if
+  cvn
+def
+
+
+% ===========================================================================================
+% Now the procset itself
+
+50 dict begin
+
+
+/justFileName {
+  //StripFileName_1 exec
+} bind def
+
+
+/rightparen (\)) 0 get def
+/leftparen (\() 0 get def
+/backslash (\\) 0 get def
+/slashstring (/) def
+/slash slashstring 0 get def
+/colonstring (:) def
+/colon colonstring 0 get def
+/dotstring (.) def
+/dot dotstring 0 get def
+/percent (%)0 get def
+/zero (0)0 get def
+/nine (9)0 get def
+/InvalidChars << { //colonstring //slashstring (\\) (%) } { 0 get null } forall >> def
+
+
+/extractFileName {
+  //justFileName exec
+  dup length 0 gt {
+    {
+      dup dup length 1 sub get rightparen ne {
+        exit
+      } if
+      dup length 1 sub -1 0 {
+        2 copy get //leftparen eq {
+          exit
+        } if
+        pop
+      } for
+      dup type /integertype eq {
+        % string ptr
+        0 exch getinterval
+      } {exit} ifelse
+    } loop
+
+    /FullShortName 1 index dup length string copy def
+
+    % Now the extension
+    //StripExtension_1 exec
+
+    FullShortName 0 1 index length 4 -1 roll length
+    dup 0 ne { 1 add } if
+    sub getinterval
+  }  {
+    /FullShortName 0 string def
+  } ifelse
+
+  % Leaves the short file name with no extension
+} bind def
+
+
+
+
+/SelectFilePlatformD <<
+  { /stringtype /filetype /arraytype /packedarraytype }{ dup } forall
+>> def
+
+/SelectFilePlatform {
+  dup //HqnOPICommonDict /currentplatform get known {
+    //HqnOPICommonDict /currentplatform get get
+  }  {
+    dup /F known {
+      /F get
+    }  {
+      % There's no platform-specific filename for this platform,
+      % but no F key either, so there must be a different platform-specific
+      % name. Select the first we find in a pre-defined order:
+      { /Mac /DOS /Unix } {
+        2 copy known {
+          get exit
+        }  { pop } ifelse
+      } forall
+      //SelectFilePlatformD 1 index type known not {
+        (Dictionary file spec contains no file name) =
+      } if
+    } ifelse
+  } ifelse
+} bind def
+
+/SelectFileName {
+  dup type /dicttype eq {
+    dup /EF known {
+      /EF get
+      //SelectFilePlatform exec
+    }  {
+      //SelectFilePlatform exec
+    } ifelse
+  } if
+} bind def
+
+/buffer 2048 string def
+
+/UpperCase {
+  % (string) -> UpperCase -> (STRING)
+  0 1 2 index length 1 sub {
+    % str i
+    2 copy get
+    % str i c
+    dup 97 ge 1 index 122 le and {
+      % str i c
+      2 index 3 1 roll 32 sub put
+    } { pop pop } ifelse
+  } for
+} bind def
+
+
+/SwitchSlashes {
+  % string -> string
+  0 1 2 index length 1 sub {
+    2 copy get //InvalidChars exch known {
+      dup 0 eq {
+        true
+      }  {
+        2 copy 1 sub get //backslash ne
+      } ifelse
+      {
+        1 index exch //slash put
+      } if
+    }  {
+      pop
+    } ifelse
+  } for
+} bind def
+
+
+/RIPdrive    %  (%C%), or whatever
+  (%os%) currentdevparams /Prefix get
+  1 1 2 index length 1 sub {
+    % path i
+    2 copy get //percent eq {
+      0 exch 1 add getinterval
+      exit
+    } if
+    pop
+  } for
+  def
+
+/SlashByPlatform <<
+
+  /Unix {
+    % /directory/ -> %/%/directory/
+    (%/%)
+  } bind
+
+  /DOS {
+    % /directory/ -> %directory%/
+    % /X/directory/ -> %X%/directory/
+    % / -> /
+    % or  /host/share/directory -> %host/share%/directory/
+    dup length 3 ge {
+      dup 2 get //slash eq
+      {
+        % ASSUME drive letter
+        dup 3 1 index length 3 sub getinterval
+        exch (%/) exch
+        1 1 getinterval //UpperCase exec
+        (%)
+      }  {
+        % buffer mark path
+        % Must be UNC share
+        0 exch
+        3 1 2 index length 1 sub {
+          % seen path i
+          2 copy get //slash eq {
+            3 -1 roll 1 add
+            % path i seen
+            dup 2 eq {
+              pop exit
+            }  {
+              3 1 roll pop
+            } ifelse
+          } { pop } ifelse
+        } for
+        % seen path    or     path i
+        dup type /integertype ne {
+          exch pop
+          dup length 1 sub
+        } if
+        % path i
+        2 copy
+        % path i path i
+        1 index length 1 index sub getinterval
+        % path i post
+        3 1 roll
+        % post path i
+        1 exch 1 sub getinterval
+        % post device
+        (%) exch (%)
+      } ifelse  % dup 2 get //slash eq
+    } if  % dup length 3 ge
+  } bind
+
+  /Mac {
+    % /volume/directory/ -> %volume%/directory/
+    1 1 index length 1 sub getinterval
+    //slashstring search {
+      exch pop
+      (%/) exch (%)
+    }  {
+      //slashstring (%os%)
+    } ifelse
+  } bind
+
+>> def
+
+/ScanSpecialPaths 10 dict def
+/ScanSpecialPaths <<
+
+  /CommentPath {
+    % extract path from full comment string
+    OPICommentName 0 1 index length FullShortName length sub getinterval
+
+    % compare with supplied mappings
+    true exch
+    OPIcommentMapping {
+      aload pop
+      % true path search replace
+      3 copy pop
+      anchorsearch {
+        % true path search replace post match
+        pop
+        5 2 roll pop pop pop
+        % replace post
+        false exch
+        exit
+      }  {
+        % Nope
+        % true path search replace path
+        pop pop pop
+      } ifelse
+      % true path
+    } forall
+    % bool path
+    exch {
+      % no match - convert whole path
+      % turn off file mapping on the way
+      //buffer mark 3 -1 roll
+      (\\\\) anchorsearch {
+        %  (DOS share 1)=
+        % DOS share
+        % \\host\share\directory\ -> %host/share%/directory/
+        pop
+        % dest mark path
+        0
+        0 1 3 index length 1 sub {
+          % dest mark path seen i
+          2 index 1 index get //backslash eq {
+            exch 1 add
+            % dest mark path i newseen
+            dup 2 eq {
+              pop exit
+            } if
+            exch
+          } if
+          pop
+        } for
+        % dest mark path i     or    dest mark path
+        dup type /integertype ne {
+          % didn't find the fourth backslash
+          dup length
+        } if
+        % dest mark path i
+        dup 2 index length lt {
+          2 copy 1 index length 1 index sub getinterval
+          //SwitchSlashes exec
+          3 1 roll
+        } if
+        % dest mark directory/ path i
+        (%) 3 1 roll
+        0 exch getinterval
+        //SwitchSlashes exec
+        (%)
+      }  {
+        (//) anchorsearch {
+          %  (DOS local 1)=
+          % PDF encoded DOS - RIP volume
+          % //directory/ -> %X%/directory/
+          pop //slashstring
+          //RIPdrive
+        }  {
+          dup length 0 gt {
+            dup 0 get //backslash eq {
+              %  (DOS local 2)=
+              % DOS - RIP volume
+              % \directory\ -> %X%/directory/
+              //SwitchSlashes exec
+              //RIPdrive
+            }  {
+              (:\\) search {
+                %  (DOS drive/share)=
+                % post match pre
+                exch pop
+                % DOS - drive letter
+                %    C:\directory\ -> %C%/directory/
+                % DOS share
+                %    host/share:\directory\ -> %host/share%/directory/
+                % post pre
+                exch //SwitchSlashes exec exch
+                (%/) exch
+                //SwitchSlashes exec
+                dup length 1 eq {
+                  //UpperCase exec
+                } if
+                (%)
+              }  {
+                dup //colonstring search {
+                  %  (Mac)=
+                  % Mac file
+                  % Volume:directory: -> %Volume%/directory/
+                  % fullpath post match pre
+                  exch pop
+                  dup length 0 eq {
+                    %  ( - relative)=
+                    % relative Mac file
+                    % :directory: -> %os%/directory/
+                    pop
+                    % fullpath post
+                    exch pop
+                    //SwitchSlashes exec
+                    //slashstring (%os%)
+                  }  {
+                    % absolute Mac file
+                    %  ( - absolute)=
+                    % Volume:directory: -> %Volume%/directory/
+                    % fullpath directory volume
+                    3 -1 roll pop
+                    exch //SwitchSlashes exec exch
+                    (%/) exch (%)
+                  } ifelse
+                }  {
+                  0 get //slash eq {
+                    %  (PDF or Unix: )print currentplatform ==
+                    % PDF or Unix encoded.
+                    % Check by platform
+                    //SlashByPlatform //HqnOPICommonDict /currentplatform get
+                    get exec
+                  }  {
+                    %  (Relative)=
+                    % relative path - RIP directory?
+                    % directory/\ -> %os%/directory/
+                    //SwitchSlashes exec
+                    //slashstring (%os%)
+                  } ifelse
+                } ifelse
+              } ifelse
+            } ifelse
+          }  {
+            % zero length - RIP directory?
+            %  (No directory)=
+            pop //slashstring (%os%)
+          } ifelse
+        } ifelse
+      } ifelse
+    }  {
+      % match - convert post and merge
+      % replace post
+      //SwitchSlashes exec exch
+      //buffer mark 4 2 roll
+    } ifelse
+    1183615869 internaldict /concattomark get exec
+    dup length string copy
+    % mount if needed
+    dup 0 get //percent eq {
+      dup 1 1 index length 1 sub getinterval
+      (%) search {
+        3 1 roll pop pop
+        length 2 add
+        % string mark len
+        1 index 0 3 -1 roll getinterval
+        mark {
+          1 index devstatus not {
+            counttomark 1 add index dup devmount pop
+            //ScanSpecialPaths begin
+              /Password 0 def
+              /DeviceType 0 def
+              /Prefix 1 index def
+              /Enable true def
+              /SearchOrder -1 def
+              currentdict
+            end
+            setdevparams
+          } if
+        } stopped
+        cleartomark
+      } if
+      pop
+    } if
+    true
+  } bind
+
+  /JobPath {
+    (%stdin%)(r) file
+    //buffer
+    statusdict /filename get exec
+    pop
+
+    (%ip:) anchorsearch {
+      % input plugin - ignore
+      pop pop
+      false
+    }  {
+      0 1 index length
+      2 index //justFileName exec
+      length sub
+      getinterval
+      true
+    } ifelse
+  } bind
+
+>> def
+
+/ScanSpecialPaths {
+  % key -> ScanSpecialPaths -> [ val true ] or [ false ]
+  dup type /nametype eq {
+    %    (nametype)=print dup ==
+    //ScanSpecialPaths exch 2 copy known {
+      get exec
+      /ScanSubDirectories false def
+    }  {
+      pop pop
+      %    (Unknown name)=
+    } ifelse
+  }  { true } ifelse
+} bind def
+
+
+/OPIsimpleTranslator
+{
+  % we have to find the file required
+
+  userdict /HqnOPIdict get
+  begin
+
+  /OPIfileName null def
+  /FoundFile false def
+
+  % Search for ID in each specified directory in turn
+  % Then search for the same file name in sub-directories of each
+  %  specified directory
+  % Then repeat for F.
+  % userdict /HqnOPIdict get /FileList known not { ( FileList NOT KNOWN )=     } if
+  FileList {
+
+    /OPICommentName 1 index def
+    //extractFileName exec
+
+    length 0 gt {
+      { () (*/) } {
+        % sep
+        OPIdirectories  {
+          % sep base
+          //ScanSpecialPaths exec {
+            2 copy length exch length add
+            FullShortName length add
+            string
+            % sep base new
+            2 copy copy pop
+            % sep base new
+            2 copy exch length
+            % sep base new new baselen
+            4 index putinterval
+            % sep base new
+            dup 3 -1 roll
+            % sep new new base
+            length 3 index length add
+            % sep new new shortstart
+            FullShortName putinterval
+
+            % sep new
+            {
+              /OPIfileName exch dup length string copy def
+              /FoundFile true def
+              exit
+            } //buffer filenameforall
+            FoundFile { exit } if
+          } if
+        } forall
+        pop  % (*/) etc
+        FoundFile { exit } if
+      } forall
+      FoundFile { exit } if
+    } if
+  } forall
+
+  end % HqnOPIdict
+
+} bind def
+
+
+/OPImergeValuesD <<
+
+  % Expand to 4 element array for different qualities
+  /OPIreplaceFiles {
+    dup type /nametype eq {
+      [ exch dup dup dup ]
+    } if
+  } bind
+
+  /OPIreportFiles {
+    dup type /nametype eq {
+      [ exch dup dup dup ]
+    } if
+  } bind
+
+  /OPIerrorAction {
+    dup type /nametype eq {
+      [ exch dup dup dup ]
+    } if
+  } bind
+
+>> def
+
+/OPIprint (%stderr)(w) file def
+/OPIprint {                   %|- (string)
+  dup type /stringtype ne {
+    //=string cvs
+  } if
+  dup dup length
+  dup 0 eq {
+    pop pop pop
+  }  {
+    1 sub get 13 eq exch
+    //OPIprint exch writestring
+    % flush at end of each line
+    { //OPIprint flushfile } if
+  } ifelse
+} bind def
+
+/OPIerror {
+  %|- offendingcommand errortype extrainfo
+  hqnversion 0 get 53 ge {  % Check for verion '5' (ascii 53)
+    $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+    % offendingcommand errortype extrainfo dict
+    /errorinfo [ null 5 -1 roll ] put
+  }  {
+    UVS (Error: ) //OPIprint exec
+    //OPIprint exec
+    (\n) //OPIprint exec
+  } ifelse
+  errordict exch get exec
+} bind def
+
+/OPImergeValues {
+  dup type /nametype eq {
+    currentdict exch 2 copy known { get }{
+      pop pop
+      % GLOB: Debugging info only - not for translation
+      /OPImergeValues /undefined (Option set name is not recognised) //OPIerror exec
+    } ifelse
+  } if
+  dup type /dicttype ne {
+    % GLOB: Debugging info only - not for translation
+    /OPImergeValues /typecheck (Argument to OPImergeValues should be a dictionary or name) //OPIerror exec
+  } if
+  dup /OPIbaseConfig known {
+    dup /OPIbaseConfig 2 copy
+    get OPImergeValues
+    undef
+  } if
+
+  {
+    dup type /dicttype ne {
+      //OPImergeValuesD 2 index known {
+        //OPImergeValuesD 2 index get exec
+      } if
+      def
+    }  {
+      currentdict 2 index known {
+        % adding into existing dictionary
+        exch load begin
+        { def } forall
+        end
+      }  {
+        % new dictionary
+        def
+      } ifelse
+    } ifelse
+  } forall
+} bind def
+
+% Read and munge in customisation dict from Usr/CustomOPI
+(%os%Usr/CustomOPI*) {
+  mark exch run
+  counttomark 1 ne 1 index type /dicttype ne or {
+    % GLOB: Debugging info only - not for translation
+    /HqnOPI /typecheck (Usr/CustomOPI must return a dictionary and nothing else) //OPIerror exec
+    stop
+  } if
+  OPImergeValues
+  cleartomark
+} //buffer filenameforall
+
+
+currentdict
+
+end
+
+globalness exch
+end  % HqnOPICommonDict
+
+
+/HqnOPICommon exch /ProcSet defineresource
+pop
+setglobal
+
+
+
+
+%%EndProcSet

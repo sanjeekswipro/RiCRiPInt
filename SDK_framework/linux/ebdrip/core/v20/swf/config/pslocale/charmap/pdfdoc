@@ -1,0 +1,25 @@
+%!PS-Adobe-3.0
+%%Title: PDFDoc-PDFDoc
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Oct 2004
+% Copyright (C) 2004-2013 Global Graphics Software Limited. All Rights Reserved.
+% $Revision: 1.4.1.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:charmap:pdfdoc(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+
+% Array to map from PDFDoc into the encoding used for Messages entries.
+% The values are then used by the TranslateChars_1 call in the HqnLocal procset.
+
+% The array below should contain exactly 256 entries, each of which must be an integer
+% in the range 0-255, or a string.
+
+/CharMap [
+	0 1 255 {} for
+]
+
+%%EOF

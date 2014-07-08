@@ -1,0 +1,57 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core rip TIFF
+#
+# $HopeName: SWv20tiff!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant tiff metrics ;
+
+# Compilation rules
+
+    DependsOn all : tiff ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        gstate
+        objects
+        tables
+    : .. .. ;
+
+    # \todo ajcd 2007-12-13: Sometime, we need to get rid of the v20 include.
+    IncludeExportDirectories Inherited Local :
+        v20
+    : .. .. ;
+
+    IncludeExportDirectories Inherited Local :
+        tiffcore
+    : .. ;
+
+    ReplaceVar Local : CFILES :
+        t6params.c
+        tifcntxt.c
+        tiffexec.c
+        tifffilter.c
+        tifftags.c
+        tifreadr.c
+        tiffclsp.c
+     : Variant tiff=yes ;
+
+    AddToVar Local : CFILES : notiff.c : Variant tiff=no ;
+
+    Library tiff : $(CFILES) ;
+
+    if $(Variant_tiff) = yes {
+        # So that exported source can be built without tiff if required
+        ExportSource $(CurrentPath)$/src$/notiff.c : C ;
+    }
+
+# Log stripped

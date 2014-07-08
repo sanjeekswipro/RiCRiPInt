@@ -1,0 +1,52 @@
+% $HopeName: SWv20!swf:pagefeat:examples:read_me(EBDSDK_P.1) $
+%
+{//currentfile null //readline not{stop}if print(\n)print}dup 1 128 string put loop
+
+******************************************************************************
+
+EXAMPLE PAGE FEATURES
+=====================
+
+This file describes the concept behind the example page features supplied with ScriptWorks
+and is not intended to be used as a Page Feature itself.
+
+Page features in ScriptWorks are simply PostScript files which may be run at the beginning of 
+every PostScript file processed by the RIP. Placing a file containing raw PostScript code
+in the "SW:Page Features" folder on the Macintosh or the "SW\PAGEFEAT" directory on a PC
+will allow that file to be selected as an Additional Feature on the Page Setup dialog inside 
+the RIP.
+
+Some of the features supplied with ScriptWorks are expected to be used as-is by a number of 
+users. These include the color and bit-depth features, and 180 degree rotation.
+
+Having said that, the original concept of Page features is that ScriptWorks OEMs, distributors
+and end-users can all add their own functionality to the RIP by adding features to perform
+specific tasks. The example features in this Examples sub-directory are intended as exactly
+that - examples. If you find them useful as they stand then please use them. If they don't 
+produce exactly the effect that you want then please change them (all we ask is that you 
+retain the Harlequin copyright information, adding your own as appropriate).
+
+The examples here include handling HPGL, PCL4 and Epson files by using the PostScript level 2
+filter operator, adding crop and register marks to automatically separated pages and adding 
+over-printing text such as 'Draft' or 'Confidential' across the page.
+
+There are very few rules to remember:
+
+a) Except for calls to 'setsystemparams' all environment changes introduced in a page feature
+   are local to that job.
+   
+b) Page features should not execute the 'exitserver' operator, unless you are explicitly
+   writing a 'download' feature.
+   
+c) If you think it might work - try it!
+
+Virtually all you need to produce all the effects you can make is provided in the 'red book', 
+PostScript Language Reference Manual, 2nd Ed (Adobe Systems Inc., ISBN 0-201018127-4, Pub: 
+Adison Wesley, 1990).
+
+******************************************************************************
+Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+Global Graphics Software Ltd. Confidential Information.
+---------------------------------------------------
+
+

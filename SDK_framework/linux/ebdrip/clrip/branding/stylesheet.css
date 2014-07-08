@@ -1,0 +1,363 @@
+/* $HopeName: SWprod_hqnrip!clrip:branding:stylesheet.css(EBDSDK_P.1) $ */
+/* Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved. */
+/* Global Graphics Software Ltd. Confidential Information. */
+H1
+{
+    FONT-FAMILY: Geneva, Arial, Helvetica, sans-serif;
+    TEXT-ALIGN: center
+}
+H2
+{
+    FONT-FAMILY: Geneva, Arial, Helvetica, sans-serif
+}
+CAPTION
+{
+    FONT-WEIGHT: bold
+}
+DIV.qindex
+{
+    BORDER-RIGHT: #b0b0b0 1px solid;
+    PADDING-RIGHT: 2px;
+    BORDER-TOP: #b0b0b0 1px solid;
+    PADDING-LEFT: 2px;
+    PADDING-BOTTOM: 2px;
+    MARGIN: 2px;
+    BORDER-LEFT: #b0b0b0 1px solid;
+    WIDTH: 100%;
+    LINE-HEIGHT: 120%;
+    PADDING-TOP: 2px;
+    BORDER-BOTTOM: #b0b0b0 1px solid;
+    BACKGROUND-COLOR: #f5ffff;
+    TEXT-ALIGN: center
+}
+A.qindex
+{
+    PADDING-RIGHT: 2px;
+    PADDING-LEFT: 2px;
+    FONT-WEIGHT: bold;
+    PADDING-BOTTOM: 2px;
+    COLOR: #007ba5;
+    PADDING-TOP: 2px;
+    TEXT-DECORATION: none
+}
+A.qindex:visited
+{
+    FONT-WEIGHT: bold;
+    TEXT-DECORATION: none
+}
+A.qindex:hover
+{
+    PADDING-RIGHT: 2px;
+    PADDING-LEFT: 2px;
+    PADDING-BOTTOM: 2px;
+    PADDING-TOP: 2px;
+    BACKGROUND-COLOR: #b0d7e4;
+    TEXT-DECORATION: none
+}
+A.qindexHL
+{
+    BORDER-RIGHT: #9295c2 1px double;
+    PADDING-RIGHT: 6px;
+    BORDER-TOP: #9295c2 1px double;
+    PADDING-LEFT: 6px;
+    FONT-WEIGHT: bold;
+    PADDING-BOTTOM: 2px;
+    BORDER-LEFT: #9295c2 1px double;
+    COLOR: #ffffff;
+    PADDING-TOP: 2px;
+    BORDER-BOTTOM: #9295c2 1px double;
+    BACKGROUND-COLOR: #007ba5;
+    TEXT-DECORATION: none
+}
+A.qindexHL:hover
+{
+    PADDING-RIGHT: 6px;
+    PADDING-LEFT: 6px;
+    PADDING-BOTTOM: 2px;
+    COLOR: #ffffff;
+    PADDING-TOP: 2px;
+    BACKGROUND-COLOR: #007ba5;
+    TEXT-DECORATION: none
+}
+A.qindexHL:visited
+{
+    COLOR: #ffffff;
+    BACKGROUND-COLOR: #007ba5;
+    TEXT-DECORATION: none
+}
+A.el
+{
+    FONT-WEIGHT: bold;
+    TEXT-DECORATION: none
+}
+A.elRef
+{
+    FONT-WEIGHT: bold
+}
+A.code
+{
+    FONT-WEIGHT: normal;
+    COLOR: #1a419d;
+    TEXT-DECORATION: none
+}
+A.codeRef
+{
+    FONT-WEIGHT: normal;
+    COLOR: #1a419d
+}
+A:hover
+{
+    BACKGROUND-COLOR: #b0d7e4;
+    TEXT-DECORATION: none
+}
+DL.el
+{
+    MARGIN-LEFT: -1cm
+}
+PRE.fragment
+{
+    BORDER-RIGHT: #cccccc 1px solid;
+    PADDING-RIGHT: 6px;
+    BORDER-TOP: #cccccc 1px solid;
+    PADDING-LEFT: 6px;
+    PADDING-BOTTOM: 4px;
+    MARGIN: 4px 8px 4px 2px;
+    BORDER-LEFT: #cccccc 1px solid;
+    PADDING-TOP: 4px;
+    BORDER-BOTTOM: #cccccc 1px solid;
+    BACKGROUND-COLOR: #f5f5f5
+}
+DIV.fragment
+{
+    BORDER-RIGHT: #cccccc 1px solid;
+    PADDING-RIGHT: 6px;
+    BORDER-TOP: #cccccc 1px solid;
+    PADDING-LEFT: 6px;
+    PADDING-BOTTOM: 6px;
+    BORDER-LEFT: #cccccc 1px solid;
+    PADDING-TOP: 6px;
+    BORDER-BOTTOM: #cccccc 1px solid;
+    BACKGROUND-COLOR: #f5ffff
+}
+DIV.ah
+{
+    MARGIN-TOP: 3px;
+    FONT-WEIGHT: bold;
+    MARGIN-BOTTOM: 3px;
+    COLOR: #ffffff;
+    BACKGROUND-COLOR: black
+}
+TD.md
+{
+    FONT-WEIGHT: bold;
+    BACKGROUND-COLOR: #fafafa
+}
+TD.mdname1
+{
+    FONT-WEIGHT: bold;
+    COLOR: #602020;
+    BACKGROUND-COLOR: #f4f4fb
+}
+TD.mdname
+{
+    FONT-WEIGHT: bold;
+    WIDTH: 600px;
+    COLOR: #602020;
+    BACKGROUND-COLOR: #f4f4fb
+}
+DIV.groupHeader
+{
+    MARGIN-TOP: 12px;
+    FONT-WEIGHT: bold;
+    MARGIN-BOTTOM: 6px;
+    MARGIN-LEFT: 16px;
+    FONT-FAMILY: Geneva, Arial, Helvetica, sans-serif
+}
+DIV.groupText
+{
+    FONT-SIZE: 14px;
+    MARGIN-LEFT: 16px;
+    FONT-STYLE: italic
+}
+BODY
+{
+    BACKGROUND: white;
+    MARGIN-LEFT: 20px;
+    COLOR: black;
+    MARGIN-RIGHT: 20px
+}
+TD.indexkey
+{
+    BORDER-RIGHT: #cccccc 1px solid;
+    PADDING-RIGHT: 10px;
+    BORDER-TOP: #cccccc 1px solid;
+    PADDING-LEFT: 10px;
+    FONT-WEIGHT: bold;
+    PADDING-BOTTOM: 2px;
+    MARGIN: 2px 0px;
+    BORDER-LEFT: #cccccc 1px solid;
+    PADDING-TOP: 2px;
+    BORDER-BOTTOM: #cccccc 1px solid;
+    BACKGROUND-COLOR: #fafafa
+}
+TD.indexvalue
+{
+    BORDER-RIGHT: #cccccc 1px solid;
+    PADDING-RIGHT: 10px;
+    BORDER-TOP: #cccccc 1px solid;
+    PADDING-LEFT: 10px;
+    PADDING-BOTTOM: 2px;
+    MARGIN: 2px 0px;
+    BORDER-LEFT: #cccccc 1px solid;
+    PADDING-TOP: 2px;
+    BORDER-BOTTOM: #cccccc 1px solid;
+    FONT-STYLE: italic;
+    BACKGROUND-COLOR: #fafafa
+}
+TR.memlist
+{
+    BACKGROUND-COLOR: #f0f0f0
+}
+P.formulaDsp
+{
+    TEXT-ALIGN: center
+}
+IMG.formulaDsp
+{
+}
+IMG.formulaInl
+{
+    VERTICAL-ALIGN: middle
+}
+SPAN.keyword
+{
+    COLOR: #008000
+}
+SPAN.keywordtype
+{
+    COLOR: #604020
+}
+SPAN.keywordflow
+{
+    COLOR: #e08000
+}
+SPAN.comment
+{
+    COLOR: #800000
+}
+SPAN.preprocessor
+{
+    COLOR: #806020
+}
+SPAN.stringliteral
+{
+    COLOR: #002080
+}
+SPAN.charliteral
+{
+    COLOR: #008080
+}
+.mdTable
+{
+    BORDER-RIGHT: #868686 1px solid;
+    BORDER-TOP: #868686 1px solid;
+    BORDER-LEFT: #868686 1px solid;
+    BORDER-BOTTOM: #868686 1px solid;
+    BACKGROUND-COLOR: #fafafa
+}
+.mdRow
+{
+    PADDING-RIGHT: 10px;
+    PADDING-LEFT: 10px;
+    PADDING-BOTTOM: 8px;
+    PADDING-TOP: 8px
+}
+.mdescLeft
+{
+    BORDER-RIGHT: #e0e0e0 1px;
+    PADDING-RIGHT: 8px;
+    BORDER-TOP: #e0e0e0 1px;
+    PADDING-LEFT: 8px;
+    FONT-SIZE: 14px;
+    PADDING-BOTTOM: 4px;
+    MARGIN: 0px;
+    BORDER-LEFT: #e0e0e0 1px;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: #e0e0e0 1px;
+    FONT-STYLE: italic;
+    BACKGROUND-COLOR: #f5ffff
+}
+.mdescRight
+{
+    BORDER-RIGHT: #e0e0e0 1px;
+    PADDING-RIGHT: 8px;
+    BORDER-TOP: #e0e0e0 1px;
+    PADDING-LEFT: 8px;
+    FONT-SIZE: 14px;
+    PADDING-BOTTOM: 4px;
+    MARGIN: 0px;
+    BORDER-LEFT: #e0e0e0 1px;
+    PADDING-TOP: 0px;
+    BORDER-BOTTOM: #e0e0e0 1px;
+    FONT-STYLE: italic;
+    BACKGROUND-COLOR: #f5ffff
+}
+.memItemLeft
+{
+    BORDER-RIGHT: #e0e0e0 1px;
+    PADDING-RIGHT: 0px;
+    BORDER-TOP: #e0e0e0 1px solid;
+    PADDING-LEFT: 8px;
+    FONT-SIZE: 12px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 4px;
+    BORDER-LEFT: #e0e0e0 1px;
+    PADDING-TOP: 1px;
+    BORDER-BOTTOM: #e0e0e0 1px;
+    FONT-FAMILY: Geneva, Arial, Helvetica, sans-serif;
+    BACKGROUND-COLOR: #fafafa
+}
+.memItemRight
+{
+    BORDER-RIGHT: #e0e0e0 1px;
+    PADDING-RIGHT: 8px;
+    BORDER-TOP: #e0e0e0 1px solid;
+    PADDING-LEFT: 8px;
+    FONT-SIZE: 13px;
+    PADDING-BOTTOM: 0px;
+    MARGIN: 4px;
+    BORDER-LEFT: #e0e0e0 1px;
+    PADDING-TOP: 1px;
+    BORDER-BOTTOM: #e0e0e0 1px;
+    FONT-FAMILY: Geneva, Arial, Helvetica, sans-serif;
+    BACKGROUND-COLOR: #fafafa
+}
+.search
+{
+    FONT-WEIGHT: bold;
+    COLOR: #003399
+}
+FORM.search
+{
+    MARGIN-TOP: 0px;
+    MARGIN-BOTTOM: 0px
+}
+INPUT.search
+{
+    FONT-WEIGHT: normal;
+    FONT-SIZE: 75%;
+    COLOR: #000080;
+    BACKGROUND-COLOR: #eeeeff
+}
+TD.tiny
+{
+    FONT-SIZE: 75%
+}
+A
+{
+    COLOR: #007ba5
+}
+A:visited
+{
+    COLOR: #0085b2
+}

@@ -1,0 +1,35 @@
+# Copyright (C) 2007-2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP Object subsystem
+#
+# $HopeName: COREobjects!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : objects ;
+
+    IncludeExportDirectories Local :
+        fileio
+        tables
+    : .. ;
+
+    Library objects :
+      compare.c
+      dictbld.c
+      dicthash.c
+      dictinit.c
+      dictscan.c
+      ncache.c
+      objects.c
+      stacks.c
+      walkdict.c
+    ;
+
+# Log stripped

@@ -1,0 +1,177 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% $HopeName: SWicolor!swf:iccreg:Profiles(EBDSDK_P.1) $
+%
+
+%==============================================================================
+%
+% Description:
+%   This file contains a simple list of ICC profiles registered
+%   with the International Color Consortium (ICC) at www.color.org.  Each 
+%   entry in the list provides the registered ID of the profile along with 
+%   the SW location of the ICC file. However, this list also serves to 
+%   provide a complete list of registered profiles even if SW doesn't have
+%   the ICC profile itself.  Some entries here, therefore, may contain only
+%   the registered ID with the corresponding file name absent.  However, if
+%   absent, an empty string - () - must be given to preserve the "pairs".
+%   This list is read by PDF code in the core-rip to validate and use 
+%   "OutputIntents" profiles given in PDF/X jobs.
+% 
+% Format:
+%   The comment character - %  - starts a comment (except when given in a 
+%   string) which continues to the end of the line.
+%   The ICC registry identifier is given as a PostScript string (it may 
+%   contain spaces). The '\' escape character can be used if a round-bracket
+%   character ( '(' or ')' ) is required as part of the identifier string.
+%   Similarly, the SW file specification is also given as a string.  The file
+%   specification must be given on the same line as the corresponding ID -
+%   to show that no such file exists, an empty string must be given.
+%
+%   Note that due to a rather slack ID scheme, entries may appear more than
+%   once (e.g. variable spacing, spurious hyphens).
+%
+%==============================================================================
+
+(CGATS TR 001)				(iccreg/ECI_USWebCoatedSWOP.icc)
+(OF COM PO P1 F60 bvdm)		()
+(OFCOM_PO_P1_F60_95)		()
+(OF COM PO P1 F60)			()
+(FOGRA1)					()
+(FOGRA1L.txt)				()
+(OF COM PO P2 F60 bvdm)		()
+(OFCOM_PO_P2_F60_95)		()
+(OF COM PO P2 F60)			()
+(FOGRA2)					()
+(FOGRA2L.txt)				()
+(OF COM PO P3 F60 bvdm)		()
+(OF COM PO-P3 F60 bvdm)		()
+(OF COM PO P3 F60)			()
+(OFCOM_PO_P3_F60_95)		()
+(OF COM PO-P3 F60)			()
+(FOGRA3)					()
+(FOGRA3L.txt)				()
+(OF COM PO P4 F60 bvdm)		()
+(OFCOM_PO_P4_F60_95)		()
+(OF COM PO P4 F60)			()
+(FOGRA4)					()
+(FOGRA4L.txt)				()
+(OF COM NE P1 F60 bvdm)		()
+(OFCOM_NE_P1_F60_95)		()
+(OF COM NE P1 F60)			()
+(FOGRA5)						()
+(FOGRA5L.txt)					()
+(OF COM NE P2 F60 bvdm)		()
+(OFCOM_NE_P2_F60_95)		()
+(OF COM NE P2 F60)			()
+(FOGRA6)						()
+(FOGRA6L.txt)					()
+(OF COM NE P3 F60 bvdm)		()
+(OFCOM_NE_P3_F60_95)		()
+(OF COM NE P3 F60)			()
+(FOGRA7)						()
+(FOGRA7L.txt)					()
+(OF COM NE P4 F60 bvdm)		()
+(OFCOM_NE_P4_F60_95)		()
+(OF COM NE P4 F60)			()
+(FOGRA8)						()
+(FOGRA8L.txt)					()
+(SC_PO_GC2CO_F30_95)		()
+(SC GC2 CO F30)				()
+(FOGRA9)						()
+(FOGRA9L.txt)					()
+(OFCOM PO_P1,2_F60_03)		(iccreg/ISOcoatedbb.icc)
+(FOGRA11)					(iccreg/ISOcoatedbb.icc)
+(FOGRA11L.txt)				(iccreg/ISOcoatedbb.icc)
+(OFCOM PO_P3_F60_03)			(iccreg/ISOwebcoatedbb.icc)
+(FOGRA12)					(iccreg/ISOwebcoatedbb.icc)
+(FOGRA12L.txt)				(iccreg/ISOwebcoatedbb.icc)
+(OFCOM PO_P4_F60_03)			(iccreg/ISOuncoatedbb.icc)
+(FOGRA13)					(iccreg/ISOuncoatedbb.icc)
+(FOGRA13L.txt)				(iccreg/ISOuncoatedbb.icc)
+(OFCOM PO_P5_F60_03)			(iccreg/ISOuncoatedyellowishbb.icc)
+(FOGRA14)					(iccreg/ISOuncoatedyellowishbb.icc)
+(FOGRA14L.txt)				(iccreg/ISOuncoatedyellowishbb.icc)
+(OFCOM PO_P(1,2)_F60_03)		(iccreg/ISOcoatedsb.icc)
+(FOGRA15)					(iccreg/ISOcoatedsb.icc)
+(FOGRA15L.txt)				(iccreg/ISOcoatedsb.icc)
+(OFCOM PO_P(3)_F60_03)		(iccreg/ISOwebcoatedsb.icc)
+(FOGRA16)					(iccreg/ISOwebcoatedsb.icc)
+(FOGRA16L.txt)				(iccreg/ISOwebcoatedsb.icc)
+(OFCOM PO_P(4) _F60_03)		(iccreg/ISOuncoatedsb.icc)
+(FOGRA17)					(iccreg/ISOuncoatedsb.icc)
+(FOGRA17L.txt)				(iccreg/ISOuncoatedsb.icc)
+(OFCOM PO_P(5) _F60_03)		(iccreg/ISOuncoatedyellowishsb.icc)
+(FOGRA18)					(iccreg/ISOuncoatedyellowishsb.icc)
+(FOGRA18L.txt)				(iccreg/ISOuncoatedyellowishsb.icc)
+(OFCOM PO_P1,2_F70_03)		(iccreg/ISOcoated175bb.icc)
+(FOGRA19)					(iccreg/ISOcoated175bb.icc)
+(FOGRA19L.txt)				(iccreg/ISOcoated175bb.icc)
+(OFCOM PO_P3_F70_03)			(iccreg/ISOwebcoated175bb.icc)
+(FOGRA20)					(iccreg/ISOwebcoated175bb.icc)
+(FOGRA20L.txt)				(iccreg/ISOwebcoated175bb.icc)
+(OFCOM PO_P4_F70_03)			(iccreg/ISOuncoated175bb.icc)
+(FOGRA21)					(iccreg/ISOuncoated175bb.icc)
+(FOGRA21L.txt)				(iccreg/ISOuncoated175bb.icc)
+(OFCOM PO_P5_F70_03)			(iccreg/ISOuncoatedyellowish175bb.icc)
+(FOGRA22)					(iccreg/ISOuncoatedyellowish175bb.icc)
+(FOGRA22L.txt)				(iccreg/ISOuncoatedyellowish175bb.icc)
+(OFCOM PO_P(1,2)_F70_03)		(iccreg/ISOcoated175sb.icc)
+(FOGRA23)					(iccreg/ISOcoated175sb.icc)
+(FOGRA23L.txt)				(iccreg/ISOcoated175sb.icc)
+(OFCOM PO_P(3)_F70_03)		(iccreg/ISOwebcoated175sb.icc)
+(FOGRA24)					(iccreg/ISOwebcoated175sb.icc)
+(FOGRA24L.txt)				(iccreg/ISOwebcoated175sb.icc)
+(OFCOM PO_P(4)_F70_03)		(iccreg/ISOuncoated175sb.icc)
+(FOGRA25)					(iccreg/ISOuncoated175sb.icc)
+(FOGRA25L.txt)				(iccreg/ISOuncoated175sb.icc)
+(OFCOM PO_P(5)_F70_03)		(iccreg/ISOuncoatedyellowish175sb.icc)
+(FOGRA26)					(iccreg/ISOuncoatedyellowish175sb.icc)
+(FOGRA26L.txt)				(iccreg/ISOuncoatedyellowish175sb.icc)
+(OFCOM_PO_P1_F60_04)		(iccreg/ISOcoated.icc)
+(FOGRA27)					(iccreg/ISOcoated.icc)
+(FOGRA27L.txt)				(iccreg/ISOcoated.icc)
+(OFCOM_PO_P3_F60_04)		(iccreg/ISOwebcoated.icc)
+(FOGRA28)					(iccreg/ISOwebcoated.icc)
+(FOGRA28L.txt)				(iccreg/ISOwebcoated.icc)
+(OFCOM_PO_P4_F60_04)		(iccreg/ISOuncoated.icc)
+(FOGRA29)					(iccreg/ISOuncoated.icc)
+(FOGRA29L.txt)				(iccreg/ISOuncoated.icc)
+(OFCOM_PO_P5_F60_04)		(iccreg/ISOuncoatedyellowish.icc)
+(FOGRA30)					(iccreg/ISOuncoatedyellowish.icc)
+(FOGRA30L.txt)				(iccreg/ISOuncoatedyellowish.icc)
+(OFCOF_PO_P2_F60_04)		(iccreg/ISOcofcoated.icc)
+(FOGRA31)					(iccreg/ISOcofcoated.icc)
+(FOGRA31L.txt)				(iccreg/ISOcofcoated.icc)
+(OFCOF_PO_P4_F54_04)		(iccreg/ISOcofuncoated.icc)
+(FOGRA32)					(iccreg/ISOcofuncoated.icc)
+(FOGRA32L.txt)				(iccreg/ISOcofuncoated.icc)
+(OFCOF_PO_P2_F54_04)		(iccreg/FOGRA33.icm)
+(FOGRA33)					(iccreg/FOGRA33.icm)
+(FOGRA33L.txt)				(iccreg/FOGRA33.icm)
+(OFCOF_PO_P4_F60_04)		(iccreg/FOGRA34.icm)
+(FOGRA34)					(iccreg/FOGRA34.icm)
+(FOGRA34L.txt)				(iccreg/FOGRA34.icm)
+(OFCOF_NE_P2_F54_04)		(iccreg/FOGRA35.icm)
+(FOGRA35)					(iccreg/FOGRA35.icm)
+(FOGRA35L.txt)				(iccreg/FOGRA35.icm)
+(OFCOF_NE_P4_F54_04)		(iccreg/FOGRA36.icm)
+(FOGRA36)					(iccreg/FOGRA36.icm)
+(FOGRA36L.txt)				(iccreg/FOGRA36.icm)
+(OFCOF_NE_P2_F60_04)		(iccreg/FOGRA37.icm)
+(FOGRA37)					(iccreg/FOGRA37.icm)
+(FOGRA37L.txt)				(iccreg/FOGRA37.icm)
+(OFCOF_NE_P4_F60_04)		(iccreg/FOGRA38.icm)
+(FOGRA38)					(iccreg/FOGRA38.icm)
+(FOGRA38L.txt)				(iccreg/FOGRA38.icm)
+(IFRA22)						(iccreg/Zeitung_QUIZ_22_02.03V2.icm)
+(IFRA22L.txt)					(iccreg/Zeitung_QUIZ_22_02.03V2.icm)
+(IFRA28)						(iccreg/Zeitung_QUIZ_28_02.03V2.icm)
+(IFRA_NP_40lcm_neg+CTP_05.00)	(iccreg/Zeitung_QUIZ_28_02.03V2.icm)
+(Ifra_NP_40lcm_neg+CTP_05.00)	(iccreg/Zeitung_QUIZ_28_02.03V2.icm)
+(IFRA26)					(iccreg/ISOnewspaper26v4.icc)
+(ISOnewspaper26v4)			(iccreg/ISOnewspaper26v4.icc)
+(IFRA30)					(iccreg/ISOnewspaper30v4.icc)
+(ISOnewspaper30v4)			(iccreg/ISOnewspaper30v4.icc)
+
+%============================ End =============================================

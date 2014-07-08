@@ -1,0 +1,362 @@
+%!PS-Adobe
+%%Title: "Level1Separator"
+%%Creator: Global Graphics Software Limited
+%%CreationDate: March 27, 1992
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: Level1Separator 3 1
+
+% $HopeName: SWv20!swf:procsets:l1sep(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Written from the specs in Adobe tech note #5044, plus some variations
+% to cope with Freehand's separation method
+%
+% Checklist of functions defined.
+%    /findcmykcustomcolor
+%    /setcmykoverprint
+%    /setcustomcolor
+%    /setseparationgray
+%    /setoverprint
+%    /currentoverprint
+%    /customcolorimage
+%    /separationimage
+%    /setimagecmyk
+%
+
+%
+% This file takes the color separation convetions defined by Adobe for use
+% with level 1 (together with a few application specific differences)
+% and redefines the results in terms of the level 2 PostScript language. 
+% 
+% The file should be used in conjunction with the user parameters
+% OverprintProcess (true by default) and OverprintBlack (false by default)
+% to determine the behaviour of setoverprint in conjunction with 
+% process colors.
+% 
+% We are assuming that the level 1 color extensions have not been turned off,
+% but things should work if a general downgrade to level 1 is pending.
+% 
+
+currentglobal
+false setglobal
+32 dict begin
+  /HqnLevel1SepDict 16 dict def
+true setglobal
+
+%
+% Given the CMYK values approximating to the colour, and it's name, we 
+% return an array identifying it (in fact just containing what we were passed)
+%
+/findcmykcustomcolor {   % [ c m y k key -> array ]
+  5 packedarray
+} bind def
+
+%
+% Given an array identifying a custom colour and a tint, this routine sets the
+% colour to print in.  If the separation is not to be generated, then process
+% colours are used to mimic the colour, via the level 2 Separation color space
+% which is of the form:
+%    [ /Separation <sep-name> /DeviceCMYK <tint-transform> ]
+% the tint transform takes a tint and multiplies it by each of the process
+% equivalent values to produce four color values in CMYK.
+%
+/setcustomcolor {   % [ array tint -> -- ]
+  [ 
+    /Separation                     % start building the color space array
+    3 index 4 get                   % get the name out of the given array
+    /DeviceCMYK
+    [                               % start of tint transform
+      6 index 0 4 getinterval       % just the four process equivalents
+      { 1 index mul exch } /forall load 
+                                    % multiply each by the tint
+      /pop load                     % pop the tint
+    ] cvx bind                      % turn it into a procedure
+  ] setcolorspace                   % array complete, set the space
+  setcolor                          % use the tint to set the color
+  pop                               % the array
+} bind def
+
+%
+% As specified in the #5044.  (like setcmykcolor, but allows -1 too).
+%
+% Make sure it's a procedure.
+%
+/setcmykoverprint [ 1183615869 internaldict /@setcmykoverprint get ] cvx readonly def
+
+%
+% Set a value that will be used on all separations.
+%
+/setseparationgray [ /Separation /All /DeviceCMYK {dup dup dup} ] def
+/setseparationgray {   % [ gray -> -- ]
+  //setseparationgray setcolorspace 
+  1.0 exch sub setcolor
+} bind def
+
+%
+% Set the overprinting flag.  We use this flag as FreeHand assumes that it
+% has this name. However other applications may not: so use whichever
+% dictionary it is defined in to date. Note that Freehand requires the action
+% to be taken only if inkoverprint is false.
+%
+% Make sure it's an operator since setoverprint is always an operator.
+%
+/setoverprint 1183615869 internaldict /@setoverprint get def
+
+% explicitly define currentoverprint which we will need later on.
+
+/currentoverprint dup load def
+
+%
+% Do an image in all separations, by specifying that it goes in the special
+% separation All; the Decode array means invert to go from tints to levels 
+% in All separation (input to underlying image code) as separationimage actually
+% takes greylevels as image does.
+%
+/separationimage {   % [ w h bits mtx proc -> -- ]
+  { /Separation /All /DeviceCMYK { dup dup dup } } setcolorspace
+  /Level1Separator /ProcSet findresource /HqnLevel1SepDict get begin
+    /ImageType 1 def
+    /DataSource exch def
+    /ImageMatrix exch def
+    /BitsPerComponent exch def
+    /Height exch def
+    /Width exch def
+    /Decode {1 0} def
+    currentdict 
+  end
+  image
+} bind def
+
+%
+% Do an image in some specific separation(s).
+%
+/customcolorimage { % [ w h bits mtx proc array -> -- ]
+  1.0 //setcustomcolor exec % requires tint
+  /Level1Separator /ProcSet findresource /HqnLevel1SepDict get begin
+    /ImageType 1 def
+    /DataSource exch def
+    /ImageMatrix exch def
+    /BitsPerComponent exch def
+    /Height exch def
+    /Width exch def
+    /Decode {1 0} def
+    currentdict 
+  end
+  image
+} bind def
+
+%
+% Freehand files have the facility to overprint colors completely irrespective
+% of the currentoverprint setting; these procedures implement that. They cannot
+% easily be separated from the rest because setoverprint requires to deal with
+% the value of inkoverprint.
+%
+% setinkoverprint sets the inkoverprint variable as well as currentoverprint;
+% this then causes future invocations of setoverprint to be ignored 
+%
+% Make sure it's a procedure.
+%
+/setinkoverprint [ 1183615869 internaldict /@setinkoverprint get ] cvx readonly def
+
+%
+% overprintprocess sets inkoverprint if any of the process colors (the first
+% four in freehand's spots array) have a flag saying overprint the color
+%
+% Make sure it's a procedure.
+%
+/overprintprocess [ 1183615869 internaldict /@overprintprocess get ] cvx readonly def
+
+%
+% FreeHand tries to use 'colorimage' as if it were 'customcolorimage', but
+% is also capable of attenuating spot color images. Each call is preceded
+% by a redefinable procedure 'setimagecmyk' which can be used to redefine
+% the action of colorimage. This also has the advantage that the 'colorimage'
+% that FH uses can be converted to simple image and therefore only use 25% 
+% of the memory.
+%
+/setimagecmyk {
+  /FreeHandDict where {
+    pop  % the dictionary from 'where'
+
+    % change the definition of 'colorimage'
+    userdict /colorimage {
+      pop pop % ncols and multiproc
+      % combine procedures so all are executed but
+      % only one set of results is kept
+
+      save
+      /Level1Separator /ProcSet findresource /HqnLevel1SepDict get begin
+        /setimagecmyksave exch def
+        currentcolorspace dup 0 get /Separation eq {
+          % temporaraily substitute the conversion values to let
+          % the transfer functions do the job instead - unless it's
+          % going to a spot color separation
+          4 array copy dup 3 { dup dup dup } put setcolorspace
+        }{
+          % devise an entirely new spot color to keep the image in one
+          % component
+          pop
+          { /Separation /$allprocesscolorspace /DeviceCMYK { dup dup dup } }
+            setcolorspace
+        } ifelse
+        /ImageType 1 def
+        /DataSource [
+          6 -1 roll /exec load
+          7 -1 roll /exec load
+          8 -1 roll /exec load
+          9 -1 roll /exec load
+          /exch load /pop load
+          /exch load /pop load
+          /exch load /pop load
+        ] cvx bind def
+        /ImageMatrix exch def
+        /BitsPerComponent exch def
+        /Height exch def
+        /Width exch def
+        /Decode {0 1} def
+        currentdict 
+      end
+      image
+      /Level1Separator /ProcSet findresource /HqnLevel1SepDict get /setimagecmyksave get restore
+    } bind put
+
+    % the original function of setimagecmyk
+    dup length 4 eq {
+      aload pop
+    }{
+      aload pop 
+      spots exch get 0 4 getinterval aload pop 
+      4 { 4 index mul 4 1 roll } repeat 
+      5 -1 roll pop
+    } ifelse
+    /ik exch def /iy exch def /im exch def /ic exch def
+  } if
+} bind def
+
+% Initialisation part.
+% Notes:
+% 1. We can't make use of globaldict since it doesn't exist in Level 1 mode.
+% 2. We have to use userdict for the /inkoverprint boolean since it has to be
+%    in a writeable dictionary.
+% 3. The functions must be procedures and can't be operators as otherwise
+%    FreeHand doesn't work (since when separating it defines setcustomcolor
+%    after having bound it into a procedure which therefore picks up our
+%    definition as opposed to its). 
+% 4. The functions can't be in userdict as otherwise PageMaker doesn't work
+%    (since when separating EPS files it does a begin on userdict which
+%     therefore picks up our definitions as opposed to its).
+% 5. We have to use userdict for /setoverprint in Level 1 mode as otherwise
+%    it gets removed. We can't always put it in userdict as otherwise Illustrator
+%    files don't work (as it too does a begin on userdict which therefore picks
+%    up our definitions as opposed to its), however in Level 1 mode Illustrator
+%    assumes the operator doesn't exist, so doesn't attempt to pick it up anyway.
+
+/HqnInitializeL1Separation 1 dict def
+/HqnInitializeL1Separation {
+  {
+    /Level1Separator /ProcSet findresource
+    { 
+      1 index dup dup dup dup
+      /HqnLevel1SepDict eq exch
+      /HqnInitializeL1Separation eq or exch
+      /HqnInitializeL2Separation eq or exch
+      /HqnInitializeL3Separation eq or exch
+      /HqnInitializeNamedColors eq or {
+        pop pop
+      } {
+        1 index /setoverprint eq {
+          //HqnInitializeL1Separation dup 4 2 roll put
+          1183615869 internaldict /shadowop get exec
+        } {
+          1 index /currentoverprint eq {
+            userdict 3 1 roll put
+          } {
+            systemdict 3 1 roll put
+          } ifelse
+        } ifelse
+      } ifelse
+    } forall
+  } 1183615869 internaldict /superexec get exec
+
+  userdict /inkoverprint false put
+} bind def
+
+/HqnInitializeL2Separation 1 dict def
+/HqnInitializeL2Separation {
+  {
+    /Level1Separator /ProcSet findresource
+    { 
+      1 index dup dup dup dup
+      /HqnLevel1SepDict eq exch
+      /HqnInitializeL1Separation eq or exch
+      /HqnInitializeL2Separation eq or exch
+      /HqnInitializeL3Separation eq or exch
+      /HqnInitializeNamedColors eq or {
+        pop pop
+      } {
+        1 index /setoverprint eq {
+          //HqnInitializeL2Separation dup 4 2 roll put
+          1183615869 internaldict /shadowop get exec
+        } {
+          systemdict 3 1 roll put
+        } ifelse
+      } ifelse
+    } forall
+  } 1183615869 internaldict /superexec get exec
+
+  userdict /inkoverprint false put
+} bind def
+
+/HqnInitializeL3Separation /HqnInitializeL2Separation load def
+
+/HqnInitializeNamedColors {
+  {
+    /Level1Separator /ProcSet findresource begin
+      /setcustomcolor      dup load systemdict 3 1 roll put
+      /findcmykcustomcolor dup load systemdict 3 1 roll put
+    end
+  } 1183615869 internaldict /superexec get exec
+} bind def
+
+% Attempt to unload L1 separator procedures. 
+% Called from LoadSetup in HqnControl
+% This is a little crude, but should be OK.
+/HqnUnloadSeparation << /setoverprint null >> def
+/HqnUnloadSeparation {
+		{
+		/Level1Separator /ProcSet findresource
+			{ 
+			pop
+			systemdict exch
+			2 copy known {
+				2 copy get type /operatortype ne {
+					undef
+				} { pop pop } ifelse
+			}	{ pop pop } ifelse
+		} forall
+	} 1183615869 internaldict /superexec get exec
+
+	//HqnUnloadSeparation 1183615869 internaldict /shadowop get exec
+
+	% Note that this section assumes that it will be called within the body 
+	% of a job, not from a page feature or elsewhere in the config portion
+	% of the job loop.
+	systemdict /languagelevel 2 copy known {
+		get 1 eq
+	}	{
+		pop pop true
+	} ifelse {
+		userdict /currentoverprint undef
+	} if
+} bind def
+
+false setglobal
+
+/Level1Separator currentdict end /ProcSet defineresource pop
+
+setglobal % Back to what it was at the start
+
+%%EndProcSet

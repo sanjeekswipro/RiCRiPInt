@@ -1,0 +1,323 @@
+% /* $HopeName: SWv20!src:pseudpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log moved to end.
+% */
+
+% ----------------------------------------------------------------------
+% pseudo operators in systemdict
+
+systemdict begin
+
+  /initialized 1 def
+
+  % FontDirectory, FlobalFontDirectory, SharedFontDirectory, findfont,
+  % findencoding, findcharstrings and findpgfont are now in resource.pss.
+
+  /Run {
+    dup == flush
+    { run } stopped
+  } bd
+
+  /buildtime currentsystemparams /BuildTime get def
+
+  /SpecialRun {
+    1183615869 internaldict /MPSRun get exec
+  } bd
+
+end % systemdict
+
+% ---------------------------------------------------------------------
+%% statusdict items
+
+statusdict begin
+
+  /authors [
+   (T.Aas)
+   (F.Abbott)
+   (A.Aitchison)
+   (P.Aldridge)
+   (T.Angelikaki)
+   (P.Attridge)
+   (M.Bailey)
+   (P.Barada)
+   (T.Barbalet)
+   (S.Bastians)
+   (K.Beiro)
+   (L.Bennett)
+   (C.Berry)
+   (D.Berry)
+   (S.Birtwistle)
+   (J.Boyfield)
+   (R.Buck)
+   (P.Butcher)
+   (R.Butterworth)
+   (A.Cave)
+   (T.Cave)
+   (P.Chase)
+   (P.Collins)
+   (D.Cook)
+   (P.Crowley)
+   (M.Dashevsky)
+   (T.Davis)
+   (D.Denyer)
+   (A.Duggan)
+   (D.Earl)
+   (M.Edie)
+   (D.Edis)
+   (A.Edwards)
+   (K.Elsman)
+   (D.Emmerson)
+   (H.Fearnhamm)
+   (T.Fitt)
+   (A.Ford)
+   (C.Freda)
+   (N.George)
+   (C.Gettinger)
+   (D.Gilday)
+   (R.Goldsmith)
+   (S.Green)
+   (D.Hall)
+   (F.Hallock)
+   (B.Hampson)
+   (D.Hembrow)
+   (R.Henderson)
+   (D.Hills)
+   (A.Hopper)
+   (P.Hornbeck)
+   (P.Howard)
+   (P.Hudson)
+   (A.Innes)
+   (R.Ivimey-Cook)
+   (J.Jefferies)
+   (M.Johnson)
+   (B.Jones)
+   (M.Jones)
+   (R.Jordan)
+   (J.Kamp)
+   (F.Kara)
+   (J.Kenyon)
+   (R.Kistruck)
+   (D.Knight)
+   (M.Kratt)
+   (M.Kreisberger)
+   (S.Lange)
+   (D.Law)
+   (T.Ledger)
+   (S.Lee)
+   (R.Lloyd)
+   (J.Marks)
+   (C.Marland)
+   (A.Masia)
+   (D.Miller)
+   (G.Nicholls)
+   (R.Oakford)
+   (G.Page)
+   (M.Parsons)
+   (J.Peatfield)
+   (E.Penfold)
+   (J.Peng)
+   (P.Pirinen)
+   (D.Pool)
+   (N.Reeves)
+   (C.Revie)
+   (M.Richmond)
+   (I.Robinson)
+   (J.Sturdy)
+   (T.Schuneman)
+   (C.Singleton)
+   (R.Smith)
+   (A.StJohn)
+   (D.Strauss)
+   (G.Swanson)
+   (B.Tennefoss)
+   (N.Terry)
+   (M.Tillotson)
+   (J.Trenouth)
+   (L.Tunmer)
+   (H.Tyson)
+   (C.Wells)
+   (P.Westlake)
+   (I.White)
+   (L.Whitfield)
+   (M.Williams)
+   (J.Wilson)
+   (G.Wiseman)
+   (S.Woodall)
+   (B.Wright)
+   (Y.Yeracaris)
+  ] noaccess def
+
+  /getknown { % name (in currentpagedevice) => |- value true; or |- false
+    currentpagedevice exch 2 copy known {
+      get dup type /nulltype eq dup {
+        exch pop
+      } if
+      not
+    }{
+      pop pop false
+    } ifelse
+  } bd
+
+  /product product def
+  /revision revision def
+  /buildtime buildtime def
+  /eerom true def
+  /sendctrld false def
+  /LaserJetEmuDict 1 dict def
+  /waittimeout 300 def
+  /appletalktype (LaserWriter) def
+  /debugmode 0 def
+  /jobstring 32 string def
+  /jobstate (idle)       def
+  /jobname   null        def
+  /jobsource (AppleTalk) def
+  /lastmode 0 def
+  /printererror {
+    0 % replaced by currentdict
+    begin
+      /ntrys exch def
+      /stat exch def
+      /eindex 0 def
+      /abort false def
+      stat -1 eq {
+        errordict /errorbeep get exec
+        (PrinterError: printer turned off) eprint eflush
+        /report true def
+        10 {
+          report {
+            /eindex 0 def
+            (PrinterError: resetting printer) eprint eflush
+            /report false def
+          } if
+          resetprinter { exit } if
+        } repeat
+      }{
+        stat 16#7fffff80 and 16#7ff80000 ne {
+          errordict /errorbeep get exec
+          (PrinterError: ) eprint
+          /bits stat -16 bitshift 6776 and def
+          currentdict bits known
+          { bits load exec }
+          {
+            statusdict /printermessage get exec
+            dup length 0 eq { pop stat 16 =string cvrs } if
+          } ifelse
+          eprint eflush
+        } if
+      } ifelse
+      % /laststat stat def
+      abort
+    end
+    { 1 setblink interrupt } if
+    %  dont do the delay any more
+    % usertime 1000 add
+    % { dup usertime lt { pop exit } if } loop
+  } def
+
+  % now poke a dictionary into the first element
+
+  /printererror load 0 <<
+    0     (timeout, clearing printer)
+    512   (service call)
+    520   (paper entry misfeed)
+    528   { 
+            //statusdict /ismanualfeed get exec {
+              (manual feed timeout)
+              /abort true def
+            }{
+              (out of paper)
+            } ifelse
+          } bind
+    536   (paper entry misfeed)
+    544   (paper jam)
+    576   (no takeup cassette)
+    2048  (warming up)
+    4616  {
+            (paper exit misfeed, ) eprint
+            stat 32256 and -9 bitshift
+            //=string cvs eprint
+            ( pages may be lost)
+          } bind
+
+    /errstr 60 string
+    /messtr 40 string
+    /report true
+    % /laststat 0
+    /ntrys 0
+    /stat 0
+    /bits 0
+    /abort false
+    /eindex 0
+
+    /eprint {
+      errstr eindex errstr length
+      eindex sub getinterval
+      cvs
+      length eindex add
+      /eindex exch def
+    } bind
+
+    /eflush {
+      //statusdict /jobstate errstr 0 eindex getinterval
+      dup
+      execdict begin
+        (%%[ ) print print ( ]%%\n) print flush
+      end
+      put
+    } bind
+  >> put
+
+  /printererror load bind pop % because it was not bound at the def
+
+  % TN3010 section 9.2 says this should be user param, but since our user
+  % param does nothing, I have used the system param instead.
+  /accuratescreens { currentsystemparams /AccurateScreens get } bd
+
+  /byteorder { currentsystemparams /ByteOrder get } bd
+
+  /realformat { currentsystemparams /RealFormat get } bd
+
+  /userdiskpercent { 0 } bd
+  /setuserdiskpercent { pop } bd
+
+  /jobtimeout { currentuserparams /JobTimeout get } bd
+  /setjobtimeout 2 dict def
+  /setjobtimeout {
+    //setjobtimeout dup /JobTimeout 4 3 roll put
+    dup /Password 0 put setuserparams
+  } bd
+
+  /emulate {
+    { /Emulator findresource } stopped {
+      pop /emulate /rangecheck //systemdict /.error get exec
+    } {
+      1 index type /dicttype eq { exch pop } if
+      filter cvx exec
+    } ifelse
+  } bd
+
+  % This dictionary can be populated with input plugin channel classes. When a
+  % job is ripped, and the input channel's class is present in this dictionary,
+  % the job will be named using the value of the %%Title: comment within the
+  % job, by copying the title to 'jobname' in statusdict.
+  /UseTitleForJobName << >> def
+
+% The following compatibility operators should be defined in systemdict by
+% PostScript that introduces ExtraPageDevice keys for duplex handling:
+%
+% setduplexmode
+% duplexmode
+% newsheet
+% firstside
+% settumble
+% tumble
+%
+% See SWhadox!swf:setups:setup for an example implementation.
+
+end % statusdict
+
+% /* ===========================================================================
+% Log stripped

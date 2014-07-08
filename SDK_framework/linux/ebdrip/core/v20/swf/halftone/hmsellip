@@ -1,0 +1,30 @@
+%!PS-Adobe-3.0
+%%Title: HMS-Elliptical1
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 10, 1995
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginResource: halftone HMS-Elliptical1
+
+% $HopeName: SWv20!swf:halftone:hmsellip(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+% use as follows in Photoshop etc:
+%       /HMS-Elliptical1 /Halftone findresource /SpotFunction get
+
+currentglobal false setglobal
+32 dict begin
+/globalness exch def
+
+/HalftoneType 1 def
+/SpotFunction $printerdict /switchscreens get (HMS Elliptical1) cvn get def
+/Angle 0 def
+/Frequency 60 def
+currentdict
+end
+
+(HMS-Elliptical1) cvn exch /Halftone defineresource
+/globalness get setglobal
+
+%%EndResource

@@ -1,0 +1,15 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# GCov compilation rules.
+#
+# $HopeName: HQNjambits!comprule:gcov.jam(EBDSDK_P.1) $
+#
+
+    NOTFILE gcov ;
+    if gcov in $(JAM_ARGUMENTS) || ! $(GCOV) in 0 {
+        EnableGCov = 1 ;
+    }
+
+
+# Log stripped

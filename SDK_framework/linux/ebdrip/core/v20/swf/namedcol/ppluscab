@@ -1,0 +1,113 @@
+%!PS-Adobe
+%%Title: PantonePLUSCoatedAbr
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 22, 2010
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:namedcol:ppluscab(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This header will create a dictionary containing all the named colours in this file,
+% along with their XYZ values.
+% Done this way to minimise VM use.
+
+	<<
+	/Globalness currentglobal false setglobal		% Will be reverted by initialize
+	/ResName /PantonePLUSCoatedAbr	% The name of this resource
+	/BaseSpace /XYZ-D50		% Underlying color space for the values below
+	/RetrySuffix false		% If a name can't be found, try stripping the suffix to 'CV'
+	/Divisor 100			% Divide values by 100
+>> /HqnColorDatabase /ProcSet findresource /initialize get exec
+PANTONE YEL 0131 C
+77.75	84.30	35.50
+PANTONE MAG 0521 C
+66.86	56.51	56.78
+PANTONE VLT 0631 C
+46.47	39.94	56.23
+PANTONE BLU 0821 C
+43.11	53.67	65.42
+PANTONE GRN 0921 C
+54.39	68.23	57.45
+PANTONE BLK 0961 C
+30.84	31.52	22.90
+PANTONE MED YEL C
+70.10	72.35	3.64
+PANTONE BRT ORG C
+50.95	32.15	1.73
+PANTONE BRT RED C
+45.47	25.41	2.83
+PANTONE STG RED C
+29.46	13.83	7.24
+PANTONE MED PRP C
+7.06	3.21	19.14
+PANTONE DK BLUE C
+5.12	3.20	23.73
+PANTONE MED BLU C
+10.65	16.26	44.79
+PANTONE BRT GRN C
+12.36	27.94	23.28
+PANTONE NTR BLK C
+1.55	1.60	1.35
+PANTONE YEL. C
+70.85	74.13	3.56
+PANTONE OR.021 C
+48.18	29.03	1.10
+PANTONE WM RED C
+46.42	26.66	4.81
+PANTONE RUBRED C
+29.55	13.70	7.62
+PANTONE RHODRED C
+39.05	19.75	22.85
+PANTONE BLU072 C
+5.07	2.41	24.69
+PANTONE REFBLU C
+3.47	1.89	18.01
+PANTONE PROBLU C
+10.75	16.46	44.66
+PANTONE WMGY 1 C
+63.21	65.01	50.02
+PANTONE WMGY 2 C
+54.72	56.06	42.43
+PANTONE WMGY 3 C
+47.43	48.44	36.22
+PANTONE WMGY 4 C
+42.06	42.83	31.71
+PANTONE WMGY 5 C
+36.87	37.43	27.48
+PANTONE WMGY 6 C
+33.78	34.22	25.10
+PANTONE WMGY 7 C
+26.78	26.98	19.38
+PANTONE WMGY 8 C
+22.98	23.06	16.35
+PANTONE WMGY 9 C
+19.52	19.49	13.64
+PANTONE WMGY 10 C
+16.34	16.24	11.18
+PANTONE WMGY 11 C
+13.02	12.86	8.65
+PANTONE CLGY 1 C
+66.81	69.32	56.20
+PANTONE CLGY 2 C
+60.63	62.92	51.18
+PANTONE CLGY 3 C
+56.05	58.17	47.70
+PANTONE CLGY 4 C
+48.37	50.22	41.57
+PANTONE CLGY 5 C
+42.96	44.61	37.15
+PANTONE CLGY 6 C
+37.72	39.16	33.03
+PANTONE CLGY 7 C
+30.52	31.70	27.00
+PANTONE CLGY 8 C
+24.61	25.56	22.03
+PANTONE CLGY 9 C
+17.89	18.59	16.31
+PANTONE CLGY 10 C
+12.59	13.10	11.72
+PANTONE CLGY 11 C
+8.85	9.21	8.40

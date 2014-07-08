@@ -1,0 +1,17 @@
+%!PS-Adobe-3.0
+%%Title: DefaultCMYK
+%%Creator: Global Graphics Software Limited
+%%CreationDate: 1998-06-19
+%%Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colspace:defcmyk(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+/DefaultCMYK [ /DeviceCMYK ] /ColorSpace defineresource pop
+setglobal
+
+%%EndResource

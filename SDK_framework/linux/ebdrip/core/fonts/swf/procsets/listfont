@@ -1,0 +1,70 @@
+%!PS-Adobe-3.0
+%%Title: HqnListFonts
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 26, 1992
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnListFonts) 1 1
+
+% this proc set provides a procedure 'listfonts' which prints a list of fonts
+% to stdout
+% 
+% It is level 2 code so cannot be run when level 2 is turned off. A typical
+% job that uses it looks like this (assuming you are worried about the 
+% level2ness):
+%         {
+%           /HqnListFonts /ProcSet findresource begin
+%             listfonts
+%           end
+%         } serverdict /execlevel2 get exec
+
+
+currentglobal false setglobal
+
+% the resource:
+8 dict begin
+  /globalness exch def
+
+  /listfontsdict 10 dict def
+  listfontsdict begin  
+
+    /fontstring 256 string def
+
+    /getnextfont {
+      /thename null def
+      //fontstring 0 16#ff put
+      /thestr //fontstring 0 1 getinterval def
+      dup {
+        pop 
+        dup //=string cvs
+        dup thestr lt {
+          /thestr 1 index //fontstring copy def
+          /thename 2 index def
+        } if
+        pop pop
+      } forall
+      thename undef
+      thename
+    } bind def
+  end
+
+  /listfonts {
+    currentglobal false setglobal
+    //listfontsdict begin
+      /thefonts <<
+	(*) { cvn 0 } //=string /Font resourceforall
+	(*) { cvn 0 } //=string /CIDFont resourceforall
+      >> def
+      thefonts length {
+        thefonts getnextfont =
+      } repeat
+    end
+    setglobal
+  } bind def
+  currentdict
+end
+
+/HqnListFonts exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet

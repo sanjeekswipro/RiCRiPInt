@@ -1,0 +1,860 @@
+%!PS-Adobe-3.0
+%%Title: HqnIllusPatch
+%%Creator: Global Graphics Software Limited
+%%CreationDate: May 1998
+%%VMusage: -1 -1
+%{HqnIllusPatch version #1 0
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnIllusPatch) 1 0
+
+% $HopeName: SWv20!swf:procsets:illpatch(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This procset contains code designed to amend the output of PostScript 
+% and EPS files created using Adobe Illustrator(tm). 
+%
+% Adobe Illustrator is a trademark of Adobe Systems, Inc.
+%
+% Entry points:
+%
+% Illus7Spots
+%
+% Install parsing to add all spot colours found in Illustrator 7 & 8 files -
+% The Illustrator code itself includes a test for whether a spot colour will be 
+% generated anyway, and prevents 'all spot colours' from having an effect.
+%
+%
+% Illus6Spots
+%
+% Throw spot colour vignettes from Illustrator 5.5 and 6 onto spot separations
+% They will otherwise always end up on the process separations.
+%
+% IllusMissingFonts
+%
+% Don't let Illustrator do font substitution itself - use the RIP features.
+
+
+currentglobal false setglobal
+
+12 dict begin
+
+/FullTestSpot /HqnSpots /ProcSet findresource /FullTestSpot get def
+
+/recstat 1183615869 internaldict /recombinestatus get def
+
+/QuickCheckPreSeparated {
+	recstat exch pop 2 ge
+} bind def
+
+/QuickCheckRecombining {
+	recstat 2 ge and
+} bind def
+
+% Used by Illus7AllSpots
+/IllustratorAutoSpots <<
+
+	/spotConverted {
+		//QuickCheckPreSeparated exec {
+			begin
+			_isCMYKSep not {
+				false
+			}	{
+				name null eq {
+					false
+				}	{
+					tintValue null eq tintImage null eq and {
+						true
+					}	{
+						spot_C spot_M spot_Y spot_K name ccThrough
+					} ifelse
+				} ifelse
+			} ifelse
+			end
+		}	{
+			begin
+			name null eq{
+				% it's a process colour
+				false
+			}	{
+				tintValue null eq tintImage null eq and{
+					% It's a spot colour in a spot to process blend.
+					true
+				}	{
+					% It's a spot colour recognised as such.
+					name
+					//FullTestSpot exec
+					dup {
+						exch
+						name dup type /nametype ne { cvn } if
+						1 index ne {
+							dup length string cvs
+							/name exch def
+						} { pop } ifelse 
+					} if
+					not
+				}ifelse
+			}ifelse
+			end
+		} ifelse
+	} bind
+
+>> def
+
+currentglobal false setglobal
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+/IllustratorFontPatch <<
+
+	/havefont [
+			{		% template
+			systemdict /languagelevel known	{
+				/Font resourcestatus dup { exch pop exch pop }	if
+			}	{
+				systemdict /FontDirectory get 1 index known	{ pop true } {
+					systemdict /fileposition known {
+						dup length 6 add exch
+						Ss 6 250 getinterval
+						cvs pop
+						Ss exch 0 exch getinterval
+						status { pop pop pop pop true }	{ false } ifelse
+					}	{
+						pop false
+					} ifelse
+				} ifelse
+			} ifelse
+		} bind
+
+			{	% replacement
+			/Font resourcestatus dup { 
+				3 1 roll pop pop 
+			} if
+		} bind
+	
+			{		
+			% Harlequin extension - poke the new definition back 
+			% into the dictionary
+			%
+			% /havefont original 0 template subst
+			4 index /havefont eq {
+				4 1 roll pop pop pop
+				2 copy { def } 1183615869 internaldict /superexec get exec
+				% /havefont subst
+			}	{
+				pop pop pop
+			} ifelse
+		}
+	
+	]
+	
+	/TZ7 [
+			{		% template
+			dup type /arraytype eq { /_wv exch def } { /_wv 0 def } ifelse
+			/_useNativeEncoding exch def
+			2 index havefont {
+				3 index 255 string cvs dup (_Symbol_) eq {
+					pop	2 index findfont
+				}	{
+					dup length 1 sub 1 exch getinterval cvn findfont
+				} ifelse
+			}	{
+				dup 1 eq {
+					2 index 64 string cvs
+					dup (-90pv-RKSJ-) (-83pv-RKSJ-) subststring {
+						exch pop dup havefont {
+							findfont false
+						}	{
+							pop true
+						} ifelse
+					}	{
+						pop	dup
+						(-90ms-RKSJ-) (-Ext-RKSJ-) subststring {
+							exch pop dup havefont {
+								findfont false
+							}	{
+								pop true
+							} ifelse
+						}	{
+							pop pop true
+						} ifelse
+					} ifelse
+						{
+						/Ryumin-Light-83pv-RKSJ-H havefont 
+							{/Ryumin-Light-83pv-RKSJ-H}{/Courier} ifelse
+							findfont [1 0 0.5 1 0 0] makefont
+					} if
+				}	{
+					/Courier findfont
+				} ifelse
+			} ifelse
+			_wv type /arraytype eq {
+				_wv makeblendedfont
+			} if
+			dup length 10 add dict begin
+			mark exch
+				{
+				1 index /FID ne { def } if
+				cleartomark mark
+			} forall
+			pop
+			/FontScript exch def
+			/FontDirection exch def
+			/FontRequest exch def
+			/FontName exch def
+			counttomark 0 eq {
+				1 _useNativeEncoding eq {
+					/Encoding _nativeEncoding def
+				} if
+				cleartomark
+			}	{
+				/Encoding load 256 array copy
+				modifyEncoding /Encoding exch def
+			} ifelse
+			FontName currentdict end
+			definefont pop
+		} bind
+		
+			{		% replacement
+			dup type /arraytype eq { /_wv exch def } { /_wv 0 def } ifelse
+			/_useNativeEncoding exch def
+
+			3 index 255 string cvs dup (_Symbol_) eq {
+				pop	2 index findfont
+			}	{
+				dup length 1 sub 1 exch getinterval cvn findfont
+			} ifelse
+
+			_wv type /arraytype eq {
+				_wv makeblendedfont
+			} if
+			dup length 10 add dict begin
+			mark exch
+				{
+				1 index /FID ne { def } if
+				cleartomark mark
+			} forall
+			pop
+			/FontScript exch def
+			/FontDirection exch def
+			/FontRequest exch def
+			/FontName exch def
+			counttomark 0 eq {
+				1 _useNativeEncoding eq {
+					/Encoding _nativeEncoding def
+				} if
+				cleartomark
+			}	{
+				/Encoding load 256 array copy
+				modifyEncoding /Encoding exch def
+			} ifelse
+			FontName currentdict end
+			definefont pop
+		} bind
+
+			{
+			% Harlequin extension - poke the new definition back 
+			% into the dictionary
+			%
+			% /TZ original 0 template subst
+			4 index /TZ eq {
+				4 1 roll pop pop pop
+				2 copy { def } 1183615869 internaldict /superexec get exec
+				% /TZ subst
+			}	{
+				pop pop pop
+			} ifelse
+		}
+	]
+
+	/TZ8	[
+			{		% template
+			dup type /arraytype eq { /_wv exch def } { /_wv 0 def } ifelse
+			/_useNativeEncoding exch def
+			2 index havefont {
+				3 index 255 string cvs
+				dup (_Symbol_) eq {
+					pop 2 index findfont
+				}	{
+					1 index 0 eq {
+						dup length 1 sub 1 exch getinterval cvn findfont
+					}	{
+						pop 2 index findfont
+					} ifelse
+				} ifelse
+			}	{
+				dup 1 eq {
+					2 index 64 string cvs
+					dup (-90pv-RKSJ-) (-83pv-RKSJ-) subststring {
+						exch pop dup havefont {
+							findfont false
+						}	{
+							pop true
+						} ifelse
+					}	{
+						pop	dup
+						(-90ms-RKSJ-) (-Ext-RKSJ-) subststring {
+							exch pop dup havefont {
+								findfont false
+							}	{
+								pop true
+							} ifelse
+						}	{
+							pop pop true
+						} ifelse
+					} ifelse
+						{
+						1 index 1 eq {
+							/Ryumin-Light-Ext-RKSJ-V havefont
+								{/Ryumin-Light-Ext-RKSJ-V} {/Courier} ifelse
+						}	{
+							/Ryumin-Light-83pv-RKSJ-H havefont
+								{/Ryumin-Light-83pv-RKSJ-H} {/Courier} ifelse
+						} ifelse
+						findfont [1 0 0.5 1 0 0] makefont
+					} if
+				}	{
+					/Courier findfont
+				} ifelse
+			} ifelse
+			
+			_wv type /arraytype eq {
+				_wv makeblendedfont
+			} if
+			dup length 10 add dict begin
+			mark exch {
+				1 index /FID ne { def } if
+				cleartomark mark
+			} forall
+			pop
+			/FontScript exch def
+			/FontDirection exch def
+			/FontRequest exch def
+			/FontName exch def
+			counttomark 0 eq {
+				1 _useNativeEncoding eq {
+					/Encoding _nativeEncoding def
+				} if
+				cleartomark
+			}	{
+				/Encoding load 256 array copy
+				modifyEncoding /Encoding exch def
+			} ifelse
+			FontName currentdict end
+			definefont pop
+		} bind
+		
+			{		% replacement
+			dup type /arraytype eq { /_wv exch def } { /_wv 0 def } ifelse
+			/_useNativeEncoding exch def
+			3 index 255 string cvs
+			dup (_Symbol_) eq {
+				pop 2 index findfont
+			}	{
+				1 index 0 eq {
+					dup length 1 sub 1 exch getinterval cvn findfont
+				}	{
+					pop 2 index findfont
+				} ifelse
+			} ifelse
+			
+			_wv type /arraytype eq {
+				_wv makeblendedfont
+			} if
+			dup length 10 add dict begin
+			mark exch {
+				1 index /FID ne { def } if
+				cleartomark mark
+			} forall
+			pop
+			/FontScript exch def
+			/FontDirection exch def
+			/FontRequest exch def
+			/FontName exch def
+			counttomark 0 eq {
+				1 _useNativeEncoding eq {
+					/Encoding _nativeEncoding def
+				} if
+				cleartomark
+			}	{
+				/Encoding load 256 array copy
+				modifyEncoding /Encoding exch def
+			} ifelse
+			FontName currentdict end
+			definefont pop
+		} bind
+	
+			{
+			% Harlequin extension - poke the new definition back 
+			% into the dictionary
+			%
+			% /TZ original 0 template subst
+			4 index /TZ eq {
+				4 1 roll pop pop pop
+				2 copy { def } 1183615869 internaldict /superexec get exec
+				% /TZ subst
+			}	{
+				pop pop pop
+			} ifelse
+		}
+	]
+
+>> def
+
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+setglobal
+
+/Illus56FixSpots [ 0 0 0 1 ] def
+/Illus56FixSpots {
+	{ /spot1 /spot2 }{
+		load begin
+		name type /nulltype ne spot_C type /nulltype eq and {
+			statusdict /CMYKCustomColors get name 
+			2 copy known {
+				get
+			}	{
+				pop pop 
+				null
+			} ifelse
+			dup type /nulltype eq userdict /HqnLastSpot known and {
+				name HqnLastSpot eq {
+					pop		% the null
+					userdict /HqnLastColorSpace get
+					3 get 0 get
+				} if
+			} if
+			dup type /nulltype eq {
+				name //FullTestSpot exec 
+					{
+					name dup type /nametype ne { cvn } if
+					1 index ne {
+						dup length string cvs /name exch def
+					} { pop } ifelse
+					pop 
+					//Illus56FixSpots
+				} if
+			} if
+			% now have colour array or null
+			dup type /nulltype ne {
+				aload pop
+				{ /spot_K /spot_Y /spot_M /spot_C } { exch def } forall
+			} { pop } ifelse
+		} if
+		end
+	} forall
+} bind def
+
+/Illus56OneSpot {
+	begin
+	tintValue type /nulltype ne spot_C type /nulltype ne and {
+		userdict /HqnLastSpot 2 copy known {
+			get dup type /stringtype eq {
+				name eq
+			}	{ pop false } ifelse
+		} { pop pop false } ifelse
+			{
+			userdict /HqnLastColorSpace get
+			setcolorspace
+			tintValue setcolor
+		}	{
+			userdict /HqnLastSpot name put
+				[ 
+				/Separation
+				name
+				/DeviceCMYK
+					[
+						[ 
+						spot_C dup type /nulltype eq {
+							pop
+							0 0 0 1
+						}	{
+							spot_M spot_Y spot_K 
+						} ifelse 
+					]
+					{ 1 index mul exch } /forall load 
+					/pop load
+				] cvx bind
+			] 
+			setcolorspace
+			tintValue setcolor
+			userdict /HqnLastColorSpace currentcolorspace put
+		} ifelse
+	} if
+	end
+} bind def	
+
+/I56TintTranform {
+	% v1 v2
+	null 2 index mul
+	null 2 index mul
+	add dup 1. gt { pop 1. } if
+	3 1 roll
+	% C V1 V2
+	null 2 index mul
+	null 2 index mul
+	add dup 1. gt { pop 1. } if
+	3 1 roll
+	% C M V1 V2
+	null 2 index mul
+	null 2 index mul
+	add dup 1. gt { pop 1. } if
+	3 1 roll
+	% C M Y V1 V2
+	null 3 -1 roll mul exch
+	null mul
+	add dup 1. gt { pop 1. } if
+	% C M Y K
+} def		% NOT bound
+
+/MakingSpots {
+	currentpagedevice /ProcessColorModel 2 copy known { 
+		get 
+		/DeviceGray ne
+	}	{
+		pop pop true
+	} ifelse
+	currentpagedevice /Separations 2 copy known { 
+		get 
+	}	{
+		pop pop false 
+	} ifelse
+	or		% not gray, or separating
+	//QuickCheckRecombining exec not
+	and		% and not recombining
+
+	% BUT - we may not know for sure if the job really is being recombined or really
+	% is pre-separated at this stage - it may be just too early, so we also have to 
+	% check in the individual procedure calls.
+} bind def
+
+(%dict) load (%actions) cvn get begin
+/AI7_ImageSettings: {
+	null exec
+
+	statusdict /PatchIllustratorFonts 2 copy known { get }{ pop pop false } ifelse
+		{ 
+		/IllFontPatch //IllustratorFontPatch /IdiomSet defineresource pop
+	} if
+
+	statusdict /PatchIllustratorSpots 2 copy known { get }{ pop pop false } ifelse
+		{
+		% setcustomcolor is often redefined and not a good check for a 'real'
+		%  installation of the L1 colour conventions.
+		/separationimage where {
+			pop
+			//MakingSpots exec {
+				//IllustratorAutoSpots 1183615869 internaldict /shadowop get exec
+				userdict /_compositeSpotDevice 1 put
+			} if
+		} if
+	} if
+} 
+dup 0
+currentdict /AI7_ImageSettings: known {
+	/AI7_ImageSettings: load
+}	{
+	{ pop }
+} ifelse
+put
+bind def
+
+end		% %actions
+
+/currentsystemparam 1183615869 internaldict /currentsystemparam get def
+
+% Suppress extra blank pages when processing pre-separated PS from Illustrator
+% because this app produces a stray rectfill of set size which we want to
+% ignore when NumCopies is also 0.
+	{
+		<<
+		/rectfill {
+			4 copy true { 1 1 -1 -1 } {
+				3 -1 roll eq and
+			} forall
+			currentpagedevice /NumCopies 2 copy known {get 0 eq} {pop pop false} ifelse
+			and {
+				pop pop pop pop
+			}	{
+				rectfill
+			} ifelse
+		} bind
+
+	>> 1183615869 internaldict /shadowop get exec
+} (Adobe Illustrator) HqnAddCreator
+
+/bCImg <<
+
+	/bCImg {
+		/cDataLen bDataLen store
+		setImgSpace
+
+		//QuickCheckPreSeparated exec {
+			setSSave
+			expandSpot
+			cyData mgData yeData cData
+			expandCMYK
+			true 4 spotDict
+			{ ncolorimage } stopped
+		}	{
+			currentdict /spotDict known {
+				% Used for blend procset v1.4
+
+				setSSave
+				spotDict begin
+
+				//Illus56FixSpots exec
+
+				{ /spot1 /spot2 } {
+					load begin
+					tintImage type /nulltype ne
+					name type /nulltype ne 
+					dup {
+						pop name //FullTestSpot exec
+						dup {
+							exch
+							name dup type /nametype ne { cvn } if
+							1 index ne {
+								dup length string cvs /name exch def
+							} { pop } ifelse
+						} if
+					} if
+					and
+					end
+				} forall
+
+				or {
+					spotColor? /spotColor? true store
+					expandSpot
+					/spotColor? exch store
+					0 0 0 0 
+					true 1 
+				}	{
+					cyData mgData yeData cData
+					expandCMYK
+					true 4
+				} ifelse
+				spotDict
+				{
+					ncolorimage
+				} stopped
+
+				end			% spotDict
+			}	{
+				% Used for blend procset v1.3
+				cyData mgData yeData cData
+				setSSave
+				mCMYKData
+				true 4
+				{ doCImg } stopped
+			} ifelse
+		} ifelse
+			{
+			$error /errorname get /undefinedresult ne {
+				stop
+			}	{
+				10 { pop } repeat
+			} ifelse
+		} if
+
+		sSave restore
+	} bind
+
+>> def
+
+/Ill6userdict <<
+
+	/_compositeSpotDevice {
+		//QuickCheckPreSeparated exec { 0 } { 1 } ifelse
+	} bind
+
+	/nsetcustomcolor {
+		//QuickCheckPreSeparated exec {
+			pop
+			setcmykcolor
+		}	{
+			begin
+			//Illus56FixSpots exec
+			spot1 /tintValue get type /nulltype ne
+			spot2 /tintValue get type /nulltype ne and {
+				% Spot to spot grad
+				systemdict /languagelevel get 3 ge {
+					userdict /HqnLastSpot 2 copy known {
+						get dup type dup /arraytype eq exch /packedarraytype eq or {
+							aload pop
+							spot1 /name get eq exch
+								spot2 /name get eq and
+							}	{ pop false } ifelse
+						}	{ pop pop false } ifelse
+							{
+							userdict /HqnLastColorSpace get
+						}	{
+							[
+							/DeviceN [ spot1 /name get spot2 /name get ] 
+							/DeviceCMYK
+							% VERY careful with offsets here ...
+							% nulls are replaced below.
+							//I56TintTranform dup length array copy
+							spot1 begin
+							dup 0 spot_C put
+							dup 17 spot_M put
+							dup 34 spot_Y put
+							dup 51 spot_K put
+							end
+							spot2 begin
+							dup 4 spot_C put
+							dup 21 spot_M put
+							dup 38 spot_Y put
+							dup 57 spot_K put
+							end
+							cvx bind 
+						]
+						userdict /HqnLastSpot 2 index 1 get put
+						userdict /HqnLastColorSpace 2 index put
+					} ifelse
+					setcolorspace
+					spot1 /tintValue get
+					spot2 /tintValue get
+					setcolor
+				}	{
+					4 copy setcmykcolor
+				} ifelse
+			}	{
+				% single spot
+				spot1 begin tintValue null ne spot_C type /nulltype ne and end
+				spot2 begin tintValue null ne spot_C type /nulltype ne and end 
+				or {
+					spot1 //Illus56OneSpot exec
+					spot2 //Illus56OneSpot exec
+				}	{
+					4 copy setcmykcolor
+				} ifelse
+			} ifelse
+			pop pop pop pop
+			end
+		} ifelse
+	}		% NOT bound - otherwise the setcmykcolor in a pre-sep job won't pick
+			% up the separation wrapper redefinition.
+
+	/ncolorimage {
+		//QuickCheckPreSeparated exec {
+			pop colorimage
+		}	{
+			begin
+			//Illus56FixSpots exec
+			dup 1 eq {
+				pop pop pop pop pop pop
+				currentoverprint 5 1 roll
+				spot1 begin
+					tintImage type /nulltype ne {
+						4 copy 
+						tintImage
+						[ spot_C spot_M spot_Y spot_K name ]
+						customcolorimage
+						true setoverprint
+					} if
+				end
+				spot2 begin
+					tintImage type /nulltype ne {
+						4 copy 
+						tintImage
+						[ spot_C spot_M spot_Y spot_K name ]
+						customcolorimage
+					} if
+				end
+				pop pop pop pop
+				setoverprint
+			}	{
+				colorimage
+			} ifelse
+			end
+		} ifelse
+	}		% NOT bound - otherwise the colorimage in a pre-sep job won't pick
+			% up the separation wrapper redefinition.
+
+	/nsetcustomcolorend {
+	} bind
+
+>> def
+
+
+% This is a patch to remove resolution dependency on Illustrator 5 generating
+% it's own screen at certain resolutions. Always turn it off because it is
+% never the right thing to do.
+
+(%%dict) load (%%actions) get begin
+
+/BeginResource: {
+  dup null exec 
+  ( Adobe_screens_AI5 ) search { 
+    pop pop pop 
+    <<
+      /screenid {-1} bind
+    >> 1183615869 internaldict /shadowop get exec 
+  } { pop } ifelse 
+} dup 1 
+currentdict /BeginResource: 2 copy known { 
+  get 
+} { 
+  pop pop { pop } 
+} ifelse put bind def
+
+end % %%actions
+
+
+3 dict begin	% ----------- the procset ----------------------------
+
+% Install parsing to add all spot colours found in Illustrator 7 files -
+% The Illustrator code itself includes a test for whether a spot colour will be 
+% generated anyway, and prevents 'all spot colours' from having an effect.
+/Illus7Spots {
+	statusdict /PatchIllustratorSpots true put
+} bind def
+
+% Install parsing to note that all fonts are 'available' in the RIP -
+% The Illustrator code itself includes a test for whether a font will be 
+% printed anyway, and replaces with Courier if not. We want the RIP's 
+% Missing Font code to kick in instead.
+% This is only required for Illustrator 7.
+/IllusMissingFonts {
+	statusdict /PatchIllustratorFonts true put
+} bind def
+
+% Throw spot colour vignettes from Illustrator 5.5 and 6 onto spot separations
+% They will otherwise always end up on the process separations.
+/Illus6Spots {
+	(%dict) load (%actions) cvn get /AI5_FileFormat {
+		mark exch
+		{ token not { exit } if exch } loop
+		counttomark 1 eq {
+			dup type /realtype eq {
+				% Don't install for Illustrator 7 or later
+				3.0 lt
+				% and don't install if pre-separated.
+				//MakingSpots exec 
+				and {
+					/separationimage where {
+						pop
+
+						userdict begin
+						//Ill6userdict { def } forall
+						end
+
+						//bCImg 1183615869 internaldict /shadowop get exec
+					} if	% separationimage known
+				} if	% right version of illustrator
+			} if	% version number is realtype
+		} if	% one item on AI5_FileFormat comment line
+		cleartomark
+	} bind	% AI5_FileFormat parsing procedure
+	put
+} bind def
+
+/HqnIllusPatch currentdict end /ProcSet defineresource pop
+
+end		% temp dict
+
+setglobal
+
+%%EOF

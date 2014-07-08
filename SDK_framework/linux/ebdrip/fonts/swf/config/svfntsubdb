@@ -1,0 +1,81 @@
+%!PS
+% $HopeName$
+
+% Copyright (C) 2012 Global Graphics Software Ltd. All rights reserved.
+%
+% This file is not intended to be user-editable.
+%
+% See SW/Config/FontSubstitution for user-editable font substitution.
+%
+% This file contains mappings from anonymous font numbers to substitute font
+% names. Anonymous font numbers are allocated by Global Graphics and their
+% formulation is not documented.
+
+%-------------------------------------------------------------------------------
+% Unconditional Font substitution maps to font names.
+
+statusdict /FontSubstitutionDB <<
+
+  % eg /1234567812345678 /Courier
+  /3626163F30C1293E /Aavasaksa-Book
+  /06D03FCF5058C37E /Aavasaksa-BookOblique
+  /0DF60E733499C9F7 /Aavasaksa-Demi
+  /24D823934FC8D30D /Aavasaksa-DemiOblique
+  /49FA6B38799C6663 /Puumala-Demi
+  /39A7DF5A31C3640B /Puumala-DemiItalic
+  /0EE039A643269CFA /Puumala-Light
+  /13D40A971CB12E09 /Puumala-LightItalic
+  /582A478B4002498E /Helsinki
+  /606C669460292C68 /Helsinki-Bold
+  /3984C85069262735 /Helsinki-BoldOblique
+  /12FD607E7D5A0175 /Helsinki-Narrow
+  /285781AC057D21DC /Helsinki-Narrow-Bold
+  /2352B16614C6A417 /Helsinki-Narrow-BoldOblique
+  /37D71C527D470E08 /Helsinki-Narrow-Oblique
+  /628B750D60A1698A /Helsinki-Oblique
+  /4D2C8D20388EE8E6 /Uusikaarlepyy-Bold
+  /71EE59541AA5B7EC /Uusikaarlepyy-BoldItalic
+  /02E9AE1C5045EF81 /Uusikaarlepyy-Italic
+  /0D549B9D70828904 /Uusikaarlepyy-Roman
+  /34A3FA8F2A50B555 /Paltamo-Bold
+  /0EA933166D58CAC8 /Paltamo-BoldItalic
+  /591C323010B40D38 /Paltamo-Italic
+  /5C8CEB8919416C22 /Paltamo-Roman
+  /390468B6099E4647 /Simpele
+  /31D2BDD0361BB310 /Turku-Bold
+  /0FA56FB97FE1DBFA /Turku-BoldItalic
+  /0DED9FD302B81E91 /Turku-Italic
+  /09A8D4753723197F /Turku-Roman
+  /58555E900A04FFD4 /Savonranta-MediumItalic
+  /7E43DAB856FF1724 /Savonlinna
+>> put
+
+%-------------------------------------------------------------------------------
+% Unconditional ShivaFont substitution maps to Shiva font names.
+
+statusdict /ShivaFontSubstitutionDB <<
+
+  % eg /ABCD1234ABCD1234 /Bullet
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional Font substitution maps to arrays of font names
+
+statusdict /ConditionalFontSubstitutionDB <<
+
+  % eg /182736450AFBECD0 [/Times-Roman/Palatino-Roman]
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional ShivaFont substitution maps to arrays of Shiva font names
+
+statusdict /ConditionalShivaFontSubstitutionDB <<
+
+  % eg /A9B8C7D6E5F40123 [/Bullet]
+
+>> put
+
+%-------------------------------------------------------------------------------
+%%EOF

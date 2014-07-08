@@ -1,0 +1,36 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for SWcore_interface, the ScriptWorks Core RIP interface.
+#
+# $HopeName: SWcore_interface!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Interface compounds are exported to the world. Use the directive
+# IncludeExportDirectories to include the core RIP interface in whatever
+# product needs to access it. The core RIP interface makefile must also be
+# added to the parent's Makefiles line.
+    DeclareExport C-ExportDirectories :
+      $(CurrentPath)$/checksum
+      $(CurrentPath)$/control
+      $(CurrentPath)$/pcl5
+      $(CurrentPath)$/pdf
+      $(CurrentPath)$/pgb
+      $(CurrentPath)$/rbt
+      $(CurrentPath)$/rle
+      $(CurrentPath)$/screening
+      $(CurrentPath)$/security
+      $(CurrentPath)$/swzip
+      $(CurrentPath)$/version
+      $(CurrentPath)$/xuid
+      $(CurrentPath)$/xps
+    ;
+
+    # Some application resources require core RIP version information.
+    DeclareExport Resource-ExportDirectories :
+      $(CurrentPath)$/version
+    ;
+
+# That's all folks!
+
+# Log stripped

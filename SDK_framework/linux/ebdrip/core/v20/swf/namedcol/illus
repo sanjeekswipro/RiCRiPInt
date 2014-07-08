@@ -1,0 +1,45 @@
+%!PS-Adobe-3.0
+%%Title: IllustratorColors
+%%Creator: Global Graphics Software Limited
+%%CreationDate: February 1999
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:namedcol:illus(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This header will create a dictionary containing all the named colours in this file,
+% along with their CMYK values.
+% Done this way to minimise VM use.
+
+	<<
+	/Globalness currentglobal false setglobal   % Will be reverted by initialize
+	/ResName /IllustratorColors                 % The name of this resource
+	/BaseSpace /DeviceCMYK                      % Underlying color space for the values below
+	/Divisor 1                                  % Take values as-is, without dividing
+	/ForceUpperCase false                       % Allow lower case in color names
+>> /HqnColorDatabase /ProcSet findresource /initialize get exec
+Blue
+1 0.5 0 0
+Red
+0.15 1 1 0
+Aqua
+1 0 0.55 0
+Blue Gray
+0.5 0.4 0.3 0
+Blue Sky
+0.8 0.05 0 0
+Brown
+0.5 0.85 1 0
+Dark Blue
+1 0.9 0.1 0
+Forest Green
+1 0.55 1 0
+Gold
+0.05 0.2 0.95 0
+Grass Green
+0.75 0.05 1 0
+Orange
+0 0.45 1 0

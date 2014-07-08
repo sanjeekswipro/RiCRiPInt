@@ -1,0 +1,286 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# SW folder compilation rules.
+#
+# $HopeName: HQNjambits!comprule:swf.jam(EBDSDK_P.1) $
+#
+
+#* Create an SW folder $(1) from the named swf directory sets $(2).
+#*
+#* $(1) SW-dir
+#* [$(2)] subset ...
+#* [$(3)] update or replace
+#* [$(4)] conditions
+#* [$(5)] mksw extra arguments
+#*
+#* The path to SW directory $(1) should be a full path.
+#* If the optional subsets parameter $(2) is omitted, it defaults to
+#* <em>normal</em>.
+#* Parameter $(3) defaults to <em>update</em> unless the <em>rebuild</em>
+#* variant includes <em>sw<em>, in which case it defaults to
+#* <em>replace</em>.
+#*
+#*seerule SW-Combine SWF
+#*section sw
+actions quietly together _SW-Folder bind mksw {
+    echo ...BUILDING SW folder $(<:DB) with options $(extraargs:*) ...
+    $(Perl) $(mksw) $(fstype) $(swfmapargs:*) $(subsets:*) -out $(<:DB) $(extraargs:*)
+}
+rule SW-Folder {
+    if $(1:G) { Error "Using gristed target with ungristed rule SW-Folder" ; }
+
+    local replace = yes ;
+    local SWdir = $(1:/) ;
+    local Subsets = $(2) ; Subsets ?= normal ;
+
+    # To ensure that the SWF directory is build and is up to date, we use
+    # After to make anything that depends on this directory also depend on a
+    # timestamp file. The updating actions for the timestamp runs mksw, and
+    # then the timestamp touch.
+
+    # Use a timestamp file to note when mksw was run.
+    local Timestamp ;
+    MakeLeafTarget Timestamp : $(SWdir).tim : : Locate ;
+
+    # Target for the destination directory
+    local Target ;
+    MakeLeafTarget Target : $(SWdir) : : DirectoryFor Distribute ;
+    MakeDirectory $(Target) ;
+
+    After $(Target) : $(Timestamp) ;
+
+    # Always clean dirs and file, regardless of conditions. 
+    CleanDir $(SWdir) ;
+    CleanFile $(Timestamp) ;
+
+    switch $(3) {
+    case replace : replace = yes ;
+    case update :  replace = new ;
+    case ?* :      Error "Replace/update parameter $(3) to SW-Folder rule is invalid" ;
+    case * :       if sw in $(Variant_rebuild) || SW in $(Variant_rebuild) {
+                       replace = yes ;
+                   } else {
+                       replace = new ;
+                   }
+    }
+
+    local Conditions ; TestConditions Conditions : $(4) ;
+    if $(Conditions) = yes {
+        FloatingDepends $(Timestamp) ;
+
+        local mksw ;
+        MakeLeafTarget mksw : mksw.pl : $(BUILDROOT) tools : Search ;
+        DEPENDS $(Timestamp) : $(mksw) ;
+
+        ExportSource $(BUILDROOT)$/tools$/mksw.pl : Perl ;
+        ExportSource $(BUILDROOT)$/tools$/pltools$/errormsg.pl : Perl ;
+
+        # mksw implements removal of the original directory when -replacesw yes
+        # is used, however that won't run if the target is already up to date
+        # according to the timestamps. This conditional will force an update
+        # regardless.
+
+        if $(replace) = yes {
+            EraseDir $(SWdir) ;
+            ALWAYS Erase-$(SWdir) ;
+            DEPENDS $(Timestamp) : Erase-$(SWdir) ;
+        }
+
+        mksw on $(Timestamp) = $(mksw) ;
+        extraargs on $(Timestamp) = -replacesw $(replace) $(5:*) ;
+        if $(NT) { fstype on $(Timestamp) = -ntfs ; }
+        if $(MACOSX) { fstype on $(Timestamp) = -macos_x ; }
+        if $(UNIX) { fstype on $(Timestamp) = -unix ; }
+        local i ; for i in $(Subsets) {
+            subsets on $(Timestamp) += -subset $(i) ;
+        }
+
+        local swfmapargs ;
+        local swformap = -swf ;
+        for i in $(SW-Swfmaps) {
+            swfmapargs on $(Timestamp) += $(swformap) $(i) ;
+            if $(swformap) = -swf {
+                swformap = -map ;
+            } else {
+                swformap = -swf ;
+                local Source ; MakeLeafTarget Source : $(i) : : ;
+                DEPENDS $(Timestamp) : $(Source) ;
+
+                _SW-Folder $(Timestamp) : $(Source) ;
+            }
+        }
+
+        # mksw only updates the timestamp when something is done. We need
+        # it updated any time this rule fires
+        TouchFile $(Timestamp) ;
+    }
+}
+
+#* Add a file to an auto-generated SW file map.
+#*
+#* $(1) swf directory relative to current directory
+#* [$(2)] file path relative to swf directory
+#* $(3) full PostScript leaf name of file
+#* [$(4)] FAT leaf name of file
+#* [$(5)] subset ...
+#* [$(6)] conditions
+#*
+#* If the optional subsets parameter $(5) is omitted, it defaults to
+#* <em>normal</em>.
+#*
+#*seerule SW-Combine SW-Folder
+#*section sw
+actions quietly _SWF-start {
+   echo ...GENERATING SWF map file $(<) ...
+   $(Perl) -e $(ShellQuote)print qq(%% Machine-generated file. Do not edit.\n);$(ShellQuote) > $(<)
+}
+actions quietly _SWF {
+   $(Perl) -e $(ShellQuote)print map { $_ eq qq((|)) ? qq(\n) : $_ } @ARGV;$(ShellQuote) "($($(>)-args:*))" >> $(<)
+}
+rule SWF {
+    local SWFdir = $(CurrentPath)$/$(1:/) ;
+    local SWFfile = $(2:/) ;
+    local HOPEname ; Join HOPEname : / : $(2) ; HOPEname ?= "" ;
+    local PSname = $(3:*) ;
+    local FATname = $(4:*) ; FATname ?= "" ;
+    local Subsets = $(5) ; Subsets ?= normal ;
+
+    local Conditions ; TestConditions Conditions : $(6) ;
+    if $(Conditions) = yes {
+        local Mapname SWFmap ;
+        {
+            local i ; for i in $(1:BS) {
+              if $(i) = .. {
+                Join Mapname : _ : $(Mapname) dotdot ;
+              } else {
+                Join Mapname : _ : $(Mapname) $(i) ;
+              }
+            }
+        }
+        Mapname = $(Mapname).map ;
+        MakeGristed SWFmap : $(Mapname) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+        if ! $(__SWFmap-$(SWFmap)) {
+            __SWFmap-$(SWFmap) = 1 ;
+            DirectoryFor $(SWFmap) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+            CleanFile $(SWFmap) ;
+
+            _SWF-start $(SWFmap) ;
+            SW-Swfmaps += $(SWFdir) $(CurrentPath)$/$(GeneratedC-Directory)$/$(Mapname) ;
+        }
+        FloatingDepends $(SWFmap) ; # every time, because the floats change
+
+        AddUnique SW-Folder-Subsets : $(Subsets) ;
+
+        local Source SourceFile ;
+        if ! $(SWFfile) {
+            Source = __$(SWFdir)_$(PSname:*) ;
+            SourceFile = $(Source) ;
+            NOTFILE $(Source) ;
+        } else {
+            SourceFile = $(SWFdir)$/$(SWFfile) ;
+            MakeLeafTarget Source : $(SourceFile) : : Search ;
+
+            ExportSource $(SourceFile) : Swf ;
+        }
+
+        # Because the _SWF actions cannot be called "together", they will be
+        # called once for every time a particular target and source are used
+        # together. Jam has an odd way of localising target variables, which
+        # means that the last setting of a target variable will be used for
+        # all invocations of the argument. We want to call the actions with
+        # all of the different arguments, so we will augment the arguments
+        # each time, but only call the actions once. 
+        $(SourceFile)-args on $(SWFmap) += $(HOPEname:*) $(PSname:*) $(FATname:*) $(Subsets:*) "|" ;
+
+        if ! $(__SWF_$(SWFmap)-$(SourceFile)) {
+            __SWF_$(SWFmap)-$(SourceFile) = 1 ;
+            _SWF $(SWFmap) : $(Source) ;
+            DEPENDS $(SWFmap) : $(Source) ;
+        }
+    }
+}
+
+#* Combine multiple SW folders to create a named swf directory set
+#* $(1) Path to SW
+#* [$(2)] source directories
+#* [$(3)] update or replace
+#* [$(4)] conditions
+#*
+#* Parameter $(3) defaults to <em>update</em> unless the <em>rebuild</em>
+#* variant includes <em>sw<em>, in which case it defaults to
+#* <em>replace</em>.
+#*
+#*seerule SW-Folder SWF
+#*section sw
+actions quietly _SWFCopyTree {
+    $(Copy) "$(>)" "$(<:S=)"
+}
+rule SW-Combine {
+    if $(1:G) { Error "Using gristed target with ungristed rule SW-Combine" ; }
+    if $(2:G) { Error "Using gristed source with ungristed rule SW-Combine" ; }
+
+    local copyargs = -f ;
+    local SWdir = $(1:/) ;
+
+    # To ensure that the SWF directory is build and is up to date, we use
+    # After to make anything that depends on this directory also depend on a
+    # timestamp file. The updating actions for the timestamp runs Copy, and
+    # then the timestamp touch.
+
+    # Use a timestamp file to note when mksw was run.
+    local Timestamp ;
+    MakeLeafTarget Timestamp : $(SWdir).tim : : Locate ;
+
+    # Target for the destination directory
+    local Target ;
+    MakeLeafTarget Target : $(SWdir) : : DirectoryFor Distribute ;
+    MakeDirectory $(Target) ;
+
+    After $(Target) : $(Timestamp) ;
+
+    # Always clean dirs and file, regardless of conditions.
+    CleanDir $(SWdir) ;
+    CleanFile $(Timestamp) ;
+
+    switch $(3) {
+    case replace : copyargs = -f ;
+    case update :  copyargs = -n ;
+    case ?* :      Error "Replace/update parameter $(3) to SW-Combine rule is invalid" ;
+    case * :       if sw in $(Variant_rebuild) || SW in $(Variant_rebuild) {
+                       copyargs = -f ;
+                   } else {
+                       copyargs = -n ;
+                   }
+    }
+
+    local Conditions ; TestConditions Conditions : $(4) ;
+    if $(Conditions) = yes {
+        FloatingDepends $(Timestamp) ;
+
+        EraseDir $(SWdir) ;
+        ALWAYS Erase-$(SWdir) ;
+
+        local i ; for i in $(2) {
+            # Refer to subset timestamp
+            local Subset ; MakeLeafTarget Subset : $(i) ;
+
+            # CopyTree sets NOTFILE on its target. We don't want this for
+            # the output directory because it stops LOCATE working, so
+            # dependents of this target can't find it. So we perform the copy
+            # as a side-effect of updating the timestamp target, using our own
+            # action with a special copy rune.
+            DEPENDS $(Timestamp) : $(Subset) ;
+            Copy on $(Timestamp) = $(FileutilRune) -e \"Fileutil::Copy\" -- -mpst --progress $(copyargs) ;
+            _SWFCopyTree $(Timestamp) : $(Subset) ;
+
+            if $(copyargs) = -f {
+                DEPENDS $(Timestamp) : Erase-$(SWdir) ;
+            }
+        }
+        TouchFile $(Timestamp) ;
+    }
+}
+
+# Log stripped

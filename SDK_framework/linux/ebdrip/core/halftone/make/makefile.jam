@@ -1,0 +1,67 @@
+# Copyright (C) 2007-2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for halftones
+#
+# $HopeName: COREhalftone!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependent compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant hqscreen metrics ;
+
+
+# Compilation rules
+
+DependsOn all : halftone ;
+
+IncludeExportDirectories Local :
+    crypt
+    devices
+    fileio
+    functions
+    gstate
+    multi
+    objects
+    recombine
+    render
+    tables
+    v20
+    : .. ;
+
+IncludeExportDirectories Local :
+    encrypt
+    : .. .. ;
+
+
+ReplaceVar Local : HQNSCREEN :
+    gu_hsl.c
+    gu_prscn.c
+    hpscreen.c
+    : Variant hqscreen=yes ;
+
+AddToVar Local : HQNSCREEN :
+    nohqscreen.c
+    : Variant hqscreen=no ;
+
+Library halftone :
+    color_ht.c
+    gu_misc.c
+    halftone.c
+    htblits.c
+    htcache.c
+    htdisk.c
+    htsort.c
+    $(HQNSCREEN)
+    ;
+
+if $(Variant_hqscreen) = yes {
+    # So that exported source can be built without hqscreen if required
+    ExportSource $(CurrentPath)$/src$/nohqscreen.c : C ;
+}
+
+
+# Log stripped

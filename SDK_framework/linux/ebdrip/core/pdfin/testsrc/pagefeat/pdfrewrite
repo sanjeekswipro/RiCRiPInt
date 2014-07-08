@@ -1,0 +1,396 @@
+%!PS- etc.
+
+% Copyright (C) 2003-2013 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Rewrites a PDF in an editable form ready for hacking.
+% Files are written to the PDF subfolder of the SW folder,
+% starting with 0000000001.pdf
+%
+% Use as a Page Feature and print a PDF file. 
+% NOTE: This works by shadowing pdfexec, which is not normally called by default
+% because it is remapped by the pdfchecker procset (which is here:
+% 'SW\Sys\ExtraStart\BackdropRenderSelector'), so you will generally need to 
+% disable it for this to work.
+%
+% It's a bit of a kludge in several places, but it's only intended
+% to get to the point that we can get a problem PDF into a form which
+% is easily edited in emacs (or a lesser editor :->). Particularly
+% useful in cases where Acrobat cannot be used to cut down an example
+% file.
+%
+% Things that might not work just so:
+%  1. You might have to escape some names by hand, for instance by
+%     changing "/PDF/X-3SetName" to "/PDF#2FX-3SetName"
+%  2. It would appear the Harlequin RIP's repair function is better
+%     than Acrobat's, because more files rewritten this way work in
+%     the former than the latter.
+%
+% $HopeName: SWpdf!testsrc:pagefeat:pdfrewrite(EBDSDK_P.1) $
+%
+
+userdict begin
+
+% Configurable options:
+%
+% stream/endstream post/prefixed with CRLF or just LF.
+% Default: true
+/HqnDoCRLF true def
+% Convert CR in ASCII streams with LF like rest of the re-written PDF.
+% Default: false
+/HqnCRToLF false def
+% Write out string in chunks of 80 hexchars (40 datachars).
+% This can be useful for binary data that would otherwise generate very long
+% lines.
+% Default: false
+/HqnFormatHexData false def
+% Reals with a value greater than 2^31-1 are printed in PostScript in exponent
+% form, i.e. x.yEz.  Set the following to true to clip large real values to
+% ensure the PDF interpreter can parse the number.
+% Default: false
+/HqnClipReals false def
+% Clipping reals to prevent exponent form appearing limits reals to a maximum
+% value of 999,999.  The following allows real values up to approx 2^31 - 1 to
+% be represented as integers - if a rela value is required then set this to
+% false.
+% Default: true
+/HqnClipRealsToInteger true def
+
+/HqnPDFDict 100 dict def
+
+% Was straight 65535, but changed it to support outputting binary stream data as
+% 80 column hexdata - having it as a multiple of 40 characters ensures only the
+% last line of the hexdata has less than 80 characters.
+/HqnPDFWorkspace 65535 40 idiv 40 mul string def
+
+% String buffer used when escaping strings
+/HqnPDFEscapeString 65535 string def
+
+/HqnPDFIndentLevel 0 def
+
+/HqnPDFNewLine true def
+
+/HqnPDFPrint {
+  dup type /stringtype ne { //HqnPDFWorkspace cvs } if
+  HqnPDFNewLine {
+    HqnPDFIndentLevel { HqnPDFFile ( ) writestring } repeat
+  } if
+  dup dup length 1 sub get dup 13 eq exch 10 eq or /HqnPDFNewLine exch def
+  HqnPDFFile exch writestring
+} bind def
+
+% Same params as getPDFobject, eliminates already known objects
+% by populating HqnPDFDict
+
+/HqnGetPDFObj {
+  HqnPDFDict 1 index known {
+    pop pop null
+  }
+  {
+    dup 3 1 roll 1183615869 internaldict /getPDFobject get exec
+    % Define it so we don't fetch it again
+    % ref obj
+    dup HqnPDFDict 4 2 roll
+    % obj dict ref obj
+    put
+  }
+  ifelse
+} bind def
+
+% NOTE: File references for alternate image stream objects are currently
+%       stripped due to presence of /F here.  Would need to check if value
+%       associated with key was dict or array before deciding whether to strip
+%       or not.
+/HqnStreamStripNames <<
+  /Filter true
+  /F true
+  /Position true
+  /StreamRefCount true
+>>
+def
+
+/HqnPDFObjDict
+<<
+  /arraytype {
+    ([) HqnPDFPrint
+    HqnPDFIndentLevel 2 add /HqnPDFIndentLevel exch def
+    {
+      ( ) HqnPDFPrint HqnPDFObj
+    } forall
+    HqnPDFIndentLevel 2 sub /HqnPDFIndentLevel exch def
+    ( ]) HqnPDFPrint
+  } bind
+
+%  /booleantype
+%  /conditiontype
+
+  /dicttype {
+    (<<\n) HqnPDFPrint
+    HqnPDFIndentLevel 2 add /HqnPDFIndentLevel exch def
+    {
+      exch HqnPDFObj ( ) HqnPDFPrint HqnPDFObj (\n) HqnPDFPrint
+    } forall
+    HqnPDFIndentLevel 2 sub /HqnPDFIndentLevel exch def
+    (>>) HqnPDFPrint
+  } bind
+
+  /filetype {
+    {
+      dup //HqnPDFWorkspace readstring exch 
+      false exch { 127 gt { pop true exit } if } forall {
+        % Found a high-bit character: exit early
+        pop true exit
+      } if
+      not {
+        % Got to the end
+        false exit
+      } if
+    }
+    loop
+    1 index 0 setfileposition exch
+
+    dup 1183615869 internaldict /getPDFstreamdict get exec
+    (<<\n) HqnPDFPrint
+    HqnPDFIndentLevel 2 add /HqnPDFIndentLevel exch def
+    {
+      HqnStreamStripNames 2 index known not {
+        exch HqnPDFObj ( ) HqnPDFPrint HqnPDFObj (\n) HqnPDFPrint
+      }
+      {
+        pop pop
+      } ifelse
+    } forall
+    1 index { (/Filter /ASCIIHexDecode\n) HqnPDFPrint } if
+    HqnPDFIndentLevel 2 sub /HqnPDFIndentLevel exch def
+    (>>\n) HqnPDFPrint
+
+    (stream) HqnPDFPrint HqnDoCRLF { (\r\n) }{ (\n) } ifelse HqnPDFPrint
+    {
+      dup //HqnPDFWorkspace readstring
+      exch 3 index { 
+        HqnFormatHexData { % Output hexdata as 80 char lines
+          dup length 0 gt {
+            dup length dup 40 mod exch 40 idiv 1 sub
+            0 1 3 -1 roll {
+              40 mul 2 index exch 40 getinterval
+              HqnPDFFile exch writehexstring (\n) HqnPDFPrint
+            } for
+            dup 0 gt {
+              dup 2 index length exch sub exch 2 index 3 1 roll getinterval
+              HqnPDFFile exch writehexstring
+            }{
+              pop
+            } ifelse
+          } if
+          pop
+        }{
+          HqnPDFFile exch writehexstring
+        } ifelse
+      }{ 
+        dup length 0 gt {
+          HqnCRToLF { % Replace Mac CRs with Unix LFs
+            {
+              (\r) search
+              exch dup length 0 gt { HqnPDFPrint }{ pop } ifelse
+              not { exit } if
+              (\n) HqnPDFPrint
+              pop
+            } loop
+          }{
+            HqnPDFPrint 
+          } ifelse
+        }{
+          pop
+        } ifelse
+      } ifelse
+      not { exit } if
+    } loop
+    pop pop
+    HqnDoCRLF { (\r\n) }{ (\n) } ifelse HqnPDFPrint (endstream) HqnPDFPrint
+  } bind
+
+%  /fonttype
+%  /gstatetype
+%  /integertype
+%  /locktype
+%  /marktype
+
+  /nametype {
+    (/) HqnPDFPrint HqnPDFPrint
+  } bind
+
+%  /nulltype
+%  /operatortype
+%  /packedarraytype
+
+  % PDF does not support exponent form of reals, i.e. no +e10 etc.  This happens
+  % for values of 1 million or more.
+  % This procedure does not cope with fractional values in the range (-1,1) that
+  % are printed using exponent form.
+  /realtype {
+    dup abs 999999.0 gt HqnClipReals and {
+      HqnClipRealsToInteger {
+        dup abs 16#7fffffff gt { 16#7fffffff }{ cvi } ifelse
+      }{
+        999999.0
+      } ifelse
+      % Apply sign of original value
+      exch 0 lt { neg } if
+    } if
+    HqnPDFPrint
+  } bind
+
+%  /savetype
+  /stringtype {
+    false 1 index { dup 0 eq exch 127 gt or { pop true exit } if } forall {
+      (<) HqnPDFPrint HqnPDFFile exch writehexstring (>) HqnPDFPrint
+    } {
+      (\() HqnPDFPrint HqnPDFFile exch //HqnPDFEscapeString 1183615869 internaldict /escapedstring get exec writestring (\)) HqnPDFPrint
+    }
+    ifelse
+  }
+>>
+def
+
+/HqnPDFObj {
+  dup type HqnPDFObjDict exch known
+  {
+    HqnPDFObjDict 1 index type get exec
+  }
+  {
+    HqnPDFPrint
+  }
+  ifelse
+} bind def
+
+/HqnPDFRecurseDict
+<<
+  /pdfobjtype {
+    HqnPDFID exch HqnGetPDFObj
+    HqnPDFRecurse
+  } bind
+
+  /dicttype {
+    {
+      exch pop HqnPDFRecurse
+    }
+    forall
+  } bind
+
+  /arraytype {
+    {
+     HqnPDFRecurse
+    }
+    forall
+  } bind
+
+  /packedarraytype 1 index
+
+  /filetype {
+    1183615869 internaldict /getPDFstreamdict get exec
+    {
+      exch pop HqnPDFRecurse
+    } forall
+  } bind
+>>
+def
+
+/HqnPDFRecurse {
+  dup type HqnPDFRecurseDict exch known
+  {
+    HqnPDFRecurseDict 1 index type get exec
+  }
+  {
+    pop
+  }
+  ifelse
+} bind def
+
+/HqnPDFPrintPadded {
+  exch //HqnPDFWorkspace cvs exch 1 index length sub { (0) HqnPDFPrint } repeat
+  HqnPDFPrint
+} bind def
+
+/HqnTrailerStripNames <<
+  /Prev true
+  /Size true
+  /Encrypt true   % Rewritten PDF is not encrupted so don't reference details
+>> def
+
+% The backdrop selector procset messes around re-defining pdfexec, and
+% defines it back to its original value if the file is not PDF, so we have to
+% do an end-run around it. We do that by re-defining the procedure the RIP
+% runs when it detects a PDF file to avoid pdfexec altogether.
+  //serverdict /switchexecmode get 2
+  {
+    1 {
+      //HqnPDFWorkspace mark (.pdf) 3 index 10 string cvs 10 1 index length sub { 0 } repeat (PDF/) 1183615869 internaldict /concattomark get exec
+      (r) { file } stopped {
+        pop userdict /HqnPDFFile 3 -1 roll (w) file put pop exit
+      } {
+        closefile 1 add
+      } ifelse
+    }
+    loop
+
+    {
+      <<>> pdfopen
+      
+      dup /HqnPDFID exch def 1183615869 internaldict /getPDFtrailer get exec
+      
+      % Starting at the trailer, recurse through the whole PDF
+      
+      dup HqnPDFRecurse
+      
+      (%PDF-1.5\n) HqnPDFPrint % Might not be v1.5, but earlier versions
+                               % should be backwards-compatible.
+      (%‚„œ”\n) HqnPDFPrint
+      
+      HqnPDFDict
+      {
+        1 index HqnPDFFile fileposition 4 2 roll
+        exch //HqnPDFWorkspace cvs dup length 1 sub 0 exch getinterval HqnPDFPrint (obj\n) HqnPDFPrint
+        HqnPDFObj (\nendobj\n) HqnPDFPrint
+        HqnPDFDict 3 1 roll put
+      } forall
+
+      /HqnXREFPos HqnPDFFile fileposition def
+      
+      (xref\n) HqnPDFPrint
+      (0 1 \n) HqnPDFPrint
+      (0000000000 65535 f \n) HqnPDFPrint
+
+      HqnPDFDict
+      {
+        exch
+        //HqnPDFWorkspace cvs token pop exch token pop exch pop exch
+        HqnPDFPrint ( 1 \n) HqnPDFPrint
+        exch
+        10 HqnPDFPrintPadded ( ) HqnPDFPrint 5 HqnPDFPrintPadded ( n \n) HqnPDFPrint
+      } forall
+
+      (trailer\n) HqnPDFPrint
+      (<<\n) HqnPDFPrint
+      HqnPDFIndentLevel 2 add /HqnPDFIndentLevel exch def
+      {
+        HqnTrailerStripNames 2 index known not {
+          exch HqnPDFObj ( ) HqnPDFPrint HqnPDFObj (\n) HqnPDFPrint
+        }
+        {
+          pop pop
+        } ifelse
+      } forall
+      (/Size ) HqnPDFPrint HqnPDFDict length HqnPDFPrint (\n) HqnPDFPrint
+      HqnPDFIndentLevel 2 sub /HqnPDFIndentLevel exch def
+      (>>\n) HqnPDFPrint
+      (startxref\n) HqnPDFPrint
+      HqnXREFPos HqnPDFPrint (\n) HqnPDFPrint
+      (%%EOF\n) HqnPDFPrint flush
+      
+      HqnPDFID pdfclose
+    } stopped pop
+    
+    HqnPDFFile closefile
+  } bind put
+
+end

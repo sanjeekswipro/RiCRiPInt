@@ -1,0 +1,230 @@
+%!PS-Adobe-3.0
+%%Title: HqnZIP
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 8, 2004
+% Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnZIP) 1 0
+
+% $HopeName: COREzipdev!swf:procsets:hqnzip(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal true setglobal
+
+20 dict dup begin
+
+  /zipdevice (%HqnZIP%) def
+  /r (r) def
+
+  /work 5 dict begin
+
+    % Scratch buffers for searching the archive for files
+    /filename 2100 string def
+    /search 2100 string def
+
+    % Simple PS file processing
+    /filetypes [ /PS ] def
+    /typeactions <<
+      /PS <<
+        /FilePattern (*.ps)
+        /Interpret {
+          run
+        } bind
+      >>
+    >> def
+
+    % Device params used when mounting the device
+    /devparams <<
+      /DeviceType 26
+      /Password 0
+      /Enable true
+      /CheckCRC32 true
+    >> def
+
+    % File type detected
+    /doingtype null def
+
+    currentdict
+  end def
+
+  % typename dict addZIPfiletype -
+  % Add a new filepattern and proc to run on matching files in a ZIP archive,
+  % typename is expected to be unique, and the dict to reside in global VM.
+  % dict must two entries:
+  %   /FilePattern - a string to use as a search string to filenameforall, with
+  %                  no device specified!
+  %   /Interpret   - a procedure that takes a string containing the name of a
+  %                  file and can interpret it.
+  /addZIPfiletype {
+    currentglobal true setglobal
+      3 1 roll
+      % Add type dict to actions dict keyed on typename
+      1 index exch //work /typeactions get 3 1 roll put
+      % Add type name to front of list of filetypes
+      //work /filetypes 2 copy get
+      4 -1 roll exch
+      aload length 1 add array astore
+      put
+    setglobal
+  } bind def
+
+  % key value addZIPparam -
+  % Add or change a device parameter used when mounting the ZIP device.
+  /addZIPparams <<
+    /DeviceType null
+    /Password null
+    /Enable null
+    /Filename null
+  >> def
+  /addZIPparams {
+    % Catch verbotten device parameters
+    dup {
+      pop //addZIPparams exch known { stop } if
+    } forall
+    currentglobal true setglobal
+      exch {
+        % Add parameter to existing set
+        //work /devparams get 3 1 roll put
+      } forall
+    setglobal
+  } bind def
+
+  % Dismount the named ZIP device if currently mounted.
+  /unmountZIP {
+    mark //zipdevice devstatus {
+      cleartomark
+      //zipdevice devdismount
+    }{
+      pop
+    } ifelse
+  } bind def 
+
+  % filename filestream -> filename filestream bool
+  /analyseZIP {
+    % Ensure device is unmounted
+    //unmountZIP exec
+
+    % Remount ZIP device on input file
+    //zipdevice dup devmount pop
+    dup //work /devparams get setdevparams
+    % Setting the filename causes the device to read the central directory -
+    % which may throw an error if there is a problem reading it.
+    mark exch {
+      << /Filename 5 index >> setdevparams
+    } stopped
+    counttomark 1 add 1 roll cleartomark
+
+    not {
+      % Look for file to interpret
+      false
+      //work /filetypes get {
+        //work /typeactions get 1 index get
+        % Convert pattern to be specific to the ZIP device
+        //work /search get mark 3 -1 roll /FilePattern get //zipdevice 1183615869 internaldict /concattomark get exec
+        % Exit on first file that matches
+        { exit } //work /filename get filenameforall
+        type /stringtype eq {
+          % Remember type of file found
+          //work /doingtype 3 -1 roll put
+          pop true
+          % UVM(Ripping file %s as %s.)
+          (Ripping file ) print
+          2 index print
+          ( as ) print
+          //work /doingtype get dup length string cvs print
+          (.\n) print
+          exit
+        } if
+      } forall
+    }{
+      false
+    } ifelse
+
+    % No file found - unmount device again
+    dup not {
+      //unmountZIP exec
+    } if
+  } bind def
+
+  /runZIP {
+    % Run the expected archive file
+    //work /search get mark
+    //work /typeactions get //work /doingtype get get /FilePattern get //zipdevice 
+    1183615869 internaldict /concattomark get exec
+    % Catch and tidy up after any error
+    mark exch
+    {
+      [ exch
+        { dup length string copy } % procedure to produce copy of filename
+        //work /filename get % scratch buffer
+        filenameforall  % does the work
+      ] % Gotch - limit is 64K items - caught stopped
+
+      //work /typeactions get //work /doingtype get get /Interpret get
+      exch % proc array
+      {
+        % proc string
+        1 index % proc string proc
+        exec
+      } forall
+      pop
+    } superstopped
+    counttomark 1 add 1 roll cleartomark
+    % Force device to close its handle on the archive so it can be deleted without first dismounting it
+    mark { //zipdevice << /Close true >> setdevparams } superstopped cleartomark
+    % Rethrow any error
+    { $error /errorname get /interrupt eq { superstop }{ stop } ifelse } if
+  } bind def
+
+  % <datetime> <buffer> ZIPdate_cvs <string>
+  % Converts file time as returned by status to a date string in ISO format:
+  %   (yyyy-mm-dd hh:mm:ss)
+  % Note: ZIP file times have a resolution of 2 seconds.
+  % Note: ZIP file time years are 1980 based
+  /colon (:) def
+  /space ( ) def
+  /dash (-) def
+  /zero_pad {
+    dup 9 gt {
+      2 string cvs
+    }{
+      2 string dup 0 48 put exch 1 index 1 1 getinterval cvs pop
+    } ifelse
+  } bind def
+  /ZIPdate_cvs {
+    mark 3 -1 roll
+    dup              16#1f and 2 mul //zero_pad exec exch % secs
+    //colon exch
+    dup -5  bitshift 16#3f and //zero_pad exec exch % mins
+    //colon exch
+    dup -11 bitshift 16#1f and //zero_pad exec exch % hours
+    //space exch
+    dup -16 bitshift 16#1f and //zero_pad exec exch % day
+    //dash exch
+    dup -21 bitshift 16#0f and //zero_pad exec exch % month
+    //dash exch
+        -25 bitshift  1980 add 4 string cvs % year
+    1183615869 internaldict /concattomark get exec
+  } bind def
+
+  [
+    /colon
+    /dash
+    /r
+    /space
+    /work
+    /zero_pad
+    /zipdevice
+  ]
+  {
+    currentdict exch undef
+  } forall
+end
+
+/HqnZIP exch /ProcSet defineresource pop
+
+setglobal
+
+%%EndProcSet

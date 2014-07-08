@@ -1,0 +1,72 @@
+%!PS-Adobe-3.0
+%%Title: PDFDoc-UTF-8
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Oct 2004
+% Copyright (C) 2004-2013 Global Graphics Software Limited. All Rights Reserved.
+% $Revision: 1.4.1.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:charmap:utf-8(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Array to map from PDFDoc into the encoding used for Messages entries.
+% The values are then used by the TranslateChars_1 call in the HqnLocal procset.
+
+% The array below should contain exactly 256 entries, each of which must be an integer
+% in the range 0-255, or a string.
+
+/CharMap [
+	16#18 { 16#20 } repeat
+	<CB98>
+	<CB87>
+	<CB86>
+	<CB99>
+	<CABA>
+	<CB9B>
+	<CB9A>
+	<CB9C>
+	16#20 1 16#7E {  } for
+	<E280A2>
+	<E280A2>
+	<E280A0> <E280A1> 
+	<E280A6>
+	<E28094>
+	<E28093>
+	<C692>
+	<E28184>
+	<E280B9> <E280BA> 
+	<E28892>
+	<E280B0>
+	<E2809E>
+	<E2809C> <E2809D> 
+	<E28098> <E28099> <E2809A> 
+	<E284A2>
+	<EFAC81> <EFAC82> 
+	<C581>
+	<C592>
+	<C5A0>
+	<C5B8>
+	<C5BD>
+	<C4B1>
+	<C582>
+	<C593>
+	<C5A1>
+	<C5BE>
+	16#20
+	<E282AC>
+	<C2A1> <C2A2> <C2A3> <C2A4> <C2A5> <C2A6> <C2A7> <C2A8> <C2A9> 
+	<C2AA> <C2AB> <C2AC> <C2AD> <C2AE> <C2AF> <C2B0> <C2B1> <C2B2>
+	<C2B3> <C2B4> <C2B5> <C2B6> <C2B7> <C2B8> <C2B9> <C2BA> <C2BB>
+	<C2BC> <C2BD> <C2BE> <C2BF> <C380> <C381> <C382> <C383> <C384>
+	<C385> <C386> <C387> <C388> <C389> <C38A> <C38B> <C38C> <C38D>
+	<C38E> <C38F> <C390> <C391> <C392> <C393> <C394> <C395> <C396>
+	<C397> <C398> <C399> <C39A> <C39B> <C39C> <C39D> <C39E> <C39F>
+	<C3A0> <C3A1> <C3A2> <C3A3> <C3A4> <C3A5> <C3A6> <C3A7> <C3A8>
+	<C3A9> <C3AA> <C3AB> <C3AC> <C3AD> <C3AE> <C3AF> <C3B0> <C3B1>
+	<C3B2> <C3B3> <C3B4> <C3B5> <C3B6> <C3B7> <C3B8> <C3B9> <C3BA>
+	<C3BB> <C3BC> <C3BD> <C3BE> <C3BF> 
+]
+
+%%EOF

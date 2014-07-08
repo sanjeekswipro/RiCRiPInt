@@ -1,0 +1,34 @@
+# Delete all filename matches without generating errors
+# patterns must, of course, be quoted
+# $Id: SafeDel,v 1.1 1999/04/22 16:06:18 build Exp $
+# $Author: build $
+# $Date: 1999/04/22 16:06:18 $
+# $Log: SafeDel,v $
+# Revision 1.1  1999/04/22  16:06:18  build
+# new unit
+# Grand Unified Socket Interface
+#
+# Revision 1.3  1993/11/13  18:01:19  neeri
+# >>
+#
+# Revision 1.2  1993/11/13  17:57:57  neeri
+# >> nothing compares 2 you
+#
+#
+
+# A frivolous change
+
+Set OldEcho {Echo}
+Set Echo 0
+
+Echo Set Exit 0> "{TempFolder}"ToDelete
+Loop
+	Break If `Evaluate {#} == "0"`
+	Echo Delete -y "{1}"'>Dev:Null³Dev:Null' >>"{TempFolder}"ToDelete 
+	Shift
+End
+Echo Exit 0 >>"{TempFolder}"ToDelete
+
+Set Echo {OldEcho}
+"{TempFolder}"ToDelete
+Delete "{TempFolder}"ToDelete

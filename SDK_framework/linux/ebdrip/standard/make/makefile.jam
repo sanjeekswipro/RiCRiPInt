@@ -1,0 +1,46 @@
+# Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for standard
+#
+# $HopeName: HQNc-standard!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+ImplementsVariant rt_libs ;
+
+# Warnings
+  RequiresVariant warning_level : high ;
+  RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+  if $(MACOSX) {
+    switch $(CompilerVersion-C) {
+    case gcc_2 :
+      # cpp-precomp has trouble with ## concatenations, force use of cpp
+      AddToVar Local : C-Compiler_Arguments : -traditional-cpp ;
+    }
+  }
+
+  DependsOn all : standard ;
+
+  # NOTE: If you add header files to standard which are required to build or
+  # interface with the standard library, you must also add them to the
+  # exported skin sources in SWprod_coreRip!make:makefile.jam, and also to the
+  # plugin kit list in SWpkit!make:makefile.jam.
+
+  Library standard :
+    hq32x2.c
+    hqassert.c
+    hqexcept.c
+    hqmemcmp.c
+    hqmemcpy.c
+    hqmemset.c
+    hqstr.c
+    hqosarch.c
+    hostplat.c
+  ;
+
+
+# Log stripped

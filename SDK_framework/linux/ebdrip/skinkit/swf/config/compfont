@@ -1,0 +1,1146 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWskinkit!swf:config:compfont(EBDSDK_P.1) $
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+/CMap  <<
+  /Adobe-GB1-H-Host <<
+    /Ordering (GBK-EUC)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-UCS2 null
+  /Adobe-Japan1-1 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Japan1-3 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 3
+  >>
+  /90msp-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-GBpc-EUC <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-H-CID <<
+    /Ordering (Adobe_GB1_H_CID)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS-EUC-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-GB1-H-Mac <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /78-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /90ms-RKSJ-UCS2 null
+  /Ext-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-CNS1-UCS2 null
+  /Adobe-GB1-1 <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-GB1-3 <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 3
+  >>
+  /B5pc-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /90pv-RKSJ-UCS2C null
+  /Adobe-CNS1-H-Host <<
+    /Ordering (ETen-B5)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-CNS1-1 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /B5pc-UCS2 null
+  /Adobe-CNS1-3 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 3
+  >>
+  /Adobe-CNS1-ETenms-B5 <<
+    /Ordering (Adobe_CNS1_ETenms_B5)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-CNS1-B5pc <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /B5pc-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS02-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS03-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /78ms-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /CNS05-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS07-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETHK-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Adobe-Japan1-0 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Add-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /90pv-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /CNS1-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan1-PS-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-Korea1-UCS2 null
+  /B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETen-B5-UCS2 null
+  /Add-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Japan1-H-Mac <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /78-EUC-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan1-2 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /78-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Korea1-KSCms-UHC <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /90pv-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Japan1-H-CID <<
+    /Ordering (Adobe_Japan1_H_CID)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Add-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Korea1-0 <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Korea1-2 <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-Korea1-H-Host <<
+    /Ordering (KSCms-UHC)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS15-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /EUC-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Japan1-4 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Adobe-Japan1-90ms-RKSJ <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Add-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /CNS2-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /90ms-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-GBK-EUC <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /78-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /EUC-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /90pv-RKSJ-UCS2 null
+  /Adobe-CNS1-H-Mac <<
+    /Ordering (B5pc)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-GB1-0 <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /90msp-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-2 <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-GB1-4 <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Adobe-CNS1-H-CID <<
+    /Ordering (Adobe_CNS1_H_CID)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETenms-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-CNS1-0 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /90ms-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-CNS1-2 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /B5pc-UCS2C null
+  /Adobe-CNS1-4 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Adobe-CNS1-ETen-B5 <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS01-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETenms-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /78ms-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /CNS04-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS06-RKSJ-H <<
+    /Ordering (CNS2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS1-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan1-5 <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /ETHK-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETen-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan1-90pv-RKSJ <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /Adobe-Japan1-UCS2 null
+  /83pv-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Japan1-PS-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /78-EUC-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Korea1-KSCpc-EUC <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /78-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /ETen-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan2-0 <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Japan1-H-Host <<
+    /Ordering (Adobe_Japan1_H_Host)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Korea1-1 <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Adobe-Korea1-H-Mac <<
+    /Ordering (KSCpc-EUC)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Adobe-Korea1-H-CID <<
+    /Ordering (Adobe_Korea1_H_CID)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS-EUC-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /CNS2-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Ext-RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GBpc-EUC-UCS2C null
+  /GBT-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Ext-RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GB-RKSJ-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /HK-RKSJ-H <<
+    /Ordering (HongKong1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /HKdla-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBKp-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GBpc-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GB-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GB-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GBK-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GB-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GBKp-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GBTpc-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBpc-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GBT-RKSJ-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Ext-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GBT-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBpc-EUC-UCS2 null
+  /Hiragana <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /GB-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /HKdla-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBK2K-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /HKdlb-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBK-EUC-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /GBK-EUC-UCS2 null
+  /GBK2K-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /GBTpc-EUC-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBT-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /GBT-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Hankaku <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /HKscs-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /HKgccs-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKm314-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKdlb-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKscs-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Identity-V <<
+    /Ordering (Identity)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSC-Johab-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /KSCms-UHC-HW-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /KSC-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSCpc-EUC-UCS2 null
+  /Hojo-RKSJ-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /HKm471-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Identity-H <<
+    /Ordering (Identity)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSCms-UHC-UCS2 null
+  /KSC-Johab-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /KSCms-UHC-HW-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKm471-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKm314-B5-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /HKgccs-B5-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /Katakana <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Hojo-EUC-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSC-EUC-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSC2-RKSJ-H <<
+    /Ordering (Korea2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSCms-UHC-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /KSC-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSC-RKSJ-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Hojo-EUC-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Hojo-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /Hojo-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSC-EUC-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /KSCms-UHC-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /KSCpc-EUC-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /NWP-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /RKSJ-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniCNS-UTF8-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniGB-UTF32-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /Roman <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UCS2-KSCpc-EUC <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniCNS-UTF16-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniGB-UTF16-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /KSCpc-EUC-UCS2C null
+  /UCS2-GBpc-EUC <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UCS2-90pv-RKSJ <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UniGB-UTF8-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UCS2-ETen-B5 <<
+    /Ordering (UCS2_ETen_B5)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniCNS-UTF32-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniCNS-UCS2-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 3
+  >>
+  /UniGB-UCS2-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /NWP-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniCNS-UTF8-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /RKSJ-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /TCVN-RKSJ-H <<
+    /Ordering (Vietnam1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UCS2-KSCms-UHC <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniGB-UTF32-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniCNS-UCS2-H <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 3
+  >>
+  /UniGB-UCS2-H <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /KSCpc-EUC-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniGB-UTF8-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UCS2-GBK-EUC <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UniCNS-UTF32-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UCS2-90ms-RKSJ <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UCS2-B5pc <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniCNS-UTF16-V <<
+    /Ordering (CNS1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniGB-UTF16-V <<
+    /Ordering (GB1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniHojo-UCS2-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniKS-UTF16-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniHojo-UTF16-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniJIS-UCS2-HW-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UniHojo-UTF8-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniKS-UTF32-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniJISX0213-UTF32-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniKS-UCS2-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniJIS-UCS2-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniHojo-UCS2-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniHojo-UTF32-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniJIS-UCS2-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniJIS-UTF32-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniKS-UTF8-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniJIS-UTF16-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniKS-UTF16-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniHojo-UTF8-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniJISX0213-UTF32-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniJIS-UTF8-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniJISPro-UCS2-HW-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniJIS-UTF16-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniJIS-UTF8-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniJISPro-UCS2-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniKS-UTF32-H <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniJIS-UCS2-HW-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 2
+  >>
+  /UniHojo-UTF16-H <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniJIS-UTF32-H <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 5
+  >>
+  /UniKS-UTF8-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /UniHojo-UTF32-V <<
+    /Ordering (Japan2)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UniJISPro-UTF8-V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 4
+  >>
+  /UniKS-UCS2-V <<
+    /Ordering (Korea1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /V <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 1
+  >>
+  /WP-Symbol <<
+    /Ordering (Japan1)
+    /Registry (Adobe)
+    /Supplement 0
+  >>
+  /UTF-16BE-PDFDoc <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /UTF-16BE-EUC-JP <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /UTF-16BE-ISOLatin1 <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /UTF-16BE-SJIS <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /Japan1-PDFDoc <<
+    /Registry (Adobe)
+    /Supplement 0
+    /Ordering (Japan1)
+  >>
+  /Japan1-UTF-8 <<
+    /Registry (Adobe)
+    /Supplement 0
+    /Ordering (Japan1)
+  >>
+  /UTF-16BE-MacRoman <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /UTF-16BE-UTF-8 <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+  /UTF-16BE-WinAnsi <<
+    /Registry (Harlequin)
+    /Supplement 0
+    /Ordering (Unicode)
+  >>
+>>
+/CIDFont  <<
+  /CID-Bullet <<
+    /Ordering (Identity)
+    /Registry (Harlequin)
+    /Supplement 0
+  >>
+>>
+/FontSet  <<
+>>

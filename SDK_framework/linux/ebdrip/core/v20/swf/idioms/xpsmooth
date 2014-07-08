@@ -1,0 +1,543 @@
+%!PS-Adobe-3.0
+%%Title: XPressSmoothGrads
+%%Creator: Global Graphics Software Limited
+%%CreationDate: December 1999
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:idioms:xpsmooth(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This will replace grad fills from QuarkXPress versions 3.32 and 4.0X
+% with calls to shfill, using LanguageLevel 3 smooth shading.
+%
+% QuarkXPress is a trademark of Quark, Inc.
+
+%%BeginResource: IdiomSet XPressSmoothGrads
+
+currentglobal false setglobal
+
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+26 dict begin		% local dictionary, unnamed.
+
+% Needed for the templates to be recognised
+/a  /setlinecap load def
+/g  /gsave load def
+/G  /grestore load def
+/H  /setgray load def
+/m  /moveto load def
+/n  /stroke load def
+/np /newpath load def
+/o  /setlinewidth load def
+/p  /setdash load def
+/rl /rlineto load def
+
+% Function, shading dictionaries etc.
+% 'null' values will be dynamically replaced
+/CMYKC0 [ 0 0 0 0 ] def
+/CMYKC1 [ 1 1 1 1 ] def
+/GrayC0 [ 0 ] def
+/GrayC1 [ 1 ] def
+/GrayFT2 << 
+	/FunctionType 2 
+	/Domain [ 0 1 ] 
+	/C0 //GrayC0
+	/C1 //GrayC1
+	/N 1 
+>> def
+/CMYKFT2 << 
+	/FunctionType 2 
+	/Domain [ 0 1 ] 
+	/C0 //CMYKC0 
+	/C1 //CMYKC1 
+	/N 1 
+>> def
+/FT3Funcs 2 array def
+/FT3 <<
+	/FunctionType 3
+	/Domain [ 0 1 ]
+	/Functions //FT3Funcs
+	/Bounds [ .5 ]
+	/Encode [ 0 1 1 0 ]
+>> def
+/AxialShade <<
+	/ShadingType 2
+	/ColorSpace null
+	/Coords [ 0 0 256 0 ]
+	/Function null
+>> def
+/SquareSource <08 17 28 60 80 88> def
+/DiamondSource <00 04 10 57 64 a0 28 24 18 57 44 88> def
+/SquareShade <<
+	/ShadingType 4
+	/ColorSpace null
+	/DataSource null
+	/BitsPerCoordinate 2
+	/BitsPerComponent 2
+	/BitsPerFlag 2
+	/Decode [ 0 384 0 384 0 1 ]		% 384 = 3/2 * 256
+	/Function null
+>> def
+/RadialCoords [ 128 128 null 128 128 0 ] def
+/RadialShade <<
+	/ShadingType 3
+	/ColorSpace null
+	/Coords //RadialCoords
+	/Function null
+	/Extend [ true false ]
+>> def	
+
+% The same blnd replacement is used for all Quark versions, although the idiom
+% in XPress 6 is slightly different
+/blndReplacement
+{
+	% (BLND: )print dup ==
+	/blmode 1 index def
+	2 eq {
+		//CMYKC1 astore pop
+		//CMYKC0 astore pop
+		/DeviceCMYK setcolorspace
+	}	{
+		//GrayC1 astore pop
+		//GrayC0 astore pop
+		currentcolorspace 0 get /Separation ne {
+			/DeviceGray setcolorspace
+		} if
+	} ifelse
+
+	save
+	0 0 256 256 rectclip
+
+	//AxialShade dup begin
+	/ColorSpace currentcolorspace def
+	/Function blmode 2 eq { //CMYKFT2 }{ //GrayFT2 } ifelse def
+	end
+
+	shfill
+
+	restore
+	newpath
+} bind def
+
+% Factor out the idioms for 'xblnd' because the bound procedures are different in
+% composite & mono workflows due to sepgr being an operator in one and a name in
+% the other. Also the idiom for Quark 3 & 4 is slightly different to Quark 5.
+
+% For Quark 3, 4, 5
+/xblnd3_base {
+	/blmode X/blf X
+	blmode 2 eq {
+		/k1 X/y1 X/m1 X/c1 X/k0 X/y0 X/m0 X/c0 X
+	}	{
+		/k1 X/k0 X
+	}ifelse
+	k1 k0/@1 X/@2 X 
+	blmode 2 eq {
+		@2 @1 sub abs c1 c0 sub abs 
+		2 copy lt {
+			exch c1 c0/@1 X/@2 X
+		}if 
+		pop m1 m0 sub abs 
+		2 copy lt {
+			exch m1 m0/@1 X/@2 X
+		}if 
+		pop 
+		y1 y0 sub abs lt{
+			y1 y0/@1 X/@2 X
+		}if
+	}if
+	@1 @2 blmode 2 eq{
+		1 exch sub exch 1 exch sub
+	}if 
+	2 copy lt{exch}if
+	sub/blstp exch/maxblnd where{pop}{calcbnd}ifelse 
+	maxblnd mul round cvi def
+	blstp 0 ne {
+		/blw 128 blstp 1 add div def
+		/kstp k1 k0 sub blstp div def
+		blmode 2 eq{
+			/cstp c1 c0 sub blstp div def
+			/mstp m1 m0 sub blstp div def
+			/ystp y1 y0 sub blstp div def
+		}if
+	}if 
+	gsave 128 128 translate newpath
+	blmode 2 eq{
+		c0 m0 y0 k0 setcmykcolor
+	}	{
+		k0 blmode 0 eq{setgray}{sepgr}ifelse
+	}ifelse
+	128 blar 1 get exec fill 
+	blstp 0 ne{
+		blw 128 
+		blar blf get 
+		blstp 1 add
+		blmode 2 eq{
+				{
+				c0 m0 y0 k0 setcmykcolor 
+				2 copy exec fill exch 2 index sub 
+				exch /c0 c0 cstp add def
+				/m0 m0 mstp add def
+				/y0 y0 ystp add def
+				/k0 k0 kstp add def
+			}repeat
+		}	{
+				{
+				k0 blmode 0 eq{setgray}{sepgr}ifelse 
+				2 copy exec fill exch 2 index sub exch
+				/k0 k0 kstp add def
+			}repeat
+		}ifelse 
+		p3
+	}if 
+	grestore
+} def
+
+% For Quark 6
+/xblnd6_base {
+	1 index -1 eq
+	{exch pop blnd}
+	{
+		/blmode X 1 add /blf X
+		blmode 2 eq
+		{/k1 X /y1 X /m1 X /c1 X /k0 X /y0 X /m0 X /c0 X}
+		{/k1 X /k0 X}
+		ifelse
+		/@1 k1 def /@0 k0 def blmode 2 eq
+		{
+			@0 @1 sub abs c1 c0 sub abs
+			2 copy lt {exch /@1 c1 def /@0 c0 def} if
+			pop m1 m0 sub abs
+			2 copy lt {exch /@1 m1 def /@0 m0 def} if
+			pop y1 y0 sub abs lt {/@1 y1 def /@0 y0 def} if
+		} if
+		/blstp @1 @0 sub abs
+		currentdict /maxblnd known not {calcbnd} if
+		maxblnd mul round cvi def
+		blstp 0 ne
+		{
+			/blw 128 blstp 1 add div def
+			/kstp k1 k0 sub blstp div def
+			blmode 2 eq
+			{
+				/cstp c1 c0 sub blstp div def
+				/mstp m1 m0 sub blstp div def
+				/ystp y1 y0 sub blstp div def
+			} if
+		} if
+		gsave 128 128 translate newpath
+		blmode 2 eq
+		{c0 m0 y0 k0 setcmykcolor}
+		{k0 blmode 0 eq {setgray}{sepgr} ifelse}
+		ifelse
+		128 blar 1 get exec fill blstp 0 ne
+		{
+			blw 128 blar blf get blstp 1 add
+			blmode 2 eq
+			{
+				{
+					c0 m0 y0 k0 setcmykcolor 2 copy exec fill
+					exch 2 index sub exch
+					/c0 c0 cstp add def /m0 m0 mstp add def
+					/y0 y0 ystp add def /k0 k0 kstp add def
+				} repeat
+			}
+			{
+				{
+					k0 blmode 0 eq {setgray}{sepgr} ifelse
+					2 copy exec fill exch 2 index sub exch
+					/k0 k0 kstp add def
+				} repeat
+			} ifelse
+			p3
+		} if
+		grestore
+	}
+	ifelse
+} def
+
+% Procedures to construct shading dictionaries for CoolBlends grad fills.
+/xblndProcs [
+		{	% Mid  ------------------------------------------------------------
+		//AxialShade dup begin
+		/Function //FT3 def
+		blmode 2 eq { //CMYKFT2 } { //GrayFT2 } ifelse 
+		dup //FT3Funcs astore pop
+		end
+	} bind
+		{	% Square  ---------------------------------------------------------
+		//SquareShade dup begin
+		/DataSource //SquareSource def
+		/Function blmode 2 eq { //CMYKFT2 }{ //GrayFT2 } ifelse def
+		end
+	} bind
+		{	% Diamond  --------------------------------------------------------
+		//SquareShade dup begin
+		/DataSource //DiamondSource def
+		/Function blmode 2 eq { //CMYKFT2 } { //GrayFT2 } ifelse def
+		end
+	} bind
+		{	% Radial  ---------------------------------------------------------
+		//RadialShade dup begin
+		/Function blmode 2 eq { //CMYKFT2 }{ //GrayFT2 } ifelse def
+		//RadialCoords 2 128 put
+		end
+	} bind
+		{	% Full radial  ----------------------------------------------------
+		//RadialShade dup begin
+		/Function blmode 2 eq { //CMYKFT2 }{ //GrayFT2 } ifelse def
+		//RadialCoords 2 181.02 put		% sqrt(2 * 128^2) - centre to corner of square
+		end
+	} bind
+] def
+
+% The idiom replacemnt for xblnd is different for XPress 6 and pre-6. The core of
+% the  replacement is common to both.
+
+% For Quark 3, 4, 5
+/xblnd3_Replacement {
+	% (XBLND3: )print 1 index =print (  )print dup ==
+	/blmode exch def
+	/blf exch def
+
+	blmode 2 eq {
+		//CMYKC1 astore pop
+		//CMYKC0 astore pop
+		/DeviceCMYK setcolorspace
+	}	{
+		//GrayC1 astore pop
+		//GrayC0 astore pop
+		currentcolorspace 0 get /Separation ne {
+			/DeviceGray setcolorspace
+		} if
+	} ifelse
+
+	save
+	0 0 256 256 rectclip
+
+	//xblndProcs blf get exec
+	dup	/ColorSpace currentcolorspace put
+
+	shfill
+	restore
+	newpath
+} bind def
+
+% For Quark 6
+/xblnd6_Replacement {
+	% (XBLND6: )print 1 index =print (  )print dup ==
+	1 index -1 eq
+	{exch pop blnd}
+	//xblnd3_Replacement
+	ifelse
+} bind def
+
+
+/XPressSmoothGrads <<
+
+	% For Quark 3, 4, 5
+	/blnd3 [
+			{		% template ------------------------------------------------
+			dup 
+			/blmode X 
+			2 eq {
+				/k1 X /y1 X /m1 X /c1 X /k0 X /y0 X /m0 X /c0 X
+			}	{
+				/k1 X /k0 X
+			}ifelse
+			k1 k0 /@1 X /@2 X 
+			blmode 2 eq {
+				@2 @1 sub abs c1 c0 sub abs 
+				2 copy lt {
+					exch c1 c0 /@1 X /@2 X
+				}if 
+				pop 
+				m1 m0 sub abs 
+				2 copy lt {
+					exch m1 m0 /@1 X /@2 X
+				}if 
+				pop y1 y0 sub abs lt {
+					y1 y0 /@1 X /@2 X
+				}if
+			}if
+			@1 @2 blmode 2 eq {
+				1 exch sub exch 1 exch sub
+			}if 
+			2 copy lt { exch } if
+			sub maxblnd mul round cvi dup dup /blstp X 
+			0 eq { pop 1 }if
+			/blw 256 blstp 1 add div def 
+			/kstp k1 k0 sub 2 index div def
+			blmode 2 eq { 
+				/cstp c1 c0 sub 2 index div def 
+				/mstp m1 m0 sub 2 index div def
+				/ystp y1 y0 sub 2 index div def
+			}if 
+			pop 
+			g np[]0 p 0 a 
+			blw dup dup devpxwd dup add add o 2 div blstp 1 add
+			blmode 2 eq { 
+					{
+					c0 m0 y0 k0 setcmykcolor 
+					dup 0 m 0 256 rl n 1 index add
+					/c0 c0 cstp add def 
+					/m0 m0 mstp add def 
+					/y0 y0 ystp add def 
+					/k0 k0 kstp add def
+				} repeat
+			}	{ 
+					{
+					k0 blmode 0 eq {H} {sepgr}ifelse 
+					dup 0 m 0 256 rl n 1 index add 
+					/k0 k0 kstp add def
+				} repeat
+			}ifelse 
+			p2 G
+		} bind
+		//blndReplacement	% replacement -------------------------------------
+	]		% blnd
+
+
+	% For Quark 6
+	/blnd6 [
+			{		% template ------------------------------------------------
+			/maxblnd where {pop} {calcbnd} ifelse
+			dup 
+			/blmode X 
+			2 eq {
+				/k1 X /y1 X /m1 X /c1 X /k0 X /y0 X /m0 X /c0 X
+			}	{
+				/k1 X /k0 X
+			}ifelse
+			k1 k0 /@1 X /@2 X 
+			blmode 2 eq {
+				@2 @1 sub abs c1 c0 sub abs 
+				2 copy lt {
+					exch c1 c0 /@1 X /@2 X
+				}if 
+				pop 
+				m1 m0 sub abs 
+				2 copy lt {
+					exch m1 m0 /@1 X /@2 X
+				}if 
+				pop y1 y0 sub abs lt {
+					y1 y0 /@1 X /@2 X
+				}if
+			}if
+			@1 @2 blmode 2 eq {
+				1 exch sub exch 1 exch sub
+			}if 
+			2 copy lt { exch } if
+			sub maxblnd mul round cvi dup dup /blstp X 
+			0 eq { pop 1 }if
+			/blw 256 blstp 1 add div def 
+			/kstp k1 k0 sub 2 index div def
+			blmode 2 eq { 
+				/cstp c1 c0 sub 2 index div def 
+				/mstp m1 m0 sub 2 index div def
+				/ystp y1 y0 sub 2 index div def
+			}if 
+			pop 
+			g np[]0 p 0 a 
+			blw dup dup devpxwd dup add add o 2 div blstp 1 add
+			blmode 2 eq { 
+					{
+					c0 m0 y0 k0 setcmykcolor 
+					dup 0 m 0 256 rl n 1 index add
+					/c0 c0 cstp add def 
+					/m0 m0 mstp add def 
+					/y0 y0 ystp add def 
+					/k0 k0 kstp add def
+				} repeat
+			}	{ 
+					{
+					k0 blmode 0 eq {H} {sepgr}ifelse 
+					dup 0 m 0 256 rl n 1 index add 
+					/k0 k0 kstp add def
+				} repeat
+			}ifelse 
+			p2 G
+		} bind
+		//blndReplacement	% replacement -------------------------------------
+	]		% blnd6
+
+
+	% xblnd is from the CoolBlends XTension with different definitions for 
+	% different versions of Quark.
+	% Need to have 2 idioms replacements for each xblnd idiom - once for composite
+	% workflows, once for mono. In a mono workflow sepgr is defined to be an operator.
+
+	% idioms for composite workflows - sepgr is a name
+
+	% For Quark 3, 4
+	/xblnd3comp [
+		[
+			//xblnd3_base aload pop
+		] cvx bind
+		//xblnd3_Replacement
+	]
+
+	% For Quark 5
+	/xblnd5comp [
+		[
+			/turnoffidiomrecognition cvx
+			//xblnd3_base aload pop
+			/resetidiomrecognition cvx
+		] cvx bind
+		//xblnd3_Replacement
+	]
+
+	% For Quark 6
+	/xblnd6comp [
+		[
+			//xblnd6_base aload pop
+		] cvx bind
+		//xblnd6_Replacement
+	]
+
+
+	% idioms for mono workflows - sepgr is an operator
+
+	/sepgr systemdict/setgray get def
+
+	% For Quark 3, 4
+	/xblnd3mono [
+		[
+			//xblnd3_base aload pop
+		] cvx bind
+		//xblnd3_Replacement
+	]
+
+	% For Quark 5
+	/xblnd5mono [
+		[
+			/turnoffidiomrecognition cvx
+			//xblnd3_base aload pop
+			/resetidiomrecognition cvx
+		] cvx bind
+		//xblnd3_Replacement
+	]
+
+	% For Quark 6
+	/xblnd6mono [
+		[
+			//xblnd6_base aload pop
+		] cvx bind
+		//xblnd6_Replacement
+	]
+
+>> /IdiomSet defineresource pop
+
+end 	% local dict
+
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+
+setglobal
+
+%%EndResource
+
+%%EOF

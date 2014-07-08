@@ -1,0 +1,31 @@
+%!PS-Adobe
+%%Title: "Draft"
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% This page feature printsthe word 'Draft' in outline over the top of 
+% each page of the document. It can be modified to produce other 
+% similar effects.
+% 
+% This routine uses the HqnImpose2 procset which is fully documented in
+% Harlequin's Extensions manual. Please note that use of this procset is
+% incompatible with the use of other imposition code, including that in
+% the HqnColumnSeps procset which is used to amalgamate pre-separated
+% pages for output to colour printers. 
+%
+
+% $HopeName: SWv20!swf:pagefeat:examples:draft(EBDSDK_P.1) $
+%
+
+
+<<
+	/PageOverlay { 
+			/Times-Roman (Draft) TextOverlay 
+		} bind
+	/Trailer {}
+>> /HqnImpose2 /ProcSet findresource /HqnInitImpose get exec
+
+statusdict /HqnColorBarAccept true put
+
+%%EOF

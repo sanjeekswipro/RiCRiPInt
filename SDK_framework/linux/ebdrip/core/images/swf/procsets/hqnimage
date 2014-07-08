@@ -1,0 +1,290 @@
+%!PS-Adobe-3.0
+%%Title: HqnImage
+%%Creator: Global Graphics Software Limited
+%%CreationDate: September 24, 2005
+% Copyright (C) 2005-2012 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%%EndComments
+%%BeginProcSet: "(HqnImage)" 1 0
+
+% this procset provides Image file support procedures for use of native 
+% Jpep, JFIF, Jpeg2000, gif, tiff, etc.. files in PostScript.
+% 
+
+% $HopeName: COREimages!swf:procsets:hqnimage(EBDSDK_P.1) $
+
+currentglobal false setglobal
+
+% the resource:
+12 dict begin
+  /globalness exch def
+  /imagedict 10 dict def
+  /userdefaultsdict 3 dict def
+  
+  /basedict
+  <<
+    /JPEG << /XResolution 180.0 /YResolution 180.0 >>
+    /JPEG2000 << /XResolution 180.0 /YResolution 180.0 >>
+    /TIFF << /XResolution 72.0 /YResolution 72.0 >>
+    /WMPHOTO << /XResolution 96.0 /YResolution 96.0 >>
+    /default <<  >>
+  >> def
+  
+  % HqnImageSetImageDefaults allows to set the image resolution by external means
+  /HqnImageSetImageDefaults % dict HqnImageSetImageDefaults -> -
+  {
+    //userdefaultsdict begin
+    {
+      def
+    } forall
+    /hqn_image_do_setpagedevice true def
+    end
+
+  } bind def
+
+
+  /getimagedetails % - getimagedetails -> dict true | false
+  {
+    % first open the file and extract info.
+    //imagedict /image-file get dup 0 setfileposition
+    << 
+      /ImageFormat null   % all possible file types ( we only get here if the image is one we support )
+    >>  1183615869 internaldict /imagecontextopen get exec  
+    { 
+      15 dict begin
+      % first populate the dictionary with the defaults appropriate for the image type
+      //basedict 1 index 2 copy known { get } { pop /default get } ifelse 
+      {
+        def
+      }
+      forall 
+      1 index 
+      {
+       def false
+      } 
+      [
+        /BitsPerComponent /ColorSpace /DataSource /Decode
+        /Height /ImageMatrix /ImageType /InterleaveType
+        /MultipleDataSources /PreMult /Width /XResolution /YResolution /EmbeddedICCProfile
+        /MaskColor
+      ] 1183615869 internaldict /imagecontextinfo get exec
+      //imagedict /image-data-dict currentdict put 
+      pop 1183615869 internaldict /imagecontextclose get exec
+      currentdict end % image-data-dict
+      true
+    }
+    {
+      false
+    }
+    ifelse    
+  } bind def
+  
+  /analyseimage { % filename / file [ configdict ] filetype-array -> true / false
+    //imagedict { pop //imagedict exch undef } forall
+
+    //imagedict /iftypes 3 -1 roll put
+    dup type /dicttype eq {
+      { //imagedict 3 1 roll put } forall
+	  } if
+	  dup type /filetype ne {
+      (r) file
+    } if
+    dup //imagedict /image-file 3 -1 roll put
+    
+    <<
+      /ImageFormat  //imagedict /iftypes get  % just the file types we currently support
+      % null   % all possible file types
+    >> 1183615869 internaldict /imagecontextopen get exec
+    { 
+      pop 1183615869 internaldict /imagecontextclose get exec
+      true
+    }{
+      false
+    } ifelse
+  } bind def
+
+
+  /runimage %   <opt dict> -
+  {
+    % first open the file and extract info.
+    //imagedict /image-file get dup 0 setfileposition
+    << 
+      /ImageFormat null   % all possible file types ( we only get here if the image is one we support )
+    >>  1183615869 internaldict /imagecontextopen get exec  
+    { 
+      15 dict begin
+      % first populate the dictionary with the defaults appropriate for the image type
+      //basedict 1 index 2 copy known { get } { pop /default get } ifelse 
+      {
+        def
+      }
+      forall 
+
+      % now augment with the user default values if set
+      //userdefaultsdict
+      {
+        def
+      } forall
+
+      3 -1 roll % now grab the options from the opts dict
+      {
+        def
+      }
+      forall
+      1 index 
+      {
+        def false
+      } 
+      [
+        /BitsPerComponent /ColorSpace /DataSource /Decode
+        /Height /ImageMatrix /ImageType /InterleaveType
+        /MultipleDataSources /PreMult /Width /XResolution /YResolution /EmbeddedICCProfile
+        /MaskColor
+      ] 1183615869 internaldict /imagecontextinfo get exec
+      //imagedict /image-data-dict currentdict put 
+      pop //imagedict /image-id  3 -1 roll put
+      end % image-data-dict
+      true
+    }
+    {
+      false
+    }
+    ifelse    
+    
+    % now render the image (assuming all was ok with the imagecontextopen & imagecontextinfo calls
+    % true on stack here is all OK so far...
+    { 
+      //imagedict /image-data-dict get begin
+      gsave
+      
+      currentdict /hqn_image_do_setpagedevice 2 copy known { get } { pop pop true } ifelse
+      { 
+        <<
+          currentdict /HWResolution known {
+            /HWResolution currentdict /HWResolution get
+          } {
+            currentdict /XResolution known currentdict /YResolution known and {
+              /HWResolution [ XResolution YResolution ]
+            } if
+          } ifelse
+
+          /PageSize [
+            Width currentdict /XResolution known {
+              72 mul XResolution div
+            } if
+            Height currentdict /YResolution known {
+              72 mul YResolution div
+            } if
+          ]
+        >> setpagedevice
+      }
+      if
+
+      gsave     % For preserving the original color space, especially for DeviceN images
+
+      % Install an intercept colorspace for an embedded profile
+      currentdict /EmbeddedICCProfile known 
+      {
+        currentdict false
+        /HqnICCBased /ProcSet findresource /InstallImageProfile get exec
+      } {
+        ColorSpace setcolorspace
+      } ifelse
+
+      //imagedict /image-file get  0 setfileposition
+        
+      ImageType 1 eq {
+        <<
+          %support chroma-keyed images
+          currentdict /MaskColor known {
+            /ImageType 4
+            /MaskColor MaskColor
+          }{
+              /ImageType 1
+          }ifelse
+          /Width Width
+          /Height Height
+          /BitsPerComponent BitsPerComponent
+          /ImageMatrix ImageMatrix
+          /Decode Decode
+          /MultipleDataSources MultipleDataSources
+          /DataSource DataSource 
+        >>
+      } {
+        << % Alpha-channel or masked image
+          /ImageType ImageType
+          /InterleaveType InterleaveType
+          /DataDict <<
+            /ImageType 1
+            /Width Width
+            /Height Height
+            /BitsPerComponent BitsPerComponent
+            /ImageMatrix ImageMatrix
+            /Decode Decode
+            /MultipleDataSources MultipleDataSources
+            /DataSource DataSource dup type /arraytype eq {
+         0 1 index length 1 sub getinterval
+            } if
+            /PreMult PreMult
+          >>
+          /MaskDict <<
+            /ImageType 1
+            /Width Width
+            /Height Height
+            /BitsPerComponent ImageType 12 eq {BitsPerComponent} {1} ifelse
+            /ImageMatrix ImageMatrix
+            /Decode [0 1]
+            DataSource type /arraytype eq {
+              /DataSource DataSource dup length 1 sub get
+            } if
+          >>
+        >>
+      } ifelse
+      //imagedict /image-data-dict get /hqn_image_do_setpagedevice 2 copy known { get } { pop pop true } ifelse
+      {
+          Width currentdict /XResolution known {
+              72 mul XResolution div
+          } if
+          Height currentdict /YResolution known {
+              72 mul YResolution div
+          } if
+          scale
+      }
+      if
+      {image} superstopped
+      grestore    % If the color space was DeviceN, this will remove an unsafe pointer from the gstate
+      dup not 
+      {
+        enableinterrupt  % Re-enable interrupts turned off by superstopped
+        currentdict /hqn_image_do_showpage 2 copy known { get } { pop pop true } ifelse
+        {
+          showpage
+        }
+        if
+      }if
+      grestore
+      end % image-data-dict
+      //imagedict /image-id get 1183615869 internaldict /imagecontextclose get exec
+      //imagedict /image-file get closefile
+
+      { $error /errorname get /interrupt eq { superstop } { stop } ifelse } if
+    }
+    {
+      //imagedict /image-file get closefile
+    }
+    ifelse
+  } bind def
+
+
+  % ------------------------------------------------------------
+
+  [ 
+  ] { currentdict exch undef } forall
+  currentdict
+end
+
+/HqnImage exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet
+

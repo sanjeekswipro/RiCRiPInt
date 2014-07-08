@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam Doughnut bootstrap for UNIX
+#
+# $HopeName: HQNbuildtools!hqmake(EBDSDK_P.1) $
+#
+LC_ALL=en_US ; export LC_ALL
+exec $CV_PERL_5_005_02 -w -Ibt -MHqmake -e "exit Hqmake::CommandLine" -- "$@"
+#
+# Log stripped

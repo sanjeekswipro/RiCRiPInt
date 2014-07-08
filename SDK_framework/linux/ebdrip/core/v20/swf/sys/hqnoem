@@ -1,0 +1,40 @@
+%!PS-Adobe
+%%Title: BootStrap - OEM specific
+%%Creator: Global Graphics Software Limited
+%%CreationDate: January 20, 1994
+%%EndComments
+%%BeginProcSet: "(HqnOEM)" 1 1
+
+% $HopeName: SWv20!swf:sys:hqnoem(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This file is provided for ScriptWorks customers to add whatever PostScript language
+% code they desire to be run when the RIP is started.
+%
+% It removes the need for OEMs to manually edit the start-up files supplied by
+% Harlequin when a new revision is released.
+%
+% This file may be deleted if not required.
+%
+% Harlequin guarantees that no code of significance will ever be included in this
+% file as shipped by them.
+
+% passwords are for EBDEVAL and max 8 threads
+
+<<
+/Password 0
+/Pipelining 33839164
+/MaxThreadsLimit 34631696
+/HVDInternal 34180839
+>> setsystemparams
+
+<<
+/NumDisplayLists 2
+/MaxThreads [2 3]
+>> setsystemparams
+
+
+% End of HqnOEM

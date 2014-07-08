@@ -1,0 +1,10 @@
+% Load error handler - short format
+%% Creator: Martin Bailey
+%% CreationDate: 94.10.20
+%% For: Harlequin
+% (C) Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+
+
+/HqnErrorHandler /ProcSet findresource
+/QuickErrorHandler get exec

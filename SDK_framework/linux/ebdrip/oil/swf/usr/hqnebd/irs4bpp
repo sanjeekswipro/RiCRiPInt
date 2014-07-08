@@ -1,0 +1,139 @@
+%!PS
+%%Title: rip4bpp
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2008 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWebd_OIL_example_gg!swf:usr:hqnebd:irs4bpp(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+currentglobal true setglobal
+
+
+/irsCMYK4bpp_Gfx
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK4bpp_Gfx
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 65
+      /Height 65
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Gfx_C_inv.bin) (r) file
+      /Depth 4
+   >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 65
+      /Height 65
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Gfx_M_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 8
+      /Height 8
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Gfx_Y_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 7
+      /Height 7
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Gfx_K_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Default 1 index
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+/irsCMYK4bpp_Photo
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK4bpp_Photo
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 7
+      /Height 7
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Photo_C_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 26
+      /Height 26
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Photo_M_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 53
+      /Height 53
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Photo_Y_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 26
+      /Height 26
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Photo_K_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Default 1 index
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+/irsCMYK4bpp_Text
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK4bpp_Text
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 68
+      /Height 68
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Text_C_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 68
+      /Height 68
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Text_M_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 24
+      /Height 24
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Text_Y_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 16
+      /Height 16
+      /Thresholds (%os%Usr/HqnEmbedded/irScreen_4bpp_Text_K_inv.bin) (r) file
+      /Depth 4
+    >>
+  /Default 1 index
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+%% The following halftone dict uses the new HqnRIP Halftone type 195 to provide a 
+%% more efficient object based screening implementation. This screen can
+%% be selected when auto object based screening mode is selected.
+/irsCMYK4bppAuto <<
+  /HalftoneType 195
+  /Default << /HalftoneType 199 /Halftone /irsCMYK4bpp_Gfx >>
+  /Text << /HalftoneType 199 /Halftone /irsCMYK4bpp_Text >>
+  /Linework << /HalftoneType 199 /Halftone /irsCMYK4bpp_Gfx >>
+  /Picture << /HalftoneType 199 /Halftone /irsCMYK4bpp_Photo >>
+  /Vignette << /HalftoneType 199 /Halftone /irsCMYK4bpp_Photo >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+setglobal % restore
+
+% (%stderr%)(w) file (Diags - irs4bpp screens defined\n) writestring

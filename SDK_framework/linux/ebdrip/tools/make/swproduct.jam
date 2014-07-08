@@ -1,0 +1,717 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam product-level definitions common to all ScriptWorks rip products
+#
+# $HopeName: SWtools!make:swproduct.jam(EBDSDK_P.1) $
+#
+
+#
+# Compilers
+#
+
+# Splint rules come before the C compilers since they can add to SplintOptions
+
+    if $(EnableSplint) {
+        CompilerVersion Inherited Local : Splint                 : splint_3_1_2 : win_32 386 ;
+        CompilerVersion Inherited Local : Splint                 : splint_3_1_2 : win_64 amd64 ;
+        CompilerVersion Inherited Local : Splint                 : splint_3_1_2 : macos_x ;
+        CompilerVersion Inherited Local : Splint                 : splint_3_1_2 : linux ;
+    }
+
+# GCov rules come before the C compilers since they can add to GCovOptions
+
+    if $(EnableGCov) {
+        CompilerVersion Inherited Local : GCov                   : gcov_3_3 : win_32 ;
+        CompilerVersion Inherited Local : GCov                   : gcov_3_3 : win_64 ;
+        CompilerVersion Inherited Local : GCov                   : gcov_3_3 : macos_x ;
+        CompilerVersion Inherited Local : GCov                   : gcov_3_3 : linux ;
+   }
+
+# Certain compiler options are RIP-dependant
+    CompileRip = 1 ;
+
+    CompilerVersion Inherited Local : C C++ mixedC           : irix_7_2_cc : irix_6_3 mips ;
+    CompilerVersion Inherited Local : C                      : irix_7_2_cc : irix_6_4 mips ;
+    CompilerVersion Inherited Local : C C++ mixedC           : irix_7_2_cc : irix_6_5 mips ;
+    CompilerVersion Inherited Local : C C++ mixedC           : gcc_3_2     : solaris ;
+    CompilerVersion Inherited Local : C C++ mixedC           : gcc_4_5_3   : netbsd ;
+
+    if $(UNIX) && $(OS) != NETBSD {
+        if $(Variant_linux_cpp_compiler) && ! $(Variant_cpp_compiler) { RequiresVariant cpp_compiler : $(Variant_linux_cpp_compiler) ; }
+
+        # linux MontaVista Linux x86 cross compiler
+        if montavista-x86 in $(JamTargetPlat)
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_mvx86_3_4_3 : linux : montavista x86 ;
+        }
+        else if linux-603 in $(JamTargetPlat)
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_ppc_3_4_3 : linux : linux ppc ;
+        }
+        else if linux-e500 in $(JamTargetPlat)
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_ppc_4_1_2 : linux : linux e500 ;
+        }
+        else if linux-arm9 in $(JamTargetPlat)
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : $(Variant_gcc_compiler) : linux : linux arm9 ;
+        }
+        else if $(Variant_cpp_compiler) = icc_11_1
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : icc_11_1 : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_5_3
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_5_3  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_1_2
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_1_2  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_3
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_3  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_4
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_4  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_6
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_6  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_3_2
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_3_2  : linux ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_x_panda_granite_4_6_4
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_panda_granite_4_6_4  : linux : linux arm ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_x_panda_granite2_4_7_3
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_panda_granite2_4_7_3  : linux : linux arm ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_x_panda_granite2soft_4_7_3
+        {
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_x_panda_granite2soft_4_7_3  : linux : linux arm ;
+        }
+        else if $(Variant_cpp_compiler)
+        {
+            Error "Unrecognised cpp_compiler variant specified ($(Variant_cpp_compiler))." ;
+        }
+        else if linux-armv6l in $(JamTargetPlat)
+        {
+            Warning "No compiler specified. Using default gcc 4.6" ;
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_6 : linux : linux armv6l ;
+        }
+        else if linux-amd64 in $(JamTargetPlat) {
+            Warning "No compiler specified. Using default gcc 4.4" ;
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_4_4  : linux ;
+        }
+        else {
+            Warning "No compiler specified. Using default gcc 3.2" ;
+            CompilerVersion Inherited Local : C C++ mixedC : gcc_3_2  : linux ;
+        }
+
+        # Same version of valgrind for all UNIX variations at present.
+        if $(Variant_valgrind) {
+          CompilerVersion Inherited Local : Valgrind : valgrind_3_7_0 : linux ;
+        }
+
+    } else if $(NT) {
+        if vxworks in $(TargetOS)
+        {
+            # VXWORKS cross-compiler
+            if $(Variant_vxworks_compiler) = wrgcc_2_7_2
+            {
+                CompilerVersion Inherited Local : C C++ mixedC : wrgcc_2_7_2 : win_32 : vxworks ppc603 ;
+            }
+            else if $(Variant_vxworks_compiler) = wrgcc_2_9_6_mips
+            {
+                CompilerVersion Inherited Local : C C++ mixedC : wrgcc_2_9_6_mips : win_32 : vxworks mips ;
+            }
+            else if vxworks-e500 in $(JamTargetPlat)
+            {
+                if $(Variant_gcc_compiler) = gcc_x_ppc_4_1_2
+                {
+                    CompilerVersion Inherited Local : C C++ mixedC : gcc_x_ppc_4_1_2 : win_32 : vxworks e500 ;
+                }
+                else if $(Variant_gcc_compiler) = gcc_x_ppc_3_4_4
+                {
+                    CompilerVersion Inherited Local : C C++ mixedC : gcc_x_ppc_3_4_4 : win_32 : vxworks e500 ;
+                }
+                else if $(Variant_diab_compiler) = diab_x_ppc_5_6_0
+                {
+                    CompilerVersion Inherited Local : C C++ mixedC : diab_x_ppc_5_6_0 : win_32 : vxworks e500 ;
+                }
+            }
+            else
+            {
+                CompilerVersion Inherited Local : C C++ mixedC : wrgcc_2_9_6 : win_32 : vxworks ppc603 ;
+            }
+        }
+        else if threadx in $(TargetOS)
+        {  # THREADX cross-compiler
+            if $(Variant_ghs_compiler) = ghs_x_arm_4_2_3
+            {
+                CompilerVersion Inherited Local : C C++ mixedC : ghs_x_arm_4_2_3 : win_32 : threadx arm9 ;
+            }
+            else if $(Variant_rvds_compiler) = rvds_x_arm_3_1
+            {
+                CompilerVersion Inherited Local : C C++ mixedC : rvds_x_arm_3_1 : win_32 : threadx arm9 ;
+            }
+        } 
+        else
+        { # WINDOWS native compilers
+            if $(Variant_wintel_cpp_compiler) && ! $(Variant_cpp_compiler) { RequiresVariant cpp_compiler : $(Variant_wintel_cpp_compiler) ; }
+
+            if $(Variant_cpp_compiler) = gcc_3_4_2
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : gcc_3_4_2 : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : gcc_3_4_2 : win_64 amd64 ;
+                RequiresVariant dll        : nd ;
+            }
+            else if $(Variant_cpp_compiler) = icc_11_1_vc_9_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : icc_11_1_vc_9_0 : win_32 386 ;
+            }
+            else if $(Variant_cpp_compiler) = msvc_8_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_8_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_8_0  : win_64 amd64 ;
+            }
+            else if $(Variant_cpp_compiler) = msvc_9_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_9_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_9_0  : win_64 amd64 ;
+            }
+            else if $(Variant_cpp_compiler) = msvc_10_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_10_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_10_0  : win_64 amd64 ;
+            }
+            else if $(Variant_cpp_compiler) = msvc_11_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_11_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_11_0  : win_64 amd64 ;
+            }
+            else if $(Variant_cpp_compiler) = msvc_12_0
+            {
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_12_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_12_0  : win_64 amd64 ;
+            }
+            else if $(Variant_cpp_compiler)
+            {
+                Error "Unrecognised cpp_compiler variant specified ($(Variant_cpp_compiler))." ;
+            }
+            else
+            {
+                Warning "No compiler specified. Using default msvc_10_0" ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_10_0  : win_32 386 ;
+                CompilerVersion Inherited Local : C C++ mixedC RC Browse : msvcnt_10_0  : win_64 amd64 ;
+            }
+        }
+    } else if $(MACOSX) {
+        if $(Variant_cpp_compiler) = gcc_4_0
+        {
+            CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_0 ;
+        }
+        else if $(Variant_cpp_compiler) = gcc_4_2
+        {
+            CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_2 ;
+        }
+        else if $(Variant_cpp_compiler) = llvm_gcc_4_2
+        {
+            CompilerVersion Inherited Local : C C++ mixedC RC : llvm_gcc_4_2 ;
+        }
+        else if $(Variant_cpp_compiler) = clang_3_1
+        {
+            CompilerVersion Inherited Local : C C++ mixedC RC : clang_3_1 ;
+        }
+        else if $(Variant_cpp_compiler)
+        {
+            Error "Unrecognised cpp_compiler variant specified ($(Variant_cpp_compiler))." ;
+        }
+        else
+        {
+            Warning "No compiler specified. Using default (gcc_4_0 on 10.4, gcc_4_2 on 10.5 and 10.6, llvm_gcc_4_2 on 10.7 and 10.8)" ;
+            CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_0      : macos_x_10_4 ;
+            CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_2      : macos_x_10_5 ;
+            CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_2      : macos_x_10_6 ;
+            CompilerVersion Inherited Local : C C++ mixedC RC : llvm_gcc_4_2 : macos_x_10_7 ;
+            CompilerVersion Inherited Local : C C++ mixedC RC : llvm_gcc_4_2 : macos_x_10_8 ;
+        }
+    }
+
+    if $(Variant_security) = ldklic || $(Variant_security) = lic || $(Variant_gui) {
+        if $(Variant_C++_ORB) = 0 && ( $(Variant_security) = ldklic || $(Variant_security) = lic ) {
+            Error Cannot use license server with non-SOAR build. ;
+        }
+
+        CompilerVersion Inherited Local : Orb Idl2Cpp : omni_4_1_4a : macos_x     : : Variant C++_ORB=OMNI ;
+        CompilerVersion Inherited Local : Orb Idl2Cpp : omni_4_1_4b : win         : : Variant C++_ORB=OMNI ;
+        CompilerVersion Inherited Local : Orb Idl2Cpp : omni_4_1_4a : linux 386   : : Variant C++_ORB=OMNI ;
+        CompilerVersion Inherited Local : Orb Idl2Cpp : omni_4_1_4a : linux amd64 : : Variant C++_ORB=OMNI ;
+        CompilerVersion Inherited Local : Orb Idl2Cpp : omni_4_1_4  : solaris     : : Variant C++_ORB=OMNI ;
+    }
+
+    if $(Variant_Javatools) { # avoid loading the jambits if undefined, using
+                              # condition arg to CompilerVersion would
+        CompilerVersion Inherited Local : Java : jdk_1_4_1 ;
+        CompilerVersion Inherited Local : Jre : jre_1_4_1 ;
+        CompilerVersion Inherited Local : CommonsCollections
+            : commons_collections_3_1 ;
+        CompilerVersion Inherited Local : JFreeChart : jfreechart_0_9_21 ;
+    }
+
+    if $(Variant_llv) != nLLv ||  $(RELEASE) = 1 {
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : irix_6_3 mips ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : irix_6_4 mips ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : irix_6_5 mips ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : linux ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : macos_x ppc ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_2 : macos_x 386 ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_0 : solaris ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_1 : win_32 386 ;
+        CompilerVersion Inherited Local : Sign                 : signtool_1_1 : win_64 amd64 ;
+    }
+
+#
+# Product variables and variants
+#
+
+    RequiresVariant product ;
+
+# By default build a dongled multi-threaded non-morisawa rip.
+    if ! $(Variant_customised) { RequiresVariant customised : HARLQN ; }
+    if ! $(Variant_security)   { RequiresVariant security   : dng    ; }
+    if ! $(Variant_cms)        { RequiresVariant cms        : hqncms ; }
+    if ! $(Variant_morisawa)   { RequiresVariant morisawa   : nm     ; }
+    if ! $(Variant_llv)        { RequiresVariant llv        : nLLv   ; }
+
+
+# If we have a C++ compiler, use it to compile the api interfaces
+    if ! $(Variant_C++_ORB) && C++ in $(EnabledCompilers) {
+        RequiresVariant C++_ORB : OMNI ;
+    }
+
+# We have OMNI C++_ORB turned on
+    if $(Variant_C++_ORB) = OMNI {
+        # When using omniORB3 or later requires_corba_any must be turned on (so that code for TypeCodes
+        # is generated, which is used for obtaining repository IDs)
+        if ! $(OmniVersion[1]) = 2 {
+            RequiresVariant requires_corba_any ;
+        }
+    }
+
+    PluginInterface = pic ;
+    if $(MAC) || $(MACOSX)  { PluginInterface += pim ; }
+    if $(C-Compiler-Family) = msvc  { PluginInterface += pip ; }
+    if $(UNIX) { PluginInterface += piu ; }
+
+#
+# Create a mechanism for including the source date in the code.
+#
+    RequiresVariant source_date ;
+
+    SWAB_SOURCE_DATE ?= "not available" ;
+    Join SWAB_SOURCE_DATE : " " : $(SWAB_SOURCE_DATE) ; # To get around Jam splitting on whitespace
+
+    if $(MAC) { QUOTED_SOURCE_DATE =  ¶\"$(SWAB_SOURCE_DATE)¶\"  ; }
+    else if $(C-Compiler-Family) = gcc-x-ppc
+    {
+        if $(C-Compiler-Version) = 2.9.6 || $(C-Compiler-Version) = 3.4.3 || $(C-Compiler-Version) = 3.4.4 || $(C-Compiler-Version) = 4.1.2 || $(C-Compiler-Version) = 4.5.3
+        {
+            QUOTED_SOURCE_DATE = \\\"$(SWAB_SOURCE_DATE)\\\" ;
+        }
+        else
+        {
+            QUOTED_SOURCE_DATE = $(SWAB_SOURCE_DATE)\\\\\\\ ;
+        }
+    }
+    else { QUOTED_SOURCE_DATE = \\\"$(SWAB_SOURCE_DATE)\\\" ; }
+
+    if $(C-Compiler-Family) = gcc-x-ppc
+    {
+        if $(C-Compiler-Version) = 2.9.6 || $(C-Compiler-Version) = 3.4.3 || $(C-Compiler-Version) = 3.4.4 || $(C-Compiler-Version) = 4.1.2 || $(C-Compiler-Version) = 4.5.3
+        {
+            AddToVar Inherited Local : C-Defines : QUOTED_SOURCE_DATE=\"$(QUOTED_SOURCE_DATE)\" : Variant source_date ;
+        }
+        else
+        {
+            AddToVar Inherited Local : C-Defines : QUOTED_SOURCE_DATE=\\\\\\\"$(QUOTED_SOURCE_DATE)\" : Variant source_date ;
+        }
+    }
+    else
+    {
+        AddToVar Inherited Local : C-Defines : QUOTED_SOURCE_DATE=\"$(QUOTED_SOURCE_DATE)\" : Variant source_date ;
+    }
+
+
+#
+# Customised
+#
+    AddToVar Inherited Local : C-Defines   : $(Variant_customised) : Variant customised ;
+    AddToVar Inherited Local : Suffix      : $(Variant_customised) : Variant customised ;
+    IncludeExportDirectories Inherited Local : customer :          : Variant customised ;
+
+    if ! $(Variant_thirdparty) {
+        Include $(BUILDROOT)$/tools$/make$/oemlist.jam ;
+        DontExportSource $(BUILDROOT)$/tools$/make$/oemlist.jam ;
+    }
+
+#
+# Customer interface compound name
+#
+    AddToVar Inherited Local : CustIface   : custiface             : Variant custiface ;
+    AddToVar Inherited Local : CustIface   : customer              : Variant Non_custiface ;
+    AddToVar Inherited Local : Suffix      : cf                    : Variant custiface ;
+
+#
+# Gui
+#
+    AddToVar Inherited Local : Suffix      : no_gui                : Variant Non_gui ;
+    AddToVar Inherited Local : Suffix      : gui                   : Variant gui ;
+    AddToVar Inherited Local : C-Defines   : FW_GUI=1              : Variant gui ;
+
+#
+# Always parallel rip.
+#
+
+# define MULTI_PROCESS as 't' for legacy code, but avoid quoting problems
+    AddToVar Inherited Local : C-Defines : MULTI_PROCESS=116 : ;
+
+#
+# Product -- Use this variant to gain access to product configuration header files
+#
+    AddToVar Inherited Local : Suffix      : $(ProductName)        : Variant product ;
+    if ! $(ProductDir) { ProductDir = $(Dot) ; }
+    IncludeExportDirectories Inherited Local : $(ProductDir) $(ProductSkin) : : Variant product ;
+
+#
+# Security -- dongle, LDK, LDK + HLS, LE, HLS or watermark
+#
+    AddToVar Inherited Local : Suffix      : dng                           : Variant security=dng ;
+    AddToVar Inherited Local : C-Defines   : DONGLE                        : Variant security=dng ;
+    AddToVar Inherited Local : C-Undefines : HQNLIC LDK LESEC WATERMARK    : Variant security=dng ;
+
+    AddToVar Inherited Local : Suffix      : ldk                           : Variant security=ldk ;
+    AddToVar Inherited Local : C-Defines   : LDK                           : Variant security=ldk ;
+    AddToVar Inherited Local : C-Undefines : DONGLE HQNLIC LESEC WATERMARK : Variant security=ldk ;
+
+    AddToVar Inherited Local : Suffix      : ldklic                        : Variant security=ldklic ;
+    AddToVar Inherited Local : C-Defines   : HQNLIC LDK                    : Variant security=ldklic ;
+    AddToVar Inherited Local : C-Undefines : DONGLE LESEC WATERMARK        : Variant security=ldklic ;
+
+    AddToVar Inherited Local : Suffix      : le                            : Variant security=le ;
+    AddToVar Inherited Local : C-Defines   : LESEC                         : Variant security=le ;
+    AddToVar Inherited Local : C-Undefines : DONGLE HQNLIC LDK WATERMARK   : Variant security=le ;
+
+    AddToVar Inherited Local : Suffix      : lic                           : Variant security=lic ;
+    AddToVar Inherited Local : C-Defines   : HQNLIC                        : Variant security=lic ;
+    AddToVar Inherited Local : C-Undefines : DONGLE LDK LESEC WATERMARK    : Variant security=lic ;
+
+    AddToVar Inherited Local : Suffix      : wm                            : Variant security=wm  ;
+    AddToVar Inherited Local : C-Defines   : WATERMARK                     : Variant security=wm  ;
+    AddToVar Inherited Local : C-Undefines : DONGLE HQNLIC LDK LESEC       : Variant security=wm  ;
+
+    if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        if ! $(Variant_ipc) { RequiresVariant ipc : corba ; }
+        if ! $(Variant_dongled_hls) { RequiresVariant dongled_hls : no ; }
+
+        AddToVar Inherited Local : Suffix    : dng                     : Variant dongled_hls=yes ;
+
+        AddToVar Inherited Local : Suffix    : corba                   : Variant ipc=corba ;
+        AddToVar Inherited Local : Suffix    : rpc                     : Variant ipc=rpc ;
+    }
+
+    if $(Variant_security) = dng || $(Variant_security) = wm {
+        CompilerVersion Inherited Local : Sentinel             : sentinel_6_4_2 : macos_x ;
+    }
+
+#
+# RIP API
+#
+    AddToVar Inherited Local : Suffix      : omni                  : Variant C++_ORB=OMNI ;
+    AddToVar Inherited Local : Suffix      : ns                    : Variant Non_C++_ORB ;
+    AddToVar Inherited Local : C-Defines   : OMNIORB               : Variant C++_ORB=OMNI ;
+    AddToVar Inherited Local : C-Defines   : PRODUCT_HAS_API HAS_DII=1 : Variant C++_ORB ;
+    AddToVar Inherited Local : VariantLibs :
+        HQN_CPP_CORBA
+        omg_idl
+        soar_idl
+    : Variant C++_ORB ;
+    if $(Variant_gui)
+    {
+        AddToVar Inherited Local : VariantLibs :
+            cdfidl
+            hostifac
+            ripiface
+            ripiimpl
+        : Variant C++_ORB ;
+    }
+
+
+#
+# Morisawa
+#
+    AddToVar Inherited Local : Suffix      : nm : Variant morisawa=nm ;
+    AddToVar Inherited Local : Suffix      : m  : Variant morisawa=m ;
+    AddToVar Inherited Local : C-Defines   : MORISAWA_ENABLED : Variant morisawa=m ;
+
+#
+# Localization Locked version (LLv)
+#
+    if $(Variant_llv) = nLLv
+    {
+        # Non-LLv variant
+        AddToVar Inherited Local : Suffix    : nLLv     : Variant llv=nLLv ;
+    } else {
+        # LLv rips are Windows-only at the moment
+        if ! $(C-Compiler-Family) = msvc
+        {
+            Error LLv rips can only be built for Windows ;
+        }
+
+        # LLv rips must be dongled
+        if $(Variant_security) != dng {
+            Error LLv rips must use dongle security ;
+        }
+
+        # General LLv define
+        AddToVar Inherited Local : C-Defines : LLV=1    : Variant llv ;
+
+        # Locale specific define
+        if $(Variant_llv) = LLvSC {
+            # Simplified Chinese
+            AddToVar Inherited Local : Suffix    : LLvSC     : Variant llv=LLvSC ;
+            AddToVar Inherited Local : C-Defines : LLV_SC=1  : Variant llv=LLvSC ;
+        } else if $(Variant_llv) = LLvTC {
+            # Traditional Chinese
+            AddToVar Inherited Local : Suffix    : LLvTC     : Variant llv=LLvTC ;
+            AddToVar Inherited Local : C-Defines : LLV_TC=1  : Variant llv=LLvTC ;
+        } else if $(Variant_llv) = LLvINV {
+            # Inverted case (for testing)
+            AddToVar Inherited Local : Suffix    : LLvINV    : Variant llv=LLvINV ;
+            AddToVar Inherited Local : C-Defines : LLV_INV=1 : Variant llv=LLvINV ;
+        } else {
+            Error Unknown LLv variant value: $(Variant_llv) ;
+        }
+    }
+
+# Core RIP PDLs. This is here, rather than in the core RIP compound, because
+# some PDLs require external support from friends (libpng, openssl, uri,
+# libgenxml), and optional features and PDLs may define SW folder subsets that
+# need distributing.
+
+    if $(Variant_metro) {
+      Error metro variant no longer supported - add xps to pdls variant value instead ;
+    }
+    if $(Variant_pcl) {
+      Error pcl variant no longer supported - add pcl to pdls variant value instead ;
+    }
+
+    # "All" pdls includes PCL, even though some products don't support it
+    local allpdls = ps pdf xps pcl ;
+
+    if ! $(Variant_pdls) {
+        # Default is to support PostScript, PDF
+        Variant_pdls = ps pdf ;
+    } else if $(Variant_pdls) = all {
+        Variant_pdls = $(allpdls) ;
+    }
+
+# Set the individual PDL variants from the pdls variant
+    for i in $(Variant_pdls) {
+        switch $(i) {
+        case ps :  RequiresVariant ps : yes ;
+        case pdf : RequiresVariant pdfin : yes ;
+        case xps : RequiresVariant xps : yes ;
+        case pcl : RequiresVariant pcl : pclall ;
+        case pcl5 : if ! $(Variant_pcl) { RequiresVariant pcl : pcl5 ; }
+        case * :   Error PDL variant name '$(i)' not recognised ;
+        }
+    }
+
+# Mark the PDL variants which are not used, checking that any overrides are OK.
+    for i in ps pdfin xps {
+        if ! $(Variant_$(i)) {
+            RequiresVariant $(i) : no ;
+        } else if ! $(Variant_$(i)) in yes no {
+            Error PDL variant '$(i)' set to invalid value '$(Variant_$(i))', must be 'yes' or 'no' ;
+        }
+    }
+
+    if ! $(Variant_pcl) {
+        RequiresVariant pcl : no ;
+    } else if $(Variant_pcl) in pcl5 pclall {
+        AddToVar Inherited Local : Suffix : pcl ;
+    } else if $(Variant_pcl) != no {
+        Error PDL variant pcl' set to invalid value '$(Variant_pcl)', must be 'pcl5', 'pclall' or 'no' ;
+    }
+
+# XPS
+    if $(Variant_xps) = yes {
+        if ! $(Variant_xml) {
+            # Don't want a warning for the majority of builds
+            # Warning "No XML backend specified - defaulting to libexpat" ;
+            RequiresVariant xml : libexpat ;
+        }
+        RequiresVariant tiff tiffcore png zip jpeg wmphoto : yes ;
+        RequiresVariant ICU ; # We need extended Unicode support
+        if $(Default-ICUconv) != all {
+            ReplaceVar Local : Default-ICUconv : minimal ; # Minimal converters
+        }
+    }
+    AddToVar Inherited Local : Suffix : xps : Variant xps=yes ;
+    AddToVar Inherited Local : C-Defines : METRO : Variant xps=yes ;
+
+# PDF
+    if $(Variant_pdfin) = yes {
+        RequiresVariant jpeg2000 jbig : yes ;
+        RequiresVariant xml : libexpat ;
+        RequiresVariant ICU ; # We need extended Unicode support
+        ReplaceVar Local : Default-ICUconv : all ; # All converters
+    }
+
+# YUCK! FIND A SOLUTION TO THIS. DON'T WANT WHOLE OF OPENSSL
+#    AddToVar Inherited Local : VariantLibs : openssl : Variant pdfin=yes ;
+
+    AddToVar Inherited Local : VariantLibs : openssl : Variant Non_openssl ; 
+    AddToVar Inherited Local : VariantLibs : openssl : Variant openssl=sec ; 
+    AddToVar Inherited Local : VariantLibs : openssl : Variant openssl=pdf ; 
+    AddToVar Inherited Local : VariantLibs : openssl : Variant openssl=all ; 
+
+# PNG
+    AddToVar Inherited Local : VariantLibs : libpng : Variant png=yes ;
+    # No suffix because usually specified as part of XPS
+
+# Posix Threads
+    # We only compile these up ourselves on Windows.
+    if $(C-Compiler-Family) = msvc
+    {
+        # We no longer link to pthreads, but we do need its header
+        # files (on Windows) whether its a parallel build or not.
+        IncludeExportDirectories Inherited Local : pthreads ;
+    }
+
+# WCS
+    if $(Variant_wcs) {
+        if ! $(Variant_xml) {
+            RequiresVariant xml : libexpat ;
+        }
+    }
+    AddToVar Inherited Local : Suffix : wcs : Variant wcs ;
+    AddToVar Inherited Local : VariantLibs : libwcs : Variant wcs ;
+
+# XML.
+# No suffix on XML at the moment; it's implied as a result of XPS processing
+#    AddToVar Inherited Local : Suffix : xml : Variant xml ;
+    AddToVar Inherited Local : VariantLibs : libgenxml uri : Variant xml ;
+
+# Watermark implies no HDLT
+    if $(Variant_security) = wm {
+        RequiresVariant hdlt : no ;
+    }
+
+# ICU (Extended Unicode support)
+    # List of ICU sub-variants
+    ReplaceVar Inherited Local : ICUVariants :
+        ICUbuiltin    # ICU data is built-in to RIP
+        ICUbreak      # break iteration (boundary finding)
+        ICUconv       # code page conversion
+        ICUcollate    # collation
+        ICUdll        # builtins as DLL rather than static library; NYI
+        ICUformat     # layout assistance
+        ICUidna       # international domain names
+        ICUlocale     # locale support
+        ICUnorm       # normalisation
+        ICUregex      # Unicode regexps
+        ICUtranslit   # transliteration
+        ICUtz         # timezone support
+        ICUtools      # Building ICU tools
+    ;
+
+    # GUI RIPs require built-in codepage conversion for skin
+    if $(Variant_gui) {
+        RequiresVariant ICU ; # We need extended Unicode support
+        ReplaceVar Local : Default-ICUconv : all ;
+    }
+
+    if ! $(Variant_ICUconv) && $(Default-ICUconv) {
+        RequiresVariant ICUconv : $(Default-ICUconv) ;
+    }
+
+    ReplaceVar Inherited Local : ICUSuffix : i ;
+
+    # Why not do these as variant variables? Because they only have an effect
+    # now, when the suffix is defined for all ICU implementors. Changes of
+    # variant in sub-makefiles cannot alter the suffix set up here, so we
+    # don't need the full variant mechanism.
+    if $(Variant_ICUbreak) {
+        ICUSuffix += b ;
+    }
+    if $(Variant_ICUconv) != none {
+        ICUSuffix += c ;
+    }
+    if $(Variant_ICUcollate) {
+        ICUSuffix += C ;
+    }
+    if $(Variant_ICUformat) {
+        ICUSuffix += f ;
+    }
+    if $(Variant_ICUidna) {
+        ICUSuffix += i ;
+    }
+    if $(Variant_ICUlocale) {
+        ICUSuffix += l ;
+    }
+    if $(Variant_ICUnorm) {
+        ICUSuffix += n ;
+    }
+    if $(Variant_ICUregex) {
+        ICUSuffix += r ;
+    }
+    if $(Variant_ICUtranslit) {
+        ICUSuffix += t ;
+    }
+    if $(Variant_ICUtz) {
+        ICUSuffix += T ;
+    }
+    if $(Variant_ICUtools) {
+        ICUSuffix = icutools ;
+    }
+
+    Join ICUSuffix : "" : $(ICUSuffix) ;
+
+    AddToVar Inherited Local : Suffix : $(ICUSuffix) : Variant ICU ;
+    AddToVar Inherited Local : C-Defines : HQNlibicu : Variant ICU ;
+    AddToVar Inherited Local : VariantLibs : icu : Variant ICU ;
+
+    # Different ICU builds go to different SW-icu folders.
+    if $(Variant_ICUconv) = minimal {
+        ReplaceVar Inherited Local : SW-icu      : icu-$(ICUSuffix)m ;
+    } else if $(Variant_ICUconv) = all {
+        ReplaceVar Inherited Local : SW-icu      : icu-$(ICUSuffix)a ;
+    } else {
+        ReplaceVar Inherited Local : SW-icu      : icu-$(ICUSuffix) ;
+    }
+
+    AddToVar Inherited Local : C-Defines : U_STATIC_IMPLEMENTATION : Variant Non_ICUdll ;
+    AddToVar Inherited Local : C-Defines : ICU_USE_PLATFORM_SEPARATORS : Variant ICUtools ;
+
+    # Override the default settings in HQNlibicu!export/unicode/phqn.h for
+    # ICU sub-variants.
+    AddToVar Inherited Local : C-Defines : ICU_DATA_BUILTIN : Variant ICUbuiltin ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_BREAK_ITERATION=0 : Variant ICUbreak ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_COLLATION=0 : Variant ICUcollate ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_FORMATTING=0 : Variant ICUformat ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_IDNA=0 : Variant ICUidna ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_NORMALIZATION=0 : Variant ICUnorm ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_REGULAR_EXPRESSIONS=0 : Variant ICUregex ;
+    AddToVar Inherited Local : C-Defines : UCONFIG_NO_TRANSLITERATION=0 : Variant ICUtranslit ;
+
+
+# Log stripped

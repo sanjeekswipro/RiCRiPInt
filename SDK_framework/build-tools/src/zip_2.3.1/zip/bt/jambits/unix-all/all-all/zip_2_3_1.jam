@@ -1,0 +1,11 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!unix-all:all-all:zip_2_3_1.jam(trunk.5) $
+#
+
+    CompilerBits zip_all.jam ;
+
+    CompilerVar ZipCommand : $(CompilerVariable)$/$(TargetPlat)$/zip ;
+
+# Log stripped

@@ -1,0 +1,35 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for libpng
+#
+# $HopeName: HQNlibpng!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Compilation rules
+ImplementsVariant png ;
+
+    RequiresVariant warning_level : low ;
+
+    DependsOn all : libpng ;
+
+    IncludeExportDirectories Local :
+        zlib
+    : .. ;
+
+    AddToVar Local : C-Defines : PNG_USER_CONFIG : Variant png=yes ;
+
+    Library libpng :
+        png.c
+        pngerror.c
+        pngget.c
+        pngmem.c
+        pngread.c
+        pngrio.c
+        pngrtran.c
+        pngrutil.c
+        pngset.c
+        pngtrans.c
+    ;
+
+# Log stripped

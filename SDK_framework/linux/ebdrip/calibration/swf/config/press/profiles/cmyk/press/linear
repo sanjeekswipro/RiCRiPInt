@@ -1,0 +1,123 @@
+%!PS-Adobe-3.0
+%%Title:	Linear 4-color Press
+%%Creator: Global Graphics Software Limited
+%%Copyright Global Graphics Software Limited, 1995 All Rights Reserved.
+%%EndComments
+
+
+/Profile	<<
+/ProfileVersion	1
+/ProfileID	()
+/LastModified	(12Oct95)
+/ProfileColorSpace	/DeviceCMYK
+/DeviceType	(Linear printing press)
+/DeviceSerialNumber	(None)
+/MediaType	(Any)
+/ColorantType	(Any)
+/Resolution	[300 300]
+/Halftone	/Contone
+/ValidForComment	()
+/ValidForDeviceTypes	[(Any)]
+/ValidForMediaTypes	[(Any)]
+/ValidForColorantTypes	[(Any)]
+/ValidForResolutions	/Any
+/ValidForHalftones	/Any
+/Comments	(This profile is only intended for use in Press calibration)
+/Linearization	[
+  <<	/ChannelName	(Cyan)
+	/ChannelColor	/Cyan
+	/DefaultCurve	[ 0.0 0.0 1.0 1.0 ]
+	/ConversionTables [
+           <<
+		/TableName (% Dot)
+		/TableValues [
+		0 1 100 0]
+		/Filter	(Cyan)
+           >>
+           <<
+                /TableName (Dot Gain)
+                /TableValues [
+                0 1 100 0]
+                /Relative true
+		/Filter	(Cyan)
+           >>
+        ]
+  >>
+  <<	/ChannelName	(Magenta)
+	/ChannelColor	/Magenta
+	/DefaultCurve	[ 0.0 0.0 1.0 1.0 ]
+	/ConversionTables [
+           <<
+		/TableName (% Dot)
+		/TableValues [
+		0 1 100 0]
+		/Filter	(Magenta)
+           >>
+           <<
+                /TableName (Dot Gain)
+                /TableValues [
+                0 1 100 0]
+                /Relative true
+		/Filter	(Magenta)
+           >>
+        ]
+  >>
+  <<	/ChannelName	(Yellow)
+	/ChannelColor	/Yellow
+	/DefaultCurve	[ 0.0 0.0 1.0 1.0 ]
+	/ConversionTables [
+           <<
+		/TableName (% Dot)
+		/TableValues [
+		0 1 100 0]
+		/Filter	(Yellow)
+           >>
+           <<
+                /TableName (Dot Gain)
+                /TableValues [
+                0 1 100 0]
+                /Relative true
+		/Filter	(Yellow)
+           >>
+        ]
+  >>
+  <<	/ChannelName	(Black)
+	/ChannelColor	/Black
+	/DefaultCurve	[ 0.0 0.0 1.0 1.0 ]
+	/ConversionTables [
+           <<
+		/TableName (% Dot)
+		/TableValues [
+		0 1 100 0]
+		/Filter	(Visual)
+           >>
+           <<
+                /TableName (Dot Gain)
+                /TableValues [
+                0 1 100 0]
+                /Relative true
+		/Filter	(Visual)
+           >>
+        ]
+  >>
+  <<	/ChannelName	(Default)
+	/ChannelColor	/Default
+	/DefaultCurve	[ 0.0 0.0 1.0 1.0 ]
+	/ConversionTables [
+           <<
+		/TableName (% Dot)
+		/TableValues [
+		0 1 100 0]
+           >>
+           <<
+                /TableName (Dot Gain)
+                /TableValues [
+                0 1 100 0]
+                /Relative true
+           >>
+        ]
+  >>
+]
+
+/MeasurementDataPresent false
+>>

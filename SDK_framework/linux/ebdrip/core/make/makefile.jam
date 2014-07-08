@@ -1,0 +1,429 @@
+# Copyright (C) 2001-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for SWcore, the ScriptWorks Core RIP.
+#
+# $HopeName: SWcore!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant to indicate if the core tracing API is available (normally
+# developer builds only, but can be set by option). This is implemented as a
+# value variant, in case we want to implement restricted versions of it later
+# (e.g., no PostScript API, no designator data, no tickle/watermark
+# object/security sensitive calls, etc). Initially, the only valid value of
+# the variant is "all", indicating the full whack is available.
+ImplementsVariant coretrace : Inherited Local ;
+
+if $(TIMING) = 1 || $(ASSERT) = 1 || $(DEBUG) = 1 {
+    RequiresVariant coretrace : all ;
+}
+
+# Core RIP features variants
+
+# List of all features
+local featurenames =
+  fontemul hdlt hqscreen hqx jbig jpeg jpeg2000 metrics pdfout png tiff trapping wmphoto zip
+;
+
+# Default features not implied by default PDLs
+if ! $(Variant_corefeatures) {
+    Variant_corefeatures = fontemul hdlt hqscreen hqx jpeg tiff trapping wmphoto ;
+} else if $(Variant_corefeatures) = all {
+    Variant_corefeatures = $(featurenames) ;
+} else if $(Variant_corefeatures) = none {
+    Variant_corefeatures = ;
+}
+
+if $(Variant_tiff) = yes {
+    RequiresVariant tiffcore : yes ;
+}
+if $(Variant_jpeg) = yes {
+    RequiresVariant tiffcore : yes ;
+    RequiresVariant tiff : yes ;
+}
+if $(Variant_wmphoto) = yes {
+    RequiresVariant tiffcore : yes ;
+}
+
+# Set variants for any features mentioned in corefeatures, but not overridden
+# by the PDL or command line.
+local i ;
+for i in $(Variant_corefeatures) {
+    if $(i) in $(featurenames) {
+        # corefeatures can be overridden by specifying an explicit variant,
+        # or by the PDL requirements
+        if ! $(Variant_$(i)) {
+            RequiresVariant $(i) : yes ;
+        }
+    } else if $(i) in none all {
+        Error Core feature variant '$(i)' cannot be selected with other features ;
+    } else {
+        Error Core feature variant '$(i)' not recognised ;
+    }
+}
+
+# Any feature not mentioned so far should get a value of "no"
+for i in $(featurenames) {
+    if ! $(Variant_$(i)) {
+        RequiresVariant $(i) : no ;
+    } else if ! $(Variant_$(i)) in yes no {
+        Error Core feature '$(i)' set to invalid value '$(Variant_$(i))', must be 'yes' or 'no' ;
+    }
+}
+
+# Suffixes and extras dependent on core variants
+
+# Font emulation
+    AddToVar Inherited Local : Suffix : nfem : Variant fontemul=no ;
+
+# HDLT
+    AddToVar Inherited Local : Suffix : nhdlt : Variant hdlt=no ;
+
+# HQN screens (HPS, HDS, HCS, HMS, screen encryption)
+    AddToVar Inherited Local : Suffix : nhqs : Variant hqscreen=no ;
+
+# HQX encryption
+    AddToVar Inherited Local : Suffix : nhqx : Variant hqx=no ;
+
+# JBig
+    AddToVar Inherited Local : Suffix : njbg : Variant jbig=no ;
+
+# JPEG 2000
+    AddToVar Inherited Local : Suffix : njp2 : Variant jpeg2000=no ;
+
+# JPEG (the exif - free standing file processing part of jpeg)
+    AddToVar Inherited Local : Suffix : njpg : Variant jpeg=no ;
+
+# Metrics
+    AddToVar Inherited Local : Suffix : mtrcs : Variant metrics=yes ;
+
+# PDF input
+    AddToVar Inherited Local : Suffix : npdf : Variant pdfin=no ;
+
+# PDFOut
+    AddToVar Inherited Local : Suffix : po : Variant pdfout=yes ;
+
+# PNG
+    AddToVar Inherited Local : Suffix : png : Variant png=yes ;
+
+# PostScript
+    AddToVar Inherited Local : Suffix : nps : Variant ps=no ;
+
+# PCL (includes PCL5, PCLXL - for now)
+    AddToVar Inherited Local : Suffix : pcl5 : Variant pcl=pcl5 ;
+    AddToVar Inherited Local : Suffix : pcl : Variant pcl=pclall ;
+
+# TIFF
+    AddToVar Inherited Local : Suffix : ntif : Variant tiff=no ;
+
+# Trapping
+    AddToVar Inherited Local : Suffix : ntr : Variant trapping=no ;
+
+# WMPHOTO
+    AddToVar Inherited Local : Suffix : nwmp : Variant wmphoto=no ;
+
+# XML
+    AddToVar Inherited Local : Suffix : xml : Variant xml ;
+
+# ZIP
+    AddToVar Inherited Local : Suffix : zip : Variant zip=yes ;
+
+# Java native interface compatibility; when building a library for use with JNI.
+    AddToVar Inherited Local : Suffix : jni : Variant jnicompatible=yes ;
+
+# Valgrind
+    AddToVar Inherited Local : Suffix : vgnd : Variant valgrind ;
+
+# Propagate export directories from Core RIP interface to Core compound,
+# to allow siblings and parents safe access.
+AddExportDirectories interface ;
+
+# List the generated files before we introduce variants -- these shouldn't
+# be compiled differently from one variant to another.
+DependsOn hqcrypt : hqcrypt : crypt ;
+
+# NOTE: This ImplementsVariant is for the variants implemented in *this*
+# compound's source files. Variants of sub-compounds need an ImplementsVariant
+# rule in the sub-compound makefile, and ALSO before the link rule at the end
+# of this makefile. Do not consolidate all of the ImplementsVariants here, or
+# the source to this compound will be built multiple times for variants which
+# it does not implement.
+ImplementsVariant
+    hdlt jpeg2000 metrics pcl pdfin pdfout png ps tiff trapping wcs wmphoto xml xps jnicompatible valgrind
+;
+
+# The metrics variant defines METRICS_BUILD, and also defines MM pool totalling
+# features, which are used when collecting metrics.
+AddToVar Inherited Local : C-Defines : METRICS_BUILD=1 ENABLE_MM_DEBUG_TOTAL=1
+                                     : Variant metrics=yes ;
+
+AddToVar Inherited Local : C-Defines : JNI_COMPATIBLE=1 : Variant jnicompatible=yes ;
+
+AddToVar Inherited Local : C-Defines : PROBE_BUILD=1 : Variant coretrace=all ;
+
+
+# Report core RIP PDLs & Features
+AddToVar Local : pdls : PCL5 : Variant pcl=pcl5 ;
+AddToVar Local : pdls : PCL5 PCLXL : Variant pcl=pclall ;
+AddToVar Local : pdls : XPS : Variant xps=yes ;
+AddToVar Local : pdls : PDF : Variant pdfin=yes ;
+AddToVar Local : pdls : PostScript : Variant ps=yes ;
+ECHO Core RIP PDLs enabled: $(pdls) ;
+
+local enabled ;
+for i in $(featurenames) {
+    if $(Variant_$(i)) && ! $(Variant_$(i)) = no {
+        enabled += $(i) ;
+    }
+}
+enabled ?= none ;
+ECHO Core RIP features enabled: $(enabled) ;
+
+    # This define is used to access private sections in core interface
+    # headers, and to exclude those sections from exported source trees.
+    #
+    AddToVar Inherited Local : C-Defines : CORE_INTERFACE_PRIVATE ;
+
+# Preprocess the names.nam files, putting the output in a suitable place.
+# ALL names files are preprocessed, even for variant compounds that may not
+# be included in this build. A variable
+    local NAMESFILES =
+        backdrop.cpp
+        devices.cpp
+        dodl.cpp
+        errors.cpp
+        fileio.cpp
+        fonts.cpp
+        functions.cpp
+        gstate.cpp
+        halftone.cpp
+        hdlt.cpp
+        imstore.cpp
+        multi.cpp
+        pcl5in.cpp
+        pclxlin.cpp
+        pdf.cpp
+        pdfin.cpp
+        pdfout.cpp
+        ps.cpp
+        recombine.cpp
+        render.cpp
+        trapping.cpp
+        v20.cpp
+        wcs.cpp
+        xml.cpp
+        xps.cpp
+    ;
+
+    # Names files for gstate
+    local GSTATENAMESFILES =
+        color.cpp
+    ;
+
+    # Names files for image filters
+    local IMAGESNAMESFILES =
+        ccitt.cpp
+        jbig.cpp
+        jpeg.cpp
+        jpeg2k.cpp
+        filtering.cpp
+        png.cpp
+        tiff.cpp
+        wmphoto.cpp
+    ;
+
+    # Names files for PostScript sub-compounds
+    local PSNAMESFILES =
+        marking.cpp
+    ;
+
+    # Names files for en/decryption sub-compounds
+    local CRYPTNAMESFILES =
+        hqx.cpp
+    ;
+
+    if $(MAC) {
+        C-Preprocessor = $(psspp) ;
+        DependsOn $(NAMESFILES) : psspp : .. tools ;
+    }
+
+    local ppnamedir = $(CurrentPath)$/$(GeneratedC-NV-Directory) ;
+    local namecomp = "" CRYPT GSTATE IMAGES PS ;
+    local i j ;
+    for j in $(namecomp) {
+        for i in $($(j)NAMESFILES) {
+            C-Preprocess $(i) : names.nam : $(j:L) $(i:S=) : $(ppnamedir) ;
+        }
+    }
+
+# Names files for excluded variant compounds
+    local RESERVENAMES ;
+    # ccitt is never variant
+    AddToVar Local : RESERVENAMES : jbig.cpp : Variant jbig=no ;
+    # jpeg although variant (for exif proessing) doesn't include/exclude names
+    AddToVar Local : RESERVENAMES : hdlt.cpp : Variant hdlt=no ;
+    # hqx is not variant, operators are stubbed out instead
+    AddToVar Local : RESERVENAMES : jpeg2k.cpp : Variant jpeg2000=no ;
+#    AddToVar Local : RESERVENAMES : marking.cpp : Variant ps=no ;
+    AddToVar Local : RESERVENAMES : pcl5in.cpp : Variant pcl=no ;
+    AddToVar Local : RESERVENAMES : pclxlin.cpp : Variant pcl=no ;
+    AddToVar Local : RESERVENAMES : pclxlin.cpp : Variant pcl=pcl5 ;
+    AddToVar Local : RESERVENAMES : pdfin.cpp : Variant pdfin=no ;
+    AddToVar Local : RESERVENAMES : pdfout.cpp : Variant pdfout=no ;
+    AddToVar Local : RESERVENAMES : png.cpp : Variant png=no ;
+    AddToVar Local : RESERVENAMES : trapping.cpp : Variant trapping=no ;
+    AddToVar Local : RESERVENAMES : tiff.cpp : Variant tiff=no ;
+    AddToVar Local : RESERVENAMES : wcs.cpp : Variant Non_wcs ;
+    AddToVar Local : RESERVENAMES : wmphoto.cpp : Variant wmphoto=no ;
+    AddToVar Local : RESERVENAMES : xml.cpp : Variant Non_xml ;
+    AddToVar Local : RESERVENAMES : xps.cpp : Variant xps=no ;
+
+   if $(Variant_pdfin) = no && $(Variant_pdfout) = no {
+       AddToVar Local : RESERVENAMES : pdf.cpp ;
+   }
+
+# Process the .cpp file using the nametool
+    NameTool namedef_.h nametab_.c sdict_.pss odict_.pss :
+        $($(namecomp)NAMESFILES) : $(RESERVENAMES)
+    ;
+
+# Variant details come before dependant compilation rules.
+#AddToVar Inherited Local : VariantLibs : freetype : Variant freetype ;
+#AddToVar Inherited Local : VariantLibs : tt : Variant Non_freetype ;
+
+# Warnings
+    RequiresVariant warning_level : high ;
+
+    AddToVar Inherited Local : SplintOptions :
+      -macro-var-prefix-exclude
+    ;
+
+# Compilation rules
+
+    DependsOn all : core ;
+
+    # Please read the notes about sub-compound variants if you add a new
+    # sub-compound library to this list.
+    ReplaceVar Local : Libraries :
+        backdrop
+        blob
+        cce
+        crypt
+        datum
+        devices
+        dodl
+        fileio
+        fonts
+        functions
+        gstate
+        halftone
+        hdlt
+        images
+        imstore
+        mm
+        morisawa
+        multi
+        objects
+        pcl5in
+        pclxlin
+        pdf
+        pdfin
+        pdfout
+        ps
+        recombine
+        render
+        tables
+        trapping
+        tt
+        types
+        v20
+        wcs
+        xml
+        xps
+        zipdev
+    ;
+
+    # Add Core RIP private includes to path; this is for headers that depend
+    # on the components included in the current product
+    AddToVar Inherited Local : C-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    # Sub-compounds automatically get access to these interfaces
+    ReplaceVar Local : CoreFriends :
+        libpng
+        md5
+        mps
+        rdrevent
+        security
+        standard
+        threads
+        timeline
+        timer
+        uri
+        zlib
+    ;
+
+    # XML parser glue
+    AddToVar Local : CoreFriends : libgenxml : Variant xml ;
+
+    # WCS lib
+    AddToVar Local : CoreFriends : libwcs : Variant wcs ;
+
+    IncludeExportDirectories Inherited Local : $(CoreFriends) : .. ;
+
+    # Sub-compounds automatically get access to the Core RIP interface, as
+    # well as to the error handling interface, and the glue interfaces to
+    # integrate low memory handlers, savelists, etc. Also, allow
+    # sub-compounds access to automatically generated includes of this
+    # compound (namedef.h et. al.)
+    IncludeExportDirectories Inherited Local :
+        .       # Includes core RIP interface because of AddExportDirectories
+        errors
+        mm
+        types
+    ;
+
+    # The glue code gets access to everything automatically. Note this is
+    # NOT Inherited, so don't combine it with the previous statement.
+    IncludeExportDirectories Local :
+        $(Libraries)
+    ;
+
+    # Glue and auto-generated code to tie the core configuration together.
+    Library core :
+        context.c
+        fpexception.c
+        glue.c
+        nametab_.c
+        odict_.c
+        progupdt.c
+        saves.c
+        sdict_.c
+        swstart.c
+    ;
+
+# Process some .pss files
+    Pss2C
+        odict_
+        sdict_
+    ;
+
+    Makefile interface $(Libraries) ;
+
+# If we want separate libraries for each variant, we need to implement the
+# union of the sub-compound variants. If you add a new sub-compound which
+# implements a variant, add the variant to this list. If you make the glue code
+# in this compound implement a variant, add it to the list above.
+#
+# generic_MPS from mps/make/makefile.jam doesn't belong in this list,
+# because it's a variant of MPS, not SW.  SW is always built without it.
+    ImplementsVariant custiface morisawa security $(featurenames) ;
+
+    if $(Variant_custiface) in 0 {
+      ImplementsVariant customised ;
+    }
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries core : $(i) : $(i) ;
+    }
+
+# Log stripped

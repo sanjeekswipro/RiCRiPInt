@@ -1,0 +1,923 @@
+%!PS-Adobe-3.0
+%%Title: HqnICCBased
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mon Oct 23, 2006
+% Copyright (C) 2006-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnICCBased) 1 0
+
+
+% $HopeName: SWv20!swf:procsets:hqniccbased(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+% This procset provides support procedures for icc profiles contained in jobs,
+% e.g. embedded in images.
+
+
+currentglobal false setglobal
+
+14 dict begin % the procset dictionary
+
+  /DefaultICCSpaceDict 7 dict def % dictionary of ICCBased spaces for default profiles
+  /ImageProfileDict 12 dict def % dictionary of file objects indexed by XRef
+
+  /altprint serverdict /altout 2 copy known {
+    get dup type /filetype eq {
+      dup status not dup { exch pop } if
+    } { pop true } ifelse
+  } { pop pop true } ifelse
+  { (%stderr)(w)file } if
+  def
+  /altprint {
+    //altprint exch
+    dup type /stringtype
+    ne { =string cvs} if
+    writestring
+  } bind def
+
+
+  % Find out if we have a DeviceN, Indexed or an Lab or ICCBased colorspace
+  % The ICCBased check is something of a convenience for the ImageBrush code as
+  % we shouldn't already have an ICCBased space in an image.
+
+  /GetColorSpaceType {  % colorspace-obj GetColorSpaceType -> DevN-bool Idx-bool LAB-bool ICC-bool
+
+    6 dict begin  % workdict
+
+    /ColorSpace exch def
+    /DevN false def
+    /Idx  false def
+    /LAB  false def
+    /ICC  false def
+
+    ColorSpace type /arraytype eq{
+      ColorSpace 0 get dup dup dup
+      /DevN exch /DeviceN eq def
+      /Idx exch /Indexed eq def
+      /LAB exch /Lab eq def
+      /ICC exch /ICCBased eq def
+    }if
+
+    DevN Idx LAB ICC   % bool bool bool bool
+
+    end  % workdict
+
+  } bind def
+
+
+  % Create a file object containing the ICC profile
+  % Needs an image-data-dict and workdict with XRefPresent on the dictstack
+
+  /CreateICCFileObject {               % - CreateICCFileObject -> file
+
+    /FileFound false def
+
+    XRefPresent
+    {
+      % See if we already have the file object
+      //ImageProfileDict XRef known
+      {
+        //ImageProfileDict XRef get    % file
+        /FileFound true def
+      } if
+    } if
+
+    FileFound not
+    {
+      1 dict begin
+      /profileChunk 0 def
+      {
+        profileChunk EmbeddedICCProfile length ge
+        {
+          ()
+        } {
+          EmbeddedICCProfile profileChunk get
+          /profileChunk profileChunk 1 add store
+        } ifelse
+      } bind
+
+      << /Intent 3 >> /ReusableStreamDecode filter
+      end
+
+      XRefPresent
+      {
+        % Save it for future reference
+        //ImageProfileDict XRef 2 index put
+      } if
+
+    } if
+
+    currentdict /FileFound undef
+
+  } bind def
+
+
+  % Add XRef to AlternateDict
+  % Needs image-data-dict and workdict on dictstack
+
+  /AddXRefToAltDict {                  % altdict AddXRefToAltDict -> altdict
+
+    XRefPresent
+    {
+      dup /XRef XRef put
+    } if
+
+  } bind def
+
+
+
+  % Create a dict containing the /Alternate colorspace key value pair for
+  % use e.g. when overriding CM in job.
+  % Needs dicts containing AlternateDict, DevN, Idx and ColorSpace on the
+  % dictstack
+
+  /CreateAlternateDict {               % - CreateAlternateDict -> altdict
+
+    AlternateDict begin
+
+    % Do not set up an alternate space for DeviceN
+    DevN not
+    {
+      Idx
+      {
+        % The alternate colorspace is the underlying space
+        /Alternate ColorSpace 1 get def
+      } {
+        /Alternate ColorSpace def
+      } ifelse
+    } if
+
+    end % AlternateDict
+
+    AlternateDict
+  } bind def
+
+
+  % Get the default profiles to apply to XPS images from the XMLParams
+  % This expects workdict on the dictstack
+
+  /GetDefaultProfiles {
+
+   % Set up the profiles we're going to use as substitutes
+   currentxmlparams /XPSParams get dup dup dup dup dup dup
+
+   /ImageGrayProfile get /GrayProfile exch def
+
+   /ImageRGBProfile get /RGBProfile exch def
+
+   /ImageScRGBProfile get /scRGBProfile exch def
+
+   /ImageCMYKProfile get /CMYKProfile exch def
+
+   /Image3ChannelProfile get /3DProfile exch def
+
+   /Image4ChannelProfile get /4DProfile exch def
+
+   /Image5to8ChannelProfile get /NdProfile exch def
+
+  } bind def
+
+
+  % Check whether the given WMPhoto pixel format is Integer RGB
+  /CheckIntegerRGBFormat {  % 1-byte-string CheckIntegerRGBFormat -> bool
+
+    % This string consists of all the bytes that could imply an Integer RGB
+    % pixel format for a WMPhoto image
+
+    <09 0a 0c 0d 0e 0f 10 14 15 16 17> exch search  % post match pre true OR string false
+
+    {
+      pop pop pop true                           % true
+    } {
+      pop false                                  % false
+    } ifelse
+
+  } bind def
+
+
+  % Check whether the given WMPhoto pixel format is Integer Gray
+  /CheckIntegerGrayFormat {  % 1-byte-string CheckIntegerGrayFormat -> bool
+
+    % This string consists of all the bytes that could imply an Integer Gray
+    % pixel format for a WMPhoto image
+
+    <08 0b 05> exch search                       % post match pre true OR string false
+
+    {
+      pop pop pop true                           % true
+    } {
+      pop false                                  % false
+    } ifelse
+
+  } bind def
+
+
+  % Get the number of image color components from the image-data-dict
+  % Note this is not suitable for use with Indexed colorspaces
+
+  /GetImageDimensions {     % image-data-dict GetImageDimensions -> integer
+
+    begin  % image-data-dict
+
+    % Find out how many color components we have
+    Decode length 2 idiv       % integer
+
+    currentdict /PreMult known
+    {
+      PreMult
+      {
+        1 sub                  % integer
+      } if
+    } if
+
+    end % image-data-dict
+
+  } bind def
+
+
+
+  % Use the name provided to leave either a corresponding ICCBased
+  % space or a device space.
+  % This expects the workdict on the stack.
+
+  % profile-nameobj GetICCSpace -> [/ICCBased FileObj] OR /DeviceSpace
+  % e.g. /RGBProfile GetICCSpace -> [/ICCBased sRGBobj] OR /DeviceRGB
+
+  /GetICCSpace {
+
+    /UseDeviceSpace false def
+
+    % Assume the profile set to null or problem installing it
+    /UseDeviceSpace true def
+
+    dup currentdict exch get dup null ne          % profile-nameobj profilename-value
+    {
+      % See if we already have this ICCBased space active
+      //DefaultICCSpaceDict 2 index known
+      {
+        pop                                       % profile-nameobj
+        //DefaultICCSpaceDict exch get            % iccspace
+
+        /UseDeviceSpace false def
+      } {
+        [/ICCBased 3 -1 roll (r) {file} stopped
+        {
+          cleartomark                             % profile-nameobj
+        } {
+          ] exch                                  % iccspace profile-nameobj
+
+          % Add it to the dictionary for future reference
+          //DefaultICCSpaceDict exch 2 index put  % iccspace
+
+          /UseDeviceSpace false def
+        } ifelse
+      } ifelse
+    } if
+
+
+    UseDeviceSpace
+    {
+      pop                                           % profile-nameobj
+
+      % Define the default device spaces
+      <<
+        /GrayProfile  /DeviceRGB
+        /RGBProfile   /DeviceRGB
+        /scRGBProfile /DeviceRGB
+        /CMYKProfile  /DeviceCMYK
+        /3DProfile    /DeviceRGB
+        /4DProfile    /DeviceCMYK
+        /NdProfile    /DeviceCMYK
+      >>
+
+      exch get                                      % devicespace
+
+    } if
+
+  } bind def
+
+
+
+  % Set up a default iccbased colorspace for XPS images that have an image
+  % ColorSpace but no embedded or associated profile, or whose embedded or
+  % associated profile does not match the image colorspace.
+  %
+  % At the moment we don't necessarily have the original pixel format of the
+  % image so if in doubt we are simply using the image colorspace.
+  %
+  % N.B. It is thought that at present in the case of indexed spaces here, the
+  % underlying space can only be RGB or RGB alpha.  So there can be no genuine
+  % 4-channel indexed image colorspace at this point.
+  %
+  % N.N.B. It looks like TIFFs can be Indexed plus spots where the Indexed only
+  % refers to RGB, and the spots are separate.  I'm not sure how we would
+  % handle this at the moment.
+
+  % image-data-dict InstallDefaultProfile -> -
+
+
+  /InstallDefaultProfile {
+
+    begin   % the image-data-dict
+    15 dict begin % workdict
+
+    % Try to apply a default profile
+
+    /WindowsMedia false def
+    /UnderlyingSpace ColorSpace def
+
+    /ImageFormat where                      % false | dict true
+    {
+      ImageFormat /WMPHOTO eq
+      {
+        /OriginalSourceColor known
+        {
+          OriginalSourceColor 15 1 getinterval /WMPixelFormat exch def
+          /WindowsMedia true def
+        } {
+          % This should have been in the image-data-dict
+          /InstallDefaultProfile: /internalerror //systemdict /.error get exec
+        } ifelse
+      } {
+        pop
+      } ifelse
+    } {
+      % This should have been in the image-data-dict
+      /InstallDefaultProfile: /internalerror //systemdict /.error get exec
+    } ifelse
+
+    % Find out if we have a /DeviceN or an /Indexed colorspace
+    ColorSpace //GetColorSpaceType exec   % DevN-bool Idx-bool LAB-bool ICC-bool
+
+    pop pop
+    /Idx exch def
+    /DevN exch def
+
+    Idx
+    {
+      /UnderlyingSpace ColorSpace 1 get def
+    } if
+
+
+    % Get the default profiles
+    //GetDefaultProfiles exec
+
+    % Use the image colorspace to determine the ICCBased space to set up
+    ColorSpace /DeviceGray eq
+    {
+      /TreatAsIntegerGray true def
+      
+      WindowsMedia
+      {
+        WMPixelFormat //CheckIntegerGrayFormat exec
+
+        not
+        {
+          /TreatAsIntegerGray false def
+
+          scRGBProfile null ne
+          {
+            [/DeviceN [/All] /scRGBProfile //GetICCSpace exec { dup dup }] setcolorspace
+          } if
+        } if
+      } if
+      
+      TreatAsIntegerGray GrayProfile null ne and
+      {
+        /GrayProfile //GetICCSpace exec geticcbasedinfo      % ndims profilecolorspace
+
+        pop 3 eq
+        {
+          [/DeviceN [/All] /GrayProfile //GetICCSpace exec { dup dup }] setcolorspace
+        } {
+          /GrayProfile //GetICCSpace exec setcolorspace
+        } ifelse
+      } {
+        ColorSpace setcolorspace
+      } ifelse
+    } {
+      UnderlyingSpace /DeviceRGB eq
+      {
+        WindowsMedia
+        {
+          WMPixelFormat //CheckIntegerRGBFormat exec
+          {
+            /RGBProfile //GetICCSpace exec
+          } {
+            /scRGBProfile //GetICCSpace exec
+          } ifelse
+        } {
+          /RGBProfile //GetICCSpace exec
+        } ifelse
+
+        Idx
+        {
+          % Make the RGBspace the underlying space of the indexed space
+          ColorSpace dup 1 4 -1 roll put
+        } if
+
+        setcolorspace
+
+      } {
+        ColorSpace /DeviceCMYK eq
+        {
+          /CMYKProfile //GetICCSpace exec setcolorspace
+        } {
+          DevN
+          {
+            ColorSpace 1 get     % devicen-colorant-array
+
+            dup length 4 ge
+            {
+              dup 0 get /Cyan eq
+              dup 1 get /Magenta eq
+              dup 2 get /Yellow eq
+              dup 3 get /Black eq
+              and and and
+              {
+                % It is a DeviceN colorspace and the first 4 colorants are Cyan,
+                % Yellow, Magenta, Black
+
+                length 4 eq
+                {
+                  /4DProfile //GetICCSpace exec setcolorspace
+                } {
+
+                  length /Dims exch def
+
+                  [
+                   /DeviceN
+                   [4 {/All} repeat Dims 4 sub {/None} repeat]
+                   /NdProfile //GetICCSpace exec
+                   [ Dims 4 sub {pop} /repeat cvx]cvx
+                  ]
+                  setcolorspace
+                } ifelse
+              } {
+                % We dare not replace it in case it's e.g. an RGB plus alpha.
+                % Unfortunately this means we also cannot at present replace
+                % e.g. 4N channels containing 4 spots.
+
+                pop
+                ColorSpace setcolorspace
+              } ifelse
+            } {
+              % DeviceN with 1,2 or 3 components.
+
+              % Strictly speaking we should use sRGB profile for all 3-channel
+              % DeviceN.  However, limit this to the special case where the
+              % channels are Red, Green, Blue, to avoid issues with DeviceN
+              % spaces we have manufactured containing e.g. Spot1, spot2, alpha.
+
+              dup length 3 eq
+              {
+                dup 0 get /Red eq
+                dup 1 get /Green eq
+                    2 get /Blue eq
+                and and
+                {
+                  /3DProfile //GetICCSpace exec setcolorspace
+                } {
+                  Colorspace setcolorspace
+                } ifelse
+              } {
+                pop
+                ColorSpace setcolorspace
+              } ifelse
+            } ifelse
+          } {
+            % Not a ColorSpace for which we can substitute a profile
+            ColorSpace setcolorspace
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  
+    end % workdict
+    end % image-data-dict
+
+  } bind def 
+
+
+
+  % Set up a substitute colorspace for N-channel WMPhoto images without an embedded or
+  % associated profile or with an embedded or associated profile that does not match
+  % the image dimensions.
+
+  /SetSubstituteColorSpace {             % image-dimensions SetSubstituteColorSpace -> -
+
+    6 dict begin % workdict
+
+    /Dims exch def
+
+    % Get the default profile names
+    //GetDefaultProfiles exec
+
+    % Set up the substitute colorspace
+    Dims 3 lt
+    {
+      end % workdict
+      /SetSubstituteColorSpace: /syntaxerror //systemdict /.error get exec
+    } {
+      Dims 3 eq
+      {
+        /3DProfile //GetICCSpace exec setcolorspace
+      } {
+        Dims 4 eq
+        {
+          /4DProfile //GetICCSpace exec setcolorspace
+        } {
+          % More than 4 dimensions so make a DeviceN and force the
+          % tinttransform to convert to the CMYKspace ignoring extra dimensions
+          [
+            /DeviceN
+            [4 {/All} repeat Dims 4 sub {/None} repeat]
+            /NdProfile //GetICCSpace exec
+            [ Dims 4 sub {pop} /repeat cvx]cvx
+          ]
+          setcolorspace
+        } ifelse
+      } ifelse
+    } ifelse
+
+    end % workdict
+
+  } bind def
+
+
+
+  % Check whether the ICCBased colorspace provided has the same dimensionality
+  % as the number of image dimensions provided.
+  % This is mainly for the situation where we have a profile but no image
+  % colorspace, i.e. N-channel WMPhoto images.
+  %
+  % Note that here we don't check for 3 component profiles to be RGB
+  % or 3N-channel as we have no way of knowing that e.g. CMY is wrong.
+
+  /CheckProfileDimensions {        % image-dimensions icc-colorspace-obj -> ok-bool
+
+    6 dict begin   % workdict
+
+    /ICCspace exch def
+    /Dims exch def
+
+    /ProfileOK false def
+
+    % Get the profile info
+    ICCspace geticcbasedinfo       % ndims profilecolorspace
+
+    % Compare the dimensions
+    pop Dims eq                    % bool
+    /ProfileOK exch def
+
+    % Leave the result on the stack
+    ProfileOK                      % bool
+
+    end   % workdict
+
+  } bind def
+
+
+
+  % Check whether the ICCBased colorspace provided is suitable for the image
+  % colorspace provided.
+  % Leaves bool true if suitable, false if not suitable.
+  %
+  % N.B. It is thought that at present in the case of indexed spaces here, the
+  % underlying space can only be RGB or RGB alpha.  So there can be no genuine
+  % 4-channel indexed image colorspace at this point.
+  %
+  % N.N.B. It looks like TIFFs can be Indexed plus spots where the Indexed only
+  % refers to RGB, and the spots are separate.  I'm not sure how we would
+  % handle this at the moment.
+  %
+  % N.N.N.B. An LAB image can only sensibly have an Lab profile as the image
+  % values will get scaled up to the Decode array values, and will need a
+  % profile which scales them down again to avoid clipping.
+  %
+  % Note: In the case where the ColorSpace was DeviceN, if the profile
+  % colorspace is equal in dimension to the image colorspace we should arguably
+  % use setcolorspace on the iccbased space rather than setinterceptcolorspace.
+  % So we could leave another bool to indicate this.  However, have omitted
+  % this for now, as the real solution is to sort out the issue with alpha
+  % ending up in the DeviceN colorant array.
+
+  % image-colorspace-obj icc-colorspace-obj CheckProfileColorspace -> ok-bool
+
+  /CheckProfileColorspace {
+
+    6 dict begin     % workdict
+
+    /ICCspace        exch def
+    /ColorSpace      exch def
+
+    /ProfileOK       false def
+
+    /UnderlyingSpace ColorSpace def
+
+    % Find out if we have a /DeviceN /Indexed or /Lab colorspace
+    ColorSpace //GetColorSpaceType exec   % DevN-bool Idx-bool LAB-bool ICC-bool
+
+    pop
+    /LAB exch def
+    /Idx exch def
+    /DevN exch def
+
+    Idx
+    {
+      /UnderlyingSpace ColorSpace 1 get def
+    } if
+
+
+    % Get the profile info
+    ICCspace geticcbasedinfo              % ndims profilecolorspace
+
+
+    % Compare the profile info with the image ColorSpace
+    ColorSpace /DeviceGray eq
+    {
+      pop 1 eq
+      /ProfileOK exch def
+    } {
+      UnderlyingSpace /DeviceRGB eq
+      {
+        dup /DeviceRGB eq
+        {
+          pop pop
+          /ProfileOK true def
+        } {
+          /DeviceN eq exch 3 eq and
+          /ProfileOK exch def
+        } ifelse
+      } {
+        ColorSpace /DeviceCMYK eq
+        {
+          dup /DeviceCMYK eq
+          {
+            pop pop
+            /ProfileOK true def
+          } {
+            /DeviceN eq exch 4 eq and
+            /ProfileOK exch def
+          } ifelse
+        } {
+          DevN
+          {
+            pop
+             
+            ColorSpace 1 get length le    
+            {
+              % profile has fewer or same number of dimensions as colorspace
+              /ProfileOK true def
+            } if
+          } {
+            LAB
+            {
+              exch pop /Lab eq
+              /ProfileOK exch def
+            }{
+             % For all other colorspaces assume the profile is OK as we have no
+             % way of verifying it.
+
+             Idx
+             {
+               % This is an unexpected case - see notes above.
+               % (DEBUG: Unexpected case in HqnICCBased!\n) print
+             } if
+
+             pop pop
+             /ProfileOK true def
+            } ifelse
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+
+
+    % Leave the result on the stack
+    ProfileOK        % bool
+
+    end  % workdict
+
+ } bind def
+
+
+
+  % Create an ICCBased colorspace from an ICC profile embedded in an image or
+  % associated with it, (provided in the call), and call setcolorspace with it.
+  % If no profile file object is provided, the image must be known to contain
+  % one.  If the image-data-dict contains an XRef then use it in the case that
+  % we are using the embedded or associated profile.
+  %
+  % Note that in the case of a DeviceN ColorSpace we are currently using the
+  % ICCspace to intercept the ColorSpace instead of using it directly.  This is
+  % not ideal, but is to avoid problems where we have e.g. an RGB image plus
+  % a spot being presented as a 4 component CMYalpha image, but with a 3
+  % component RGB profile, which therefore cannot be used directly.
+  % Of course, even if we had a 4 component profile here, e.g. CMYK this
+  % would not be correct, so this really needs to be addressed at source.
+  %
+  % Note also that N-channel WMPhoto images do not contain any original
+  % ColorSpace.
+  %
+  % (See e.g. HqnImage procset for image-data-dict).
+
+  % image-data-dict fromXPS-bool [fileobj] InstallImageProfile -> -
+
+  /InstallImageProfile {
+
+    mark
+
+    1 index type /booleantype ne
+    {
+      exch 4 2 roll exch         % mark fileobj fromXPS-bool image-data-dict
+      2 index null eq
+      {
+        pop pop pop pop
+        /InstallImageProfile: /syntaxerror //systemdict /.error get exec
+      } if
+    } {
+      3 1 roll exch              % mark from-XPS-bool image-data-dict
+    } ifelse
+
+
+    begin % the image-data-dict
+
+    % Either an associated or an embedded profile must be present
+    counttomark 2 eq
+    currentdict /EmbeddedICCProfile known or   % mark [fileobj] fromXPS-bool bool
+    {
+      currentdict /ColorSpace known            % mark [fileobj] fromXPS-bool bool
+      currentdict /XRef       known            % mark [fileobj] fromXPS-bool bool bool
+
+      15 dict begin % workdict
+
+      /XRefPresent   exch  def
+      /OrigSpace     exch  def
+      /XPS           exch  def
+
+      /ICCspace      null  def
+      /Dims          0 def
+      /AlternateDict << >> def
+      /Associated    false def
+      /RIntent       null  def
+
+
+      counttomark 1 eq
+      {
+        /Associated true def
+        /FileObj exch def
+      } {
+        /FileObj //CreateICCFileObject exec def
+      } ifelse
+
+      pop   % the mark
+
+
+      OrigSpace
+      {
+        % Find out if we have a /DeviceN or an /Indexed colorspace
+        ColorSpace //GetColorSpaceType exec   % DevN-bool Idx-bool LAB-bool ICC-bool
+
+        pop pop
+        /Idx exch def
+        /DevN exch def
+
+        % Create the ICCBased colorspace
+        /ICCspace [/ICCBased FileObj //CreateAlternateDict exec //AddXRefToAltDict exec] def
+
+        % Find out if the ICCBased colorspace matches the image colorspace
+        ColorSpace ICCspace //CheckProfileColorspace exec        % bool
+
+        {
+          % The profile was OK
+          % If doing XPS set the rendering intent from the profile
+
+          XPS
+          {
+            ICCspace geticcbasedintent setrenderingintent
+          } if
+
+          DevN
+          {
+            % Use the ICCspace to intercept the ColorSpace
+            % N.B. If /DeviceN is to be intercepted setinterceptcolorspace becomes a no-op
+
+            ColorSpace setcolorspace
+            <<
+              ICCspace dup geticcbasedinfo       % mark iccspace ndims profilecolorspace
+              3 1 roll pop                       % mark profilecolorspace iccspace
+            >> setinterceptcolorspace
+          } {
+
+            Idx
+            {
+              % The ICCspace becomes the underlying space of the indexed colorspace
+              ColorSpace dup
+              1 ICCspace put setcolorspace
+            } {
+              ICCspace setcolorspace
+            } ifelse
+          } ifelse
+          end % workdict
+          end % image-dict
+        } {
+          % The profile doesn't match the pixel format of the image.  If we are
+          % doing XPS try to substitute one of the default profiles.  Otherwise
+          % warn and ignore the profile.
+
+          XPS
+          {
+            /ColorSpace where                    % dict true
+            pop
+
+            % End these now to make for a cleaner tidyup if we end up with
+            % an error during InstallDefaultProfile
+            end % workdict
+            end % image-dict
+
+            //InstallDefaultProfile exec
+
+          } {
+            UVS (Ignoring icc profile which does not match image pixel format.\n) //altprint exec
+            ColorSpace setcolorspace
+
+            end % workdict
+            end % image-dict
+          } ifelse
+
+        } ifelse
+      } {
+        % There was no original ColorSpace as can happen for N-channel WMPhoto.
+
+        % Create the ICCBased colorspace
+        /ICCspace [/ICCBased FileObj AlternateDict //AddXRefToAltDict exec] def
+
+        % Get the image dimensions
+        /Decode where                                  % false | image-data-dict true
+        {
+          //GetImageDimensions exec /Dims exch def
+        } {
+          % Something has gone badly wrong
+          end % the workdict
+          end % the image-data-dict
+          /InstallImageProfile: /internalerror //systemdict /.error get exec
+        } ifelse
+
+        % Check if the ICCBased colorspace matches the image dimensions
+        Dims ICCspace //CheckProfileDimensions exec         % bool
+        {
+          % The profile was OK
+          % If doing XPS set the rendering intent from the profile
+
+          XPS
+          {
+            ICCspace geticcbasedintent setrenderingintent
+          } if
+
+          ICCspace setcolorspace
+          end % workdict
+          end % image-dict
+        } {
+          Dims
+          end % workdict
+          end % image-dict
+          //SetSubstituteColorSpace exec
+        } ifelse
+      } ifelse
+    } {
+      pop % fromXPS-bool
+      end % the image-data-dict
+      /InstallImageProfile: /internalerror //systemdict /.error get exec
+    } ifelse
+
+  } bind def
+
+
+% Remove traces of private data and local procedures which are not
+% to be exported as facilities of the procset.
+  [
+    /AddXRefToAltDict
+    /CheckIntegerRGBFormat
+    /CheckIntegerGrayFormat
+    /CheckProfileColorspace
+    /CheckProfileDimensions
+    /CreateAlternateDict
+    /CreateICCFileObject
+    /DefaultICCSpaceDict
+    /GetAlternateProfiles
+    /GetDefaultProfiles
+    /GetICCSpace
+  ] { currentdict exch undef } forall
+
+currentdict
+end % the procset dictionary
+
+/HqnICCBased exch /ProcSet defineresource
+
+exch setglobal
+
+%%EndProcSet
+
+

@@ -1,0 +1,29 @@
+%!PS-Adobe-3.0 Resource-Font
+%%Version: 002.001 (1)
+%%VMlocation: global
+
+(%os%shivafonts/Helsinki-Narrow) run
+
+/Helvetica-Narrow-Oblique
+/Helsinki-Narrow findfont dup length dict begin
+% start of loop for original Font dictionary keys
+{exch dup /FontInfo eq{ exch dup length dict begin
+% start of loop for the /FontInfo dictionary keys
+ {exch dup /FullName eq {(Helvetica-Narrow-Oblique) def pop}
+%not /FullName
+ {dup /FamilyName eq{(Helvetica) def pop}{exch def}ifelse}ifelse}
+% end of loop for the /FontInfo dictionary keys
+ forall currentdict readonly end def}
+%not /FontInfo
+{exch def}ifelse}
+% end of loop forall original Font dictionary keys
+forall
+/Helsinki-Narrow undefinefont
+/UniqueID 5087424 def
+dup /FontName exch def
+currentdict /SubstFontName undef
+/FontMatrix [0.001 0 0.19438E-3 0.001 0 0] readonly def
+currentdict end
+dup /FID undef
+definefont pop
+

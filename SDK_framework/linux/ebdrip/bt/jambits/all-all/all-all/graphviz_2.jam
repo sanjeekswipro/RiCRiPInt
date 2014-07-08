@@ -1,0 +1,13 @@
+# Copyright (C) 2011 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# 
+# $HopeName: HQNjambits!all-all:all-all:graphviz_2.jam(EBDSDK_P.1) $
+#
+
+# Optional graphviz for use by Doxygen
+
+if $($(CV_Name)) {
+    CompilerVar GraphvizPath : $(CompilerVariable) ;
+}
+
+# Log stripped

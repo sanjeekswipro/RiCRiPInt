@@ -1,0 +1,65 @@
+%!PS
+%%Title: DCLine_CMYK1
+% Copyright (c) 2013 Global Graphics Software Ltd. All Rights Reserved
+
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+currentglobal true setglobal
+
+%% DCLine_CMYK1
+%%			 size			gradient 		frequency	
+%%           cell x	cell y	line x	line y	space x	space y		angle	lpi		max 	actual screen levels
+%% black     
+%% yellow    
+%% cyan      
+%% magenta   
+%%
+/DCLine_CMYK1
+<<
+  /HalftoneType 5
+  /HalftoneName /DCLine_CMYK1
+
+  /Cyan
+  <<
+    /HalftoneType 6
+    /Width 32
+    /Height 12
+    /Thresholds (%os%/Irs/DCLine_1bit_Cyan.bin) (r) file
+  >>
+
+  /Magenta
+  <<
+    /HalftoneType 6
+    /Width 32
+    /Height 8
+    /Thresholds (%os%/Irs/DCLine_1bit_Magenta.bin) (r) file
+  >>
+
+  /Yellow
+  <<
+    /HalftoneType 6
+    /Width 32
+    /Height 8
+    /Thresholds (%os%/Irs/DCLine_1bit_Yellow.bin) (r) file
+  >>
+
+  /Black
+  <<
+    /HalftoneType 6
+    /Width 32
+    /Height 8
+    /Thresholds (%os%/Irs/DCLine_1bit_Black.bin) (r) file
+  >>
+
+  /Default
+  << /HalftoneType 199 /Halftone /DCLine_CMYK1 /HalftoneColor /Black >>
+
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+
+setglobal % restore

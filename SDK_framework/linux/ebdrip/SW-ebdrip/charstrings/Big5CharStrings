@@ -1,0 +1,49 @@
+
+
+/Big5CharStrings
+
+159 dict dup begin
+
+  /.notdef 0 def     /p64 1 def         /p65 2 def         /p66 3 def
+  /p67   4 def       /p68 5 def         /p69 6 def         /p70 7 def
+  /p71   8 def       /p72 9 def         /p73 10 def        /p74 11 def
+  /p75  12 def       /p76 13 def        /p77 14 def        /p78 15 def
+  /p79  16 def       /p80 17 def        /p81 18 def        /p82 19 def
+  /p83  20 def       /p84 21 def        /p85 22 def        /p86 23 def
+  /p87  24 def       /p88 25 def        /p89 26 def        /p90 27 def
+  /p91  28 def       /p92 29 def        /p93 30 def        /p94 31 def
+  /p95  32 def       /p96 33 def        /p97 34 def        /p98 35 def
+  /p99  36 def       /p100 37 def       /p101 38 def       /p102 39 def
+  /p103 40 def       /p104 41 def       /p105 42 def       /p106 43 def
+  /p107 44 def       /p108 45 def       /p109 46 def       /p110 47 def
+  /p111 48 def       /p112 49 def       /p113 50 def       /p114 51 def
+  /p115 52 def       /p116 53 def       /p117 54 def       /p118 55 def
+  /p119 56 def       /p120 57 def       /p121 58 def       /p122 59 def
+  /p123 60 def       /p124 61 def       /p125 62 def       /p126 63 def
+  /p161 64 def       /p162 65 def       /p163 66 def       /p164 67 def
+  /p165 68 def       /p166 69 def       /p167 70 def       /p168 71 def
+  /p169 72 def       /p170 73 def       /p171 74 def       /p172 75 def
+  /p173 76 def       /p174 77 def       /p175 78 def       /p176 79 def
+  /p177 80 def       /p178 81 def       /p179 82 def       /p180 83 def
+  /p181 84 def       /p182 85 def       /p183 86 def       /p184 87 def
+  /p185 88 def       /p186 89 def       /p187 90 def       /p188 91 def
+  /p189 92 def       /p190 93 def       /p191 94 def       /p192 95 def
+  /p193 96 def       /p194 97 def       /p195 98 def       /p196 99 def
+  /p197 100 def      /p198 101 def      /p199 102 def      /p200 103 def
+  /p201 104 def      /p202 105 def      /p203 106 def      /p204 107 def
+  /p205 108 def      /p206 109 def      /p207 110 def      /p208 111 def
+  /p209 112 def      /p210 113 def      /p211 114 def      /p212 115 def
+  /p213 116 def      /p214 117 def      /p215 118 def      /p216 119 def
+  /p217 120 def      /p218 121 def      /p219 122 def      /p220 123 def
+  /p221 124 def      /p222 125 def      /p223 126 def      /p224 127 def
+  /p225 128 def      /p226 129 def      /p227 130 def      /p228 131 def
+  /p229 132 def      /p230 133 def      /p231 134 def      /p232 135 def
+  /p233 136 def      /p234 137 def      /p235 138 def      /p236 139 def
+  /p237 140 def      /p238 141 def      /p239 142 def      /p240 143 def
+  /p241 144 def      /p242 145 def      /p243 146 def      /p244 147 def
+  /p245 148 def      /p246 149 def      /p247 150 def      /p248 151 def
+  /p249 152 def      /p250 153 def      /p251 154 def      /p252 155 def
+  /p253 156 def      /p254 157 def      /space 158 def
+
+end
+/CharStrings defineresource pop

@@ -1,0 +1,31 @@
+/JISCharStrings
+
+95 dict dup begin
+
+  /.notdef 0 def     /c21 1 def         /c22 2 def         /c23 3 def
+  /c24 4 def         /c25 5 def         /c26 6 def         /c27 7 def
+  /c28 8 def         /c29 9 def         /c2A 10 def        /c2B 11 def
+  /c2C 12 def        /c2D 13 def        /c2E 14 def        /c2F 15 def
+  /c30 16 def        /c31 17 def        /c32 18 def        /c33 19 def
+  /c34 20 def        /c35 21 def        /c36 22 def        /c37 23 def
+  /c38 24 def        /c39 25 def        /c3A 26 def        /c3B 27 def
+  /c3C 28 def        /c3D 29 def        /c3E 30 def        /c3F 31 def
+  /c40 32 def        /c41 33 def        /c42 34 def        /c43 35 def
+  /c44 36 def        /c45 37 def        /c46 38 def        /c47 39 def
+  /c48 40 def        /c49 41 def        /c4A 42 def        /c4B 43 def
+  /c4C 44 def        /c4D 45 def        /c4E 46 def        /c4F 47 def
+  /c50 48 def        /c51 49 def        /c52 50 def        /c53 51 def
+  /c54 52 def        /c55 53 def        /c56 54 def        /c57 55 def
+  /c58 56 def        /c59 57 def        /c5A 58 def        /c5B 59 def
+  /c5C 60 def        /c5D 61 def        /c5E 62 def        /c5F 63 def
+  /c60 64 def        /c61 65 def        /c62 66 def        /c63 67 def
+  /c64 68 def        /c65 69 def        /c66 70 def        /c67 71 def
+  /c68 72 def        /c69 73 def        /c6A 74 def        /c6B 75 def
+  /c6C 76 def        /c6D 77 def        /c6E 78 def        /c6F 79 def
+  /c70 80 def        /c71 81 def        /c72 82 def        /c73 83 def
+  /c74 84 def        /c75 85 def        /c76 86 def        /c77 87 def
+  /c78 88 def        /c79 89 def        /c7A 90 def        /c7B 91 def
+  /c7C 92 def        /c7D 93 def        /c7E 94 def
+
+end
+/CharStrings defineresource pop

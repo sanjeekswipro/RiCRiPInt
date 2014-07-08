@@ -1,0 +1,92 @@
+%!PS-Adobe-3.0
+%%Title: DeviceCMYK
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu Mar 23 19:44:44 1995
+% Copyright (c) Global Graphics Software Limited, 1992, 1993, 1994, 1995 All Rights Reserved.
+%%EndComments
+
+
+/Profile <<
+  /ProfileVersion 1
+  /ProfileID (Test Profile)
+  /LastModified (/1995/03/23/19/44/00)
+  /ProfileColorSpace /DeviceCMYK
+  /DeviceType (XRite 938)
+  /DeviceSerialNumber (ABC123)
+  /MediaType (Unknown)
+  /ColorantType (Unknown)
+  /Resolution [1200 1200]
+  /Halftone /Contone
+  /ValidForComment (DeviceCMYK Linearization)
+  /ValidForDeviceTypes /Any
+  /ValidForMediaTypes /Any
+  /ValidForColorantTypes /Any
+  /ValidForResolutions /Any
+  /ValidForHalftones /Any
+  /Comments (Default DeviceCMYK Profile)
+
+  /Linearization [
+    <<
+      /ChannelName (Cyan)
+      /ChannelColor /Cyan
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (% Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Cyan)
+        >>
+      ]
+    >>
+    <<
+      /ChannelName (Magenta)
+      /ChannelColor /Magenta
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (% Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Magenta)
+        >>
+      ]
+    >>
+    <<
+      /ChannelName (Yellow)
+      /ChannelColor /Yellow
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (% Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Yellow)
+        >>
+      ]
+    >>
+    <<
+      /ChannelName (Black)
+      /ChannelColor /Black
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (% Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Visual)
+        >>
+      ]
+    >>
+    <<
+      /ChannelName (Default)
+      /ChannelColor /Default
+      /DefaultCurve [0 0 1 1]
+      /ConversionTables [
+        <<
+          /TableName (% Dot)
+          /TableValues [0.0 1.0 100.0 0.0]
+          /Filter (Default)
+        >>
+      ]
+    >>
+  ]
+
+  /MeasurementDataPresent false
+>>

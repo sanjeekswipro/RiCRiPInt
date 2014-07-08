@@ -1,0 +1,128 @@
+# Copyright (C) 2005-2011 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Doxygen compilation rules.
+#
+# $HopeName: HQNjambits!comprule:doxygen.jam(EBDSDK_P.1) $
+
+# This rule has the ability to Unifdef and Substitute in the doxygen config
+# file. It uses Substitute to change instances of _OUTPUT_PATH_ to the path
+# name specified as the output path name, and _INPUT_PATH_ to the input
+# directory specified.
+#
+# It also supports the use of GraphViz (HAVE_DOT in the config file). Lastly it
+# conforms to the convention of actions having _Target style naming.
+
+#*
+#* Action to invoke Doxygen using a specific config file. Uses environment specified
+#* in ENV (currently just to set PATH, but not predetermined by this rule)
+#*
+#* $(1) Output File Name (not used)
+#* $(2) Doxygen configuration file name
+#* 
+actions quietly _Doxygen
+{
+  echo ...DOXYGEN $(2)
+  $(SetEnv)$(ENV)$(NewLine)
+  $(DoxygenCommand) $(2)
+}
+
+
+#*
+#* Rule for generating Doxygen HTML output from current directory.  The
+#* Doxygen config file must be supplied, even if it is the Doxygen
+#* default 'Doxyfile'.  Note that the output directory specified in the
+#* Jam rule must be the same as the output directory specified in the
+#* Doxygen configuration file. If you wish to use the same path name in
+#* the config file, specify it as the string _OUTPUT_PATH_. The input
+#* directory (which files to scan) can be specified as a space separated
+#* list as _INPUT_PATH_ in the config file.
+#*
+#* $(2) and $(3) can be null; if specified they are used to create
+#* DependsOn rules for the documentation. $(2) is a target to cause the
+#* documentation to be built, and $(3) is a target that must have been
+#* built before the documentation can be built.
+#*
+#* $(1)   Doxygen configuration file name
+#* [$(2)] Target to depend on the documentation (or null if not needed)
+#* [$(3)] Target the documentation depends on  (or null if not needed)
+#* $(4)   Output directory name (where to put the documentation)
+#* $(5)   Input directory name (the directory for doxygen to scan)
+#* [$(6)] Unifdef arguments for Config file processing. -UNEVER is always included
+#
+#* e.g. Doxygen core.dox : doxygen : : Manual : Sources : -DWIN32 ;
+
+rule Doxygen
+{
+  local ConfigFile = $(1) ;
+  local DependOnTarget = $(2) ;
+  local DoxyDependsOn = $(3) ;
+  local OutputPath = $(4) ;
+  local InputPath = $(5) ;
+  local ConfigIfdefs = $(6) ;
+
+  if $(1:G) { Error "Gristed Doxygen ConfigFile not supported: "$(1) ; }
+  MustBeSet InputPath : Empty Doxygen InputPath not supported ;
+  MustBeSet OutputPath : Empty Doxygen OutputPath not supported ;
+
+  # (peterc note) This ungristed, so same-named dox files in different
+  #               compounds would clash. TODO?
+  SEARCH on $(ConfigFile) += $(CurrentPath) ;
+
+  # We are interested in the timestamp on the index.html file, as Doxygen
+  # does not update stamp on $(OutputPath) once created.
+  local OutputFile ;
+  MakeGristed OutputFile : $(OutputPath)$/html$/index.htm : $(CurrentPath) ;
+  DirectoryFor $(OutputFile) : $(CurrentPath) ;
+  FloatingDepends $(OutputFile) ;
+
+  # Grist used here must match grist used by Unifdef rule
+  local TempFilePath = $(CurrentPath)$/$(GeneratedC-Directory) ;
+  local DoxyTarget1 DoxyTarget2 DoxyTarget3 ;
+  local DoxyName1 = $(ConfigFile:B)1$(ConfigFile:S) ;
+  MakeGristed DoxyTarget1 : $(DoxyName1)                    : $(TempFilePath) ;
+  MakeGristed DoxyTarget2 : $(ConfigFile:B)2$(ConfigFile:S) : $(TempFilePath) ;
+  MakeGristed DoxyTarget3 : $(ConfigFile:B)3$(ConfigFile:S) : $(TempFilePath) ;
+  DirectoryFor $(DoxyTarget2) : $(TempFilePath) ;
+  DirectoryFor $(DoxyTarget3) : $(TempFilePath) ;
+  FloatingDepends $(DoxyTarget1) $(DoxyTarget2) $(DoxyTarget3) ;
+
+  # Do cpp-type preprocessing of the config file - e.g. switch on/off CHM files
+  # We pass -t to Unifdef, which disables any comment scanning. The reason for
+  # this is that .dox files can contain pattern syntaxes that look sufficiently
+  # like C comments to cause problems, eg: */swf/* */make/*
+  Unifdef  $(TempFilePath)$/$(DoxyName1) :
+           $(ConfigFile) :
+           $(ConfigIfdefs) -UNEVER -t : ...PREPROCESSING $(ConfigFile) ;
+
+  # Substitute the output path name in the file
+  DEPENDS $(DoxyTarget2) : $(DoxyTarget1) ;
+  Substitute $(DoxyTarget2) : $(DoxyTarget1) :
+             _OUTPUT_PATH_ : $(OutputPath) : "OUTPUT_PATH = $(OutputPath)" ;
+
+  # Substitute the input path name in the file
+  DEPENDS $(DoxyTarget3) : $(DoxyTarget2) ;
+  Substitute $(DoxyTarget3) : $(DoxyTarget2) :
+             _INPUT_PATH_ : $(InputPath) : "INPUT_PATH = $(InputPath)" ;
+
+  # Ensure that "clean" target cleans up Doxygen
+  CleanDir $(OutputFile:P) ;
+  CleanFile $(DoxyTarget1) $(DoxyTarget2) $(DoxyTarget3) ;
+
+  DependsOn $(OutputFile) : $(DoxyTarget3) ;
+  if $(DoxyDependsOn) {
+    DependsOn $(OutputFile) : $(DoxyDependsOn) ;
+  }
+  if $(DependOnTarget) {
+    DependsOn $(DependOnTarget) : $(OutputFile) ;
+  }
+
+  # Prepare variables for use in _Doxygen actions
+  DoxygenCommand on $(OutputFile) = $(DoxygenCommand) ;
+  ENV on $(OutputFile) = $(Doxygen_Environment) ;
+  # OutputFile is not actually used by the action at present...
+  _Doxygen $(OutputFile) : $(DoxyTarget3) ;
+}
+
+#
+# Log stripped

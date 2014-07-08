@@ -1,0 +1,589 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Compilation rules for rebuilding product using WDK
+#
+# $HopeName: HQNjambits!comprule:wdkbuild.jam(EBDSDK_P.1) $
+#
+
+
+#* Copy files listed by $(2) to WDK build directory.
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for file listing files to copy
+#* $(3) WDK build dir
+#*
+#* Copies all the files listed to the WDK build directory.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule ExportSource DoWDKBuild
+#*section WDK build
+actions quietly together _CopyWDKSources bind wdkcopy unifdef {
+  $(Perl) $(wdkcopy) $(wdkdir) $(filelist) $(unifdef)
+}
+
+rule CopyWDKSources
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local SrcList = $(2) ;
+
+  local wdkcopy ;
+  MakeLeafTarget wdkcopy : wdkcopy.pl : $(BUILDROOT) bt : Search ;
+  DEPENDS $(Target) : $(wdkcopy) ;
+
+  wdkcopy on $(Target) = $(wdkcopy) ;
+  wdkdir on $(Target) = $(BUILDROOT)$/$(3) ;
+  filelist on $(Target) = $(BUILDROOT)$/obj$/wdksource.txt ;  # As in ExportSource in base.jam
+  unifdef on $(Target) = $(Build-Tools-unifdef) ;
+
+  _CopyWDKSources $(Target) ;
+
+  DEPENDS $(Target) : $(SrcList) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Creates dirs and sources files for WDK build.  Copies
+#* source files to be alongside sources file.
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for CopyWDKSources rule
+#* $(3) WDK build dir
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#* Sources file can only be in leaf directory.  Sources
+#* file can only build one target.  So create each sources
+#* file in a directory named after that target, and copy the
+#* required source to be alongside.
+#*
+#*seerule DoWDKBuild
+#*section WDK build
+actions quietly together _MakeWDKDirs bind wdkdirs {
+  $(Perl) $(wdkdirs) $(rootdir) $(dirsfile)
+  del $(dirsfile)
+}
+
+rule MakeWDKDirs
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local Source = $(2) ;
+
+  local dirsfile = $(BUILDROOT)$/obj$/dirslist.txt ;
+
+  local wdkdirs ;
+  MakeLeafTarget wdkdirs : wdkdirs.pl : $(BUILDROOT) bt : Search ;
+  DEPENDS $(Target) : $(wdkdirs) ;
+
+  wdkdirs on $(Target) = $(wdkdirs) ;
+  rootdir on $(Target) = $(BUILDROOT)$/$(3) ;
+  dirsfile on $(Target) = $(dirsfile) ;
+  _MakeWDKDirs $(Target) ;
+
+  DEPENDS $(Target) : $(Source) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Executes WDK build command in $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for MakeWDKDirs rule
+#* $(3) WDK build dir
+#*
+#* Step five of source exporting process.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule DoWDKBuild
+#*section WDK build
+actions quietly together _BuildWithWDK {
+  echo ...Building with WDK in $(builddir) : $(cmd)
+  call $(wdkroot)\bin\setenv $(wdkroot)
+  cd /d $(builddir)
+  $(cmd)
+  echo ...End of build with WDK
+}
+
+rule BuildWithWDK
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local Source = $(2) ;
+  local BuildCmd = build -CbDe ;
+
+  builddir on $(Target) = $(BUILDROOT)$/$(3) ;
+  wdkroot on $(Target) = $(WDKROOT) ;
+  cmd on $(Target) = $(BuildCmd) ;
+  _BuildWithWDK $(Target) ;
+
+  DEPENDS $(Target) : $(Source) ;
+}
+
+
+#* Convenience rule to execute all WDK build rules in order.
+#*
+#* $(1) gristed target for rule
+#* $(2) WDK build directory
+#*
+#* Copies source, creates WDK build files and builds using WDK.
+#*
+#* Directory $(2) is relative to $(BUILDROOT).
+#*
+#*seerule CopyWDKSources ExportSource
+#*section WDK build
+rule DoWDKBuild
+{
+  CheckGristed $(1) ;
+
+  local Target = $(1) ;
+  local WDKBuildDir = $(2) ;
+
+  WriteWDKSourcesFiles $(Target) : $(WDKBuildDir) ;
+
+  # Must match WdkSrcList in ExportSource rule in base.jam
+  local WdkSrcList ; MakeGristed WdkSrcList : wdksource.txt : $(BUILDROOT) ;
+  local CopyWDKSourcesTarget ; MakeGristed CopyWDKSourcesTarget : $(WDKBuildDir) : $(CurrentPath) ;
+  CopyWDKSources $(CopyWDKSourcesTarget) : $(WdkSrcList) : $(WDKBuildDir) ;
+
+  local MakeWDKDirsTarget ; MakeGristed MakeWDKDirsTarget : makewdkdirs : $(CurrentPath) ;
+  MakeWDKDirs $(MakeWDKDirsTarget) : $(CopyWDKSourcesTarget) : $(WDKBuildDir) ;
+
+  BuildWithWDK $(Target) : $(MakeWDKDirsTarget) : $(WDKBuildDir) ;
+  DEPENDS wdkbuild : $(Target) ;
+}
+
+actions quietly together _WDKSources bind wdksources {
+  echo $(cdefines) > $(tmpdir)\cdefs.txt
+  echo $(includes) > $(tmpdir)\incs.txt
+  echo $(sources) > $(tmpdir)\srcs.txt
+  echo $(dlllibs) > $(tmpdir)\dlllibs.txt
+  echo $(dllexports) > $(tmpdir)\dllexports.txt
+
+rem echo  $(Perl) $(wdksources) $(rootdir) $(targetname) $(targettype) $(buildregime) $(runtime) $(path) $(tmpdir)\cdefs.txt $(tmpdir)\incs.txt $(tmpdir)\srcs.txt $(tmpdir)\dlllibs.txt $(tmpdir)\dllexports.txt $(dllentry) $(libsfile)
+  $(Perl) $(wdksources) $(rootdir) $(targetname) $(targettype) $(buildregime) $(runtime) $(path) $(tmpdir)\cdefs.txt $(tmpdir)\incs.txt $(tmpdir)\srcs.txt $(tmpdir)\dlllibs.txt $(tmpdir)\dllexports.txt $(dllentry) $(libsfile)
+
+  del $(tmpdir)\cdefs.txt
+  del $(tmpdir)\incs.txt
+  del $(tmpdir)\srcs.txt
+  del $(tmpdir)\dlllibs.txt
+  del $(tmpdir)\dllexports.txt
+rem  del $(libsfile)
+}
+
+actions quietly together _CleanListFile {
+  echo "something" > $(listfile)
+  del $(listfile)
+}
+
+actions quietly together _ListString {
+  echo $(liststring) >> $(listfile)
+}
+
+actions quietly together _ListTarget bind listtarget {
+  echo $(listtarget) >> $(listfile)
+}
+
+#* Writes a WDK sources file.
+#*
+#* $(1) gristed target
+#* $(2) WDK build dir
+#*
+#*seerule WDKSources
+#*section WDK build
+rule WDKSources
+{
+  CheckGristed $(1) ;
+
+  local Target = $(1) ;
+
+  local SourcesTarget = $(SourcesTarget-$(Target)) ;
+
+  local wdksources ;
+  MakeLeafTarget wdksources : wdksources.pl : $(BUILDROOT) bt : Search ;
+  DEPENDS $(SourcesTarget) : $(wdksources) ;
+
+  local targetname = $(TargetName-$(SourcesTarget):BS) ;
+  local wdkpath = $(Path-$(SourcesTarget))$/$(targetname) ;
+
+  wdksources on $(SourcesTarget) = $(wdksources) ;
+  rootdir on $(SourcesTarget) = $(BUILDROOT)$/$(2) ;
+  targetname on $(SourcesTarget) = $(targetname) ;
+  targettype on $(SourcesTarget) = $(TargetType-$(SourcesTarget)) ;
+  if $(Variant_rt_libs) = dynamic_multi_threaded  {
+    runtime on $(SourcesTarget) = USE_MSVCRT ;
+  } else {
+    runtime on $(SourcesTarget) = USE_LIBCMT ;
+  }
+  if $(DEBUG) = 1
+  {
+    buildregime on $(SourcesTarget) = DEBUG ;
+  }
+  else
+  {
+    buildregime on $(SourcesTarget) = RELEASE ;
+  }
+  path on $(SourcesTarget) = $(wdkpath) ;
+  if $(Sources-$(SourcesTarget))
+  {
+    sources on $(SourcesTarget) = $(Sources-$(SourcesTarget):BS) ;
+  }
+  else
+  {
+    sources on $(SourcesTarget) = none ;
+  }
+  includes on $(SourcesTarget) = $(Includes-$(SourcesTarget)) $($(MetaIncludes-$(SourcesTarget))-C-ExportDirectories) ;
+  cdefines on $(SourcesTarget) = -D$(C-Defines-$(SourcesTarget)) ;
+
+  tmpdir on $(SourcesTarget) = $(BUILDROOT) ;
+
+  if $(TargetType-$(SourcesTarget)) = Dll
+  {
+    if $(Dll-Linker-Libs-$(SourcesTarget))
+    {
+      dlllibs on $(SourcesTarget) = $(Dll-Linker-Libs-$(SourcesTarget)) ;
+    }
+    else
+    {
+      dlllibs on $(SourcesTarget) = none ;
+    }
+
+    if $(WDKExports-$(Target))
+    {
+      dllexports on $(SourcesTarget) = $(WDKExports-$(Target)) ;
+    }
+    else
+    {
+      dllexports on $(SourcesTarget) = none ;
+    }
+
+    if $(WDKDllEntry-$(SourcesTarget))
+    {
+      dllentry on $(SourcesTarget) = $(WDKDllEntry-$(SourcesTarget)) ;
+    }
+    else
+    {
+      dllentry on $(SourcesTarget) = none ;
+    }
+  }
+  else
+  {
+    dlllibs on $(SourcesTarget) = none ;
+    dllexports on $(SourcesTarget) = none ;
+    dllentry on $(SourcesTarget) = none ;
+  }
+
+  if $(LibsFile-$(SourcesTarget))
+  {
+    libsfile on $(SourcesTarget) = $(LibsFile-$(SourcesTarget)) ;
+  }
+  else
+  {
+    libsfile on $(SourcesTarget) = none ;
+  }
+
+  _WDKSources $(SourcesTarget) ;
+
+
+  NOTFILE $(SourcesTarget) ;
+  ALWAYS $(SourcesTarget) ;
+  if $(TargetFile-$(Target))
+  {
+    # This covers all case except a library just linked from other libraries
+    # That case is covered in NoteWDKTargetLibs
+    DEPENDS $(TargetFile-$(Target)) : $(SourcesTarget) ;
+  }
+}
+
+#* Writes a WDK sources file for each of the WDK targets.
+#*
+#* $(1) gristed target
+#* $(2) WDK build dir
+#*
+#*seerule WDKSources, NoteWDKTarget
+#*section WDK build
+rule WriteWDKSourcesFiles
+{
+  local dirsfile = $(BUILDROOT)$/obj$/dirslist.txt ;
+
+  local CleanDirsList ;  MakeGristed CleanDirsList : WDK-CleanDirs : $(BUILDROOT) ;
+  listfile on $(CleanDirsList) = $(dirsfile) ;
+  _CleanListFile $(CleanDirsList) ;
+  ALWAYS $(CleanDirsList) ;
+  NOTFILE $(CleanDirsList) ;
+
+  for T in $(WdkTargets)
+  {
+    # Add dir for this sources file to dirslist.txt
+    local SourcesTarget = $(SourcesTarget-$(T)) ;
+
+    local targetname = $(TargetName-$(SourcesTarget):BS) ;
+    local wdkpath = $(Path-$(SourcesTarget))$/$(targetname) ;
+
+    local DirsList ;  MakeGristed DirsList : DirsList-$(SourcesTarget) : $(CurrentPath) ;
+    liststring on $(DirsList) = $(wdkpath) $(TargetType-$(SourcesTarget)) ;
+    listfile on $(DirsList) = $(dirsfile) ;
+    _ListString $(DirsList) ;
+
+    NOTFILE $(DirsList) ;
+    DEPENDS $(DirsList) : $(CleanDirsList) ;
+    DEPENDS $(SourcesTarget) : $(DirsList) ;
+
+    # Write the sources file
+    WDKSources $(T) : $(2) ;
+
+    # Copy C source files to same directory as sources file
+    local S ; for S in $(Sources-$(SourcesTarget))
+    {
+      local dest ;
+      MakeLeafTarget dest : $(S:BS) : $(BUILDROOT) $(2) $(wdkpath) : Locate ;
+
+      DependsOn $(SourcesTarget) : $(dest) ;
+      CopyFile $(dest) : $(S) ;
+    }
+
+    CopyWDKExtraSources $(SourcesTarget) : $(2) ;
+  }
+}
+
+
+#* Note that a target (i.e. Exec, Dll, Lib) will require a WDK sources file.
+#*
+#* $(1) gristed target
+#* $(2) source ...
+#* [$(3)] path ...
+#*
+#*seerule JamCompileNLink
+#*section WDK build
+rule NoteWDKTarget
+{
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    CheckGristed $(1) ;
+
+    local Target = $(1) ;  
+    local SourcesTarget ; MakeGristed SourcesTarget : Sources-$(1:BS) : $(CurrentPath) ;
+
+    TargetName-$(SourcesTarget) ?= $(<) ;
+    TargetType-$(SourcesTarget) ?= $(LinkType-$(Target)) ;
+    Path-$(SourcesTarget) ?= $(CurrentPath) ;
+
+    local Dir ; MakePath Dir : $(CurrentPath) $(3) ;
+    local Sources ; MakeGristed Sources : $(2) : $(Dir) ;
+    Sources-$(SourcesTarget) += $(Sources) ;
+    AddUnique Includes-$(SourcesTarget) : $(C-IncludeDirectories) $(C-SystemIncludeDirectories) ;
+    AddUnique MetaIncludes-$(SourcesTarget) : $(Meta-IncludedExportDirectories) ;
+    C-Defines-$(SourcesTarget) ?= $(C-Defines) ;
+
+    if $(LinkType-$(Target)) = Dll
+    {
+      # Lazy evaluation so that libs can be specified after
+      # DynamicLibrary rule
+      Dll-Linker-Libs-$(SourcesTarget) = $(C-Dll-Linker_Libraries:&) ;
+    }
+
+    SourcesTarget-$(Target) = $(SourcesTarget) ;
+    AddUnique WdkTargets : $(Target) ;
+  }
+}
+
+
+#* Note the libraries to be linked with a WDK target.
+#*
+#* $(1) target
+#* $(2) lib ...
+#*
+#*seerule _C-LinkWith_
+#*section WDK build
+rule NoteWDKTargetLibs
+{
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    local SourcesTarget ; MakeGristed SourcesTarget : Sources-$(1:BS) : $(CurrentPath) ;
+    local libsfile = $(BUILDROOT)$/obj$/libs-$(1:BS).txt ;
+
+    LibsFile-$(SourcesTarget) = $(libsfile) ;
+
+    local CleanLibT ;  MakeGristed CleanLibT : CleanLibs-$(SourcesTarget) : $(CurrentPath) ;
+    listfile on $(CleanLibT) = $(libsfile) ;
+    _CleanListFile $(CleanLibT) ;
+    ALWAYS $(CleanLibT) ;
+    NOTFILE $(CleanLibT) ;
+
+    local L ; for L in $(2)
+    {
+      local LibT ;  MakeGristed LibT : ListLibs-$(L) : $(SourcesTarget) ;
+      listtarget on $(LibT) = $(L) ;
+      listfile on $(LibT) = $(libsfile) ;
+      _ListTarget $(LibT) ;
+
+      NOTFILE $(LibT) ;
+      DEPENDS $(LibT) : $(CleanLibT) ;
+      DEPENDS $(SourcesTarget) : $(LibT) ;
+    }
+
+    if $(TargetFile-$(1))
+    {
+      DEPENDS $(TargetFile-$(1)) : $(SourcesTarget) ;
+    }
+  }
+}
+
+
+#* Note the libraries to be linked with a WDK target.
+#*
+#* $(1) target
+#* $(2) libname ...
+#*
+#*seerule _C-LinkWith_
+#*section WDK build
+rule NoteWDKTargetLibNames
+{
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    local SourcesTarget ; MakeGristed SourcesTarget : Sources-$(1:BS) : $(CurrentPath) ;
+    local libsfile = $(BUILDROOT)$/obj$/libs-$(1:BS).txt ;
+
+    LibsFile-$(SourcesTarget) = $(libsfile) ;
+
+    local CleanLibT ;  MakeGristed CleanLibT : CleanLibs-$(SourcesTarget) : $(CurrentPath) ;
+    listfile on $(CleanLibT) = $(libsfile) ;
+    _CleanListFile $(CleanLibT) ;
+    ALWAYS $(CleanLibT) ;
+    NOTFILE $(CleanLibT) ;
+
+    local L ; for L in $(2)
+    {
+      local LibT ;  MakeGristed LibT : ListLibs-$(L) : $(SourcesTarget) ;
+      liststring on $(LibT) = $(L) ;
+      listfile on $(LibT) = $(libsfile) ;
+      _ListString $(LibT) ;
+
+      NOTFILE $(LibT) ;
+      DEPENDS $(LibT) : $(CleanLibT) ;
+      DEPENDS $(SourcesTarget) : $(LibT) ;
+    }
+
+    if $(TargetFile-$(1))
+    {
+      DEPENDS $(TargetFile-$(1)) : $(SourcesTarget) ;
+    }
+  }
+}
+
+
+#* Note extra source files for a WDK target.
+#*
+#* Most sources can be picked up automatically, but e.g. #included .c
+#* files need to be noted via this rule.
+#*
+#* $(1) target
+#* $(2) source ...
+#* [$(3)] path ...
+#*
+#*section WDK build
+rule NoteWDKExtraSources
+{
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    local SourcesTarget ; MakeGristed SourcesTarget : Sources-$(1:BS) : $(CurrentPath) ;
+
+    local Dir ; MakePath Dir : $(CurrentPath) $(3) ;
+    local Sources ; MakeGristed Sources : $(2) : $(Dir) ;
+
+    ExtraSources-$(SourcesTarget) += $(Sources) ;
+
+    local S ; for S in $(Sources)
+    {
+      SEARCH on $(S) += $(Dir)$/$(C-SourceDirectories) ;
+    }
+  }
+}
+
+rule CopyWDKExtraSources
+{
+  CheckGristed $(1) ;
+
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    local SourcesTarget = $(1) ;
+
+    local targetname = $(TargetName-$(SourcesTarget):BS) ;
+    local wdkpath = $(Path-$(SourcesTarget))$/$(targetname) ;
+
+    local S ; for S in $(ExtraSources-$(SourcesTarget))
+    {
+      local dest ;
+      MakeLeafTarget dest : $(S:BS) : $(BUILDROOT) $(2) $(wdkpath) : Locate ;
+
+      DependsOn $(SourcesTarget) : $(dest) ;
+      CopyFile $(dest) : $(S) ;
+    }
+  }
+}
+
+#* Note entry point for a DLL WDK target.
+#*
+#* $(1) target
+#* $(2) entry point
+#*
+#*section WDK build
+rule NoteWDKDllEntryPoint
+{
+  if wdkbuild in $(JAM_ARGUMENTS)
+  {
+    local SourcesTarget ; MakeGristed SourcesTarget : Sources-$(1:BS) : $(CurrentPath) ;
+
+    WDKDllEntry-$(SourcesTarget) = $(2) ;
+  }
+}
+
+#* Zips up $(3) to create $(4).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for zip file to depend on
+#* $(3) WDK build dir
+#* $(4) zip file name
+#* $(5) list of files, relative to $(3)
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#* Note: This rule is required because the Zip rule uses zip * which
+#* includes all files in the archive.  We only want some files, and
+#* from multiple sub-directories
+#*
+#*section WDK build
+actions quietly _ZipWDKFiles {
+  echo ...Zipping WDK files from directory $(SrcDir) into $(ZipFile)...
+  $(ChDir) $(SrcDir)
+  $(ZipCommand) -rq9 $(ZipFile) $(FileList)
+}
+
+rule ZipWDKFiles
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local Source = $(2) ;
+
+  local ZipFileTarget ; MakeGristed ZipFileTarget : $(4) : $(CurrentPath) ;
+  DirectoryFor $(ZipFileTarget) : $(CurrentPath)$/obj ;
+
+  SrcDir on $(ZipFileTarget) = $(3) ;
+  ZipCommand on $(ZipFileTarget) = $(ZipCommand) ;
+  ZipFile on $(ZipFileTarget) = $(BUILDROOT)$/obj$/$(4) ;
+  FileList on $(ZipFileTarget) = $(5) ;
+  _ZipWDKFiles $(ZipFileTarget) ;
+
+  DEPENDS $(ZipFileTarget) : $(Source) ;
+  DEPENDS $(Target) : $(ZipFileTarget) ;
+  NOTFILE $(Target) ;
+}
+
+# Log stripped

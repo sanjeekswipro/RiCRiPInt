@@ -1,0 +1,450 @@
+%!PS-Adobe-3.0
+%%Title: Config Backup
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mon, Mar 7, 1994
+%{Config Backup version #1 0
+% Copyright (C) 1994-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% This job will create a back-up file for configuration data which may 
+% be sent to your support group in order for them to reproduce your 
+% setup more quickly and easily in the event of any problems. It may, 
+% of course, also be used for backing up and restoring your page setups 
+% etc.
+%
+% To reduce the size of the backup file the data is LZW compressed when
+% this file is run from a level 2 RIP.
+%
+% Since files are saved by their PostScript names you can use backup
+% and restore to move files between PC RIPs and all mappings will be 
+% automatically set up.
+%
+% To re-install the backup simply run 'print file' on the file produced 
+% by this utility.
+%
+% The backup file will be created in the same directory as this file is 
+% found. 
+
+% $HopeName: SWv20!swf:utils:confback.ps(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% *********************************************************************
+% Add any other file and directories to be backed up here  
+% *********************************************************************
+ /FolderList [ 
+		(DESCRIBE.PS)
+ 		(Config/*)
+		(DevSetup/*)
+		(ReproductionCriteria/*)
+		(Sys/*) 
+		(Usr/*) 
+		(LOGFILE)
+	] def
+% *********************************************************************
+
+/tmpstr 65535 string def
+/filestr 255 string def
+/outfilestr 255 string def
+/shortstr 20 string def
+
+(\n*****************************************************************)=
+(                    CREATING DESCRIPTION FILE)=
+
+% *****************************
+% Make description file in DESCRIBE.LOG
+
+% switch to level 2 for pagedevice calls etc.
+
+save
+{
+% redefine print to output to file
+/describefile (DESCRIBE.PS)mark 1 index { deletefile } stopped cleartomark (w) file def
+/realprint { print } bind def
+/print { describefile exch writestring } bind def 
+
+({//currentfile null //readline not{stop}if print()=}dup 1 128 string put loop)=
+
+/sortarray 100 string def
+/sortstring 100 string def
+/sortdict {
+	% |- dict array
+	% copy dict keys into array
+	/ind 0 def
+	1 index {
+		pop
+		% dict array key
+		1 index ind 3 -1 roll 
+		% dict array array ind key
+		put
+		/ind ind 1 add def
+	} forall
+	
+	% |- dict array
+	% sort array
+		{
+		true
+		0 1 ind 2 sub {
+			% |- dict array bool i
+			2 index 1 index 2 copy 
+			% |- dict array bool i array i array i
+			get 
+			% |- dict array bool i array i array[i]
+			3 1 roll 1 add get
+			% |- dict array bool i array[i] array[i+1]
+			2 copy sortarray cvs exch sortstring cvs lt {
+				% |- dict array bool i array[i] array[i+1]
+				4 index 4 -1 roll
+				% |- dict array bool array[i] array[i+1] array i
+				2 copy 
+				% |- dict array bool array[i] array[i+1] array i array i
+				1 add 
+				% |- dict array bool array[i] array[i+1] array i array i+1
+				6 -1 roll put 3 -1 roll put
+				% |- dict array bool
+				pop false
+			}	{	
+				pop pop pop
+			} ifelse
+		} for
+		{ exit } if
+	} loop
+} bind def
+   
+/dictlevel 0 def
+/ListDict {
+	dup length array sortdict
+	(<<)=
+		{
+		% |- dict key
+		2 copy get
+		% |- dict key val
+		dictlevel { (   )print } repeat
+		exch =print ( - )print 
+		dup type /dicttype eq {
+			/dictlevel dictlevel 1 add def
+			ListDict
+			/dictlevel dictlevel 1 sub def
+		}	{
+			==
+		} ifelse
+	} forall
+	dictlevel { (   )print } repeat
+	pop 	% dict
+	(>>)=
+} bind def
+
+(\nCurrent Configuration:)=
+(  Version:       )print hqnversion =
+(  Build Date:    )print currentsystemparams /BuildDate get =
+
+/cp currentpagedevice def
+/cs currentsystemparams def
+
+()=
+(  Level:         )print cs/LanguageLevel get ==
+(  Resolution:    )print cp/HWResolution get ==
+(  Page Size:     )print cp/PageSize get ==
+(  Margins:       )print cp/Margins get ==
+(  Media width:   )print statusdict begin mediawidth == end
+(  Auto showpage: )print cs/AutoShowpage get ==
+(  Scaling:       )print cp/Scaling get ==
+(  Negative:      )print cp/NegativePrint get ==
+(  Mirrored:      )print cp/MirrorPrint get ==
+(  Rotated:       )print cp/ExtraOrientation get ==
+(  Film saving:   )print cp/FilmSaving get ==
+% I wish I knew how to figure out how we're calibrating!
+% (  Calibrated:    )print 1183615869 internaldict begin currentcalibration end null ne ==
+flush
+
+(\nScreening:)=
+(  HPS:           )print cs/AccurateScreens get ==
+(  Spot function: )print 
+cp/DefaultScreenName get =
+(  Overide spot:  )print cs/OverrideSpotFunction get 0 gt ==
+(  Screen freq:   )print cp/DefaultScreenFrequency get ==
+(  Overide freq:  )print cs/OverrideFrequency get 0 ne ==
+(  Extra Grays:   )print cs/ScreenExtraGrays get =print
+		(, )print cs/ScreenLevels get ==
+(  Dot centered:  )print cs/ScreenDotCentered get ==
+(  Angle accuracy: )print cs/ScreenAngleAccuracy get ==
+(  Angle snap:    )print cs/ScreenAngleSnap get ==
+(  Freq accuracy: )print cs/ScreenFrequencyAccuracy get ==
+(  Zero adjust:   )print cs/ScreenZeroAdjust get ==
+(  Freq Deviation: )print cs/ScreenFrequencyDeviation get ==
+flush
+
+(\nSeparations:)=
+(  Separating:    )print cp/Separations get dup == {
+	currenthalftone {
+		dup type /dicttype eq {
+			(    )print
+			exch ==
+			begin
+			(      Frequency: )print Frequency =print (, Angle: )print Angle =
+			end
+		}	{
+			pop pop
+		} ifelse
+	} forall
+} if
+flush
+
+(\nVM:)=
+vmstatus 
+(  Maximum:       )print ==
+(  Current:       )print ==
+pop
+
+(\nDevices:)=
+(Devices/*){ = } 255 string filenameforall
+
+(\nSystem Params:)=
+cs ListDict
+
+(\nUser Params:)=
+currentuserparams ListDict
+
+(\nPage Device:)=
+cp ListDict
+
+()=
+
+describefile closefile
+
+} serverdict /execlevel2 get exec
+restore
+
+% End of creating DESCRIBE.PS
+% ***********************************
+
+
+/outfilename (CONFIG.PS) def
+
+statusdict /filename known {
+	currentfile
+	statusdict begin outfilestr filename pop end
+	
+	dup length 1 sub -1 0 {
+		% |- str i
+		2 copy get (/) 0 get eq {
+			% found the path
+			1 add
+			exit
+		}	{
+			pop		% i
+		} ifelse
+	} for
+	
+	dup type /integertype eq {
+		% we found the '/'
+		% |- inputname i
+		0 exch getinterval
+		dup length outfilename length add string
+		% |- path newstr
+		dup 0 3 index putinterval
+		% |- path newstr
+		dup 3 -1 roll length outfilename putinterval
+	}	{
+		% loose in SW
+		pop	% input name
+		outfilename
+	} ifelse
+
+	/outfilename exch def
+} if
+
+mark outfilename { deletefile } stopped cleartomark 
+/outputfile outfilename (w) file def
+	
+/do_write {
+	outputfile exch
+	{ writestring } stopped {
+		(WRITE FAILED - check whether the drive is full!)=
+		stop
+	} if
+} bind def
+
+/do_hex_write {
+	outputfile exch
+	{ writehexstring } stopped {
+		(WRITE FAILED - check whether the drive is full!)=
+		stop
+	} if
+} bind def
+
+/copy_block { % |- proc
+		{
+		currentfile tmpstr readline pop
+		dup length 0 gt {
+			dup 0 get 46 eq {
+				pop exit
+			}	{
+				1 index exec
+			} ifelse
+		}	{
+			1 index exec
+		} ifelse
+	} loop
+	pop		% proc
+} bind def
+
+(% Configuration backed up: )do_write daytime do_write (\r)do_write
+(% from RIP version )do_write hqnversion do_write (\r)do_write
+
+systemdict /languagelevel known { systemdict /languagelevel get } { 1 } ifelse
+2 ge {
+	(currentfile /LZWDecode filter cvx exec\r) do_write
+	/outputfile outputfile /LZWEncode filter def
+} if
+
+{ do_write (\r) do_write } copy_block
+/tmpstr 65535 string def
+/copy_out {
+	(File ")print dup print (" - )print
+	dup (LOGFILE) eq {
+		pop
+		(to be restored as LOGBACK )print
+		(LOGBACK) mark 1 index { deletefile } stopped cleartomark
+	} if
+	dup status {
+		pop pop pop pop (already exists )print
+		(- Existing file will be overwritten )print
+	} if
+	mark 1 index { deletefile } stopped cleartomark
+	mark exch
+	/outfile exch (w) { file } stopped {
+		cleartomark	
+		/outputting false def
+		(- *FAILED TO CREATE FILE* )print
+	} 	{
+		def pop
+		/outputting true def
+	} ifelse
+	flush
+	/togo exch def
+		{
+		  currentfile tmpstr togo 65535 lt { 0 togo getinterval } if
+		  readstring exch
+		  outputting {
+			  outfile exch  { writestring } stopped {
+				(WRITE FAILED - check whether the drive is full!)=
+				stop
+			  } if
+		  } 	{
+		  	pop
+		  } ifelse
+		  
+%		  (.) print flush
+		  /togo togo 65535 sub def
+		  not togo 0 le or{ exit } if
+	} loop
+	outputting { 
+		outfile closefile
+		(- restored)=
+	} 	{
+		(- skipped)=
+	} ifelse
+} bind def
+/getnum 20 string def
+/getnum {
+	//getnum cvs
+	0 exch
+		{
+		dup dup 48 ge exch 57 le and {
+			48 sub exch 10 mul add
+		}	{
+			pop
+		} ifelse
+	} forall
+} bind def
+/hashver {
+	token pop getnum 1000 mul exch
+	token pop pop
+	token pop exch pop getnum 
+	add
+} bind def
+/showtimes {
+	dup hashver
+	hqnversion hashver 
+	ne {
+		(*****  Configuration was backed up from RIP version )print =
+		(*****  On )print = 
+		(*****  Cannot restore from a different revision )=
+		stop
+	} if 
+	(\n*****************************************************************)=
+	(                RESTORING CONFIGURATION DATA)=
+	(*****************************************************************\n)=
+	(Configuration backed up from RIP version )print =
+	(On )print = 
+	(\n)print
+} def
+
+. ********** End of copy block
+
+(\()do_write daytime do_write (\)\()do_write hqnversion do_write (\)showtimes)do_write 
+
+{ = } copy_block
+*****************************************************************
+              BACKING UP CONFIGURATION DATA
+*****************************************************************
+
+. ********** End of copy block
+
+ FolderList {
+		{
+		/realfile exch def
+		true 
+		[ (Config/inUse) ] {
+			realfile eq {
+				pop false
+				exit
+			} if
+		} forall
+		{
+		realfile =
+		(\r% **************** ) do_write realfile do_write ( ****\r)do_write
+		/totlength 0 def
+		/inputfile realfile (r) file def
+		
+		% Find file length
+			{
+			  inputfile tmpstr readstring 
+			  /realstr 3 -1 roll def
+			  /totlength totlength realstr length add def
+			  not { exit } if		% false from readstring
+		} loop
+
+		totlength shortstr cvs do_write
+		( <) do_write
+		realfile do_hex_write
+		(> copy_out\r) do_write
+		
+		inputfile closefile
+		
+		totlength 65535 le {
+			realstr do_write
+		}	{
+			/inputfile realfile (r) file def
+
+				{
+				  inputfile tmpstr readstring exch
+				  do_write
+				  not { exit } if		% false from readstring
+			} loop
+			
+			inputfile closefile
+		} ifelse
+		
+		inputfile closefile
+		} if
+	} filestr filenameforall
+} forall
+
+(\n*****************************************************************)=
+(Backup file is called )print outfilename =
+(*****************************************************************\n)=
+
+%EOF

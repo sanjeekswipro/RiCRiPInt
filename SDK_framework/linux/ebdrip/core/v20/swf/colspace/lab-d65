@@ -1,0 +1,53 @@
+%!PS-Adobe-3.0
+%%Title: LAB-D65
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Wed Mar 22 13:59:00 1995
+%%Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colspace:lab-d65(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+[
+  /CIEBasedABC
+  <<
+    /XUID [124 0 0 19950322 15052]
+    /RangeABC [0 100 -128 127 -128 127]
+    /DecodeABC [ { 16 add 116 div } bind { 500 div } bind { 200 div } bind ]
+    /MatrixABC [ 1 1 1 1 0 0 0 0 -1 ]
+    /DecodeLMN [
+      { dup 6 29 div ge { 
+          dup dup mul mul
+        }{
+          4 29 div sub 108 841 div mul
+        } ifelse
+        0.9505 mul
+      } bind
+      { dup 6 29 div ge { 
+          dup dup mul mul
+        }{
+          4 29 div sub 108 841 div mul
+        } ifelse
+      } bind
+      { dup 6 29 div ge { 
+          dup dup mul mul
+        }{
+          4 29 div sub 108 841 div mul
+        } ifelse
+        1.0890 mul
+      } bind
+    ]
+    /RangeLMN [ -0.1181 1.2540 0.1379 1.0000 -0.4971 1.6400 ]
+    /WhitePoint [ 0.9505 1 1.0890 ]
+  >>
+]
+
+(LAB-D65) cvn exch /ColorSpace defineresource pop
+
+setglobal
+
+%%EndResource

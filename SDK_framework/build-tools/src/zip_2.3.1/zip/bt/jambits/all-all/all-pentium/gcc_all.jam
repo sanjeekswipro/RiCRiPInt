@@ -1,0 +1,12 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:all-pentium:gcc_all.jam(trunk.7) $
+#
+
+  local Com = C C++ mixedC ;
+  if ! $(Variant_project) = rift { 
+    CompilerVar $(Com)-Compiler_Arguments : -msse2 ;
+  }
+
+# Log stripped

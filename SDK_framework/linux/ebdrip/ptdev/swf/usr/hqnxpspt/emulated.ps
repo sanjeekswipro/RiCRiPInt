@@ -1,0 +1,259 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:emulated.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This 'emulates' various PrintTicket options.  Emulated options are usually
+% those that are not applicable to a RIP (such as hole punching), and are
+% instead stored as (page buffer) device parameters allowing them to be
+% handled in a device-specific backend.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+
+/DoPageMediaType {
+  begin
+    % Handle PageMediaType value
+    pt_value [/Value] /Plain GetPTValueWithDefault exch pop
+    PGBParamDict /PtfMediaType 3 -1 roll put
+
+    % Handle PageMediaWeight (if specified)
+    pt_value /Weight known {
+      pt_value [/Weight /Value] 0 GetPTValueWithDefault exch pop
+      PGBParamDict /PtfMediaWeight 3 -1 roll put
+    }if
+  end
+} bind def
+
+/DoPageOutputQuality {
+  begin
+    pt_value [/Value] /Normal GetPTValueWithDefault exch pop
+    PGBParamDict /PtfOutputQuality 3 -1 roll put
+  end
+} bind def
+
+/DoPageOutputColor {
+  begin
+    % Handle /Value
+    pt_value /Value known {
+      PGBParamDict /PtfPageOutputColor pt_value /Value get put
+    }if
+
+    % Handle DeviceBitsPerPixel (if specified)
+    pt_value /DeviceBitsPerPixel known {
+      pt_value [/DeviceBitsPerPixel /Value] 24 GetPTValueWithDefault exch pop cvi
+      PGBParamDict /PtfOutputDeviceBPP 3 -1 roll put
+    }if
+
+    % Handle DriverBitsPerPixel (if specified)
+    pt_value /DriverBitsPerPixel known {
+      pt_value [/DriverBitsPerPixel /Value] 24 GetPTValueWithDefault exch pop cvi
+      PGBParamDict /PtfOutputDriverBPP 3 -1 roll put
+    }if
+  end
+} bind def
+
+/DoJobOutputOptimization {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+    PGBParamDict /PtfJobOutputOptimization 3 -1 roll put
+  end
+} bind def
+
+/DoPagePhotoPrintingIntent {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+    PGBParamDict /PtfPagePhotoPrintingIntent 3 -1 roll put
+  end
+} bind def
+
+/DoDocumentHolePunch {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+    % Ignore if JobHolePunch is already set
+    dup () eq
+    (%pagebuffer%) currentdevparams /PtfJobHolePunch () GetDictValueWithDefault () eq
+    or {
+      PGBParamDict /PtfDocumentHolePunch 3 -1 roll put
+    }{
+      pop
+      (%%[ Warning: Ignoring DocumentHolePunch as JobHolePunch is already set. ]%%) =
+    }ifelse
+  end
+} bind def
+
+/DoJobHolePunch {
+  begin
+    PGBParamDict /PtfJobHolePunch
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+    put
+  end
+} bind def
+
+/DoDocumentRollCut {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+    % Ignore if JobRollCutAtEndOfJob is already set
+    dup () eq
+    (%pagebuffer%) currentdevparams /PtfJobRollCutAtEndOfJob () GetDictValueWithDefault () eq
+    or {
+      PGBParamDict /PtfDocumentRollCut 3 -1 roll put
+    }{
+      pop
+      (%%[ Warning: Ignoring DocumentRollCut as JobRollCutAtEndOfJob is already set. ]%%) =
+    }ifelse
+  end
+} bind def
+
+/DoJobRollCutAtEndOfJob {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+    PGBParamDict /PtfJobRollCutAtEndOfJob 3 -1 roll put
+  end
+} bind def
+
+/DoDocumentStaple {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+    % Ignore if JobStapleAllDocuments is already set
+    dup () eq
+    (%pagebuffer%) currentdevparams /PtfJobStapleAllDocuments () GetDictValueWithDefault () eq
+    or {
+      dup () ne 1 index /None ne and {
+        PGBParamDict /PtfStapleAngle
+        pt_value /Angle << /Value 0 >> GetDictValueWithDefault /Value 0 GetDictValueWithDefault
+        put
+        PGBParamDict /PtfStapleSheetCapacity
+        pt_value /SheetCapacity << /Value 0 >> GetDictValueWithDefault /Value 0 GetDictValueWithDefault
+        put
+      }if
+
+      PGBParamDict /PtfDocumentStaple 3 -1 roll put
+    }{
+      pop
+      (%%[ Warning: Ignoring DocumentStaple as JobStapleAllDocuments is already set. ]%%) =
+    }ifelse
+  end
+} bind def
+
+/DoJobStapleAllDocuments {
+  begin
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+    dup () ne 1 index /None ne and {
+      PGBParamDict /PtfStapleAngle
+      pt_value /Angle << /Value 0 >> GetDictValueWithDefault /Value 0 GetDictValueWithDefault
+      put
+      PGBParamDict /PtfStapleSheetCapacity
+      pt_value /SheetCapacity << /Value 0 >> GetDictValueWithDefault /Value 0 GetDictValueWithDefault
+      put
+    }if
+
+    PGBParamDict /PtfJobStapleAllDocuments 3 -1 roll put
+  end
+} bind def
+
+/DoJobDeviceLanguage {
+  begin
+    pt_value [/Value] () GetPTValueWithDefault exch pop
+
+    dup () ne {
+      PGBParamDict /PtfJobDeviceLanguage_Level pt_value [/LanguageLevel /Value] false () GetPTValueWithDefault exch pop put
+      PGBParamDict /PtfJobDeviceLanguage_Encoding pt_value [/LanguageEncoding /Value] false () GetPTValueWithDefault exch pop put
+      PGBParamDict /PtfJobDeviceLanguage_Version pt_value [/LanguageVersion /Value] false () GetPTValueWithDefault exch pop put
+    }if
+
+    PGBParamDict /PtfJobDeviceLanguage 3 -1 roll put
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /DocumentHolePunch <<
+    /Action //DoDocumentHolePunch
+    /Default << /Value () >>
+  >>
+  /DocumentRollCut <<
+    /Action //DoDocumentRollCut
+    /Default << /Value () >>
+  >>
+  /DocumentStaple <<
+    /Action //DoDocumentStaple
+    /Default << /Value () >>
+  >>
+
+  /JobDeviceLanguage <<
+    /Action //DoJobDeviceLanguage
+    /Default << /Value () >>
+  >>
+  /JobHolePunch <<
+    /Action //DoJobHolePunch
+    /Default << /Value () >>
+  >>
+  /JobOutputOptimization <<
+    /Action //DoJobOutputOptimization
+    /Default << /Value /None >>
+  >>
+  /JobRollCutAtEndOfJob <<
+    /Action //DoJobRollCutAtEndOfJob
+    /Default << /Value () >>
+  >>
+  /JobStapleAllDocuments <<
+    /Action //DoJobStapleAllDocuments
+    /Default << /Value () >>
+  >>
+
+  /PageMediaType <<
+    /Action //DoPageMediaType
+    /Default <<
+      /Value /Plain
+      /Weight << /Value -1 >>
+    >>
+  >>
+  /PageOutputColor <<
+    /Action //DoPageOutputColor
+    /Default <<
+      /Value /Color
+      /DeviceBitsPerPixel << /Value 8 >>
+      /DriverBitsPerPixel << /Value 32 >>
+    >>
+  >>
+  /PageOutputQuality <<
+    /Action //DoPageOutputQuality
+    /Default << /Value /Normal >>
+  >>
+  /PagePhotoPrintingIntent <<
+    /Action //DoPagePhotoPrintingIntent
+    /Default << /Value /None >>
+  >>
+>>
+
+end

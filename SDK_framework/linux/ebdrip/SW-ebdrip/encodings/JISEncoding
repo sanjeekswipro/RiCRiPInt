@@ -1,0 +1,37 @@
+%!PS-Adobe-2.0 AdobeEncoding
+%%Title: JISEncoding
+%%Version: 002.000
+%%CreationDate: Sun Aug  7 12:57:05 PDT 1988
+% Copyright (c) 1984, '85, '86, '87, '88 Adobe Systems Incorporated.
+% All Rights Reserved.
+
+
+/JISEncoding
+256 array dup 0 1 255 {/.notdef put dup} for pop
+                     dup 16#21 /c21 put dup 16#22 /c22 put dup 16#23 /c23 put
+  dup 16#24 /c24 put dup 16#25 /c25 put dup 16#26 /c26 put dup 16#27 /c27 put
+  dup 16#28 /c28 put dup 16#29 /c29 put dup 16#2A /c2A put dup 16#2B /c2B put
+  dup 16#2C /c2C put dup 16#2D /c2D put dup 16#2E /c2E put dup 16#2F /c2F put
+  dup 16#30 /c30 put dup 16#31 /c31 put dup 16#32 /c32 put dup 16#33 /c33 put
+  dup 16#34 /c34 put dup 16#35 /c35 put dup 16#36 /c36 put dup 16#37 /c37 put
+  dup 16#38 /c38 put dup 16#39 /c39 put dup 16#3A /c3A put dup 16#3B /c3B put
+  dup 16#3C /c3C put dup 16#3D /c3D put dup 16#3E /c3E put dup 16#3F /c3F put
+  dup 16#40 /c40 put dup 16#41 /c41 put dup 16#42 /c42 put dup 16#43 /c43 put
+  dup 16#44 /c44 put dup 16#45 /c45 put dup 16#46 /c46 put dup 16#47 /c47 put
+  dup 16#48 /c48 put dup 16#49 /c49 put dup 16#4A /c4A put dup 16#4B /c4B put
+  dup 16#4C /c4C put dup 16#4D /c4D put dup 16#4E /c4E put dup 16#4F /c4F put
+  dup 16#50 /c50 put dup 16#51 /c51 put dup 16#52 /c52 put dup 16#53 /c53 put
+  dup 16#54 /c54 put dup 16#55 /c55 put dup 16#56 /c56 put dup 16#57 /c57 put
+  dup 16#58 /c58 put dup 16#59 /c59 put dup 16#5A /c5A put dup 16#5B /c5B put
+  dup 16#5C /c5C put dup 16#5D /c5D put dup 16#5E /c5E put dup 16#5F /c5F put
+  dup 16#60 /c60 put dup 16#61 /c61 put dup 16#62 /c62 put dup 16#63 /c63 put
+  dup 16#64 /c64 put dup 16#65 /c65 put dup 16#66 /c66 put dup 16#67 /c67 put
+  dup 16#68 /c68 put dup 16#69 /c69 put dup 16#6A /c6A put dup 16#6B /c6B put
+  dup 16#6C /c6C put dup 16#6D /c6D put dup 16#6E /c6E put dup 16#6F /c6F put
+  dup 16#70 /c70 put dup 16#71 /c71 put dup 16#72 /c72 put dup 16#73 /c73 put
+  dup 16#74 /c74 put dup 16#75 /c75 put dup 16#76 /c76 put dup 16#77 /c77 put
+  dup 16#78 /c78 put dup 16#79 /c79 put dup 16#7A /c7A put dup 16#7B /c7B put
+  dup 16#7C /c7C put dup 16#7D /c7D put dup 16#7E /c7E put
+/Encoding defineresource pop
+
+%%EndAdobeEncoding

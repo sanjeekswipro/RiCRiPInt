@@ -1,0 +1,526 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:n-up.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for N-Up printing.
+% Note: PageOrientation may be overridden when N-Up is active if
+% it will improve media saving coverage.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+currentglobal true setglobal
+
+% When this flag is true the page presentation direction will be automatically
+% adjusted when this N-Up code maximizes page coverage by rotating each source
+% page. When false presentation direction will be applied in relation to the
+% media.
+/OfficeStylePresentationDirection true def
+
+% Table to convert custom /PagesPerSheet PrintTicket settings to numerical
+% values.
+/NUpPPSList <<
+  /GG_GPD_1PPS   1
+  /GG_GPD_2PPS   2
+  /GG_GPD_4PPS   4
+  /GG_GPD_6PPS   6
+  /GG_GPD_8PPS   8
+  /GG_GPD_9PPS   9
+  /GG_GPD_16PPS  16
+>> def
+
+% Page tactics for use with N-Up, keyed off whether pages are being rotated.
+/PageTactic <<
+  false <<
+    /RightBottom /L2RT2B
+    /BottomRight /T2BL2R
+    /LeftBottom  /R2LT2B
+    /BottomLeft  /T2BR2L
+    /RightTop    /L2RB2T
+    /TopRight    /B2TL2R
+    /LeftTop     /R2LB2T
+    /TopLeft     /B2TR2L
+  >>
+  true <<
+    /RightBottom /B2TL2R
+    /BottomRight /L2RB2T
+    /LeftBottom  /T2BL2R
+    /BottomLeft  /L2RT2B
+    /RightTop    /B2TR2L
+    /TopRight    /R2LB2T
+    /LeftTop     /T2BR2L
+    /TopLeft     /R2LT2B
+  >>
+>> def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Return a scaler [0, 1.0] indicating how much of the media will be covered
+% by the source pages.
+%
+% pages_across pages_up swap_fixedpagedimensions CalculatePageCoverage num
+/CalculatePageCoverage {
+  1 dict begin
+    /SwapFixedPageDimenions exch def
+    /PagesUp exch def
+    /PagesAcross exch def
+
+    /TotalPageCount PagesUp PagesAcross mul def
+    /MediaWH PageSize def
+    /MediaArea MediaWH aload pop mul def
+    /PageWH FixedPageSize def
+
+    SwapFixedPageDimenions
+    <<
+      /Landscape null
+      /ReverseLandscape null
+    >> PageOrientation known
+    xor {
+      /PageWH PageWH aload pop exch 2 array astore def
+    }if
+
+    % DEBUG
+    % (PagesAcross: ) print PagesAcross ==
+    % (PagesUp: ) print PagesUp ==
+    % (Flipped FixedPage: ) print SwapFixedPageDimenions ==
+    % (Media: ) print MediaWH { 20 string cvs print ( ) print } forall (\n) print
+    % (Page: ) print PageWH { 20 string cvs print ( ) print } forall (\n) print
+
+    /MediaArea MediaWH aload pop mul def
+
+    % Calculate page scaling required to fit all pages on media
+    MediaWH 0 get
+    PageWH 0 get PagesAcross mul
+    div
+    MediaWH 1 get
+    PageWH 1 get PagesUp mul
+    div
+    % xscale yscale
+
+    % Get minimum page scale, clipped to a max of 1.0 (as we only shrink to fit)
+    2 copy gt { exch }if pop
+    /page_scale exch dup 1.0 gt { pop 1.0 }if def
+
+    /OnePageArea PageWH aload pop mul page_scale mul page_scale mul def
+    /AllPagesArea OnePageArea TotalPageCount mul def
+
+    % Calculate total page coverage (0=>Bad, 1=>Excellent)
+    AllPagesArea MediaArea div
+    % (Coverage: ) print dup ==
+  end
+} bind def
+
+% pages_per_sheet GetPagesAcross pages_across
+% Determine how many pages 'across' to place on the media when performing N-Up.
+/GetPagesAcross {
+  % Use heuristic to find value
+  dup sqrt ceiling
+  2 copy div ceiling 1 index mul
+  % N x1 m1
+
+  3 -1 roll
+  dup 2 div sqrt ceiling
+  dup 3 1 roll
+  div ceiling 1 index mul
+  % x1 m1 x2 m2
+
+  3 -1 roll gt {
+    % Use first calc
+    pop
+  }{
+    % Use second calc
+    exch pop
+  }ifelse
+  cvi
+} bind def
+
+/HqnImposeTrailer { } bind def
+
+% HqnImpose2 prefix procedure which ensures the page size set by setpagedevice
+% is applied when performing N-Up.  This is called by the HqnImpose2 procset
+% when SensePageDevice detects a modification.  We then check to see whether it
+% was the page size which was modified (held in /HqnPTFilmSize), and change the
+% MinWidth/MinHeight/MaxWidth/MaxHeight params accordingly.
+% We can't set these params when we call HqnInitImpose as the page size may
+% not be available.
+% We also use this code to configure the page tactic, as this information
+% can be influenced by whether the output is being rotated or not.
+/HqnImposeFilmSizePrefix {
+  % Configure the size of the HqnImpose2 film
+  userdict /HqnPTFilmSize 2 copy known {
+    get aload pop 2 copy
+    MaxHeight eq exch
+    MaxWidth eq and not
+    {
+      % New page size detected so update HqnImpose2 film
+      /MaxHeight exch def
+      /MaxWidth exch def
+      /MinWidth MaxWidth def
+      /MinHeight MaxHeight def
+    }{
+      % Page size was not changed
+      pop pop
+    }ifelse
+  }{
+    % Page size has not been set
+    pop pop
+  }ifelse
+
+  % Configure HqnImpose2 based on the most efficient combination of
+  % pages up/across and source page rotation.
+  userdict /HqnPTInternalState 2 copy known {
+    get begin
+      /TempPagesAcross PagesPerSheet  //GetPagesAcross exec def
+      /TempPagesUp PagesPerSheet TempPagesAcross div ceiling cvi def
+      /SwapUpAcross false def
+      /RotateSourcePages false def
+
+      MaxWidth 0 gt {
+        % Calculate coverage for each combination
+        /CoverageMatrix <<
+          % Key: Swap up/across values
+          false <<
+            % Key: Rotate source pages
+            false TempPagesAcross TempPagesUp 2 index //CalculatePageCoverage exec
+            true  TempPagesAcross TempPagesUp 2 index //CalculatePageCoverage exec
+          >>
+          true <<
+            % Key: Rotate source pages
+            false TempPagesUp TempPagesAcross 2 index //CalculatePageCoverage exec
+            true  TempPagesUp TempPagesAcross 2 index //CalculatePageCoverage exec
+          >>
+        >> def
+
+        % Find best coverage value
+        /BestCoverage 0.0 def
+        [ true false ] {
+          dup /IsSwapped exch def
+          CoverageMatrix exch get
+          [ true false ] {
+            dup /IsRotated exch def
+            1 index exch get
+            % Stack: coverage
+
+            dup BestCoverage ge {
+              /BestCoverage exch def
+              /SwapUpAcross IsSwapped def
+              /RotateSourcePages IsRotated def
+            }{
+              pop
+            }ifelse
+          }forall
+          pop
+        }forall
+
+        % Tidy up
+        [ /CoverageMatrix /BestCoverage /IsSwapped /IsRotated ] { currentdict exch undef }forall
+      }if
+
+      % Create dictionary to configure HqnImpose2
+      <<
+        SwapUpAcross {
+          /PagesAcross TempPagesUp
+          /PagesUp TempPagesAcross
+        }{
+          /PagesAcross TempPagesAcross
+          /PagesUp TempPagesUp
+        }ifelse
+        /Tactic //PageTactic //OfficeStylePresentationDirection { RotateSourcePages }{ RotateOutput }ifelse get PresentationDirection get
+        /Aspect RotateSourcePages RotateOutput xor { /Rotated }{ /Original }ifelse
+
+        /ExtraFlip RotateOutput RotateSourcePages not and
+      >>
+
+      [ /SwapUpAcross /RotateSourcePages /TempPagesUp /TempPagesAcross ] { currentdict exch undef }forall
+
+    end
+    { def }forall
+  }{
+    pop pop
+  }ifelse
+
+} bind def
+
+% A HqnImpose2 prefix procedure which adjusts the horizontal and vertical page
+% gutters in order to center each source page in its panel.
+/HqnImposeOffsetsPrefix {
+  % Check page size has been set
+  MaxWidth 0 gt
+  {
+    /MinGutterToApply 5.0 def
+
+    % Calculate the page scale here as ScaleX/ScaleY used by HqnImpose2 is not
+    % always initialised early enough for use here.
+    /LocScale
+    MaxWidth Aspect /Original eq { PageWidth }{ PageHeight }ifelse PagesAcross mul div
+    MaxHeight Aspect /Original eq { PageHeight }{ PageWidth }ifelse PagesUp mul div
+    2 copy gt { exch }if pop
+    dup 1.0 gt { pop 1.0 }if % Clip scale to 1.0
+    def
+
+    % Set the gutter values so whitespace surrounding the source page is
+    % distributed evenly.
+    /OptHGutter
+    MaxHeight LocScale div PagesUp Aspect /Original eq { PageHeight }{ PageWidth }ifelse mul sub PagesUp 1 add div
+    dup MinGutterToApply lt { pop 0.0 }if % Ignore very small gutters
+    def
+    /OptVGutter
+    MaxWidth LocScale div PagesAcross Aspect /Original eq { PageWidth }{ PageHeight }ifelse mul sub PagesAcross 1 add div
+    dup MinGutterToApply lt { pop 0.0 }if % Ignore very small gutters
+    def
+
+    currentdict /LocScale undef
+    currentdict /MinGutterToApply undef
+  }if
+} bind def
+
+% A single prefix procedure used when initializing HqnImpose2, allowing us to
+% chain user-defined prefix procedures together.
+/HqnImposePrefixGroup {
+  //HqnImposeFilmSizePrefix exec
+  //HqnImposeOffsetsPrefix exec
+} bind def
+
+setglobal
+
+% Calculate how many pages to put on the sheet.
+% This may increase the requested amount such that pages can be placed
+% on a 'x by y' grid.
+%
+% pages_per_sheet GetSupportedPagesPerSheet supported_pages_per_sheet
+/GetSupportedPagesPerSheet {
+  dup
+  dup //GetPagesAcross exec
+  dup 3 1 roll div ceiling cvi
+  mul
+
+  exch 1 index ne {
+    (%%[ Warning: Non-standard page count used in N-Up; Using ) print dup 8 string cvs print ( ]%%) =
+  }if
+} bind def
+
+% Called during EndPage, and the entry point to XPS PT handling of watermarks and
+% FrameLines etc.
+/XPSPageOverlay {
+   0 1 XPSPageOverlayProcs length 1 sub {
+      XPSPageOverlayProcs exch get
+      dup type /dicttype ne {
+         /XPSPageOverlay errordict /typecheck get exec
+      } if
+      begin
+      ImposeDebug {
+         (XPSPageOverlay: )print currentdict /Name known { Name }{ (Un-named) } ifelse ==
+      } if
+      Proc
+      end
+   } for
+} bind def
+
+% The supported values for FrameLine
+/FrameLineVals <<
+   /None    {}    % no-op
+   /SolidLine {
+      Enabled {
+         gsave
+         {}0 setdash
+         0 setgray
+         FrameLineWidth setlinewidth
+
+         % Draw FrameLine around the panel, taking into account the margin.
+         FrameLineMargin FrameLineMargin
+         PanelWidth FrameLineMargin 2 mul sub
+         PanelHeight FrameLineMargin 2 mul sub
+         rectstroke
+
+         grestore
+      }  {
+         (%%[ Warning: FrameLine will not be shown because PostScript is not enabled ]%%) =
+      } ifelse
+   } bind
+>> def
+
+% This procedure handles drawing the FrameLine on every page as required
+% It's called from XPSPageOverlay
+/FrameLineRecord <<
+   /Name (FrameLine)
+   /Enabled save mark
+      /GGSans /Font resourcestatus {
+        pop pop
+        { 1 setgray -10000 10000 moveto /GGSans 0.1 selectfont (a) show } stopped not
+      }{
+        false
+      }ifelse
+      {
+        % PS markup enabled
+        pop true exch
+      }{
+        % PS markup disabled
+        cleartomark false exch
+      }ifelse
+      restore
+
+   /Proc {
+      //FrameLineVals FrameLine
+      2 copy known { get exec }{
+         /FrameLine errordict /undefined get exec
+      } ifelse
+   } bind
+   /FrameLine null         % placeholder
+   /FrameLineWidth null    % placeholder
+   /FrameLineMargin null   % placeholder
+>> def
+
+% Generate the config that needs to be passed to HqnInitImpose to add a page
+% margin such that the FrameLine is visible on all sides of the page.
+%
+% The size of the margin is governed by FrameLineMargin.
+%
+% - AddFrameLineMargin config
+/AddFrameLineMargin {
+    /CropMarks true
+    /ShowWedges false       /ShowJobName false
+    /ShowProgressives false /ShowSepNames false
+    /ShowCropMarks false    /ShowRegisterMarks false
+    /Bleed 0
+    /CropSpace FrameLineMargin
+} bind def
+
+% impose_dict DoConfigureImposition -
+%
+% Configure imposition procset based on the /PagesPerSheet and /PresentationDirection
+% settings in impose_dict.
+/DoConfigureImposition {
+  begin
+    % Get FrameLine and associated values
+    /FrameLineWidth pt_value [/FrameLineWidth /Value] false 250.0 GetPTValueWithDefault exch pop micronTo72DPI def
+    /FrameLineMargin pt_value [/FrameLineMargin /Value] false 3000.0 GetPTValueWithDefault exch pop micronTo72DPI round def
+
+    % Store N-Up values for use in PrintTicket procset
+    //InternalState /PagesPerSheet PagesPerSheet //GetSupportedPagesPerSheet exec put
+
+    % Ignore a job level 1-up request (unless we want a FrameLine).
+    scope /Job ne
+    PagesPerSheet 1 gt or
+    FrameLine /None ne
+    or {
+      % Store /PagesPerSheet for use when duplexing
+      InternalState /PresentationDirection PresentationDirection put
+
+      InternalState
+      <<
+        /Job /UsingJobNUp
+        /Document /UsingDocumentNUp
+      >>
+      scope get true put
+
+      % Create dictionary to configure HqnImpose2
+      % Note: Further config options are specified in HqnImposePrefix.
+      <<
+        /Objective /NxN
+        /Prefix //HqnImposePrefixGroup
+        /Suffix /FixedSizeSheet
+        /OversizeStrategy /ScaleToFit
+        /OptHGutter 0
+        /OptVGutter 0
+        /MinHGutter 0
+        /MinVGutter 0
+        /HorCenter true
+        /VertCenter true
+        /Trailer //HqnImposeTrailer
+        /SheetSlop 0
+
+        % Configure frameline
+        FrameLine /None ne {
+          //AddFrameLineMargin exec
+
+          { /FrameLine /FrameLineWidth /FrameLineMargin }{ //FrameLineRecord exch dup load put } forall
+          /XPSPageOverlayProcs << 0 //FrameLineRecord >>
+          /PageOverlay //XPSPageOverlay
+        }if
+
+%        /DebugReport true
+      >> /HqnImpose2 /ProcSet findresource /HqnInitImpose get exec
+
+      % Flush the imposition media
+      /HqnImpose2 /ProcSet findresource /HqnFlushFilm get exec
+    }if
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/DoNUp {
+  begin
+    <<
+      % Get PagesPerSheet value
+      /PagesPerSheet pt_value [/PagesPerSheet /Value] 1 GetPTValueWithDefault exch pop
+
+      % Get PresentationDirection value
+      /PresentationDirection pt_value [/PresentationDirection /Value] /RightBottom GetPTValueWithDefault exch pop
+
+      % Get FrameLine value
+      /FrameLine pt_value [/FrameLine /Value] false /None GetPTValueWithDefault exch pop
+    >>
+    //DoConfigureImposition exec
+  end
+} bind def
+
+/DoJobNUpPagesPerSheet {
+  begin
+    <<
+      % Get PagesPerSheet value
+      /PagesPerSheet
+      //NUpPPSList
+      pt_value [/Value] /GG_GPD_1PPS GetPTValueWithDefault exch pop
+      get
+
+      % Get PresentationDirection value
+      /PresentationDirection RIPPrintTicket [/JobNUpPresentationOrder /Value] false /RightBottom GetPTValueWithDefault exch pop
+
+      % Get FrameLine value
+      /FrameLine
+      <<
+        /ON  /SolidLine
+        /OFF /None
+      >>
+      RIPPrintTicket [/JobNUpFrameLine /Value] false /OFF GetPTValueWithDefault exch pop
+      get
+    >>
+    //DoConfigureImposition exec
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /JobNUpAllDocumentsContiguously << /Action //DoNUp >>
+  /JobNUp                         << /Action //DoNUp >> % Support deprecated keyword
+  /JobNUpPagesPerSheet            << /Action //DoJobNUpPagesPerSheet >> % Support custom keyword
+  /DocumentNUp                    << /Action //DoNUp >>
+>>
+
+end

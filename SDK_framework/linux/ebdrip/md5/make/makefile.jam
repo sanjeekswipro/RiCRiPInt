@@ -1,0 +1,18 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for MD5
+#
+# $HopeName: HQNmd5!make:makefile.jam(EBDSDK_P.1) $
+#
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    DependsOn all : md5 ;
+
+    C-IncludeExportDirectories standard : .. ;
+
+    Library md5 : md5.c ;
+
+# Log stripped

@@ -1,0 +1,36 @@
+/PCSymCharStrings
+
+118 dict dup begin
+  /.notdef 0 def     /c01 1 def         /c02 2 def         /c03 3 def
+  /c04 4 def         /c05 5 def         /c06 6 def         /c07 7 def
+  /c08 8 def         /c09 9 def         /c0A 10 def        /c0B 11 def
+  /c0C 12 def        /c0D 13 def        /c0E 14 def        /c0F 15 def
+  /c10 16 def        /c11 17 def        /c12 18 def        /c13 19 def
+  /c14 20 def        /c15 21 def        /c16 22 def        /c17 23 def
+  /c18 24 def        /c19 25 def        /c1A 26 def        /c1B 27 def
+  /c1C 28 def        /c1D 29 def        /c1E 30 def        /c1F 31 def
+  /c20 32 def        /c21 33 def        /c22 34 def        /c23 35 def
+  /c24 36 def        /c25 37 def        /c26 38 def        /c27 39 def
+  /c28 40 def        /c29 41 def        /c2A 42 def        /c2B 43 def
+  /c2C 44 def        /c2D 45 def        /c2E 46 def        /c2F 47 def
+  /c30 48 def        /c31 49 def        /c32 50 def        /c33 51 def
+  /c34 52 def        /c35 53 def        /c36 54 def        /c37 55 def
+  /c38 56 def        /c39 57 def        /c3A 58 def        /c3B 59 def
+  /c3C 60 def        /c3D 61 def        /c3E 62 def        /c3F 63 def
+  /c40 64 def        /c41 65 def        /c42 66 def        /c43 67 def
+  /c44 68 def        /c45 69 def        /c46 70 def        /c47 71 def
+  /c48 72 def        /c49 73 def        /c4A 74 def        /c4B 75 def
+  /c4C 76 def        /c4D 77 def        /c4E 78 def        /c4F 79 def
+  /c50 80 def        /c51 81 def        /c52 82 def        /c53 83 def
+  /c54 84 def        /c55 85 def        /c56 86 def        /c57 87 def
+  /c58 88 def        /c59 89 def        /c5A 90 def        /c5B 91 def
+  /c5C 92 def        /c5D 93 def        /c5E 94 def        /c61 95 def
+  /c62 96 def        /c63 97 def        /c64 98 def        /c65 99 def
+  /c66 100 def       /c67 101 def       /c68 102 def       /c69 103 def
+  /c6A 104 def       /c6B 105 def       /c6C 106 def       /c6D 107 def
+  /c6E 108 def       /c6F 109 def       /c70 110 def       /c71 111 def
+  /c72 112 def       /c73 113 def       /c74 114 def       /c75 115 def
+  /c76 116 def       /c77 117 def
+
+end
+/CharStrings defineresource pop

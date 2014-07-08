@@ -1,0 +1,213 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# IDL compilation rules.
+#
+# $HopeName: HQNjambits!comprule:idl.jam(trunk.29) $
+#
+
+##############################
+# Low-level updating actions #
+##############################
+
+# A rule for executing the idl2cpp compiler on gristed source and target
+    rule Idl-Idl2Cpp { CheckGristed $(>) ; FloatingDepends $(<) ; DEPENDS $(<) : $(>) ;
+        local Directory ; MakePath Directory : $(CurrentPath) $(Idl2CppOutput-Directory) ;
+        DeclareExport C-ExportDirectories : $(Directory) ;
+        DEPENDS $(<) : $(Directory) ;
+
+        Dir     on $(<) = $(Directory) ;
+        ENV     on $(<) = $(Idl2Cpp-Compiler_Environment) ;
+        I2C     on $(<) = $(Idl2Cpp-Compiler) $(Idl2Cpp-Compiler_Arguments) ;
+        Defines on $(<) = $(Idl-Defines) ;
+        IncDirs on $(<) = $(Idl-IncludeDirectories) ;
+        SysDirs on $(<) = $(Idl-SystemIncludeDirectories) ;
+        Meta-I  on $(<) = $(Meta-IncludedExportDirectories) ;
+    }
+    actions quietly Idl-Idl2Cpp {
+echo ...GENERATING C++ FROM $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(CopyFile) $(>) $(Dir)$(FS)$(>:BS)
+$(ChDir) $(Dir)
+$(I2C) -D$(Defines) -I$($(Meta-I)-Idl-ExportDirectories:R=$(BUILDROOT)) -I$(IncDirs:R=$(BUILDROOT)) -I$(SysDirs) $(>:BS) && $(Erase) $(>:BS)
+    }
+
+# A rule for executing the idl2java compiler on gristed source and target
+    rule Idl-Idl2Java { CheckGristed $(>) ; FloatingDepends $(<) ; DEPENDS $(<) : $(>) ;
+        ENV     on $(<) = $(Idl2Java-Compiler_Environment) ;
+        I2J     on $(<) = $(Idl2Java-Compiler) $(Idl2Java-Compiler_Arguments) ;
+        -o      on $(<) = $(Idl2Java-Compiler_OutputDir=) ;
+        incs    on $(<) = $(Idl2Java-Compiler_IncludeDirsFollow) ;
+        -I      on $(<) = $(Idl2Java-Compiler_AddIncludeDir) ;
+        IncDirs on $(<) = $(Idl-IncludeDirectories) $(Idl-SystemIncludeDirectories) ;
+        Meta-I  on $(<) = $(Meta-IncludedExportDirectories) ;
+        -c      on $(<) = $(Idl2Java-Compiler_InputFile=) ;
+
+        if $(Idl2Java-Postprocessor) {
+            local PP_ ;
+            Join PP_ : " " : "&&" $(Idl2Java-Postprocessor) $(Idl2Java-Postprocessor_Arguments) "" ;
+            PP_ on $(<) = $(PP_) ;
+        }
+    }
+    actions quietly Idl-Idl2Java {
+echo ...GENERATING JAVA FROM $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Erase) $(<:S=) $(DiscardStdErr)
+$(MkDir) $(<:S=)
+$(I2J) $(-o)$(<:S=) $(incs) $(-I)$($(Meta-I)-Idl-ExportDirectories) $(-I)$(IncDirs) $(-c)$(>) $(PP_)$(<:S=) && $(FileutilRune) -e "Fileutil::Find" -- -t f -r ".java$" $(<:S=) > $(<)
+$(CopyTree) $(<:S=) $(BUILDROOT)$(FS)idl_output
+    }
+
+
+# A rule for executing the midl compiler on gristed source and target
+    rule Idl-Midl { CheckGristed $(>) ; FloatingDepends $(<) ; DEPENDS $(<) : $(>) ;
+        local Directory ; MakePath Directory : $(CurrentPath) $(MidlOutput-Directory) ;
+        DeclareExport C-ExportDirectories : $(Directory) ;
+        DEPENDS $(<) : $(Directory) ;
+
+        Dir     on $(<) = $(Directory) ;
+        ENV     on $(<) = $(Midl-Compiler_Environment) ;
+        midl    on $(<) = $(Midl-Compiler) $(Midl-Compiler_Arguments) ;
+        Defines on $(<) = $(Midl-Defines) ;
+        IncDirs on $(<) = $(Midl-IncludeDirectories) ;
+        SysDirs on $(<) = $(Midl-SystemIncludeDirectories) ;
+        Meta-I  on $(<) = $(Meta-IncludedExportDirectories) ;
+        -I      on $(<) = $(Midl-Compiler_AddIncludeDir) ;
+        -o      on $(<) = $(Midl-Compiler_OutputDir=) ;
+    }
+    actions Idl-Midl {
+echo ...COMPILING $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(mkdir) $(Dir)
+"$(midl)" $(>)  $(-o)$(Dir) $(-I)$($(Meta-I)-Idl-ExportDirectories:R=$(BUILDROOT))
+    }
+
+
+
+#############
+# Interface #
+#############
+
+# A rule for compiling IDL to C++
+#
+#   Idl-Idl2Cpp-Compile <source> ... [ : <path> ... ] ;
+#
+    rule Idl-Idl2Cpp-Compile {
+        if Idl2Cpp in $(EnabledCompilers) {
+            local i ; for i in $(<) {
+                local Cpp ; LocateGeneric Cpp : $(i:S=) :      : Idl2CppOutput : LOCATE ;
+                local Hh  ; LocateGeneric Hh  : $(i:S=) :      : Idl2HhOutput  : LOCATE ;
+                local Idl ; LocateGeneric Idl : $(i:S=) : $(2) : Idl           : SEARCH ;
+            
+            # Make it look like everything that depends on either of the .cpp or .hh
+            # files also depends on the other.  This avoids the warning about
+            # independent targets showing up.
+                INCLUDES $(Cpp) : $(Hh) ; INCLUDES $(Hh) : $(Cpp) ;
+
+                GeneratedIncludable $(Hh) ;
+
+                AddUnique Idl-$(CurrentPath) : $(Idl) ;
+
+                Idl-Dependencies $(Idl) ;
+                Idl-Idl2Cpp $(Cpp) $(Hh) : $(Idl) ;
+                CleanDir $(CurrentPath)$(FS)obj ;
+            }
+        }
+    }
+
+
+## new copy rule for IDL generated C++ - don't update access times for copies
+#
+    rule CopyIDLDirs { CheckGristed $(<) ; NOTFILE $(<) ; ALWAYS $(<) ; DEPENDS $(<) : $(>) ;
+        DestDirectory on $(<) = $(3) ;
+    }
+    actions quietly CopyIDLDirs {
+$(FileutilRune) -e "Fileutil::Copy" -- -tmns $(>) "$(DestDirectory)"
+    }
+
+# A rule for compiling IDL to Java
+#
+#   Idl-Idl2Java-Compile <source> ... [ : <path> ... ] ;
+#
+    rule Idl-Idl2Java-Compile {
+        if Idl2Java in $(EnabledCompilers) {
+            local Dir = $(CurrentPath)$(FS)$(Idl2JavaOutput-Directory) ;
+            local i ; for i in $(<) {
+                local Idl ; LocateGeneric Idl : $(i:S=) : $(2) : Idl : SEARCH ;
+                local Target ; MakeGristed Target : $(i:S=.src) : $(CurrentPath) ;
+
+                AddUnique Idl-$(CurrentPath) : $(Idl) ;
+
+                Idl-Dependencies $(Idl) ;
+                DirectoryFor $(Target) : $(Dir) ;
+                Idl-Idl2Java $(Target) : $(Idl) ;
+                CleanDir $(CurrentPath)$(FS)obj $(BUILDROOT)$(FS)idl_output ;
+            }
+        }
+    }
+
+
+
+# Add export include directories (and idl output directories to C-
+# IncludeDirectories) (now just a wrapper to IncludeExportDirectories)
+#
+#   Idl-IncludeExportDirectories <dir> ... [ : <path> ... [ : <inheritance> ] ] ;
+#
+    rule Idl-IncludeExportDirectories {
+        local Inheritance = $(3) ; Inheritance ?= Local ;
+        IncludeExportDirectories $(Inheritance) : $(1) : $(2) : $(4) ;
+    }
+
+
+# A rule for compiling MIDL to C++
+#
+#   Idl-Midl-Compile <source> ... [ : <path> ... ] ;
+#
+    rule Idl-Midl-Compile {
+        if Midl in $(EnabledCompilers) {
+            local Dir = $(CurrentPath)$(FS)$(MidlOutput-Directory) ;
+
+            local i ; for i in $(<) {
+                local Cpp  ; LocateGeneric Cpp : $(i:S=) :      : MidlOutput : LOCATE ;
+                local Hh   ; LocateGeneric Hh  : $(i:S=) :      : MidlHhOutput  : LOCATE ;
+                local Midl ; LocateGeneric Midl : $(i:S=) : $(2) : Midl           : SEARCH ;
+
+            # Make it look like everything that depends on either of the .cpp or .hh
+            # files also depends on the other.  This avoids the warning about
+            # independent targets showing up.
+                INCLUDES $(Cpp) : $(Hh) ; INCLUDES $(Hh) : $(Cpp) ;
+
+                GeneratedIncludable $(Hh) ;
+ 
+                AddUnique Midl-$(CurrentPath) : $(Midl) ;
+
+                Midl-Dependencies $(Midl) ;
+#                DirectoryFor $(Target) : $(Dir) ;
+                Idl-Midl $(Cpp) $(Hh) : $(Midl) ;
+                CleanDir $(CurrentPath)$(FS)obj ;
+
+
+            }
+        }
+    }
+
+
+    rule Midl-Dependencies {
+        IncludePath     on $(<) = $(C-IncludeDirectories) ;
+        Midl-IncludePath on $(<) = $(Midl-IncludeDirectories) ;
+        if $(DoFileParsing) { HDRRULE on $(<) = _Midl-Depends-Rule ; }
+        _C-Depends-Style $(<) ;
+    }
+
+    rule _Midl-Depends-Rule {
+        _C-Depends-Rule $(<:S=.h) : $(>:S=.h) ;
+
+        _Cache-Depends C : $(<) : $(>) : $(Midl-IncludePath) : $(MetaIncludePath) : Midl-ExportDirectories ;
+
+        local i ; for i in DependsFile HDRRULE HDRSCAN IncludePath MetaIncludePath Midl-IncludePath {
+            $(i) on $(Included) = $($(i)) ;
+        }
+    }
+
+
+# Log stripped

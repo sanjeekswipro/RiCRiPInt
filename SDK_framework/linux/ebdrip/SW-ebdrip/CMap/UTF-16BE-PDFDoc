@@ -1,0 +1,88 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%IncludeResource: ProcSet (CIDInit)
+%%BeginResource: CMap (Unicode-PDFDoc)
+%%Title: (UTF-16BE-PDFDoc Harlequin Unicode 0)
+%%Version: 1.000
+%%EndComments
+
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Harlequin) def
+  /Ordering (Unicode) def
+  /Supplement 0 def
+end def
+
+/CMapName /UTF-16BE-PDFDoc def
+/CMapVersion 1.000 def
+/CMapType 1 def
+
+% /XUID [] def
+
+/WMode 0 def
+
+1 begincodespacerange
+  <00> <FF>
+endcodespacerange
+
+2 beginnotdefrange
+<00> <17> 32
+<9F> <9F> 32
+endnotdefrange
+
+% The 16#... encoding is not strictly kosher, but will work
+% in the context of a Harlequin RIP, and is much easier to 
+% create and maintain.
+37 begincidrange
+<18> <18> 16#02D8
+<19> <19> 16#02C7
+<1A> <1A> 16#02C6
+<1B> <1B> 16#02D9
+<1C> <1C> 16#02BA
+<1D> <1D> 16#02DB
+<1E> <1E> 16#02DA
+<1F> <1F> 16#02DC
+<20> <7E> 16#0020
+<7F> <7F> 16#2022
+<80> <80> 16#2022
+<81> <82> 16#2020
+<83> <83> 16#2026
+<84> <84> 16#2014
+<85> <85> 16#2013
+<86> <86> 16#0192
+<87> <87> 16#2044
+<88> <89> 16#2039
+<8A> <8A> 16#2212
+<8B> <8B> 16#2030
+<8C> <8C> 16#201E
+<8D> <8E> 16#201C
+<8F> <91> 16#2018
+<92> <92> 16#2122
+<93> <94> 16#FB01
+<95> <95> 16#0141
+<96> <96> 16#0152
+<97> <97> 16#0160
+<98> <98> 16#0178
+<99> <99> 16#017D
+<9A> <9A> 16#0131
+<9B> <9B> 16#0142
+<9C> <9C> 16#0153
+<9D> <9D> 16#0161
+<9E> <9E> 16#017E
+<A0> <A0> 16#20AC
+<A1> <FF> 16#00A1
+endcidrange
+
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

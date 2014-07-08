@@ -1,0 +1,65 @@
+
+
+/HankakuCharStrings
+
+223 dict dup begin
+
+  /.notdef 0 def     /c20 1 def         /c21 2 def         /c22 3 def
+  /c23 4 def         /c24 5 def         /c25 6 def         /c26 7 def
+  /c27 8 def         /c28 9 def         /c29 10 def        /c2A 11 def
+  /c2B 12 def        /c2C 13 def        /c2D 14 def        /c2E 15 def
+  /c2F 16 def        /c30 17 def        /c31 18 def        /c32 19 def
+  /c33 20 def        /c34 21 def        /c35 22 def        /c36 23 def
+  /c37 24 def        /c38 25 def        /c39 26 def        /c3A 27 def
+  /c3B 28 def        /c3C 29 def        /c3D 30 def        /c3E 31 def
+  /c3F 32 def        /c40 33 def        /c41 34 def        /c42 35 def
+  /c43 36 def        /c44 37 def        /c45 38 def        /c46 39 def
+  /c47 40 def        /c48 41 def        /c49 42 def        /c4A 43 def
+  /c4B 44 def        /c4C 45 def        /c4D 46 def        /c4E 47 def
+  /c4F 48 def        /c50 49 def        /c51 50 def        /c52 51 def
+  /c53 52 def        /c54 53 def        /c55 54 def        /c56 55 def
+  /c57 56 def        /c58 57 def        /c59 58 def        /c5A 59 def
+  /c5B 60 def        /c5C 61 def        /c5D 62 def        /c5E 63 def
+  /c5F 64 def        /c60 65 def        /c61 66 def        /c62 67 def
+  /c63 68 def        /c64 69 def        /c65 70 def        /c66 71 def
+  /c67 72 def        /c68 73 def        /c69 74 def        /c6A 75 def
+  /c6B 76 def        /c6C 77 def        /c6D 78 def        /c6E 79 def
+  /c6F 80 def        /c70 81 def        /c71 82 def        /c72 83 def
+  /c73 84 def        /c74 85 def        /c75 86 def        /c76 87 def
+  /c77 88 def        /c78 89 def        /c79 90 def        /c7A 91 def
+  /c7B 92 def        /c7C 93 def        /c7D 94 def        /c7E 95 def
+  /c81 96 def        /c82 97 def        /c83 98 def        /c84 99 def
+  /c85 100 def       /c86 101 def       /c87 102 def       /c88 103 def
+  /c89 104 def       /c8A 105 def       /c8B 106 def       /c8C 107 def
+  /c8D 108 def       /c8E 109 def       /c8F 110 def       /c90 111 def
+  /c91 112 def       /c92 113 def       /c93 114 def       /c94 115 def
+  /c95 116 def       /c96 117 def       /c97 118 def       /c98 119 def
+  /c99 120 def       /c9A 121 def       /c9B 122 def       /c9C 123 def
+  /c9D 124 def       /c9E 125 def       /c9F 126 def       /cA1 127 def
+  /cA2 128 def       /cA3 129 def       /cA4 130 def       /cA5 131 def
+  /cA6 132 def       /cA7 133 def       /cA8 134 def       /cA9 135 def
+  /cAA 136 def       /cAB 137 def       /cAC 138 def       /cAD 139 def
+  /cAE 140 def       /cAF 141 def       /cB0 142 def       /cB1 143 def
+  /cB2 144 def       /cB3 145 def       /cB4 146 def       /cB5 147 def
+  /cB6 148 def       /cB7 149 def       /cB8 150 def       /cB9 151 def
+  /cBA 152 def       /cBB 153 def       /cBC 154 def       /cBD 155 def
+  /cBE 156 def       /cBF 157 def       /cC0 158 def       /cC1 159 def
+  /cC2 160 def       /cC3 161 def       /cC4 162 def       /cC5 163 def
+  /cC6 164 def       /cC7 165 def       /cC8 166 def       /cC9 167 def
+  /cCA 168 def       /cCB 169 def       /cCC 170 def       /cCD 171 def
+  /cCE 172 def       /cCF 173 def       /cD0 174 def       /cD1 175 def
+  /cD2 176 def       /cD3 177 def       /cD4 178 def       /cD5 179 def
+  /cD6 180 def       /cD7 181 def       /cD8 182 def       /cD9 183 def
+  /cDA 184 def       /cDB 185 def       /cDC 186 def       /cDD 187 def
+  /cDE 188 def       /cDF 189 def       /cE0 190 def       /cE1 191 def
+  /cE2 192 def       /cE3 193 def       /cE4 194 def       /cE5 195 def
+  /cE6 196 def       /cE7 197 def       /cE8 198 def       /cE9 199 def
+  /cEA 200 def       /cEB 201 def       /cEC 202 def       /cED 203 def
+  /cEE 204 def       /cEF 205 def       /cF0 206 def       /cF1 207 def
+  /cF2 208 def       /cF3 209 def       /cF4 210 def       /cF5 211 def
+  /cF6 212 def       /cF7 213 def       /cF8 214 def       /cF9 215 def
+  /cFA 216 def       /cFB 217 def       /cFC 218 def       /cFD 219 def
+  /cFE 220 def       /cFF 221 def       /zeroslash 222 def
+
+end
+/CharStrings defineresource pop

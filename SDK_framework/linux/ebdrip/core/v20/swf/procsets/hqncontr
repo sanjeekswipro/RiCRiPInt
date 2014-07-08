@@ -1,0 +1,1067 @@
+%!PS-Adobe-3.0
+%%Title: HqnControl
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sun, Aug 24, 1997
+% Copyright (c) Global Graphics Software Ltd 1997-2011 All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.13.2.1.1.1 $
+%%EndComments
+%%BeginProcSet: (HqnControl) 1 0
+
+% $HopeName: SWv20!swf:procsets:hqncontr(EBDSDK_P.1) $
+
+currentglobal false setglobal
+
+/HqnInputTypes /ProcSet findresource
+dup begin
+
+userdict /HqnControlDict 40 dict put
+HqnControlDict begin
+
+/InputTypesProcset exch def
+
+/globalness exch def
+
+/ControlDebug false def
+
+/InLoad false def
+
+/stderr (%stderr%)(w)file def
+
+/procsetversion ($Revision: 1.13.2.1.1.1 $) 11 1 index length 13 sub getinterval def
+
+save
+% UVM (Loading PostScript language control API v%s - Copyright (c) 2004-%d Global Graphics Software Ltd. All Rights Reserved.\n)
+//stderr dup (Loading PostScript language control API v) writestring
+dup procsetversion writestring
+( - Copyright (c) 2004-2005 Global Graphics Software Ltd. All Rights Reserved.\n) writestring
+restore
+
+/LayeredOptionList null def
+/ExecType /auto def
+/SetupBase (Config/Page Setups/) def
+/buffer 8196 string def
+/percent (%)0 get def
+
+/ExecChannel null def
+/ForceType null def
+/TypeOrder null def
+
+% Execution procsets for file types not included in main InputTypes.
+% These file types MUST be manually specified - they cannot be
+% auto-detected.
+% Use AddExecType to extend this list - replacing the directory will NOT work.
+% Each value must be a procedure:
+  % stack:
+  %     inputfile
+  % return: nothing
+/ExecTypes <<
+
+  /PCL4 { /PCLDecode filter cvx exec } bind
+
+  /Epson { /EPSONDecode filter cvx exec } bind
+
+  /HPGL { /HPGLDecode filter cvx exec } bind
+
+>> def
+
+% Execution procsets for file types not included in main InputTypes, or
+% replacements for those.
+% Unlike types in ExecTypes these file types can be auto-detected.
+% The value of each key should be an array of two procedures.
+% For the first:
+  % on the stack:
+  %     filename inputfile
+  % return:
+  %     filename inputfile bool
+  % bool is true if file type has been positively identified
+  % The procedure may amend inputfile, but ONLY if it has been identified
+  %   as matching this file type.
+  % Don't forget to reset the file position to start of file if you move it.
+  % If the procedure does any defines then it must explicitly put to a known
+  %   writeable dictionary, or do so inside a dictionary it's created itself.
+% For the second:
+  % on the stack:
+  %     inputfile
+  % return: nothing.
+  % The simplest example would be "{ exec } bind"
+% Use AddAutoExecType to extend this list - replacing the directory will NOT work.
+/AutoExecTypes 2 dict def
+/AutoExecSelected null def
+
+/typeInternals <<
+  /Password 0
+  /DeviceType 0
+  /Prefix null
+  /Enable true
+  /SearchOrder -1
+>> def
+/typeInternals {
+  /Command exch def
+
+  statusdict begin softwareiomode end 1 eq {
+    % Can't run ExecFile from the executive.
+    $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+    /errorinfo [ null (Executive) ] put
+    Command errordict /invalidaccess get exec
+  } if
+
+  % filename
+
+  % Mount device if required
+  dup 0 get //percent eq {
+    dup 1 1 index length 1 sub getinterval
+    (%) search {
+      3 1 roll pop pop length 2 add
+      % filename devnamelen
+      1 index 0 3 -1 roll getinterval
+      dup devstatus {
+        9 { pop } repeat
+      } {
+        dup devmount pop
+        //typeInternals
+        dup /Prefix 3 index put
+        setdevparams
+      } ifelse
+    }   {
+      Command errordict /undefinedfilename get exec
+    } ifelse
+  } if
+
+  statusdict begin
+
+    % just in case ...
+    0 setsoftwareiomode
+    /AutoExecSelected null store
+
+    ExecType /auto eq {
+      % first try AutoExecTypes
+      % stack: filename
+      dup //r& file
+      % Save the file away in internaldict for future reference
+      1183615869 internaldict /fileObject 2 index put
+
+      /FFile 1 index def
+
+      //AutoExecTypes {
+        /AutoExecSelected 3 -1 roll store
+        0 get exec {
+          % If a type has been added to autoexectypes to override a built in
+          % implementation for the same type, and if the new one does not
+          % recognise a file as being that type, whilst ours does, then we must
+          % continue to execute using the built-in one.
+          /ExecType /autolist store
+          1183615869 internaldict /fileType AutoExecSelected put
+          exit
+        } if
+        % In case the test had to close and re-open the file again.
+      } forall
+
+      ExecType /auto eq {
+        % now use the standard InputTypes
+        pop     % file from testing AutoFileTypes
+        //InputTypesProcset begin
+
+        mark
+        TypeOrder null ne {
+          TypeOrder aload pop
+        }       {
+          /PS % must be first (i.e. checked last)
+          //InputTypes {
+            pop % procedure
+            % /PS MUST be first, and those in /FirstTypesToCheck must be last
+            dup /PS eq
+            //FirstTypesToCheck  {
+              2 index eq or
+            }forall
+            { pop } if
+          } forall
+          % Finally add the /FirstTypesToCheck ones (last in the array is tested first)
+          //FirstTypesToCheck aload pop
+        } ifelse
+        1183615869 internaldict /fileObject get closefile
+        //openreadfile exec
+        end     % HqnInputTypes
+        /ExecType 1183615869 internaldict /fileType get store
+      } if
+    }   {
+      dup (r) file
+      % Save the file away in internaldict for future reference
+      1183615869 internaldict /fileObject 2 index put
+
+      % check ExecType is suitable
+      % first look in AutoExecTypes
+      //AutoExecTypes ExecType 2 copy known {
+        /AutoExecSelected 1 index store
+        get 0 get exec dup {
+          /ExecType /autolist store
+          1183615869 internaldict /fileType AutoExecSelected put
+        } if
+        not
+      } { pop pop true } ifelse
+        {
+        % now try the built-in types if not in AutoExecTypes, or failed to verify
+        //InputTypesProcset begin
+          //InputTypes ExecType 2 copy
+
+          known {
+            get exec
+            not {
+              Command errordict /invalidaccess get exec
+            } if
+          }     {
+            % act if was in AutoExecTypes but didn't match
+            AutoExecSelected null ne {
+              Command errordict /invalidaccess get exec
+            } if
+          } ifelse
+
+        end             % the procset
+      } if
+      1183615869 internaldict /fileType ExecType put
+
+      exch pop  % the file name
+    } ifelse
+
+  end           % statusdict
+} bind def
+
+/SinglePageRange {
+  % type array
+  dup length 1 eq {
+    0 get
+    dup type /integertype eq {
+      1 ne
+    }   {
+      dup length 1 sub get
+      1 ne
+    } ifelse
+  }     {
+    pop
+    true
+  } ifelse
+    {
+    //stderr dup (WARNING: ) writestring
+    dup 3 -1 roll writestring
+    ( files are single pages - invalid PageRange ignored\n) writestring
+  } { pop } ifelse
+} bind def
+
+/PSinternals {
+  globaldict begin
+
+  HqnRange get dup type /integertype eq {
+    dup
+  }     {
+    dup length 1 eq {
+      0 get 999999      % ... end of file ...
+    }   {
+      aload pop
+    } ifelse
+  } ifelse
+  /HqnRangeEnd exch def
+  /HqnRangeStart exch def
+
+  /HqnDontPrint HqnRangeStart HqnPageNumber gt def
+
+  end
+} bind def
+
+/showpageinternals {
+  globaldict /HqnPageNumber 2 copy get 1 add put
+  HqnPageNumber HqnRangeStart eq {
+    globaldict /HqnDontPrint false put
+  }     {
+    HqnPageNumber HqnRangeEnd gt {
+      % next range (if there is one)
+      globaldict /HqnRange 2 copy get 1 add put
+      //HqnControlDict /PageRange get
+      dup length HqnRange gt {
+        % Yes, there's another range
+        //PSinternals exec
+      } {
+        % Nope, that's the lot
+        pop
+
+        % skip to the very end of the underlying file for a clean close
+        {
+          currentfile //buffer readstring
+          exch pop
+          not { exit } if
+        } loop
+        /HqnControlClose errordict /unregistered get exec
+      } ifelse
+    } if
+  } ifelse
+} bind def
+
+% PageRange handlers for specific file types. If a file type is not included in
+% this list then it will use the /PS code
+% The procedures are called with the PageRange array on the op stack, and they
+% are expected to consume it
+% To add new file types to this list, use AddPageRange.
+/ExecPageRange 6 dict begin
+
+  /PDF <<
+    /PageRange null
+  >> def
+  /PDF {
+    //PDF
+    dup /PageRange 4 -1 roll put
+    setpdfparams
+  } bind def
+
+  /TIFF {
+    % TIFF are single page formats
+    (TIFF) exch //SinglePageRange exec
+  } bind def
+
+  /JFIF {
+    % JPEG is a single page format
+    (JPEG & JFIF) exch //SinglePageRange exec
+  } bind def
+
+  /PS   {
+    globaldict begin
+    /HqnRange 0 def
+    /HqnPageNumber 1 def
+    end
+
+    //PSinternals exec
+
+    % If we use shadowing then calibration will fail, and so will
+    % some imposition.
+    userdict /showpage {
+      HqnDontPrint {
+        erasepage
+        initgraphics
+      } {
+        showpage
+      } ifelse
+      //showpageinternals exec
+    } bind put
+    userdict /copypage {
+      HqnDontPrint {
+        systemdict /languagelevel get 3 ge {
+          erasepage initgraphics
+        } if
+      } {
+        copypage
+      } ifelse
+      //showpageinternals exec
+    } bind put
+  } bind def
+
+currentdict end def
+
+% This dictionary defines how passwords may be applied to specific file
+% types. If a file type is not present here and a password is supplied
+% then a warning will be emitted and the password will not be used.
+% To extend this list use AddPassword
+/ExecPasswords 2 dict begin
+
+  /PDF <<
+    /UserPasswords null
+  >> def
+  /PDF {
+    //PDF
+    dup /UserPasswords 4 -1 roll put
+    setpdfparams
+  } bind def
+
+currentdict end def
+
+/r& (r&) def
+
+% Used for typechecking keys to ExecFile
+/ExecParams <<
+  /PageRange    << /arraytype dup /packedarraytype dup >>
+  /ForceType    << /booleantype dup >>
+  /Password     <<
+    /stringtype dup
+    /arraytype dup
+    /packedarraytype dup
+    /integertype dup
+    /nametype dup
+    /realtype dup
+  >>
+  /TypeOrder    << /arraytype dup /packedarraytype dup >>
+>> def
+/CheckParams <<
+>> def
+
+/PLSfile (%fs%PluginMisc/PluginLoadSetup) def
+
+/CarryOver [ [ statusdict /ForDSC ][ statusdict /TitleDSC ][ userdict /TitleString ] [ statusdict /jobname ] ] def
+/ClearVals [ [ statusdict /ForDSC ][ statusdict /TitleDSC ][ userdict /TitleString ] ] def
+
+/TmpFileName (%os%/tmp/SubmitFile.tmp) def
+
+/ExecFileStopFailsJob true def
+
+/LoadSetupTrailer {} def
+
+9 dict begin            % ======================== the procset ================================
+
+/LoadSetup {
+  count 1 lt {
+    /LoadSetup errordict /stackunderflow get exec
+  } if
+  dup type /stringtype ne {
+    /LoadSetup errordict /typecheck get exec
+  } if
+
+  {
+    statusdict /HqnRIPType 2 copy known {
+      get
+      dup /Spooler eq exch /Splitter eq or
+    }   {
+      pop pop
+      false
+    } ifelse
+      {
+      % In an EP2000 Spooler or Splitter - ignore this call
+      pop
+    }   {
+      % Record job name strings from the job
+      //HqnControlDict begin
+      //CarryOver {
+        aload pop 2 copy known {
+          2 copy get
+          dup length string copy
+          def
+        } { pop } ifelse
+        pop
+      } forall
+      end
+
+      % Generate the full filename
+      //SetupBase //buffer copy pop
+      //buffer dup //SetupBase length 3 index putinterval
+      0 3 -1 roll length //SetupBase length add getinterval
+
+      % Was this a pattern, e.g. "(11-*) LoadSetup"
+      dup (*) search {
+        % yes - find first such file
+        pop pop pop
+
+        % copy out of buffer ...
+        dup length string copy
+
+        % and keep a copy of the pattern in case no matching setups exist
+        dup {
+          exch pop      % clear the dup.
+          exit
+        } //buffer filenameforall
+      } { pop } ifelse
+
+      dup status not {
+        % UVM (Warning: Page setup specified could not be found: %s\n)
+        //stderr (Warning: Page setup specified could not be found: ) writestring
+        //SetupBase length 1 index length 1 index sub getinterval //stderr exch writestring
+        //stderr (\n) writestring
+        /LoadSetup errordict /undefined get exec
+      } if
+      pop pop pop pop   % from status
+
+      dup //SetupBase length 1 index length 1 index sub getinterval
+      % No need for globalisation uvs because this is a copy of the report from coreskin.
+      //stderr dup (Setup loaded: ") writestring
+      dup 2 index writestring
+      ("\n) writestring
+      //HqnControlDict /SetupName 3 -1 roll put
+      //HqnControlDict /SetupFile 3 -1 roll put
+
+      % Clear down the dictionary and operand stacks
+      % We can't just do this arbitrarily because that messes
+      % things up if done from a PPD, so store them away ...
+      count array astore userdict /HqnOpStack 3 -1 roll put
+
+      countdictstack array dictstack userdict
+        /HqnDictStack 3 -1 roll put
+      cleardictstack
+
+      % Disable resolution override so it doesnt interfere with the new setup
+      << /OverrideKeys << /HWResolution false >> >> setpagedevice
+
+      % Unload L1 spot colors
+      /Level1Separator /ProcSet findresource /HqnUnloadSeparation get exec
+
+      % Unload HqnImpose if loaded
+      userdict /HqnImposeDict known {
+        /HqnImpose /ProcSet findresource /HqnUnloadImpose get exec
+      } if
+      % Unload HqnImpose2 if loaded
+      userdict /HqnImpose2Dict known {
+        /HqnImpose2 /ProcSet findresource /HqnUnloadImpose get exec
+      } if
+      % Unload simple imposition, if active
+      statusdict /HqnLayoutInitialized 2 copy known { get 1 gt }{ pop pop false } ifelse
+      {
+        /HqnLayout /ProcSet findresource /DeactivateLayout_1 get exec
+      } if
+
+      % Turn off InDesign recombine flag
+      false /HqnPageCounter /ProcSet findresource /RecombineInDesign get exec
+
+      % Plugin-specific unload code
+      //PLSfile status {
+        pop pop pop pop
+        //PLSfile run
+      } if
+
+      erasepage initgraphics
+
+      % Flag that we're loading a setup
+      //HqnControlDict /InLoad true put
+
+      //HqnControlDict /SetupFile get run
+
+      dup /PageSetupName //HqnControlDict /SetupName get put
+
+      /HqnPageSetupConf /ProcSet findresource /DoPageSetup get exec
+
+      % Unset flag
+      //HqnControlDict /InLoad false put
+
+      % Poke the output device parameters in properly, in case the
+      % default device matched the one from the setup that's just been loaded.
+      currentpagedevice /ExtraPageDeviceKeys get setpagedevice
+
+      % And now restore the dict and operand stacks:
+      HqnOpStack aload pop
+      countdictstack 1 HqnDictStack length 1 sub {
+        HqnDictStack exch get begin
+      } for
+
+      //HqnControlDict begin
+      //CarryOver {
+        aload pop
+        currentdict 1 index known {
+          dup load
+          put
+        } { pop pop } ifelse
+      } forall
+
+      mark LoadSetupTrailer stopped {
+        $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+        /errorinfo [ null (LoadSetupTrailer) ] put
+        stop
+      } if
+      cleartomark
+      end
+    } ifelse
+  } stopped {
+    //HqnControlDict /InLoad false put
+    /LoadSetup errordict /undefinedresult get exec
+  } if
+} bind def
+
+% Test whether we're in the middle of loading a setup
+% LoadingSetup -> bool
+/LoadingSetup {
+  //HqnControlDict /InLoad get
+} bind def
+
+/SetLoadSetupTrailer {
+  count 0 eq {
+    /LoadSetupTrailer errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  1 index xcheck not or {
+    /LoadSetupTrailer errordict /typecheck get exec
+  } if
+  //HqnControlDict /LoadSetupTrailer 3 -1 roll bind put
+} bind def
+
+/CheckType {
+  save
+  //HqnControlDict begin
+  /ExecChannel null def
+  /ForceType null def
+  /TypeOrder null def
+
+  /CheckSave exch def
+  count 1 lt {
+    /CheckType errordict /stackunderflow get exec
+  } if
+  dup type /stringtype ne {
+    count 2 lt {
+      /CheckType errordict /stackunderflow get exec
+    } if
+    dup type /dicttype ne 2 index type /stringtype ne or {
+      /CheckType errordict /typecheck get exec
+    } if
+    //CheckParams {
+      % dict key types
+      3 copy pop 2 copy known {
+        get
+        dup 3 1 roll
+        type known not {
+          $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+          % dict key val EP
+          /errorinfo [ null 6 -1 roll //buffer cvs ] put
+          /CheckType errordict /typecheck get exec
+        } if
+        def
+      } {
+        pop pop pop
+        null def
+      } ifelse
+    } forall
+    dup /FileObject known {
+      /ExecChannel 1 index /FileObject get def
+    } if
+
+    pop
+  }     {
+    //CheckParams {
+      pop null def
+    } forall
+  } ifelse
+  /ExecType /auto def
+
+  /CheckType //typeInternals exec
+
+  pop 1183615869 internaldict /fileType get
+
+  CheckSave end restore
+} bind def
+
+/ClearExecFileStop {
+  //HqnControlDict /HqnControlStopped false put
+} bind def
+
+/SetExecFileStop {
+  //HqnControlDict /HqnControlStopped true put
+  $error begin
+    /command load /HqnControlClose ne
+    errorname /unregistered ne or
+  end
+  { % For job fail to be detected by an input plugin it must be set before the channel is closed.
+    % Error handlers can cause closure (e.g. reporting "following lines") so do this first.
+    //HqnControlDict /ExecFileStopFailsJob get {
+      $error /failjob true put
+    } if
+    defaulthandleerror
+  } if
+} bind def
+
+/SetExecFileStopFailsJob  {
+  //HqnControlDict /ExecFileStopFailsJob 3 -1 roll put
+} bind def
+
+/ExecTypeSWIO <<
+  /PS 0
+  /PDF 2
+  /EPS 3
+>> def
+
+% ExecFileSafeStopped
+%
+% Identical to ExecFileSafe, in that it executes an arbitrary file within a safe/restore
+% bracket. This version, though, returns a boolean on the stack indicating whether
+% the file was stopped (due to an error) before it completed.
+%
+% Eg.
+%
+% /HqnControl /ProcSet findresource begin
+%   (%C%/somedir/somefile.ps) ExecFileSafeStopped
+%   {
+%      -- error handling code
+%   } if
+% end
+%
+% |- filename -> boolean [ did the file stop with an error? ]
+/ExecFileSafeStopped
+{
+  save
+    2 dict begin
+      /remembersave exch def
+      //ClearExecFileStop exec
+      false //SetExecFileStopFailsJob exec % undone by restore
+      /HqnControl /ProcSet findresource /ExecFile get exec
+      //HqnControlDict /HqnControlStopped get
+      remembersave
+    end
+  restore
+} bind def
+
+/ExecFileSafe {
+  //ExecFileSafeStopped exec pop
+} bind def
+
+% (filename) -> ExecFile
+% (filename) <<config>> -> ExecFile
+/ExecFile {
+% (EXECFILE+)= pstack (____________)=
+  //HqnControlDict begin
+  /ExecChannel null def
+  /ForceType null def
+
+  //ClearExecFileStop exec
+
+  count 1 lt {
+    /ExecFile errordict /stackunderflow get exec
+  } if
+  dup type /stringtype ne {
+    count 2 lt {
+      /ExecFile errordict /stackunderflow get exec
+    } if
+    dup type /dicttype ne 2 index type /stringtype ne or {
+      /ExecFile errordict /typecheck get exec
+    } if
+    dup /FileType known {
+      dup /FileType get /ExecType exch def
+      //AutoExecTypes ExecType known not
+      //InputTypes ExecType known not and
+      //ExecTypes ExecType known not and {
+        $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+        /errorinfo [ null (FileType) ] put
+        /ExecFile errordict /undefined get exec
+      } if
+    }   {
+      /ExecType /auto def
+    } ifelse
+
+    dup /FileObject known {
+      /ExecChannel 1 index /FileObject get def
+    } if
+
+    //ExecParams {
+      % dict key types
+      3 copy pop 2 copy known {
+        get
+        dup 3 1 roll
+        type known not {
+          $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+          % dict key val EP
+          /errorinfo [ null 6 -1 roll //buffer cvs ] put
+          /ExecFile errordict /typecheck get exec
+        } if
+        def
+      } {
+        pop pop pop
+        null def
+      } ifelse
+    } forall
+    pop
+  }     {
+    //ExecParams {
+      pop null def
+    } forall
+    /ExecType /auto def
+  } ifelse
+
+  ForceType null ne { ForceType ExecType /PS eq and }{ false } ifelse
+  /ExecChannel load dup null ne { status } { pop false } ifelse
+  and {
+    pop % filename
+    /ExecChannel load
+    //ExecTypeSWIO ExecType 2 copy known {
+      get
+      statusdict /setsoftwareiomode get exec
+    }   { pop pop } ifelse
+  }     {
+    /ExecFile //typeInternals exec
+  } ifelse
+
+  //HqnControlDict /ExecChannel 2 index put
+
+  ExecType
+
+  /PageRange load
+  dup null ne {
+    //ExecPageRange 1183615869 internaldict /fileType get
+    2 copy known not { pop /PS } if
+    get exec
+  } { pop } ifelse
+
+  Password null ne {
+    //ExecPasswords 1 index
+    dup /autolist eq {
+      pop
+      //HqnControlDict /AutoExecSelected get
+    } if
+    2 copy known {
+      get Password exch exec
+    }   {
+      //stderr (WARNING: Password ignored in ExecFile\n) writestring
+    } ifelse
+  } if
+
+  % Clear down the dictionary and operand stacks
+  % We can't just do this arbitrarily because that messes
+  % things up, so store them away ...
+  count 2 roll
+  count 2 sub array astore //HqnControlDict /HqnOpStack 3 -1 roll put
+
+  countdictstack array dictstack //HqnControlDict
+    /HqnDictStack 3 -1 roll put
+  cleardictstack
+
+% (EXECFILE: RUNNING: )print 1 index statusdict begin 150 string filename pop == end
+  dup /autolist eq {
+    pop % /autolist
+    cvx
+    //AutoExecTypes //HqnControlDict /AutoExecSelected get get 1
+  }     {
+    //InputTypes 1 index known 1 index /auto eq or {
+      pop
+      cvx
+      dup serverdict /stdout get
+      statusdict begin setstdio end
+      serverdict /switchexecmode get
+      statusdict /softwareiomode get exec
+    }   {
+      //ExecTypes exch
+    } ifelse
+  } ifelse
+  get
+
+  stopped {
+% (STOPPED)=
+        //SetExecFileStop exec % Record for caller
+  } if
+
+  % And now restore the dict and operand stacks:
+  clear
+  //HqnControlDict /HqnOpStack get aload pop
+  cleardictstack
+  countdictstack 1 //HqnControlDict /HqnDictStack get length 1 sub {
+    //HqnControlDict /HqnDictStack get exch get begin
+  } for
+
+  % Check the file that's just been run is closed
+  /ExecChannel load dup status { closefile }{ pop } ifelse
+  end
+% (EXECFILE-)=
+} bind def
+
+/DidExecFileStop {
+  //HqnControlDict /HqnControlStopped 2 copy known {
+    get
+  } {
+    pop pop
+    false
+  } ifelse
+} bind def
+
+% Get the file object being run by ExecFile, if there is one.
+% -> file true
+% or
+% -> false
+/CurrentExecChannel {
+  //HqnControlDict /ExecChannel get
+  dup null eq {
+    pop false
+  }     {
+    dup status {
+      true
+    }   {
+      pop false
+    } ifelse
+  } ifelse
+} bind def
+
+% Set the default job submission procedure
+//HqnControlDict /SubmissionProc //ExecFile put
+
+/InstallSubmissionProc {
+  count 1 lt {
+    /InstallSubmissionProc errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and {
+    /InstallSubmissionProc errordict /typecheck get exec
+  } if
+  dup xcheck not {
+    /InstallSubmissionProc errordict /undefinedresult get exec
+  } if
+  //HqnControlDict /SubmissionProc 3 -1 roll put
+} bind def
+
+% datasource [ <<config>> ] -> SubmitFile
+% datasource can be:
+%       string - a file name
+%       integer - the number of bytes to read from current file to get the file name
+%       null    - the input file is the rest of the current file. Spool to disk, then run that.
+% the optional config dictionary can include:
+%       FileType        - name          - the type of the file being submitted (/PS, /PDF, /EPS, etc)
+%       PageRange       - array         - which pages from this file
+%       JobName         - string        - set jobname in statusdict to this
+%       JobNameUTF8 - string    - UTF-8 representation of JobName
+% JobNameIsFileName - boolean  - true if JobName is a file name
+%       PageSetup       - string        - load this page setup before executing the file
+%       Header          - string or array of strings    - (only used where datasource is null)
+%               Copy this string or strings to the temp file before the rest of the stream
+%       TypeOrder       - array of names from InputTypes in HqnConfigProvider. Test these file types in
+%               the opposite order to the order in this array. /PS should be first in the array.
+%               Used only when FileType is not supplied.
+/SubmitFile <<
+  /stringtype {}
+  /integertype {
+    //buffer 0 3 -1 roll getinterval currentfile exch readstring
+    not { /SubmitFile errordict /ioerror get exec } if
+    dup length string copy
+  } bind
+  /nulltype {
+    pop % null
+
+    % Copy incoming file to disk
+    //TmpFileName (w) file
+    1 index /Header known {
+      dup 2 index /Header get
+      dup type /stringtype eq {
+        writestring
+      } {
+        dup type dup /arraytype ne exch /packedarraytype ne and {
+          /SubmitFile errordict /typecheck get exec
+        } if
+        % file array
+          {
+          2 copy writestring pop
+        } forall
+        pop     % the file
+      } ifelse
+    } if
+      {
+      currentfile //buffer readstring
+      % f s b
+      2 index 3 -1 roll writestring
+      not { exit } if
+    } loop
+    closefile
+    //TmpFileName
+      <<
+      /EndJob <<
+        /SubmitFile {
+          mark { //TmpFileName deletefile } stopped cleartomark
+        } bind
+      >>
+    >> setpagedevice
+  } bind
+>> def
+/SubmitFile {
+  //ControlDebug { (SUBMITFILE+)= } if
+  count 1 lt {
+    /SubmitFile errordict /stackunderflow get exec
+  } if
+  dup type /dicttype ne { <<>> } if
+  count 2 lt {
+    /SubmitFile errordict /stackunderflow get exec
+  } if
+  //SubmitFile 2 index type known not {
+    /SubmitFile errordict /stackunderflow get exec
+  } if
+  dup /JobName known {
+    statusdict /jobname 2 index /JobName get put
+    dup /JobNameUTF8 known {
+      statusdict /notedjobname 2 index /JobName get put
+      statusdict /notedjobnameutf8 2 index /JobNameUTF8 get put
+    } if
+    dup /JobNameIsFileName known {
+      statusdict /jobnameisfilename 2 index /JobNameIsFileName get put
+    } {
+      statusdict /jobnameisfilename undef
+    } ifelse
+  } if
+  dup /PageSetup known {
+    dup /PageSetup get //LoadSetup exec
+  } if
+  exch //SubmitFile 1 index type get exec
+  exch
+
+  //ClearVals {
+    aload pop undef
+  } forall
+
+  //HqnControlDict /SubmissionProc get exec
+
+  mark { //TmpFileName deletefile } stopped cleartomark
+
+  //DidExecFileStop exec {
+    $error /newerror false put  % avoid false error reports from temp file deletion etc.
+    stop  % Need this to trigger "Job Not Completed"
+  }if
+
+  //ControlDebug { (SUBMITFILE-)= } if
+} bind def
+
+/AddExecType {
+  % Add a new file type to ExecTypes
+  % key proc -> AddExecType ->
+  count 2 lt {
+    /AddExecType errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  1 index xcheck not or
+  2 index type /nametype ne or {
+    /AddExecType errordict /typecheck get exec
+  } if
+
+  //ExecTypes 3 1 roll put
+} bind def
+
+/AddAutoExecType {
+  % Add a new file type to AutoExecTypes
+  % key proc proc -> AddAutoExecType ->
+  count 2 lt {
+    /AddAutoExecType errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  1 index xcheck not or
+  2 index type dup /arraytype ne exch /packedarraytype ne and or
+  2 index xcheck not or
+  3 index type /nametype ne or {
+    /AddAutoExecType errordict /typecheck get exec
+  } if
+
+  2 array astore //AutoExecTypes 3 1 roll put
+} bind def
+
+/AddPageRange {
+  % Add a new file type to ExecPageRange
+  % key proc -> AddExecType ->
+  count 2 lt {
+    /AddPageRange errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  1 index xcheck not or
+  2 index type /nametype ne or {
+    /AddPageRange errordict /typecheck get exec
+  } if
+
+  //ExecPageRange 3 1 roll put
+} bind def
+
+/AddPassword {
+  % Add a new file type to ExecPageRange
+  % key proc -> AddExecType ->
+  count 2 lt {
+    /AddPassword errordict /stackunderflow get exec
+  } if
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  1 index xcheck not or
+  2 index type /nametype ne or {
+    /AddPassword errordict /typecheck get exec
+  } if
+
+  //ExecPasswords 3 1 roll put
+} bind def
+
+currentdict end % =============== Procset dictionary ============
+
+statusdict /HqnControl 2 index put
+
+globalness exch
+
+end             % HqnControlDict
+end             % HqnInputTypes procset
+
+/HqnControl exch /ProcSet defineresource
+
+exch setglobal
+
+userdict /HqnControlDict undef
+
+%%EndProcSet

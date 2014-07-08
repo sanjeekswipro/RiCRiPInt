@@ -1,0 +1,314 @@
+%!PS-Adobe-3.0
+%%Title: HqnAssert
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Jan 2003
+%%VMusage: -1 -1
+% Copyright (C) 2003-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnAssert) 1 0
+
+% Global Graphics Software Ltd. Confidential Information.
+
+% $HopeName: SWv20!swf:procsets:assert(EBDSDK_P.1) $
+
+
+%
+% The Initialize proc defines two new operators:
+
+% any ErrPrint -
+% Prints message to stderr
+
+% string proc HqnAssert -
+% The proc is treated as an assertion. If false, the string is printed
+% to stderr as a report. Testing and reporting is conditional. By default
+% it is turned on in a debug/asserted RIP and off otherwise.
+
+% Asserts may be enabled or disabled by calling OverrideAsserts with a
+% boolean argument. This may be activated from HqnOEM, or from a file in
+% Sys/ExtraStart
+
+% Additional Debugging tools are available from the procset:
+%
+% /command /errorname (extradetail) ExtraError
+% Report a detail with addditional configuration data
+%
+% /codeblock /basename StartStackCheck
+% Record the current op and dict stack sizes and save level for StackCheck*
+%
+% /basename /reference StackCheck0
+% asserts that the op and dict stack sizes and the save level are unchanged
+% since the corresponding StartStackCheck.
+%
+% /basename /reference savechange dictchange opchange StackCheck3
+% asserts that the save level has grown by savechange, the dict stack size by
+% dictchange and the op stack size by opchange since the corresponding
+% StartStackCheck.
+%
+
+currentglobal false setglobal
+
+18 dict begin
+
+/globalness exch def
+
+/workspace currentdict def
+
+/ToolsDebug false def
+/ShowStack true def
+
+/AssertStat /Uninitialized def
+
+/ErrFile serverdict /altout 2 copy known {
+	get dup type /filetype eq {
+		dup status not dup { exch pop } if
+	} { pop true } ifelse
+  } { pop pop true } ifelse
+  	{
+	(%stderr)(w)file 
+  } if
+def
+
+/ErrPrintFail (ERROR: > 512 chars) def
+/ErrPrint 512 string def
+/ErrPrint {
+	dup type /stringtype ne {
+		//ErrPrint { cvs } stopped {
+			pop pop //ErrPrintFail
+		} if
+	} if
+	//ErrFile exch writestring
+} bind def
+
+/AssertsOn (ASSERT: )def
+/AssertsOn {
+	count 2 lt {
+		/HqnAssert errordict /stackunderflow get exec
+	} if
+	dup xcheck not 2 index type /stringtype ne or {
+		/HqnAssert errordict /typecheck get exec
+	} if
+	
+	mark exch stopped {
+		/HqnAssert errordict /undefinedresult get exec
+	}	{
+		counttomark 1 ne {
+			/HqnAssert errordict /undefinedresult get exec
+		} if
+		dup type /booleantype ne {
+			/HqnAssert errordict /typecheck get exec
+		} if
+		exch pop
+			{
+			pop		% assertion was true - discard report
+		}	{
+			//AssertsOn //ErrPrint exec
+			//ErrPrint exec
+			(\n) //ErrPrint exec
+		} ifelse
+	} ifelse
+} bind def
+
+/AssertsOff { pop pop } bind def
+
+/SetAsserts {
+	% boolean on stack
+	dup	<<
+		/HqnAssert 3 -1 roll {
+			//AssertsOn
+			//workspace /AssertStat /Enabled put
+		}	{
+			//AssertsOff
+			//workspace /AssertStat /Disabled put
+		} ifelse
+		
+		/ErrPrint //ErrPrint
+	>> 1183615869 internaldict /defineop get exec
+	
+		{
+		(**** PostScript asserts enabled ****\n) ErrPrint
+	} if
+} bind def
+  
+/extraerror {
+	$error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+	% offendingcommand errortype extrainfo dict
+	/errorinfo [ null 5 -1 roll ] put
+	errordict exch get exec
+} bind def
+
+currentglobal true setglobal
+/StackCheckStore 12 dict def
+setglobal
+
+/StackCheckD 5 dict def	
+/StackCheck {
+		{
+		//StackCheckD begin
+		{ /OpChange /DictChange /SaveChange /Ref /Base }{ exch def } forall
+		//StackCheckStore Base 2 copy known not {
+			exch pop
+			/StackCheck /undefined 3 -1 roll //extraerror exec
+		} if
+		get
+
+		aload pop
+
+		DictChange dup null eq { pop pop } {
+			add countdictstack 1 sub
+			2 copy ne {
+				% unitname save opstack expecteddict actualdictstack
+				% No U V M is provided as this is developer reporting, not for end users.
+				(%%[ ERROR: HqnAssert: Dict Stacks do not match: )//ErrPrint exec
+				4 index //ErrPrint exec (/) //ErrPrint exec Base //ErrPrint exec (/) //ErrPrint exec Ref //ErrPrint exec
+				(, Actual: ) //ErrPrint exec //ErrPrint exec
+				(, Expected: ) //ErrPrint exec //ErrPrint exec
+				( ]%%\n) //ErrPrint exec
+			} { pop pop } ifelse
+		} ifelse
+
+		OpChange dup null eq { pop pop } {
+			% unitname save opstack opchange
+			add count 3 sub
+			2 copy ne {
+				% unitname save opstack actualopstack
+				2 copy
+				(%%[ ERROR: HqnAssert: Op Stacks do not match: )//ErrPrint exec
+				5 index //ErrPrint exec (/) //ErrPrint exec Base //ErrPrint exec (/) //ErrPrint exec Ref //ErrPrint exec
+				(, Actual: ) //ErrPrint exec //ErrPrint exec
+				(, Expected: ) //ErrPrint exec //ErrPrint exec
+				( ]%%\n) //ErrPrint exec
+				% unitname save opstack actualopstack
+				//workspace /ShowStack get {
+					exch sub dup 0 gt {
+						2 1 3 -1 roll 1 add {
+							(  *  ) //ErrPrint exec
+							index dup type //ErrPrint exec ( - ) //ErrPrint exec //ErrPrint exec (\n) //ErrPrint exec
+						} for
+					} { pop } ifelse
+				}  { pop pop } ifelse
+			} { pop pop } ifelse
+		} ifelse
+
+		% unitname save
+		SaveChange dup null eq { pop pop } {
+			add vmstatus pop pop
+			2 copy ne {
+				% unitname save actualsave
+				(%%[ ERROR: HqnAssert: Save Depths do not match: )//ErrPrint exec
+				2 index //ErrPrint exec (/) //ErrPrint exec Base //ErrPrint exec (/) //ErrPrint exec Ref //ErrPrint exec
+				(, Actual: ) //ErrPrint exec //ErrPrint exec
+				(, Expected: ) //ErrPrint exec //ErrPrint exec
+				( ]%%\n) //ErrPrint exec
+			} { pop pop } ifelse
+		} ifelse
+
+		pop		% unitname
+		
+		end		% StackCheckD
+	} stopped { defaulthandleerror stop } if
+} bind def
+
+/HqnAssert 10 dict begin
+
+	/Initialize {
+		1183615869 internaldict /setripvar known
+
+		//SetAsserts exec
+	} bind def
+	
+	/OverrideAsserts {
+		count 1 lt {
+			/OverrideAsserts errordict /stackunderflow get exec
+		} if
+		dup type /booleantype ne {
+			/OverrideAsserts errordict /typecheck get exec
+		} if
+		
+		//SetAsserts exec
+	} bind def
+	
+	/AssertStatus {
+		//workspace /AssertStat get
+	} bind def
+
+	/ErrFile //ErrFile def
+	
+	/ExtraError //extraerror def
+	
+	/ErrPrint //ErrPrint def
+	
+	% /unitname /basename -> StartStackCheck -> -
+	/StartStackCheck {
+		count 2 lt {
+			/StartStackCheck errordict /stackunderflow get exec
+		} if
+		//workspace /AssertStat get /Enabled eq {
+				{
+				//ToolsDebug { (++ StartStackCheck: )print dup == } if
+				dup type /nametype ne 2 index type /nametype ne or {
+					/StartStackCheck errordict /typecheck get exec
+				} if
+				//StackCheckStore exch
+				2 copy known { 
+					2 copy get 
+				}	{
+					currentglobal true setglobal 
+					4 array 
+					exch setglobal
+				} ifelse
+				
+				% unitname //SCD basename [array]
+				4 -1 roll 				% unitname
+				vmstatus pop pop		% save depth
+				count 5 sub			% op stack
+				countdictstack		% dict stack
+
+				5 -1 roll 
+				astore
+				put
+			} stopped { defaulthandleerror stop } if
+		}	{ pop pop } ifelse
+	} bind def
+	
+	% /basename /refname -> StackCheck0
+	/StackCheck0 {
+		count 2 lt {
+			/StackCheck0 errordict /stackunderflow get exec
+		} if
+		//workspace /AssertStat get /Enabled eq {
+				{
+				//ToolsDebug { (++ StackCheck0: )print dup == } if
+				dup type /nametype ne 2 index type /nametype ne or {
+					/StackCheck0 errordict /typecheck get exec
+				} if
+				
+				0 0 0 //StackCheck exec
+			} stopped { defaulthandleerror stop } if
+		}	{ pop pop } ifelse
+	} bind def
+	
+	% /basename /refname savechange dictchange opchange -> StackCheck3
+	/StackCheck3 {
+		count 5 lt {
+			/StackCheck3 errordict /stackunderflow get exec
+		} if
+		//workspace /AssertStat get /Enabled eq {
+				{
+				//ToolsDebug { (++ StackCheck3: )print 4 index =print (/)print 3 index == } if
+				5 copy false
+				3 { exch type dup /integertype ne exch /nulltype ne and or } repeat
+				2 { exch type /nametype ne or } repeat
+					{
+					/StackCheck3 errordict /typecheck get exec
+				} if
+				
+				//StackCheck exec
+			} stopped { defaulthandleerror stop } if
+		}	{ pop pop pop pop pop } ifelse
+	} bind def
+
+currentdict end /ProcSet defineresource pop
+
+globalness end setglobal
+
+%%EndProcSet

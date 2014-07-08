@@ -1,0 +1,37 @@
+%!PS-Adobe
+
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Run this file to obtain a patch for early versions of Adobe Illustrator
+% which dont work with color operators.
+
+% $HopeName: SWv20!swf:usr:illuscol(EBDSDK_P.1) $
+%
+
+statusdict begin softwareiomode end 0 eq {
+  serverdict begin 0 exitserver
+} if
+
+(%%dict) load begin
+  (%%actions) load begin
+    /BeginProcSet {
+      (:Adobe_cmykcolor 0 0) search {
+        pop pop pop
+        userdict /def {
+          1 index /initialize eq {
+            dup 2 {
+              pop Adobe_cmykcolor begin 
+              currentdict /setcmykcolor currentdict /currentcmykcolor
+              { undef undef } 1183615869 internaldict /superexec get exec
+            } /put load 1183615869 internaldict /superexec get exec
+          } if
+          userdict /def undef
+          def
+        } bind put
+      }{
+        { //BeginProcSet exec } stopped pop
+      } ifelse
+    } bind def
+  end
+end

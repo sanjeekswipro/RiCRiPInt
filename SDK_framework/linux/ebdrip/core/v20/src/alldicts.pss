@@ -1,0 +1,22 @@
+% /* $HopeName: SWv20!src:alldicts.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+
+% ----------------------------------------------------------------------
+%% create local dictionaries
+
+systemdict begin
+  /statusdict   200 dict def
+currentglobal false setglobal
+  /errordict    34 dict def
+setglobal
+  /$error       16 dict def
+  /serverdict   96 dict def
+  /$printerdict 16 dict def
+  /$hqndict     8 dict def
+end % systemdict
+

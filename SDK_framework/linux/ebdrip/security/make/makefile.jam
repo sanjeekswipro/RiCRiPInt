@@ -1,0 +1,120 @@
+# Copyright (C) 2007-2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for security interface
+#
+# $HopeName: SWsecurity!make:makefile.jam(EBDSDK_P.1) $
+#
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant custiface ldkvendor llv product rt_libs security C++_ORB ;
+
+    C-IncludeExportDirectories
+        core
+        coreskin
+        coreutil
+        $(CustIface)
+        dlliface
+        fwgui
+        fwos
+        HQN_CPP_CORBA
+        le-security
+        libgenxml$/libexpat
+        licence
+        mps
+        $(PluginInterface)
+        psio
+        pwdinfo
+        ripiimpl
+        sign
+        standard
+        threads
+    : .. ;
+
+
+# Custom splint options
+
+AddToVar Inherited Local : SplintOptions :
+  +param-use      # Warn about unused parameters, because some compilers don't
+  -ret-val-other  # Allow return values to be ignored
+;
+
+# Compilation rules
+
+    AddToVar Inherited Local : C-Defines : STATIC_LINK : Variant rt_libs=multi_threaded ;
+
+    DependsOn all : security ;
+
+    Library dngbits : dngbits.c ;
+
+    Library donglib : donglib.c ;
+
+    Library ldkvendor : ldkvendor.c ;
+
+    Library security : dllsec.c dllutils.c dongle.c tbub.c ;
+    C-LinkWithLibraries security : dngbits : . ;
+
+
+    if $(Variant_security) = lic {
+       # A licensed RIP has no other security options
+       Library security : lic.c ;
+    }
+    else if $(Variant_security) = ldk {
+       # An LDK RIP with no other fallback security options
+       AddToVar Local : C-Defines : XML_STATIC ;
+
+       Library security : ldk.c ldkvendor.c ;
+    }
+    else if $(Variant_security) = ldklic {
+       # An LDK RIP with HLS as a fallback security options
+       AddToVar Local : C-Defines : XML_STATIC ;
+
+       Library security : ldk.c ldkvendor.c lic.c ;
+    }
+    else if $(Variant_security) = le {
+       # No additional source files here for LE security
+    }
+    else {
+      if $(Variant_security) = dngldk {
+        Library security : ldkvendor.c ;
+      }     
+      else if $(Variant_security) = wm {
+        if $(MACOSX) { Library security : dllmac.c   ; }
+        if $(C-Compiler-Family) = msvc     { Library security : dllwin.c   ; }
+        if $(UNIX)   { Library security : dllmotif.c ; }
+      }
+
+      # include the dongle security files specific to the platform
+      if $(MACOSX) {
+        Library security :
+          eve3dong.c
+          rnbwdong.c
+          timedong.c
+        ;
+      }
+      if $(C-Compiler-Family) = msvc {
+        Library security :
+          rnbwcplus.c
+          rnbwdong.c
+          mphardng.c
+        ;
+      }
+      if $(UNIX)
+      {
+        Library security :
+          timedong.c
+          mphardng.c
+        ;
+        if linux-386 in $(JamTargetPlat) || linux-amd64 in $(JamTargetPlat) {
+          Library security :
+            rnbwdong.c
+          ;
+          C-LinkWithLibraries security : dongles : .. dongles ;
+        }
+      }
+    }
+
+
+# Log stripped

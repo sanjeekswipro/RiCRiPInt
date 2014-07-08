@@ -1,0 +1,91 @@
+# Copyright (C) 2012-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for IJG JPEG library
+#
+# $HopeName: HQNjpeg!make:makefile.jam(EBDSDK_P.1) $
+#
+
+  RequiresVariant warning_level : low ;
+
+  ImplementsVariant jpeg ;
+
+  DependsOn all : libjpeg ;
+
+  # Build libjpeg-turbo (Win) or libjpeg (non-Win), but not both.
+  if $(Variant_jpeg) && $(C-Compiler-Family) != msvc {
+
+    C-IncludeExportDirectories
+      jpeg
+      rdrevent
+      standard
+      : .. ;
+
+    # Avoid name clashes with skin's copy of libjpeg
+    AddToVar Inherited Local : C-Defines : USE_LIBJPEG_API ;
+
+    LIBFILES =
+      jaricom.c
+      jcapimin.c
+      jcapistd.c
+      jcarith.c
+      jccoefct.c
+      jccolor.c
+      jcdctmgr.c
+      jchuff.c
+      jcinit.c
+      jcmainct.c
+      jcmarker.c
+      jcmaster.c
+      jcomapi.c
+      jcparam.c
+      jcprepct.c
+      jcsample.c
+      jctrans.c
+      jdapimin.c
+      jdapistd.c
+      jdarith.c
+      jdatadst.c
+      jdatasrc.c
+      jdcoefct.c
+      jdcolor.c
+      jddctmgr.c
+      jdhuff.c
+      jdinput.c
+      jdmainct.c
+      jdmarker.c
+      jdmaster.c
+      jdmerge.c
+      jdpostct.c
+      jdsample.c
+      jdtrans.c
+      jerror.c
+      jfdctflt.c
+      jfdctfst.c
+      jfdctint.c
+      jidctflt.c
+      jidctfst.c
+      jidctint.c
+      jmemmgr.c
+      jmemnobs.c
+      jquant1.c
+      jquant2.c
+      jutils.c
+      libjpeg.c
+    ;
+
+    Library libjpeg : $(LIBFILES) ;
+
+    # So that exported source can be built without libjpeg-turbo if required
+    ExportSource $(CurrentPath)$/src$/nolibjpeg.c : C ;
+
+  } else {
+
+    C-IncludeExportDirectories
+      standard
+      : .. ;
+
+    Library libjpeg : nolibjpeg.c ;
+  }
+
+# Log stripped

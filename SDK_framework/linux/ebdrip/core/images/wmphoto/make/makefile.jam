@@ -1,0 +1,109 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core rip WMPHOTO
+#
+# $HopeName: COREwmphoto!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : medium ;
+RequiresVariant 64bit_warnings ;
+
+# Turn off ANSI so that it will compile 
+RequiresVariant ansi : 0 ;
+
+ImplementsVariant wmphoto thirdparty metrics ;
+
+# Compilation rules
+
+    DependsOn all : wmphoto ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        mm
+        objects
+        tables
+    : .. .. ;
+    
+   IncludeExportDirectories Inherited Local :
+        tiffcore 
+   : .. ;
+
+
+    if $(Variant_wmphoto) = no
+    {
+        Library wmphoto : nowmp.c ;
+    }
+    else
+    {
+        if $(Variant_thirdparty)
+        {
+             Library wmphoto ;
+             Search wmphoto$(C-Lib-Suffix) : $(CurrentPath)$/$(C-TPB-Directory) ;
+        }
+        else
+        {
+            local SourceFiles =
+                WMPGlueWmp.c
+                strdec.c
+                wmpparams.c
+                wmpcntxt.c
+                wmpfilter.c
+                wmptags.c
+                wmpreadr.c
+                decode.c
+                huffman.c
+                postprocess.c
+                segdec.c
+                strInvTransform.c
+                strTransform.c
+                strPredQuantDec.c
+                adapthuff.c
+                image.c
+                strcodec.c
+                strPredQuant.c
+            ;
+
+            Library wmphoto : $(SourceFiles) ;
+
+            ExportSource wmphoto : ThirdPartyBinary : : : $(CurrentPath)$/$(C-TPB-Directory) ;
+
+            local s ; for s in $(SourceFiles)
+            {
+                local T ; MakeGristed T : $(s) : $(CurrentPath) ;
+                DontExportSource $(T) ;
+            }
+
+            local HeaderFiles =
+                ansi.h
+                mac_wmp.h
+                other_platform.h
+                perfTimer.h
+                vxworks_wmp.h
+                wmpcntxt.h
+                WMPGlue.h
+                wmpreadr.h
+                wmptags.h
+                wmsal.h
+                wmspecstring.h
+                wmspecstrings_adt.h
+                wmspecstrings_strict.h
+                x86.h
+            ;
+
+            local h ; for h in $(HeaderFiles)
+            {
+                DontExportSource $(CurrentPath)$/src$/$(h) ;
+            }
+
+            # So that exported source can be built without wmphoto if required
+            ExportSource $(CurrentPath)$/src$/nowmp.c : C ;
+        }
+    }
+
+
+# Log stripped

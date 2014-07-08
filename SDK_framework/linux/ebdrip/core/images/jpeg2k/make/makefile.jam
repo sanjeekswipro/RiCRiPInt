@@ -1,0 +1,140 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# make file for HQNjpeg2k compound. Builds the Kakadu C++ source with an HQN C interface
+# $HopeName: HQNjpeg2k-kak6!make:makefile.jam(EBDSDK_P.1) $
+
+RequiresVariant warning_level : medium ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant jpeg2000 thirdparty ;
+
+    DependsOn all : jpeg2k ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        objects
+        fileio
+        tables
+    : .. .. ;
+
+    # This does not signal that pointers are 64 bit, but rather
+    # changes some cast macro's to be 64 bit safe. No idea why this is
+    # simply not permanently on.
+
+    if $(TargetOS) != win_64 {
+      CompilerVar C-Defines : KDU_POINTERS64 ;
+    }
+
+    if $(Variant_jpeg2000) = no
+    {
+        Library jpeg2k : nojpeg2k.c ;
+    }
+    else
+    {
+        if $(Variant_thirdparty)
+        {
+             Library jpeg2k ;
+             Search jpeg2k$(C-Lib-Suffix) : $(CurrentPath)$/$(C-TPB-Directory) ;
+        }
+        else
+        {
+            local SourceFiles =
+                analysis.cpp
+                block_coding_common.cpp
+                block_decoder.cpp
+                block_encoder.cpp
+                blocks.cpp
+                codestream.cpp
+                colour.cpp
+                compressed.cpp
+                decoder.cpp
+                encoder.cpp
+                jp2.cpp
+                jpeg2000.c
+                jpeg2k.c
+                jpx.cpp
+                kakadu.cpp
+                kdu_region_decompressor.cpp
+                kdu_stripe_decompressor.cpp
+                kernels.cpp
+                messaging.cpp
+                mq_decoder.cpp
+                mq_encoder.cpp
+                multi_transform.cpp
+                params.cpp
+                roi.cpp
+                synthesis.cpp
+            ;
+
+            Library jpeg2k : $(SourceFiles) ;
+
+            ExportSource jpeg2k : ThirdPartyBinary : : : $(CurrentPath)$/$(C-TPB-Directory) ;
+
+            local s ; for s in $(SourceFiles)
+            {
+                local T ; MakeGristed T : $(s) : $(CurrentPath) ;
+                DontExportSource $(T) ;
+            }
+
+            local HeaderFiles =
+                analysis_local.h
+                block_coding_common.h
+                compressed_local.h
+                gcc_colour_altivec_local.h
+                gcc_colour_mmx_local.h
+                gcc_colour_sparcvis_local.h
+                gcc_dwt_altivec_local.h
+                gcc_dwt_mmx_local.h
+                gcc_dwt_sparcvis_local.h
+                hqnmem.h
+                jp2.h
+                jp2_local.h
+                jp2_shared.h
+                jpx.h
+                jpx_local.h
+                kakadu.h
+                kakadu.hpp
+                kdu_arch.h
+                kdu_block_coding.h
+                kdu_cache.h
+                kdu_compressed.h
+                kdu_elementary.h
+                kdu_file_io.h
+                kdu_kernels.h
+                kdu_messaging.h
+                kdu_params.h
+                kdu_region_compositor.h
+                kdu_region_decompressor.h
+                kdu_roi_processing.h
+                kdu_sample_processing.h
+                kdu_stripe_decompressor.h
+                kdu_utils.h
+                mq_decoder.h
+                mq_encoder.h
+                msvc_block_decode_asm.h
+                msvc_colour_mmx_local.h
+                msvc_dwt_mmx_local.h
+                msvc_region_compositor_local.h
+                multi_transform_local.h
+                params_local.h
+                region_compositor_local.h
+                region_decompressor_local.h
+                roi_local.h
+                stripe_decompressor_local.h
+                synthesis_local.h
+                transform_local.h
+            ;
+
+            local h ; for h in $(HeaderFiles)
+            {
+                DontExportSource $(CurrentPath)$/src$/$(h) ;
+            }
+
+            # So that exported source can be built without jpeg2000 if required
+            ExportSource $(CurrentPath)$/src$/nojpeg2k.c : C ;
+        }
+    }
+
+
+# Log stripped

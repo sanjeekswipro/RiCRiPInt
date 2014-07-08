@@ -1,0 +1,128 @@
+# Copyright (C) 2007-2011 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for icolor
+#
+# $HopeName: SWicolor!make:makefile.jam(EBDSDK_P.1) $
+#
+
+ImplementsVariant product cms minimal ;
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : icolor ;
+
+    if $(Variant_gui) {
+        # Gui RIP
+        IncludeExportDirectories Local :
+            cfiledev
+            core
+            coreskin
+            coreutil
+            custiface
+            fwos
+            $(PluginInterface)
+            profile 
+            psio
+            standard
+            unicode
+        : .. ;
+
+        LIBFILES =
+            iccdev.c
+            icolor.c
+            iccspace.c
+            icprofil.c
+            icread.c
+            iconvert.c
+            iclow.c ;
+
+        Library icolor : $(LIBFILES) ;
+    }
+
+    # Soon this will be controlled by a pdfx variant, rather than minimal
+    if ! $(Variant_minimal) {
+      AddUnique SW-Folder-Variants : iccreg ;
+    }
+
+    SWF swf : icccrd : icccrd ;
+    SWF swf : iccreg : iccreg : : ebdcm iccreg normal normalnonminimal ;
+    SWF swf : iccreg Profiles : Profiles : : iccreg ;
+    SWF swf : iccreg c175bb.icc : ISOcoated175bb.icc : : iccreg ;
+    SWF swf : iccreg c175bbi.pdf : ISOcoated175bb_info.pdf : : iccreg ;
+    SWF swf : iccreg c175sb.icc : ISOcoated175sb.icc : : iccreg ;
+    SWF swf : iccreg c175sbi.pdf : ISOcoated175sb_info.pdf : : iccreg ;
+    SWF swf : iccreg cbb.icc : ISOcoatedbb.icc : : iccreg ;
+    SWF swf : iccreg cbbi.pdf : ISOcoatedbb_info.pdf : : iccreg ;
+    SWF swf : iccreg cc.icc : ISOcofcoated.icc : : iccreg ;
+    SWF swf : iccreg cci.pdf : ISOcofcoated_info.pdf : : iccreg ;
+
+    # Used in the CMM examples, so include in most builds
+    SWF swf : iccreg coated.icc : ISOcoated.icc : : normalnonminimal ;
+
+    SWF swf : iccreg coated.icc : ISOcoated.icc : : ebdcm ;
+    SWF swf : iccreg coatedi.pdf : ISOcoated_info.pdf : : iccreg ;
+    SWF swf : iccreg csb.icc : ISOcoatedsb.icc : : iccreg ;
+    SWF swf : iccreg csbi.pdf : ISOcoatedsb_info.pdf : : iccreg ;
+    SWF swf : iccreg cu.icc : ISOcofuncoated.icc : : iccreg ;
+    SWF swf : iccreg cui.pdf : ISOcofuncoated_info.pdf : : iccreg ;
+    SWF swf : iccreg eci04deu.pdf : ECI_Offset_2004_DEU.pdf : : iccreg ;
+    SWF swf : iccreg eci04eng.pdf : ECI_Offset_2004_ENG.pdf : : iccreg ;
+    SWF swf : iccreg fogls04.pdf : Fogra_liesmich04.pdf : : iccreg ;
+    SWF swf : iccreg fogra33.icm : FOGRA33.icm : : iccreg ;
+    SWF swf : iccreg fogra34.icm : FOGRA34.icm : : iccreg ;
+    SWF swf : iccreg fogra35.icm : FOGRA35.icm : : iccreg ;
+    SWF swf : iccreg fogra36.icm : FOGRA36.icm : : iccreg ;
+    SWF swf : iccreg fogra37.icm : FOGRA37.icm : : iccreg ;
+    SWF swf : iccreg fogra38.icm : FOGRA38.icm : : iccreg ;
+    SWF swf : iccreg fograi.pdf : fograi.pdf : : iccreg ;
+    SWF swf : iccreg fogrd04.pdf : Fogra_Readme04.pdf : : iccreg ;
+    SWF swf : iccreg gracg7.icc : GRACoL2006_Coated1v2.icc : : iccreg ;
+    SWF swf : iccreg hdalic.pdf : Heidelberg_License.pdf : : iccreg ;
+    SWF swf : iccreg ifrai.pdf : IFRA_Profiles.pdf : : iccreg ;
+    SWF swf : iccreg news26.icc : ISOnewspaper26v4.icc : : iccreg ;
+    SWF swf : iccreg news26i.pdf : ISOnewspaper26v4.info.pdf : : iccreg ;
+    SWF swf : iccreg news30.icc : ISOnewspaper30v4.icc : : iccreg ;
+    SWF swf : iccreg news30i.pdf : ISOnewspaper30v4.info.pdf : : iccreg ;
+    SWF swf : iccreg quiz22.icm : Zeitung_QUIZ_22_02.03V2.icm : : iccreg ;
+    SWF swf : iccreg quiz28.icm : Zeitung_QUIZ_28_02.03V2.icm : : iccreg ;
+    SWF swf : iccreg swop.icc : ECI_USWebCoatedSWOP.icc : : iccreg ;
+    SWF swf : iccreg swopi.pdf : ECI_USwebcoatedSWOP_info.pdf : : iccreg ;
+    SWF swf : iccreg u175bb.icc : ISOuncoated175bb.icc : : iccreg ;
+    SWF swf : iccreg u175bbi.pdf : ISOuncoated175bb_info.pdf : : iccreg ;
+    SWF swf : iccreg u175sb.icc : ISOuncoated175sb.icc : : iccreg ;
+    SWF swf : iccreg u175sbi.pdf : ISOuncoated175sb_info.pdf : : iccreg ;
+    SWF swf : iccreg ubb.icc : ISOuncoatedbb.icc : : iccreg ;
+    SWF swf : iccreg ubbi.pdf : ISOuncoatedbb_info.pdf : : iccreg ;
+    SWF swf : iccreg ucoated.icc : ISOuncoated.icc : : iccreg ;
+    SWF swf : iccreg ucoatedi.pdf : ISOuncoated_info.pdf : : iccreg ;
+    SWF swf : iccreg usb.icc : ISOuncoatedsb.icc : : iccreg ;
+    SWF swf : iccreg usbi.pdf : ISOuncoatedsb_info.pdf : : iccreg ;
+    SWF swf : iccreg uy.icc : ISOuncoatedyellowish.icc : : iccreg ;
+    SWF swf : iccreg uy175bb.icc : ISOuncoatedyellowish175bb.icc : : iccreg ;
+    SWF swf : iccreg uy175bbi.pdf : ISOuncoatedyellow175bb_info.pdf : : iccreg ;
+    SWF swf : iccreg uy175sb.icc : ISOuncoatedyellowish175sb.icc : : iccreg ;
+    SWF swf : iccreg uy175sbi.pdf : ISOuncoatedyellow175sb_info.pdf : : iccreg ;
+    SWF swf : iccreg uybb.icc : ISOuncoatedyellowishbb.icc : : iccreg ;
+    SWF swf : iccreg uybbi.pdf : ISOuncoatedyellowbb_info.pdf : : iccreg ;
+    SWF swf : iccreg uyi.pdf : ISOuncoatedyellow_info.pdf : : iccreg ;
+    SWF swf : iccreg uysb.icc : ISOuncoatedyellowishsb.icc : : iccreg ;
+    SWF swf : iccreg uysbi.pdf : ISOuncoatedyellowsb_info.pdf : : iccreg ;
+    SWF swf : iccreg wc.icc : ISOwebcoated.icc : : iccreg ;
+    SWF swf : iccreg wc175bb.icc : ISOwebcoated175bb.icc : : iccreg ;
+    SWF swf : iccreg wc175bbi.pdf : ISOwebcoated175bb_info.pdf : : iccreg ;
+    SWF swf : iccreg wc175sb.icc : ISOwebcoated175sb.icc : : iccreg ;
+    SWF swf : iccreg wc175sbi.pdf : ISOwebcoated175sb_info.pdf : : iccreg ;
+    SWF swf : iccreg wcbb.icc : ISOwebcoatedbb.icc : : iccreg ;
+    SWF swf : iccreg wcbbi.pdf : ISOwebcoatedbb_info.pdf : : iccreg ;
+    SWF swf : iccreg wci.pdf : ISOwebcoated_info.pdf : : iccreg ;
+    SWF swf : iccreg wcsb.icc : ISOwebcoatedsb.icc : : iccreg ;
+    SWF swf : iccreg wcsbi.pdf : ISOwebcoatedsb_info.pdf : : iccreg ;
+    SWF swf : procsets : procsets : : normal ;
+    SWF swf : procsets hqnicc : HqnImportICC : HQNICC : normal ;
+    SWF swf : procsets icctargs : HqnICCTargets ;
+
+# Log stripped

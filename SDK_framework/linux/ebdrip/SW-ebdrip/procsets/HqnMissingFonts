@@ -1,0 +1,443 @@
+%!PS-Adobe-3.0
+%%Title: HqnMissingFonts2
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 19, 1993
+% Copyright (C) 1993-2013 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+% $Revision: 1.32.1.1.1.1 $
+%%BeginProcSet: "(HqnMissingFonts)" 1 0
+
+userdict /globalness currentglobal put
+false setglobal
+
+13 dict begin
+  true setglobal
+  /MissingFonts 32 dict def
+  /MissingCIDFonts 32 dict def
+  /GlobalDict 9 dict def
+  % These are the veneers, and the categories to which they will be applied.
+  % They are safe in global memory, because the FindResource procs we will
+  % poke into them (replacing null) must also be global (see defineresource)
+  /fontbefore<<
+    /Font [
+      {//GlobalDict begin FontBefore null exec FontAfter end}bind
+      {//GlobalDict begin FontDefine null exec end}bind
+    ]
+    /CIDFont [
+      {//GlobalDict begin CIDBefore null exec CIDAfter end}bind
+      {//GlobalDict begin CIDDefine null exec end}bind
+    ]
+  >>def
+
+  % In local VM so we don't get global to local reference when poking an
+  % existing SubstituteCIDFont at the beginning
+  false setglobal
+  2 dict dup /LocalDict exch def begin
+    /Substitute{
+      null exec
+      dup null eq {
+        pop pop /CID-Bullet
+      } if
+      //GlobalDict /Substituted true put
+    } bind def
+
+    % attach our general purpose veneers, (but only the once)...
+    /Veneer{
+      /CIDAfter load {} eq{
+        currentglobal true setglobal
+        //fontbefore
+        { % /Font [ {FindResource} {DefineResource} ]
+          aload pop 3 2 roll /Category 2 copy findresource
+          % {find} {define} /Font /Category <<cat>>
+          dup length dict begin{def}forall
+          % {find} {define} /Font /Category
+          /FindResource dup load 6 5 roll dup 3 4 3 roll put def
+          % {define} /Font /Category
+          /DefineResource dup load 5 4 roll dup 3 4 3 roll put def
+          currentdict end exch defineresource pop
+        } forall
+        setglobal
+
+        $error /SubstituteCIDFont 2 copy known {
+          2 copy get //LocalDict /Substitute get exch 0 exch put
+        } if
+        //Substitute put
+      }if
+    }bind def
+  end
+
+  true setglobal
+  //GlobalDict begin
+    /MissingAction /unknown def
+    /FontBefore {} def   % our five hooks for the veneer
+    /FontAfter {} def
+    /CIDBefore {} def
+    /CIDAfter {} def
+    /FontDefine {} def
+    /CIDDefine {} def
+    % initialise the state
+    /Init{
+      /Depth 0 def
+      /FontFailed 0 def
+      /Substituted false def
+    }bind def
+    Init
+  end
+
+% Now the external interfaces. Firstly, the reportmissingfonts method...
+  /fontDefine {
+    //MissingFonts 2 index 2 copy known{
+      % /font <<font>> <<missing>> /font
+      2 index /HqnSubstituteFont known{
+        pop pop
+      }{
+        undef
+      }ifelse
+    }{pop pop}ifelse
+  } bind def
+  /cidDefine {
+    //MissingCIDFonts 2 index 2 copy known{
+      % /font <<font>> <<missing>> /font
+      2 index /HqnSubstituteFont known{
+        pop pop
+      }{
+        undef
+      }ifelse
+    }{pop pop}ifelse
+  } bind def
+  /fontbefore {
+    //MissingFonts 1 index known {
+      //MissingFonts exch get
+    } if
+    % do the original
+    dup
+  } bind def
+  /fontafter {
+    % now the extra functionality, note if font not now present
+    FontDirectory 2 index known not //GlobalFontDirectory 3 index known not and {
+      exch % the defaulted font (e.g. Courier)
+      //MissingFonts
+        1 index
+        dup
+        $error /SubstituteFont known
+          { $error /SubstituteFont get exec }
+          { pop /Courier }
+        ifelse
+      put
+      pop
+    }{
+      exch pop % the name
+    } ifelse
+  } bind def
+
+  /CIDbefore {
+    //GlobalDict /Depth 2 copy get 1 add put
+    //MissingCIDFonts 1 index known {
+      //MissingCIDFonts exch get
+    } if
+    % do the original
+    dup
+
+  } bind def
+  /CIDafter {
+    % now the extra functionality, note if font was substituted
+    //GlobalDict dup /Depth get 1 eq exch /Substituted get and {
+      exch % the defaulted font (e.g. CID-Bullet)
+      //MissingCIDFonts
+        1 index
+        dup
+        $error /SubstituteCIDFont get exec
+      put
+      pop
+      //GlobalDict /Substituted false put
+    }{
+      exch pop % the name
+    } ifelse
+    //GlobalDict /Depth 2 copy get 1 sub put
+  } bind def
+  false setglobal
+
+  /reportmissingfonts {
+    //GlobalDict begin
+      /MissingAction /reportmissingfonts def
+      //LocalDict /Veneer get exec
+      /FontBefore //fontbefore def
+      /FontAfter  //fontafter  def
+      /CIDBefore  //CIDbefore  def
+      /CIDAfter   //CIDafter   def
+      /FontDefine //fontDefine def
+      /CIDDefine  //cidDefine  def
+      Init
+    end
+
+    <<
+      /StartRender <<
+        /reportmissingfonts {
+          //MissingFonts { pop //MissingFonts exch undef } forall
+          //MissingCIDFonts { pop //MissingCIDFonts exch undef } forall
+        } bind
+      >>
+    >> setpagedevice % the thing which clears out the list for each page
+  } bind def
+
+% Secondly, the missingfonts method...
+  true setglobal
+  /fontbefore {
+    % do the original, with printing suppressed
+    execdict begin
+      /print load exch
+      /print { pop } def
+    end
+    dup
+  } bind def
+  /fontafter {
+    execdict /print 5 -1 roll put
+
+    % now the extra functionality, abort if font not now present
+    FontDirectory 2 index known not //GlobalFontDirectory 3 index known not and {
+      pop % the defaulted font (e.g. Courier)
+      execdict begin
+        % UVM(%%%%[ Error: stopping job because font %s not found ]%%%%)
+        (%%[ Error: stopping job because font ) /print load exec
+        dup 100 string cvs /print load exec
+        ( not found ]%%\n) /print load exec
+      end
+      serverdict /abortjobnow get exec
+    }{
+      exch pop % the name
+    } ifelse
+  } bind def
+
+  /CIDbefore {
+    //GlobalDict /Depth 2 copy get 1 add put
+    % do the original, with printing suppressed
+    execdict begin
+      /print load exch
+      /print { pop } def
+    end
+    dup
+  } bind def
+  /CIDafter {
+    execdict /print 5 -1 roll put
+
+    % now the extra functionality, abort if font was substituted
+    //GlobalDict dup /Depth get 1 eq exch /Substituted get and {
+      pop % the defaulted font (e.g. CID-Bullet)
+      execdict begin
+        % UVM(%%%%[ Error: stopping job because CID font %s not found ]%%%%)
+        (%%[ Error: stopping job because CID font ) /print load exec
+        dup 100 string cvs /print load exec
+        ( not found ]%%\n) /print load exec
+      end
+      % Reset substitution tracking prior to raising an error.
+      //GlobalDict begin Init end
+      serverdict /abortjobnow get exec
+    }{
+      exch pop % the name
+    } ifelse
+    //GlobalDict /Depth 2 copy get 1 sub put
+  } bind def
+  false setglobal
+
+  /missingfonts {
+    //GlobalDict begin
+      /MissingAction /missingfonts def
+      //LocalDict /Veneer get exec
+      /FontBefore //fontbefore def
+      /FontAfter  //fontafter  def
+      /CIDBefore  //CIDbefore  def
+      /CIDAfter   //CIDafter   def
+      /FontDefine {}           def
+      /CIDDefine  {}           def
+      Init
+    end
+  } bind def
+
+% Thirdly, the deferredmissingfonts method...
+  true setglobal
+  /fontDefine {
+    //MissingFonts 2 index 2 copy known{
+      2 index /HqnSubstituteFont known{
+        pop pop
+      }{
+        execdict begin
+          % UVM(%%%%[ Font %s has been supplied ]%%%%)
+          (%%[ Font ) /print load exec
+          dup 100 string cvs /print load exec
+          ( has been supplied ]%%\n) /print load exec
+        end
+        undef /FontFailed FontFailed 1 sub def
+      }ifelse
+    }{pop pop}ifelse
+  } bind def
+  /cidDefine {
+    //MissingCIDFonts 2 index 2 copy known{
+      2 index /HqnSubstituteFont known{
+        pop pop
+      }{
+        execdict begin
+          % UVM(%%%%[ CID font %s has been supplied ]%%%%)
+          (%%[ CID font ) /print load exec
+          dup 100 string cvs /print load exec
+          ( has been supplied ]%%\n) /print load exec
+        end
+        undef /FontFailed FontFailed 1 sub def
+      }ifelse
+    }{pop pop}ifelse
+  } bind def
+  /fontbefore {
+    //MissingFonts 1 index known {
+      //MissingFonts exch get
+    } if
+    % do the original, with printing suppressed
+    execdict begin
+      /print load exch
+      /print { pop } def
+    end
+    dup
+  } bind def
+  /fontafter {
+    execdict /print 5 -1 roll put
+
+    % now the extra functionality, note if font not now present
+    FontDirectory 2 index known not //GlobalFontDirectory 3 index known not and {
+      exch % the defaulted font (e.g. Courier)
+      //MissingFonts
+        1 index
+        dup
+        $error /SubstituteFont known
+          { $error /SubstituteFont get exec }
+          { pop /Courier }
+        ifelse
+      put
+
+      % Sadly we can't do this if the font will be supplied later...
+      % % Do minimum required to prevent HqnImpose2 forcing the RIP to quit when
+      % % autoshowpage is enabled.
+      % currentpagedevice /Imposition get {
+      %   << /AutoShowpage false >> setsystemparams
+      % }{
+      %   erasepage
+      % } ifelse
+
+      execdict begin
+        % UVM(%%%%[ Warning: job will stop at end of this page because font %s not found ]%%%%)
+        (%%[ Warning: job will stop at end of this page because font ) /print load exec
+        100 string cvs /print load exec % note: no dup as for error case
+        ( not found ]%%\n) /print load exec
+      end
+      /FontFailed FontFailed 1 add def
+    }{
+      exch pop % the name
+    } ifelse
+  } bind def
+
+  /CIDbefore {
+    //GlobalDict /Depth 2 copy get 1 add put
+    //MissingCIDFonts 1 index known {
+      //MissingCIDFonts exch get
+    } if
+    % do the original, with printing suppressed
+    execdict begin
+      /print load exch
+      /print { pop } def
+    end
+    dup
+  } bind def
+  /CIDafter {
+    execdict /print 5 -1 roll put
+
+    % now the extra functionality, note if font was substituted
+    //GlobalDict dup /Depth get 1 eq exch /Substituted get and {
+      exch % the defaulted font (e.g. CID-Bullet)
+      //MissingCIDFonts
+        1 index
+        dup
+        $error /SubstituteCIDFont get exec
+      put
+
+      % Sadly we can't do this if the font will be supplied later...
+      % % Do minimum required to prevent HqnImpose2 forcing the RIP to quit when
+      % % autoshowpage is enabled.
+      % currentpagedevice /Imposition get {
+      %   << /AutoShowpage false >> setsystemparams
+      % }{
+      %   erasepage
+      % } ifelse
+
+      execdict begin
+        % UVM(%%%%[ Warning: job will stop at end of this page because CID font %s not found ]%%%%)
+        (%%[ Warning: job will stop at end of this page because CID font ) /print load exec
+        100 string cvs /print load exec % note: no dup as for error case
+        ( not found ]%%\n) /print load exec
+      end
+      /FontFailed FontFailed 1 add def
+      /Substituted false def
+    }{
+      exch pop % the name
+    } ifelse
+    //GlobalDict /Depth 2 copy get 1 sub put
+  } bind def
+  false setglobal
+
+  /deferredmissingfonts {
+    //GlobalDict begin
+      /MissingAction /deferredmissingfonts def
+      //LocalDict /Veneer get exec
+      /FontBefore //fontbefore def
+      /FontAfter  //fontafter  def
+      /CIDBefore  //CIDbefore  def
+      /CIDAfter   //CIDafter   def
+      /FontDefine //fontDefine def
+      /CIDDefine  //cidDefine  def
+      Init
+    end
+
+    <<
+      /StartRender <<
+        /deferredmissingfonts {
+          //GlobalDict /FontFailed get 0 gt{
+            execdict begin
+              UVS(%%[ Error: stopping job because font(s) not present ]%%\n)
+                /print load exec
+            end
+            serverdict /abortjobnow get exec
+          } if
+        } bind
+      >>
+    >> setpagedevice % the thing which catches faulty jobs
+  } bind def
+
+/GetFontFailed {
+        //GlobalDict begin
+        FontFailed 0 gt
+        MissingAction /deferredmissingfonts eq and
+        end
+} bind def
+
+  [
+    /MissingFonts
+    /MissingCIDFonts
+    /GlobalDict
+    /LocalDict
+    /fontbefore
+    /fontafter
+    /CIDbefore
+    /CIDafter
+    /fontDefine
+    /cidDefine
+  ] {
+    currentdict exch undef
+  } forall
+
+  currentdict
+end
+
+/HqnMissingFonts exch /ProcSet defineresource
+
+globalness setglobal
+userdict /globalness undef
+
+%%EndProcSet
+
+

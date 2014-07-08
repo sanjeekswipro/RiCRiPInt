@@ -1,0 +1,63 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for WCS CMM (Windows Color System)
+#
+# $HopeName: COREwcs!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.5.1.1.1.1 2013/12/19 11:25:08 anon Exp $
+#
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant wcs ;
+
+    DependsOn all : wcs ;
+
+    IncludeExportDirectories Local :
+        xmlparser
+    ;
+
+    AddToVar Inherited Local : $(Com)-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    IncludeExportDirectories Inherited Local :
+        blob
+        fileio
+        gstate
+        mm
+        objects
+        tables
+        v20
+        xml
+    : .. ;
+
+    IncludeExportDirectories Inherited Local :
+        unicode
+    : .. .. ;
+
+    ReplaceVar Local : LIBFILES :
+        blobfilter.c
+        wcscmm.c
+    : Variant wcs ;
+
+    AddToVar Local : LIBFILES : nowcs.c : Variant Non_wcs ;
+
+    Library wcs : $(LIBFILES) ;
+
+    ReplaceVar Local : Libraries :
+        xmlparser
+    : Variant wcs ;
+
+    Makefile xmlparser ;
+
+    local i ;
+    for i in $(Libraries) {
+        C-LinkWithLibraries wcs : $(i) : $(i) ;
+    }
+
+    if $(Variant_wcs) {
+      # So that exported source can be built without wcs if required
+      ExportSource $(CurrentPath)$/src$/nowcs.c : C ;
+    }
+
+# Log stripped

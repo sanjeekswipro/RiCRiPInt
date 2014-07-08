@@ -1,0 +1,65 @@
+Perl -Sx "{0}" {"Parameters"}; Exit
+
+#!/usr/local/bin/perl
+#######################################################################
+#	Project	:	GUSI			-	Grand Unified Socket Interface
+#	File		:	MakeAliases	-	Determine which standard routines to rename
+#	Author	:	Matthias Neeracher
+#	Language	:	Perl
+#
+#  $Log: MakeAliases,v $
+#  Revision 1.2  1999/04/23  08:46:43  peterg
+#  Automatic checkin:
+#  changed attribute _comment to '#  '
+#
+#  Revision 1.2  1994/12/30  20:22:11  neeri
+#  Generate output in subdirectory.
+#
+#  Revision 1.1  1994/02/25  01:21:59  neeri
+#  Initial revision
+#
+#	Revision 0.1  1992/11/21  00:00:00  neeri
+#	Consider externals
+#	
+#######################################################################
+
+($dir) = ($ARGV[0] =~ /^:(.*):/);
+
+open(ALIAS, "Aliases") 		|| die "Can't open file \"Aliases\"";
+open(EXT,	"GUSI.ext")		|| die "Can't open file \"GUSI.ext\"";
+open(DF, 	">:$dir:Alias.df")	|| die "Can't open file \":$dir:Alias.df\"";
+open(DF1, 	">:$dir:Alias1.df")	|| die "Can't open file \":$dir:Alias1.df\"";
+open(RN,		">:$dir:Alias.rn")	|| die "Can't open file \":$dir:Alias.rn\"";
+
+while (<ALIAS>)	{
+	if (/(\S+)\s+(\S+)/) {
+		$Alias{$1} = $2;
+	
+		print RN  "   -rn $1=$2\n" unless ($1 eq $2);
+	}
+}
+
+close ALIAS;
+
+while (<EXT>)	{
+	if (/\S+\s+(\S+)/) {
+		$Ext{$1} = 1;
+	}
+}
+
+close EXT;
+
+while (<>)	{
+	if (/^(\S+).*\$/ || /EP=(\S+)/) {
+		unless ($Alias{$1}) {
+			if ($Ext{$1}) {
+				print DF1 "$1\n";
+			} else {
+				print DF "$1\n";
+			}
+		}
+	}
+}
+
+close DF;
+close RN;

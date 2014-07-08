@@ -1,0 +1,24 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWskinkit!swf:sys:extmedia(EBDSDK_P.1) $
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+%!PS-Adobe
+%%Title: Sys/ExtraMediaSelectionKeys
+%%Creator: Global Graphics Software Limited
+%%CreationDate: January 23, 1992
+%%EndComments
+
+% This file should produce a set (possibly none) of key / value pairs
+% on the operand stack to be used as additional media selection keys 
+% (as per the note on page 243 of Red Book 2). The values are always either
+% /InputAttributes or /OutputAttributes. The keys must also be keys for 
+% setpagedevice so will also need including in Sys/ExtraPageDeviceKeys.
+% See OEM documentation for detail.
+% For example:
+%                 /MyMediaKey /InputAttributes
+

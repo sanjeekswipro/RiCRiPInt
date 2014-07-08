@@ -1,0 +1,10 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:linux-all:all.jam(EBDSDK_P.1) $
+#
+
+  TargetOS ?= linux ;
+  DefaultVar  C-Defines : linux __NO_STRING_INLINES ;
+
+# Log stripped

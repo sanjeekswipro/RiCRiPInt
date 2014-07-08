@@ -1,0 +1,422 @@
+%!PS-Adobe-3.0
+%%Title: HqnInputTypes
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 18, 2007
+% Copyright (c) Global Graphics Software, 2007 All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%%EndComments
+%%BeginProcSet: "(HqnInputTypes)" 1 0
+
+
+% $HopeName: SWv20!swf:procsets:inputtypes(EBDSDK_P.1) $
+
+currentglobal
+
+false setglobal
+
+20 dict  % HqnInputTypesDict
+begin
+
+  /InputTypesDebug true def
+
+  /workspace currentdict def
+
+  /globalness exch def
+
+  /tiffheader 4 string def
+  /mmheader (MM\000\052) def
+  /iiheader (II\052\000) def
+  /tiffnamestring 2048 string def
+
+  /epsheader 4 string def
+  /epsbytes (\305\320\323\306) def
+
+  /pdfheader 5 string def
+  /pdfbytes (%PDF-) def
+
+  /zipheader 4 string def
+
+  % local file header
+  /zipbytes1 <504b0304> def
+  % central file header
+  /zipbytes2 <504b0102> def
+  % end central directory record
+  /zipbytes3 <504b0506> def
+
+  /bangpsheader 4 string def
+  /bangpsbytes (%!PS) def
+
+  % Checks to see if the file is seek()able
+  /isseekable {
+    % stack at start:  fileobject
+    % stack at finish: bool
+
+    1183615869 internaldict /fileseekable get { exec } stopped { pop false } if
+  } bind def
+
+  /r& (r&) def
+  /w& (w&) def
+
+  /hostserver (%hostserver%IOR:) def
+  /IORseparator (/) def
+  /IORwithleafname (%hostserver%<IOR>/) def
+  /IORwithoutleafname (%hostserver%<IOR>) def
+
+  /MapHostServerFileNames {
+    dup //hostserver anchorsearch {
+      % hostserver file
+      pop pop % discard post and match
+      % check if the IOR has /<leafname>
+      //IORseparator search {
+        % Do have leafname
+        pop pop % discard pre and match
+        //IORwithleafname print
+        print % leafname
+      } {
+        % No leafname
+        pop % discard original
+        //IORwithoutleafname print
+      } ifelse
+    } {
+      % Non-hostserver file
+      % Print filename as is
+      pop % discard original returned by anchorsearch
+      print
+    } ifelse
+  }  bind def
+
+
+  % By default check these types before checking any others
+  % They are tested in the opposite order to the order in this array
+
+  /FirstTypesToCheck [ /BANGPS /PDF ] def
+
+  % If you add a file-type to /InputTypes, the spool plugin may also need its
+  % type detection to be extended to include the new type
+
+  /InputTypes
+  <<
+    % on the stack:
+    %     filename inputfile
+    % return:
+    %     filename inputfile bool
+    % bool is true if file type has been positively identified
+
+    % These should all protect against the case that the file is not
+    % seekable.
+
+    /FLAT {
+      /HqnFlatOut /ProcSet resourcestatus {
+        pop pop
+        dup //workspace /isseekable get exec
+        {
+          dup /HqnFlatOut /ProcSet findresource /analyseflat get exec
+          dup {
+            exch pop
+            (/HqnFlatOut /ProcSet findresource /runflat get exec)
+            0 () /SubFileDecode filter exch
+          } if
+        }
+        {
+          false
+        } ifelse
+      }
+      {
+        false
+      } ifelse % resourcestatus
+    } bind
+
+   /JFIF {
+     /HqnImage /ProcSet resourcestatus {
+       pop pop
+       dup //workspace /isseekable get exec
+       {
+         dup [ /JFIF /JPEG ] /HqnImage /ProcSet findresource /analyseimage get exec
+         dup {
+           exch pop
+           ( 1 dict /HqnImage /ProcSet findresource /runimage get exec)
+           0 () /SubFileDecode filter exch
+         } if
+       }
+       {
+         false
+       } ifelse
+     }
+     {
+       false
+     } ifelse % resourcestatus
+   } bind
+
+    /JPEG2K {
+      /HqnImage /ProcSet resourcestatus {
+        pop pop
+        dup //workspace /isseekable get exec
+        {
+          dup [ /JPEG2000 ] /HqnImage /ProcSet findresource /analyseimage get exec
+          dup {
+            exch pop
+            ( 1 dict /HqnImage /ProcSet findresource /runimage get exec)
+            0 () /SubFileDecode filter exch
+          } if
+        }
+        {
+          false
+        } ifelse
+      }
+      {
+        false
+      } ifelse % resourcestatus
+    } bind
+
+
+    /WMPHOTO {
+      /HqnImage /ProcSet resourcestatus {
+        pop pop
+        dup //workspace /isseekable get exec
+        {
+          dup [ /WMPHOTO ] /HqnImage /ProcSet findresource /analyseimage get exec
+          dup {
+            exch pop
+            ( 1 dict /HqnImage /ProcSet findresource /runimage get exec)
+            0 () /SubFileDecode filter exch
+          } if
+        }
+        {
+          false
+        } ifelse
+      }
+      {
+        false
+      } ifelse % resourcestatus
+    } bind
+
+
+    /GIF {
+      /HqnGIF /ProcSet resourcestatus {
+        pop pop
+        dup //workspace /isseekable get exec
+        {
+          dup /HqnGIF /ProcSet findresource /analyseGIF get exec
+          dup {
+            exch pop
+            (/HqnGIF /ProcSet findresource /runGIFinfodict get exec)
+            0 () /SubFileDecode filter exch
+          } if
+        }
+        {
+          false
+        } ifelse
+      }
+      {
+        false
+      } ifelse % resourcestatus
+    } bind
+
+    /PDF { % Safe for non-seekable files
+      dup //pdfheader 1183615869 internaldict /peekreadstring get exec {
+        % check to see if it is a PDF file
+        //pdfbytes eq {
+          % valid PDF file header, so flag file as PDF (softwareiomode = 2)
+          % UVM(Ripping file %s as PDF.)
+          1 index (Ripping file ) print
+          //MapHostServerFileNames exec
+          ( as PDF.\n) print
+          2 setsoftwareiomode
+          true
+        } {
+          % not a PDF header
+          false
+        } ifelse
+      } {
+        % file not long enough to have a PDF header
+        pop
+        false
+      } ifelse
+    }
+
+    /EPS { % Safe for non-seekable files
+      dup //epsheader 1183615869 internaldict /peekreadstring get exec {
+        % check to see if it is an EPS file
+        //epsbytes eq {
+          % valid EPS file header, so flag file as EPS
+          % UVM(Ripping file %s as EPS.)
+          1 index (Ripping file ) print
+          //MapHostServerFileNames exec
+          ( as EPS.\n) print
+          3 setsoftwareiomode
+          true
+        } {
+          % not an EPS header
+          false
+        } ifelse
+      } {
+        % file not long enough to have a EPS header
+        pop
+        false
+      } ifelse
+    }
+
+    /BANGPS { % Safe for non-seekable files
+      dup //bangpsheader 1183615869 internaldict /peekreadstring get exec {
+        % check to see if it is an explicit %-bang-PS
+        //bangpsbytes eq
+      } {
+        % file not long enough
+        pop
+        false
+      } ifelse
+    }
+
+    /PS {
+      true
+    }
+
+    /TIFF { % Safe for non-seekable files
+      /HqnUNC /ProcSet resourcestatus {
+        pop pop
+        dup //tiffheader 1183615869 internaldict /peekreadstring get exec {
+          % check to see if it is a tiff file
+          dup //mmheader eq exch //iiheader eq or {
+            % this has a tiff file header
+            % UVM(Ripping file %s as TIFF.)
+            (Ripping file ) print
+            1 index
+            //MapHostServerFileNames exec
+            ( as TIFF.\n) print
+
+            1183615869 internaldict /fileObject 3 -1 roll put
+            1183615869 internaldict
+            /fileName 2 index
+            /HqnUNC /ProcSet findresource /ResolveDevice get exec
+            //tiffnamestring copy put
+
+            (/HqnInputTypes /ProcSet findresource /runTIFF get exec)
+            0 () /SubFileDecode filter
+            true
+          } {
+            % not a tiff header
+            false
+          } ifelse
+        } {
+          % file not long enough to have a tiff header
+          pop
+          false
+        } ifelse
+      }
+      {
+        false % resourcestatus
+      } ifelse
+    }
+
+    /ZIP {
+      /HqnZIP /ProcSet resourcestatus {
+        pop pop
+        dup //workspace /isseekable get exec
+        {
+          dup //zipheader readstring {
+            % Check for a ZIP archive
+            //zipbytes1 eq //zipheader //zipbytes2 eq or //zipheader //zipbytes3 eq or {
+              /HqnZIP /ProcSet findresource /analyseZIP get exec
+              dup {
+                exch pop
+                ({/HqnZIP /ProcSet findresource /runZIP get exec} superstopped 1183615869 internaldict /fileObject get closefile {stop} if)
+                0 () /SubFileDecode filter exch
+              } if
+
+            }{ % not a ZIP signature - seek back to the beginning of the file
+              dup 0 setfileposition
+              false
+            } ifelse
+
+          }{ % file not long enough to have a ZIP header
+            pop
+            % reopen file as it was closed on EOF
+            pop dup //r& file
+            false
+          } ifelse
+        }
+        {
+          false
+        } ifelse
+      }
+      {
+        false
+      } ifelse % resourcestatus
+    }
+
+  >> def
+
+  /runTIFF {
+      1183615869 internaldict /fileObject get dup dup 0 setfileposition
+      [ /TIFF ] /HqnImage /ProcSet findresource /analyseimage get exec
+      dup
+      {
+        exch pop
+        1 dict /HqnImage /ProcSet findresource /runimage get exec
+      }
+      if
+      1183615869 internaldict /fileObject get
+      closefile
+  } bind def
+
+
+  /openreadfile {
+    % on the stack:
+    %     inputfilename mark filetypes
+    % or
+    %     inputfilename array-of-filetypes
+    % return:
+    %     inputfile
+    %
+    statusdict begin
+      dup type /arraytype eq {
+        % the array format - turn into the stack-based format
+        mark exch dup dup
+        length 1 sub -1 0
+        {
+          get exch dup
+        } for
+        pop pop
+      } if
+      counttomark dup
+      3 add -1 roll
+      dup //r& file
+      % Save the file away in internaldict for future reference
+      1183615869 internaldict /fileObject 2 index put
+      0 1 5 -1 roll 1 sub
+      {
+        pop % index
+        3 -1 roll
+        //InputTypes exch
+        dup 5 1 roll
+        get exec
+        {
+          % Save the file type in internaldict for future reference
+          1183615869 internaldict
+          /fileType 5 -1 roll
+          dup /BANGPS eq { pop /PS }if   % Report /BANGPS type as /PS
+          put
+          exit
+        }
+        { 3 -1 roll pop }
+        ifelse
+      } for
+      exch pop % filename
+      counttomark 1 add 1 roll
+      cleartomark
+  end
+}  bind def
+
+
+  currentdict
+
+end % HqnInputTypesDict
+
+/HqnInputTypes exch /ProcSet defineresource
+
+/globalness get
+
+setglobal
+
+
+%%EndProcSet

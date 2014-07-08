@@ -1,0 +1,1026 @@
+# $HopeName: SWprod_hqnrip!ebdrip:makefile.unx.ebd.template(EBDSDK_P.1) $
+#
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+#
+# This example is provided on an "as is" basis and without
+# warranty of any kind. Global Graphics Software Ltd. does not
+# warrant or make any representations regarding the use or results
+# of use of this example.
+#
+# To compile the test app customize the few variables below, change
+# directory to the directory containing this file and then run:
+#    gmake -f Makefile
+#
+#
+
+################ Customize these variables ###################
+#
+
+CC=@gcc
+LN=@g++
+AR=@ar
+
+LIB_SUFFIX=.a
+DYLIB_SUFFIX=.so
+#ifdef DYLIB
+LIBS=-ldl -lm -lpthread -lrt -lgcov
+#else
+LIBS=-lm -lpthread -lrt -lgcov
+#endif
+
+EBDWRAPPER=ebdwrapper
+OBJ_DIR=.
+APP_DIR=$(OBJ_DIR)
+SRC_DIR=../lib
+SW_ROOT_DIR=../SW
+CORELIB_DIR=../bin
+#ifdef DYLIB
+CORELIB=$(CORELIB_DIR)/corelib$(DYLIB_SUFFIX)
+#else
+#ifdef LINUX_X86_GCC_4_6_3
+CORELIB=$(CORELIB_DIR)/libcorelib.linux-x86-4.6.3$(LIB_SUFFIX)
+#else
+CORELIB=$(CORELIB_DIR)/corelib$(LIB_SUFFIX)
+#endif
+#endif
+#ifdef SDK_OPT_UFST5
+UFST5LIB=$(OBJ_DIR)/ufst5$(LIB_SUFFIX)
+#endif
+#ifdef SDK_OPT_UFST7
+UFST7LIB=$(OBJ_DIR)/ufst7$(LIB_SUFFIX)
+#endif
+#ifdef SDK_OPT_FF
+#ifdef LINUX_X86_GCC_4_6_3
+FFLIB=$(OBJ_DIR)/libff.linux-x86-4.6.3$(LIB_SUFFIX)
+#else
+FFLIB=$(OBJ_DIR)/ff$(LIB_SUFFIX)
+#endif
+#endif
+USE_RAM_SW_FOLDER=0
+#ifdef SDK_OPT_PDF_OUT
+SUPPORT_PDF_OUT=1
+#endif
+SUPPORT_TIFF_OUT=1
+SUPPORT_PJL=1
+SUPPORT_SCRN1BPP=1
+SUPPORT_SCRN2BPP=1
+SUPPORT_SCRN4BPP=1
+SUPPORT_SOCKET=1
+#ifdef SDK_OPT_UFST5
+USE_UFST5=1
+#endif
+#ifdef SDK_OPT_UFST7
+USE_UFST7=1
+#endif
+#ifdef SDK_OPT_FF
+USE_FF=1
+#endif
+
+SWFOLDERLIB=$(OBJ_DIR)/swfolderlib$(LIB_SUFFIX)
+ifeq ($(USE_RAM_SW_FOLDER),1)
+  SWDEPEND=$(SWFOLDERLIB)
+endif
+
+#
+##############################################################
+
+all: objdirs $(APP_DIR)/$(EBDWRAPPER)
+
+ifeq ($(DEBUG),1)
+  OPT_ARGS=-g -DGG_DEBUG -DDEBUG_BUILD
+else
+ifeq ($(TIMING),1)
+  OPT_ARGS=-pg -g -O -DNDEBUG
+else
+  OPT_ARGS=-O2 -DNDEBUG
+endif
+endif
+
+ifeq ($(ASSERT),1)
+  ASSERT_ARGS=-DASSERT_BUILD
+endif
+
+ifeq ($(TIMING),1)
+  TIMING_ARGS=-pg
+endif
+
+#ifdef SDK_OPT_PDF_OUT
+ifeq ($(SUPPORT_PDF_OUT),1)
+  PMS_PDFOUT_DEF=-DPMS_SUPPORT_PDF_OUT
+endif
+#endif
+
+ifeq ($(USE_RAM_SW_FOLDER),1)
+  SW_IN_RAM_DEF=-DUSE_RAM_SW_FOLDER
+endif
+
+ifeq ($(USE_ZIP_HYBRID_SW_FOLDER),1)
+  SW_HYBRID_DEF=-DUSE_ZIP_HYBRID_SW_FOLDER 
+endif
+
+ifeq ($(SUPPORT_SOCKET),1)
+  SUPPORT_SOCKET_DEF=-DPMS_SUPPORT_SOCKET
+endif
+
+ifeq ($(SUPPORT_TIFF_OUT),1)
+  SUPPORT_TIFF_OUT_DEF=-DPMS_SUPPORT_TIFF_OUT
+endif
+
+ifeq ($(SUPPORT_PJL),1)
+  PJLLIB=$(OBJ_DIR)/libpjlparser$(LIB_SUFFIX)
+  SUPPORT_PJL_DEF=-DUSE_PJL
+endif
+
+ifeq ($(SUPPORT_SCRN1BPP),1)
+  SUPPORT_SCRN1BPP_DEF=-DSDK_SUPPORT_1BPP_EXT_EG
+endif
+
+ifeq ($(SUPPORT_SCRN2BPP),1)
+  SUPPORT_SCRN2BPP_DEF=-DSDK_SUPPORT_2BPP_EXT_EG
+endif
+
+ifeq ($(SUPPORT_SCRN4BPP),1)
+  SUPPORT_SCRN4BPP_DEF=-DSDK_SUPPORT_4BPP_EXT_EG
+endif
+
+# Compiler args
+#
+# Define NO_BATTERY_CALENDAR if you do not have a battery powered clock
+#   see skinkit\src\caldev.c
+#
+CCARGS = \
+  -fno-builtin-memcpy \
+  -fno-strict-aliasing \
+  -Wno-unknown-pragmas \
+#ifdef ASSERT_BUILD
+  -DCHECKSUM \
+#endif
+  $(SUPPORT_PJL_DEF) \
+#ifdef SDK_OPT_XPS_IN
+  -DMETRO \
+  -DXML_STATIC -DHAVE_EXPAT_CONFIG_H -DXMLCALL= \
+#endif
+  $(SUPPORT_TIFF_OUT_DEF) \
+  $(SUPPORT_SCRN1BPP_DEF) \
+  $(SUPPORT_SCRN2BPP_DEF) \
+  $(SUPPORT_SCRN4BPP_DEF) \
+  -DPMS_INPUT_IS_FILE -DPMS_OUTPUT_IS_TIFF \
+#ifdef SDK_OPT_PDF_OUT
+  $(PMS_PDFOUT_DEF) \
+#endif
+#ifdef SDK_OPT_UFST5
+  -DUSE_UFST5 \
+  -DUFST_LINUX \
+#endif
+#ifdef SDK_OPT_UFST7
+  -DUSE_UFST7 \
+  -DUFST_LINUX \
+#endif
+#ifdef SDK_OPT_FF
+  -DUSE_FF \
+  -DFF_LINUX \
+#endif
+#ifdef SDK_DIRECT_OUT
+  -DDIRECTPRINTPCLOUT \
+#endif
+#ifdef SDK_DIRECT_VIEW
+  -DDIRECTVIEWPDFTIFF \
+#endif
+#ifdef LINUX_X86_GCC_4_6_3
+  -Wno-format-security -Wno-unused-result \
+  -Wno-unused-but-set-variable -Wno-switch \
+  -Wno-unknown-pragmas -fno-strict-aliasing \
+#endif
+#ifdef LINUX64_BUILD32
+  -m32 \
+#endif
+  -DLESDK \
+  $(SW_HYBRID_DEF) $(SW_IN_RAM_DEF) \
+  $(SUPPORT_SOCKET_DEF) \
+  $(SWOPT) \
+#ifdef DYLIB
+  -fPIC \
+#endif
+  -c \
+  $(ARCH_ARGS) $(OPT_ARGS) $(ASSERT_ARGS) $(TIMING_ARGS) \
+  -DUNIX=1 \
+  -Dlinux \
+
+WARNARGS = -Wall -Wno-missing-braces
+
+UFSTWARNARGS = -w
+FFWARNARGS = -w
+
+LNARGS = \
+  $(ARCH_ARGS) \
+  $(TIMING_ARGS) \
+#ifdef LINUX64_BUILD32
+  -m32 \
+#endif
+
+#
+# It is less likely you will need to edit these to compile on your system
+
+# Locations of LE RIP interface files in $(SRC_DIR)
+IF_CONTROL=interface/control
+IF_SCREENING=interface/screening
+IF_VERSION=interface/version
+IF_SWZIP=interface/swzip
+IF_MPS=interface/mps
+IF_PGB=interface/pgb
+IF_RLE=interface/rle
+#ifdef SDK_OPT_XPS_IN
+IF_XPS=interface/xps
+#endif
+#ifdef SDK_OPT_LESEC
+IF_LESEC=le-security/export
+#endif
+
+STANDARD_INCLUDES= \
+  -I$(SRC_DIR)/standard/export
+
+KIT_INCLUDES= \
+  -I$(SRC_DIR)/dlliface/export \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/$(IF_PGB) \
+  -I$(SRC_DIR)/$(IF_RLE) \
+  -I$(SRC_DIR)/$(IF_SCREENING) \
+  -I$(SRC_DIR)/$(IF_SWZIP) \
+  -I$(SRC_DIR)/$(IF_VERSION) \
+#ifdef SDK_OPT_XPS_IN
+  -I$(SRC_DIR)/$(IF_XPS) \
+  -I$(SRC_DIR)/libgenxml/libexpat/export \
+  -I$(SRC_DIR)/libgenxml/libexpat/unix/src \
+  -I$(SRC_DIR)/ptdev/export \
+#endif
+#ifdef SDK_OPT_LESEC
+  -I$(SRC_DIR)/$(IF_LESEC) \
+#endif
+  -I$(SRC_DIR)/jpeg/export \
+  -I$(SRC_DIR)/libjpeg/export \
+  -I$(SRC_DIR)/libjpeg/src \
+  -I$(SRC_DIR)/libjpeg-turbo/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/skinkit/src \
+  -I$(SRC_DIR)/skinkit/unix/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/threads/export \
+  -I$(SRC_DIR)/timeline/export \
+  -I$(SRC_DIR)/timer/export \
+  -I$(SRC_DIR)/timer/src \
+  -I$(SRC_DIR)/zlib/export \
+  $(STANDARD_INCLUDES)
+
+PTDEV_INCLUDES= \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/$(IF_XPS) \
+  -I$(SRC_DIR)/libgenxml/libexpat/export \
+  -I$(SRC_DIR)/libgenxml/libexpat/unix/src \
+  -I$(SRC_DIR)/ptdev/export \
+  -I$(SRC_DIR)/ptdev/src \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/skinkit/unix/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  -I$(SRC_DIR)/threads/export \
+  $(STANDARD_INCLUDES)
+
+OIL_INCLUDES= \
+  -I$(SRC_DIR)/dlliface/export \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/$(IF_PGB) \
+  -I$(SRC_DIR)/$(IF_RLE) \
+  -I$(SRC_DIR)/$(IF_SCREENING) \
+  -I$(SRC_DIR)/$(IF_VERSION) \
+  -I$(SRC_DIR)/oil/export \
+  -I$(SRC_DIR)/oil/unix/export \
+  -I$(SRC_DIR)/oil/src \
+  -I$(SRC_DIR)/pdfspool/export \
+  -I$(SRC_DIR)/pjl/export \
+  -I$(SRC_DIR)/pms/export \
+  -I$(SRC_DIR)/skinkit/src \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/skinkit/unix/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/threads/export \
+  -I$(SRC_DIR)/timeline/export \
+  -I$(SRC_DIR)/timer/export \
+#ifdef SDK_OPT_FF
+  -I$(SRC_DIR)/ff/core \
+  -I$(SRC_DIR)/ff/export \
+  -I$(SRC_DIR)/pfinff/export \
+#endif
+#ifdef SDK_OPT_UFST5
+  -I$(SRC_DIR)/pfinufst5/export \
+  -I$(SRC_DIR)/ufst/sys/inc \
+  -I$(SRC_DIR)/ufst/rts/inc \
+  -I$(SRC_DIR)/ufst/rts/fco \
+  -I$(SRC_DIR)/ufst/rts/tt \
+#endif
+#ifdef SDK_OPT_UFST7
+  -I$(SRC_DIR)/pfinufst7/export \
+  -I$(SRC_DIR)/ufst7/sys/inc \
+  -I$(SRC_DIR)/ufst7/rts/inc \
+  -I$(SRC_DIR)/ufst7/rts/fco \
+  -I$(SRC_DIR)/ufst7/rts/tt \
+#endif
+  -I$(SRC_DIR)/jpeg/export \
+  -I$(SRC_DIR)/libjpeg/export \
+  -I$(SRC_DIR)/libjpeg/src \
+  -I$(SRC_DIR)/libjpeg-turbo/export \
+  $(STANDARD_INCLUDES)
+
+GGETIFF_INCLUDES= \
+  -I$(SRC_DIR)/ggetiff/export \
+  -I$(SRC_DIR)/pms/export \
+  -I$(SRC_DIR)/pms/src \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+
+PJL_INCLUDES= \
+  -I$(SRC_DIR)/pjl/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+
+PDFSPOOL_INCLUDES= \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/pdfparse/export \
+  -I$(SRC_DIR)/pdfspool/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+
+PMS_INCLUDES= \
+  -I$(SRC_DIR)/ggetiff/export \
+  -I$(SRC_DIR)/oil/export \
+  -I$(SRC_DIR)/pms/export \
+  -I$(SRC_DIR)/pms/src \
+  -I$(SRC_DIR)/pms/unix/export \
+  -I$(SRC_DIR)/zlib/export \
+#ifdef SDK_OPT_UFST5
+  -I$(SRC_DIR)/ufst/sys/inc \
+  -I$(SRC_DIR)/ufst/rts/inc \
+  -I$(SRC_DIR)/ufst/rts/fco \
+  -I$(SRC_DIR)/ufst/rts/tt \
+#endif
+#ifdef SDK_OPT_UFST7
+  -I$(SRC_DIR)/ufst7/sys/inc \
+  -I$(SRC_DIR)/ufst7/rts/inc \
+  -I$(SRC_DIR)/ufst7/rts/fco \
+  -I$(SRC_DIR)/ufst7/rts/tt \
+#endif
+#ifdef SDK_OPT_FF
+  -I$(SRC_DIR)/ff/core \
+#endif
+  $(STANDARD_INCLUDES)
+
+#ifdef SDK_OPT_UFST5
+PFINUFST5_INCLUDES= \
+  -I$(SRC_DIR)/ufst/sys/inc \
+  -I$(SRC_DIR)/ufst/rts/inc \
+  -I$(SRC_DIR)/ufst/rts/fco \
+  -I$(SRC_DIR)/ufst/rts/tt \
+  -I$(SRC_DIR)/dlliface/export \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/pfinufst5/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+#endif
+
+#ifdef SDK_OPT_UFST7
+PFINUFST7_INCLUDES= \
+  -I$(SRC_DIR)/ufst7/sys/inc \
+  -I$(SRC_DIR)/ufst7/rts/inc \
+  -I$(SRC_DIR)/ufst7/rts/fco \
+  -I$(SRC_DIR)/ufst7/rts/tt \
+  -I$(SRC_DIR)/dlliface/export \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/pfinufst7/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+#endif
+
+#ifdef SDK_OPT_FF
+PFINFF_INCLUDES = \
+  -I$(SRC_DIR)/dlliface/export \
+  -I$(SRC_DIR)/$(IF_CONTROL) \
+  -I$(SRC_DIR)/$(IF_MPS) \
+  -I$(SRC_DIR)/ff/core \
+  -I$(SRC_DIR)/pfinff/export \
+  -I$(SRC_DIR)/skinkit/export \
+  -I$(SRC_DIR)/rdrevent/export \
+  -I$(SRC_DIR)/timeline/export \
+  $(STANDARD_INCLUDES)
+#endif
+
+####################### Source Files ######################
+
+LE_OFILES=\
+ $(OBJ_DIR)/skinkit/caldev.o \
+ $(OBJ_DIR)/skinkit/config.o \
+ $(OBJ_DIR)/skinkit/devutils.o \
+ $(OBJ_DIR)/skinkit/fdecrypt.o \
+ $(OBJ_DIR)/skinkit/file.o \
+ $(OBJ_DIR)/skinkit/filedev.o \
+ $(OBJ_DIR)/skinkit/fndcrypt.o \
+#ifdef SDK_OPT_LESEC
+ $(OBJ_DIR)/skinkit/handshake.o \
+#endif
+ $(OBJ_DIR)/skinkit/hybridev.o \
+ $(OBJ_DIR)/skinkit/mem.o \
+ $(OBJ_DIR)/skinkit/memfs.o \
+ $(OBJ_DIR)/skinkit/monitor.o \
+ $(OBJ_DIR)/skinkit/paths.o \
+ $(OBJ_DIR)/skinkit/pgbdev.o \
+ $(OBJ_DIR)/skinkit/probelog.o \
+ $(OBJ_DIR)/skinkit/progevts.o \
+ $(OBJ_DIR)/skinkit/ramdev.o \
+ $(OBJ_DIR)/skinkit/ripthread.o \
+ $(OBJ_DIR)/skinkit/skinkit.o \
+ $(OBJ_DIR)/skinkit/strutils.o \
+ $(OBJ_DIR)/skinkit/streamdev.o \
+ $(OBJ_DIR)/skinkit/sync.o \
+ $(OBJ_DIR)/skinkit/zlibutil.o
+
+LEP_OFILES=\
+ $(OBJ_DIR)/skinkit/pfile.o \
+ $(OBJ_DIR)/skinkit/pmem.o \
+ $(OBJ_DIR)/skinkit/pprobelog.o \
+ $(OBJ_DIR)/skinkit/ptime.o
+
+#ifdef SDK_OPT_XPS_IN
+# Files for the Metro skin build
+
+XPS_OFILES=\
+ $(OBJ_DIR)/skinkit/swzipreaddev.o \
+ $(OBJ_DIR)/skinkit/xpsbuild.o \
+ $(OBJ_DIR)/skinkit/xpsconfstate.o \
+ $(OBJ_DIR)/skinkit/xpsdev.o
+
+PTDEV_OFILES=\
+ $(OBJ_DIR)/ptdev/dynstring.o \
+ $(OBJ_DIR)/ptdev/ggxml.o \
+ $(OBJ_DIR)/ptdev/msxml.o \
+ $(OBJ_DIR)/ptdev/prnttckt.o \
+ $(OBJ_DIR)/ptdev/prnttcktutils.o \
+ $(OBJ_DIR)/ptdev/ptdev.o \
+ $(OBJ_DIR)/ptdev/xmlcbcks.o \
+ $(OBJ_DIR)/ptdev/xpsconf.o
+#endif
+
+ifeq ($(SUPPORT_SCRN1BPP),1)
+OIL_SCRN1BPP_OFILES= \
+ $(OBJ_DIR)/oil/oil_ebd1bpp.o 
+endif
+
+ifeq ($(SUPPORT_SCRN2BPP),1)
+OIL_SCRN2BPP_OFILES= \
+ $(OBJ_DIR)/oil/oil_htm2bpp.o \
+ $(OBJ_DIR)/oil/oil_scrn2bpp.o 
+endif
+
+ifeq ($(SUPPORT_SCRN4BPP),1)
+OIL_SCRN4BPP_OFILES= \
+ $(OBJ_DIR)/oil/oil_htm4bpp.o \
+ $(OBJ_DIR)/oil/oil_scrn4bpp.o 
+endif
+
+ifeq ($(SUPPORT_PJL),1)
+OIL_PJL_OFILES= \
+ $(OBJ_DIR)/oil/oil_pjl.o
+endif
+
+OIL_OFILES=\
+ $(OIL_SCRN1BPP_OFILES) \
+ $(OIL_SCRN2BPP_OFILES) \
+ $(OIL_SCRN4BPP_OFILES) \
+ $(OIL_PJL_OFILES) \
+ $(OBJ_DIR)/oil/oil_ebddev.o \
+ $(OBJ_DIR)/oil/oil_entry.o \
+ $(OBJ_DIR)/oil/oil_interface_oil2pms.o \
+ $(OBJ_DIR)/oil/oil_interface_skin2oil.o \
+ $(OBJ_DIR)/oil/oil_malloc.o \
+ $(OBJ_DIR)/oil/oil_timing.o \
+ $(OBJ_DIR)/oil/oil_media.o \
+ $(OBJ_DIR)/oil/oil_stream.o \
+ $(OBJ_DIR)/oil/oil_test.o \
+ $(OBJ_DIR)/oil/oil_job_handler.o \
+ $(OBJ_DIR)/oil/oil_page_handler.o \
+ $(OBJ_DIR)/oil/oil_pdfspool.o \
+ $(OBJ_DIR)/oil/oil_probelog.o \
+ $(OBJ_DIR)/oil/oil_progdev.o \
+ $(OBJ_DIR)/oil/oil_psconfig.o \
+ $(OBJ_DIR)/oil/oil_main.o \
+ $(OBJ_DIR)/oil/oil_multithread.o \
+ $(OBJ_DIR)/oil/oil_cmm.o \
+#ifdef SDK_DIRECT_OUT 
+ $(OBJ_DIR)/oil/oil_pcl5rast.o \
+ $(OBJ_DIR)/oil/oil_pcl6rast.o \
+ $(OBJ_DIR)/oil/oil_pclcommon.o \
+#endif
+ $(OBJ_DIR)/oil/oil_utils.o \
+ $(OBJ_DIR)/oil/oil_virtualfile.o
+ 
+OILP_OFILES=\
+ $(OBJ_DIR)/oil/oil_platform.o \
+
+#ifdef SDK_OPT_PDF_OUT
+ifeq ($(SUPPORT_PDF_OUT),1)
+PMS_PDFOUT_OFILES=\
+ $(OBJ_DIR)/pms/pms_pdf_out.o 
+endif
+#endif
+
+ifeq ($(SUPPORT_TIFF_OUT),1)
+PMS_TIFFOUT_OFILES=\
+ $(OBJ_DIR)/pms/pms_tiff_out.o 
+endif
+
+ifeq ($(SUPPORT_SCRN1BPP),1)
+PMS_SCRN1BPP_OFILES=\
+ $(OBJ_DIR)/pms/pms_scrn_1bpp_text.o \
+ $(OBJ_DIR)/pms/pms_scrn_1bpp_gfx.o \
+ $(OBJ_DIR)/pms/pms_scrn_1bpp_image.o 
+endif
+
+ifeq ($(SUPPORT_SCRN2BPP),1)
+PMS_SCRN2BPP_OFILES=\
+ $(OBJ_DIR)/pms/pms_scrn_2bpp_text.o \
+ $(OBJ_DIR)/pms/pms_scrn_2bpp_gfx.o \
+ $(OBJ_DIR)/pms/pms_scrn_2bpp_image.o 
+endif
+
+ifeq ($(SUPPORT_SCRN4BPP),1)
+PMS_SCRN4BPP_OFILES=\
+ $(OBJ_DIR)/pms/pms_scrn_4bpp_text.o \
+ $(OBJ_DIR)/pms/pms_scrn_4bpp_gfx.o \
+ $(OBJ_DIR)/pms/pms_scrn_4bpp_image.o 
+endif
+
+ifeq ($(SUPPORT_SOCKET),1)
+PMS_SOCKET_OFILES=\
+ $(OBJ_DIR)/pms/pms_input_socket.o \
+ $(OBJ_DIR)/pms/pms_socket.o 
+endif
+
+LIBJPEG_OFILES= \
+ $(OBJ_DIR)/libjpeg/jaricom.o \
+ $(OBJ_DIR)/libjpeg/jcapimin.o \
+ $(OBJ_DIR)/libjpeg/jcapistd.o \
+ $(OBJ_DIR)/libjpeg/jcarith.o \
+ $(OBJ_DIR)/libjpeg/jccoefct.o \
+ $(OBJ_DIR)/libjpeg/jccolor.o \
+ $(OBJ_DIR)/libjpeg/jcdctmgr.o \
+ $(OBJ_DIR)/libjpeg/jchuff.o \
+ $(OBJ_DIR)/libjpeg/jcinit.o \
+ $(OBJ_DIR)/libjpeg/jcmainct.o \
+ $(OBJ_DIR)/libjpeg/jcmarker.o \
+ $(OBJ_DIR)/libjpeg/jcmaster.o \
+ $(OBJ_DIR)/libjpeg/jcomapi.o \
+ $(OBJ_DIR)/libjpeg/jcparam.o \
+ $(OBJ_DIR)/libjpeg/jcprepct.o \
+ $(OBJ_DIR)/libjpeg/jcsample.o \
+ $(OBJ_DIR)/libjpeg/jctrans.o \
+ $(OBJ_DIR)/libjpeg/jdapimin.o \
+ $(OBJ_DIR)/libjpeg/jdapistd.o \
+ $(OBJ_DIR)/libjpeg/jdarith.o \
+ $(OBJ_DIR)/libjpeg/jdatadst.o \
+ $(OBJ_DIR)/libjpeg/jdatasrc.o \
+ $(OBJ_DIR)/libjpeg/jdcoefct.o \
+ $(OBJ_DIR)/libjpeg/jdcolor.o \
+ $(OBJ_DIR)/libjpeg/jddctmgr.o \
+ $(OBJ_DIR)/libjpeg/jdhuff.o \
+ $(OBJ_DIR)/libjpeg/jdinput.o \
+ $(OBJ_DIR)/libjpeg/jdmainct.o \
+ $(OBJ_DIR)/libjpeg/jdmarker.o \
+ $(OBJ_DIR)/libjpeg/jdmaster.o \
+ $(OBJ_DIR)/libjpeg/jdmerge.o \
+ $(OBJ_DIR)/libjpeg/jdpostct.o \
+ $(OBJ_DIR)/libjpeg/jdsample.o \
+ $(OBJ_DIR)/libjpeg/jdtrans.o \
+ $(OBJ_DIR)/libjpeg/jerror.o \
+ $(OBJ_DIR)/libjpeg/jfdctflt.o \
+ $(OBJ_DIR)/libjpeg/jfdctfst.o \
+ $(OBJ_DIR)/libjpeg/jfdctint.o \
+ $(OBJ_DIR)/libjpeg/jidctflt.o \
+ $(OBJ_DIR)/libjpeg/jidctfst.o \
+ $(OBJ_DIR)/libjpeg/jidctint.o \
+ $(OBJ_DIR)/libjpeg/jmemmgr.o \
+ $(OBJ_DIR)/libjpeg/jmemnobs.o \
+ $(OBJ_DIR)/libjpeg/jquant1.o \
+ $(OBJ_DIR)/libjpeg/jquant2.o \
+ $(OBJ_DIR)/libjpeg/jutils.o \
+ $(OBJ_DIR)/libjpeg/libjpeg.o
+
+LIBJPEGTURBO_OFILES= \
+ $(OBJ_DIR)/libjpeg-turbo/nolibjpegturbo.o
+
+PMS_OFILES=\
+ $(OBJ_DIR)/pms/pms_config.o \
+ $(OBJ_DIR)/pms/pms_engine_simulator.o \
+ $(OBJ_DIR)/pms/pms_file_in.o \
+ $(OBJ_DIR)/pms/pms_filesys.o \
+ $(OBJ_DIR)/pms/pms_interface_oil2pms.o \
+ $(OBJ_DIR)/pms/pms_malloc.o \
+ $(OBJ_DIR)/pms/pms_page_handler.o \
+ $(OBJ_DIR)/pms/pms_thread.o \
+ $(PMS_TIFFOUT_OFILES) \
+ $(OBJ_DIR)/pms/pms_main.o \
+ $(OBJ_DIR)/pms/pms_version.o \
+ $(OBJ_DIR)/pms/pms_input_hotfolder.o \
+ $(OBJ_DIR)/pms/pms_input_manager.o \
+ $(OBJ_DIR)/pms/pms_entry.o \
+ $(PMS_SCRN1BPP_OFILES) \
+ $(PMS_SCRN2BPP_OFILES) \
+ $(PMS_SCRN4BPP_OFILES) \
+ $(PMS_SOCKET_OFILES) \
+#ifdef SDK_OPT_UFST5
+ $(OBJ_DIR)/pms/pms_ufst.o \
+ $(OBJ_DIR)/pms/ufstrom.o \
+#ifdef UFST_FCO_PCL45
+ $(OBJ_DIR)/pms/ufstrom_pcl45.o \
+#endif
+#ifdef UFST_FCO_PCLPS2
+ $(OBJ_DIR)/pms/ufstrom_pclps2.o \
+#endif
+#ifdef UFST_FCO_PCLPS3
+ $(OBJ_DIR)/pms/ufstrom_pclps3.o \
+#endif
+#ifdef UFST_FCO_PS2
+ $(OBJ_DIR)/pms/ufstrom_ps2.o \
+#endif
+#ifdef UFST_FCO_PS3
+ $(OBJ_DIR)/pms/ufstrom_ps3.o \
+#endif
+#endif
+#ifdef SDK_OPT_UFST7
+ $(OBJ_DIR)/pms/pms_ufst.o \
+ $(OBJ_DIR)/pms/ufstrom.o \
+#ifdef UFST_FCO_PCL45
+ $(OBJ_DIR)/pms/ufstrom_pcl45.o \
+#endif
+#ifdef UFST_FCO_PCLPS2
+ $(OBJ_DIR)/pms/ufstrom_pclps2.o \
+#endif
+#ifdef UFST_FCO_PCLPS3
+ $(OBJ_DIR)/pms/ufstrom_pclps3.o \
+#endif
+#ifdef UFST_FCO_PS2
+ $(OBJ_DIR)/pms/ufstrom_ps2.o \
+#endif
+#ifdef UFST_FCO_PS3
+ $(OBJ_DIR)/pms/ufstrom_ps3.o \
+#endif
+#endif
+#ifdef SDK_OPT_FF
+ $(OBJ_DIR)/pms/ffrom.o \
+#ifdef FF_PFR_PCL45
+ $(OBJ_DIR)/pms/ffrom_pcl45.o \
+#endif
+#ifdef FF_PFR_PCLPS2
+ $(OBJ_DIR)/pms/ffrom_pclps2.o \
+#endif
+#ifdef FF_PFR_PCLPS3
+ $(OBJ_DIR)/pms/ffrom_pclps3.o \
+#endif
+#ifdef FF_PFR_PS3
+ $(OBJ_DIR)/pms/ffrom_ps3.o \
+#endif
+#endif
+#ifdef SDK_OPT_PDF_OUT
+ $(PMS_PDFOUT_OFILES) \
+#endif
+
+PMSP_OFILES=\
+ $(OBJ_DIR)/pms/pms_platform.o \
+
+GGETIFF_OFILES=\
+ $(OBJ_DIR)/ggetiff/gge_tiff.o
+ 
+ifeq ($(SUPPORT_PJL),1)
+PJLLIB_OFILES=\
+ $(OBJ_DIR)/pjl/pjlparser.o
+endif
+ 
+PDFSPOOL_OFILES=\
+ $(OBJ_DIR)/pdfspool/pdfspool.o \
+ $(OBJ_DIR)/pdfspool/spooldev.o \
+ $(OBJ_DIR)/pdfspool/spooler.o
+
+#ifdef SDK_OPT_UFST5
+PFINUFST5_OFILES=\
+ $(OBJ_DIR)/pfinufst5/pfinufst5.o
+#endif
+
+#ifdef SDK_OPT_UFST7
+PFINUFST7_OFILES=\
+ $(OBJ_DIR)/pfinufst7/pfinufst7.o
+#endif
+
+#ifdef SDK_OPT_FF
+PFINFF_OFILES=\
+ $(OBJ_DIR)/pfinff/pfinff.o
+#endif
+
+RDREVENT_OFILES=\
+ $(OBJ_DIR)/rdrevent/rdr.o \
+ $(OBJ_DIR)/rdrevent/event.o \
+ $(OBJ_DIR)/rdrevent/rdrglue.o
+
+THREADS_OFILES=\
+ $(OBJ_DIR)/threads/ggsthreads.o
+
+TIMELINE_OFILES=\
+ $(OBJ_DIR)/timeline/timeline.o
+
+TIMER_OFILES=\
+ $(OBJ_DIR)/timer/timer.o
+
+TIMERU_OFILES=\
+ $(OBJ_DIR)/timer/timerimp.o
+
+
+####################### Rules ###################################
+
+## OIL ##
+$(OIL_OFILES): $(OBJ_DIR)/oil/%.o: $(SRC_DIR)/oil/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/oil/${@F} $(CCARGS) $(WARNARGS) $(OIL_INCLUDES) $(SRC_DIR)/oil/src/${<F}
+
+$(OILP_OFILES): $(OBJ_DIR)/oil/%.o: $(SRC_DIR)/oil/unix/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/oil/${@F} $(CCARGS) $(WARNARGS) $(OIL_INCLUDES) $(SRC_DIR)/oil/unix/src/${<F}
+
+## PMS ##
+$(PMS_OFILES): $(OBJ_DIR)/pms/%.o: $(SRC_DIR)/pms/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pms/${@F} $(CCARGS) $(WARNARGS) $(PMS_INCLUDES) $(SRC_DIR)/pms/src/${<F}
+
+$(PMSP_OFILES): $(OBJ_DIR)/pms/%.o: $(SRC_DIR)/pms/unix/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pms/${@F} $(CCARGS) $(WARNARGS) $(PMS_INCLUDES) $(SRC_DIR)/pms/unix/src/${<F}
+
+## GGETIFF ##
+$(GGETIFF_OFILES): $(OBJ_DIR)/ggetiff/%.o: $(SRC_DIR)/ggetiff/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/ggetiff/${@F} $(CCARGS) $(WARNARGS) $(GGETIFF_INCLUDES) $(SRC_DIR)/ggetiff/src/${<F}
+
+## PJL ##
+ifeq ($(SUPPORT_PJL),1)
+$(PJLLIB_OFILES): $(OBJ_DIR)/pjl/%.o: $(SRC_DIR)/pjl/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pjl/${@F} $(CCARGS) $(WARNARGS) $(PJL_INCLUDES) $(SRC_DIR)/pjl/src/${<F}
+endif
+
+## PDFSPOOL ##
+$(PDFSPOOL_OFILES): $(OBJ_DIR)/pdfspool/%.o: $(SRC_DIR)/pdfspool/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pdfspool/${@F} $(CCARGS) $(WARNARGS) $(PDFSPOOL_INCLUDES) $(SRC_DIR)/pdfspool/src/${<F}
+
+## SKINKIT ##	
+$(LE_OFILES): $(OBJ_DIR)/skinkit/%.o: $(SRC_DIR)/skinkit/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/skinkit/${@F} $(CCARGS) $(WARNARGS) $(KIT_INCLUDES) $(SRC_DIR)/skinkit/src/${<F}
+
+$(LEP_OFILES): $(OBJ_DIR)/skinkit/%.o: $(SRC_DIR)/skinkit/unix/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/skinkit/${@F} $(CCARGS) $(WARNARGS) $(KIT_INCLUDES) $(SRC_DIR)/skinkit/unix/src/${<F}
+
+$(RDREVENT_OFILES): $(OBJ_DIR)/rdrevent/%.o: $(SRC_DIR)/rdrevent/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/rdrevent/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/rdrevent/src/${<F}
+
+$(LIBJPEG_OFILES): $(OBJ_DIR)/libjpeg/%.o: $(SRC_DIR)/libjpeg/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/libjpeg/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/libjpeg/src/${<F}
+
+$(LIBJPEGTURBO_OFILES): $(OBJ_DIR)/libjpeg-turbo/%.o: $(SRC_DIR)/libjpeg-turbo/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/libjpeg-turbo/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/libjpeg-turbo/src/${<F}
+
+$(THREADS_OFILES): $(OBJ_DIR)/threads/%.o: $(SRC_DIR)/threads/unix/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/threads/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/threads/unix/src/${<F}
+
+$(TIMELINE_OFILES): $(OBJ_DIR)/timeline/%.o: $(SRC_DIR)/timeline/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/timeline/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/timeline/src/${<F}
+
+$(TIMER_OFILES): $(OBJ_DIR)/timer/%.o: $(SRC_DIR)/timer/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/timer/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/timer/src/${<F}
+
+$(TIMERU_OFILES): $(OBJ_DIR)/timer/%.o: $(SRC_DIR)/timer/unix/src/%.c
+	@echo building ${<F}
+	@$(CC) -o $(OBJ_DIR)/timer/${@F} $(CCARGS) $(KIT_INCLUDES) $(SRC_DIR)/timer/unix/src/${<F}
+
+#ifdef SDK_OPT_XPS_IN
+$(XPS_OFILES): $(OBJ_DIR)/skinkit/%.o: $(SRC_DIR)/skinkit/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/skinkit/${@F} $(CCARGS) $(WARNARGS) $(KIT_INCLUDES) $(SRC_DIR)/skinkit/src/${<F}
+
+$(PTDEV_OFILES): $(OBJ_DIR)/ptdev/%.o: $(SRC_DIR)/ptdev/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/ptdev/${@F} $(CCARGS) $(WARNARGS) $(PTDEV_INCLUDES) $(SRC_DIR)/ptdev/src/${<F}
+#endif
+
+SKIN_OBJECTS=\
+  $(LE_OFILES) \
+  $(LIBJPEG_OFILES) \
+  $(LIBJPEGTURBO_OFILES) \
+  $(RDREVENT_OFILES) \
+  $(THREADS_OFILES) \
+  $(TIMELINE_OFILES) \
+  $(TIMER_OFILES) \
+  $(TIMERU_OFILES) \
+  $(LEP_OFILES) \
+#ifdef SDK_OPT_XPS_IN
+  $(XPS_OFILES) \
+  $(PTDEV_OFILES) \
+#endif
+
+#ifdef SDK_OPT_UFST5
+$(PFINUFST5_OFILES): $(OBJ_DIR)/pfinufst5/%.o: $(SRC_DIR)/pfinufst5/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pfinufst5/${@F} $(CCARGS) $(WARNARGS) $(PFINUFST5_INCLUDES) $(SRC_DIR)/pfinufst5/src/${<F}
+
+PFINUFST5_OBJECTS=$(PFINUFST5_OFILES)  
+#endif
+
+#ifdef SDK_OPT_UFST7
+$(PFINUFST7_OFILES): $(OBJ_DIR)/pfinufst7/%.o: $(SRC_DIR)/pfinufst7/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pfinufst7/${@F} $(CCARGS) $(WARNARGS) $(PFINUFST7_INCLUDES) $(SRC_DIR)/pfinufst7/src/${<F}
+
+PFINUFST7_OBJECTS=$(PFINUFST7_OFILES)  
+#endif
+
+#ifdef SDK_OPT_FF
+$(PFINFF_OFILES): $(OBJ_DIR)/pfinff/%.o: $(SRC_DIR)/pfinff/src/%.c
+	@echo building ${<F}
+	$(CC) -o $(OBJ_DIR)/pfinff/${@F} $(CCARGS) $(WARNARGS) $(PFINFF_INCLUDES) $(SRC_DIR)/pfinff/src/${<F}
+
+PFINFF_OBJECTS=$(PFINFF_OFILES)  
+#endif
+
+$(SKIN_OBJECTS): $(MAKEFILE)
+$(PFINUFST5_OBJECTS): $(MAKEFILE)
+$(PFINUFST7_OBJECTS): $(MAKEFILE)
+$(PFINFF_OBJECTS): $(MAKEFILE)
+
+# SKIN library 
+$(OBJ_DIR)/libskin.a:  $(SKIN_OBJECTS) $(PFINUFST5_OBJECTS) $(PFINUFST7_OBJECTS) $(PFINFF_OBJECTS)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+
+# OIL library ... 
+$(OBJ_DIR)/liboil.a:  $(OIL_OFILES) $(OILP_OFILES)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+
+# PMS library ... 
+$(OBJ_DIR)/libpms.a:  $(PMS_OFILES) $(PMSP_OFILES)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+
+# GGETIFF library ... 
+$(OBJ_DIR)/libggetiff.a:  $(GGETIFF_OFILES)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+
+# PJL library ... 
+ifeq ($(SUPPORT_PJL),1)
+$(OBJ_DIR)/libpjlparser.a:  $(PJLLIB_OFILES)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+endif
+
+# PDFSPOOL library ... 
+$(OBJ_DIR)/libpdfspool.a:  $(PDFSPOOL_OFILES)
+	@echo creating $(@F) from object files
+	$(AR) rvu $@ $^
+
+# Rule to import the SW folder as a static linkable library, so
+# that it can be embedded in process memory.
+$(SWFOLDERLIB):
+	@echo Importing $(SW_ROOT_DIR)
+	@$(OBJ_DIR)/imptool -root $(SW_ROOT_DIR) -output $(OBJ_DIR)/swfolder.c -var pSWRam -multiple
+	@echo building $(OBJ_DIR)/swfolder.c
+	@$(CC) $(CCARGS) $(KIT_INCLUDES) $(OBJ_DIR)/swfolder.c $(OBJ_DIR)/mfs*.c
+	@echo creating $@ from object files
+	@$(AR) rvu $@ swfolder.o mfs*.o
+
+# ebdwrapper executable
+$(APP_DIR)/$(EBDWRAPPER): \
+  $(CORELIB) \
+  $(PMS_EXE_OFILES) \
+#ifdef SDK_OPT_UFST5
+  $(UFST5LIB) \
+#endif
+#ifdef SDK_OPT_UFST7
+  $(UFST7LIB) \
+#endif
+#ifdef SDK_OPT_FF
+  $(FFLIB) \
+#endif
+$(OBJ_DIR)/libpms.a \
+$(OBJ_DIR)/liboil.a \
+$(OBJ_DIR)/libskin.a \
+$(OBJ_DIR)/libggetiff.a \
+$(PJLLIB) \
+$(OBJ_DIR)/libpdfspool.a \
+$(SWDEPEND)
+	@echo linking $(APP_DIR)/$(EBDWRAPPER) from $^
+	$(LN) $(LNARGS) -o $@ $^ $(LIBS)
+
+
+objdirs: FRC
+	@if [ ! -d $(OBJ_DIR)/skinkit  ]; then mkdir -p $(OBJ_DIR)/skinkit;  fi
+	@if [ ! -d $(OBJ_DIR)/rdrevent ]; then mkdir -p $(OBJ_DIR)/rdrevent; fi
+	@if [ ! -d $(OBJ_DIR)/standard ]; then mkdir -p $(OBJ_DIR)/standard; fi
+	@if [ ! -d $(OBJ_DIR)/threads  ]; then mkdir -p $(OBJ_DIR)/threads;  fi
+	@if [ ! -d $(OBJ_DIR)/timeline ]; then mkdir -p $(OBJ_DIR)/timeline; fi
+	@if [ ! -d $(OBJ_DIR)/timer  ]; then mkdir -p $(OBJ_DIR)/timer;  fi
+	@if [ ! -d $(OBJ_DIR)/oil  ]; then mkdir -p $(OBJ_DIR)/oil;  fi
+	@if [ ! -d $(OBJ_DIR)/pdfspool  ]; then mkdir -p $(OBJ_DIR)/pdfspool;  fi
+	@if [ ! -d $(OBJ_DIR)/pjl  ]; then mkdir -p $(OBJ_DIR)/pjl;  fi
+	@if [ ! -d $(OBJ_DIR)/pms  ]; then mkdir -p $(OBJ_DIR)/pms;  fi
+	@if [ ! -d $(OBJ_DIR)/ggetiff  ]; then mkdir -p $(OBJ_DIR)/ggetiff;  fi
+	@if [ ! -d $(OBJ_DIR)/libjpeg  ]; then mkdir -p $(OBJ_DIR)/libjpeg;  fi
+	@if [ ! -d $(OBJ_DIR)/libjpeg-turbo  ]; then mkdir -p $(OBJ_DIR)/libjpeg-turbo;  fi
+#ifdef SDK_OPT_UFST5
+	@if [ ! -d $(OBJ_DIR)/pfinufst5 ]; then mkdir -p $(OBJ_DIR)/pfinufst5; fi
+#endif
+#ifdef SDK_OPT_UFST7
+	@if [ ! -d $(OBJ_DIR)/pfinufst7 ]; then mkdir -p $(OBJ_DIR)/pfinufst7; fi
+#endif
+#ifdef SDK_OPT_FF
+	@if [ ! -d $(OBJ_DIR)/pfinff ]; then mkdir -p $(OBJ_DIR)/pfinff; fi
+#endif
+	@if [ ! -d $(OBJ_DIR)/ptdev ]; then mkdir -p $(OBJ_DIR)/ptdev; fi
+
+
+# Rule to remove all the things which a previous build might have built
+# - ebdwrapper
+# - archive files
+# - object directories
+# - SW-in-RAM source files
+# - SW-in-RAM object files
+# - SW-in-RAM archive file
+clean:
+	@rm -f $(APP_DIR)/$(EBDWRAPPER)
+	@rm -f $(OBJ_DIR)/skin.a
+	@rm -rf $(OBJ_DIR)/libjpeg
+	@rm -rf $(OBJ_DIR)/libjpeg-turbo
+	@rm -f $(OBJ_DIR)/oil.a
+	@rm -f $(OBJ_DIR)/pdfspool.a
+	@rm -f $(OBJ_DIR)/pjlparser.a
+	@rm -f $(OBJ_DIR)/pms.a
+	@rm -f $(OBJ_DIR)/ggetiff.a
+	@rm -rf $(OBJ_DIR)/ggetiff
+	@rm -rf $(OBJ_DIR)/oil
+	@rm -rf $(OBJ_DIR)/pdfspool
+	@rm -rf $(OBJ_DIR)/pjl
+	@rm -rf $(OBJ_DIR)/pms
+	@rm -rf $(OBJ_DIR)/rdrevent
+	@rm -rf $(OBJ_DIR)/skinkit
+	@rm -rf $(OBJ_DIR)/standard
+	@rm -rf $(OBJ_DIR)/threads
+	@rm -rf $(OBJ_DIR)/timeline
+	@rm -rf $(OBJ_DIR)/timer
+#ifdef SDK_OPT_UFST5
+	@rm -rf $(OBJ_DIR)/pfinufst5
+#endif
+#ifdef SDK_OPT_UFST7
+	@rm -rf $(OBJ_DIR)/pfinufst7
+#endif
+#ifdef SDK_OPT_FF
+	@rm -rf $(OBJ_DIR)/pfinff
+#endif
+	@rm -rf $(OBJ_DIR)/ptdev
+	@rm -f $(OBJ_DIR)/mfs*.c
+	@rm -f $(OBJ_DIR)/swfolder.c
+	@rm -f mfs*.o
+	@rm -f swfolder.o
+	@rm -f $(SWFOLDERLIB)
+
+
+# a dummy rule to force recompilation
+FRC:
+
+

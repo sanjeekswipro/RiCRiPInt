@@ -1,0 +1,14 @@
+%!PS-Adobe-3.0 Resource-Font
+%%Version: 002.001 (1)
+%%VMlocation: global
+
+/Aavasaksa-DemiOblique
+/Aavasaksa-Demi findfont dup length dict begin {def} forall
+/UniqueID 5087414 def
+dup /FontName exch def
+currentdict /SubstFontName undef
+/FontMatrix [0.001 0 0.185339E-3 0.001 0 0] readonly def
+currentdict end
+dup /FID undef
+definefont pop
+

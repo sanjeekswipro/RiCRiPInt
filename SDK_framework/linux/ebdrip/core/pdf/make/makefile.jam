@@ -1,0 +1,55 @@
+# Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for PDF common compound (base layer for PDF in/out)
+#
+# $HopeName: COREpdf_base!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# The following is required to get defines right:
+ImplementsVariant pdfin pdfout metrics ;
+
+# Compilation rules
+
+    DependsOn all : pdf ;
+
+    IncludeExportDirectories Inherited Local :
+        devices
+        errors
+        fileio
+        gstate
+        mm
+        objects
+        pdfin
+        tables
+        v20
+    : .. ;
+
+    if $(Variant_pdfin) = yes || $(Variant_pdfout) = yes {
+        ReplaceVar Local : CFILES :
+            pdfcntxt.c
+            pdfhtname.c
+            pdfmatch.c
+            pdfmem.c
+            pdfres.c
+            pdfstrm.c
+            pdfxref.c
+            stream.c
+        ;
+    } else {
+        ReplaceVar Local : CFILES : nopdf.c ;
+    }
+
+    Library pdf : $(CFILES) ;
+
+    if $(Variant_pdfin) = yes || $(Variant_pdfout) = yes {
+        # So that exported source can be built without pdf if required
+        ExportSource $(CurrentPath)$/src$/nopdf.c : C ;
+    }
+
+# Log stripped

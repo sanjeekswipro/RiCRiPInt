@@ -1,0 +1,786 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# This is SWIG's "brand-new" cross-platform cross-product build system, based
+# around the Jam/MR make application.
+#
+# $HopeName: HQNjambits!base.jam(EBDSDK_P.1) $
+#
+#
+# Environment variables observed/required (required unless surrounded by []).
+#
+# BUILDROOT
+# HqmakePerl
+# HQNbuildtools
+# JAM_ARGUMENTS
+# JAM_HOST_PATH
+# JAM_TARG_PATH
+# [JAM_VARIANTS]
+# [OVERRIDES]
+#
+# ASSERT DEBUG NOOPT RELEASE
+#
+# CV_*
+# [Variant_*]
+#
+# The platform configuration bits may use other variables I don't know about.
+# This is basically due to the way paths and environment get set up in the
+# traditional system.  Eventually, it should all become self-contained,
+# avoiding the need for things like whatcom, but for now, beware!
+#
+
+##################
+# Initialisation #
+##################
+
+ECHO "#" ;
+ECHO "#" Jam doughnut "  (jam-users@harlequin.com)" ;
+ECHO "#" using Jam/MR version $(SWIGVERSION) ($(CODENAME)) ;
+ECHO "#" ;
+
+# We need slash set up before we perform any file operations (like including
+# platform configuration information).
+    if $(NT)     { FS ?= \\ ;  Dot ?= .   ; SPLITPATH ?= ";" ; }
+    if $(UNIX)   { FS ?= / ;   Dot ?= .   ; SPLITPATH ?= ":" ; }
+    if $(MACOSX) { FS ?= / ;   Dot ?= .   ; SPLITPATH ?= ":" ; }
+    if $(MAC)    { FS ?= ":" ; Dot ?= ":" ; SPLITPATH ?= "," ; }
+
+if $(JAMDEBUG_INCLUDE) {
+  ECHO "Executing jambits$(FS)base.jam:" ;
+}
+
+# Set up some other useful stuff at the same time
+    CurrentPath = $(Dot) ;
+    CurrentMakefile = $(Dot)$/make$/makefile.jam ;
+    NewLine = "
+" ;
+
+# Set up some helper tools and directories
+    HQNjambits   ?= $(HQNbuildtools)$/jambits ;
+    HQNperl5libs ?= $(HQNbuildtools:R=$(BUILDROOT))$/perl5libs ;
+
+#
+# A couple of list-manipulation rules
+#
+
+#* $(1) variablename
+#* $(2) separatorstring
+#* $(3) list ...
+#* Join the elements of $(3) together using the $(2).  Assign the result
+#* to the variable named $(1).
+#*eg Join NewPath : $(SPLITPATH) : $(PATH) new$/path$/element ;
+    rule Join {
+        local __Join__ = $(3[1]) ; __Join__ ?= "" ;
+        local __Join__Bit ;
+        for __Join__Bit in $(3[2-]) { __Join__ = $(__Join__)$(2)$(__Join__Bit) ; }
+        $(1) = $(__Join__) ;
+    }
+
+#* $(1) variablename
+#* [$(2)] list ...
+#* Reverse the order of the elements in $(2).  Assigns the result to the
+#* variable named $(1).  $(2) is optional, and if not specified, $($(1))
+#* is assumed (ie. $(1) will be reversed <em>in-place</em>).
+#*
+#* For large lists, this operation can be quite processor-intensive, so
+#* think carefully before you use it.
+#*eg ReverseList GreatestFirst : $(LeastFirst) ;
+        rule ReverseList {
+            local __ReverseList__ __ReverseList__i ;
+            local __ReverseList__Orig = $(2) ; __ReverseList__Orig ?= $($(1)) ;
+
+            for __ReverseList__i in $(__ReverseList__Orig) {
+                __ReverseList__ = $(__ReverseList__i) $(__ReverseList__) ;
+            }
+            $(1) = $(__ReverseList__) ;
+        }
+
+#* $(1) variablename
+#* $(2) values ...
+#* Add to the list of values in $(1) those $(2) that are not already there.
+    rule AddUnique {
+        local __AddUnique__ ; for __AddUnique__ in $(2) {
+            local __AddUnique__i ; for __AddUnique__i in $(1) {
+                if ! $(__AddUnique__) in $($(__AddUnique__i)) {
+                    $(__AddUnique__i) += $(__AddUnique__) ;
+                }
+            }
+        }
+    }
+
+# Some platform variables, obtained from swmake environment variables
+#
+# JamFullPathSpec (eg "win_nt_4_0-pentium_2_5")
+# JamHostPlat     (a list of applicable platform formats for the host machine,
+#                  least specific first)
+# JamTargetPlat   (similarly for the target machine)
+# JamPlatformPath (list of rooted directories possibly containing platform
+#                  configuration information)
+    JamFullPlatSpec = $(JAM_HOST_PATH[1]) ;
+    ReverseList JamHostPlat   : $(JAM_HOST_PATH) ;
+    ReverseList JamTargetPlat : $(JAM_TARG_PATH) ;
+
+    JamPlatformPathTemp = $(HQNjambits) $(BUILDROOT)$/make ;
+    JamPlatformPathTemp = $(JamPlatformPathTemp)$/$(JamHostPlat) ;
+    JamPlatformPathTemp = $(JamPlatformPathTemp:E)$/$(JamTargetPlat) ;
+    AddUnique JamPlatformPath : $(JamPlatformPathTemp) ;
+
+    # Trim the path down to a list where directories actually exist.
+    JamPlatformPath = $(JamPlatformPath:E) ;
+    if $(JAMDEBUG_INCLUDE) {
+      ECHO ==================================================== look in dir's ;
+      ECHO $(JamPlatformPath) ;
+      ECHO ==================================================== ;
+    }
+
+#################
+# Utility rules #
+#################
+
+#* $(1) error-message ...
+#* Print $(1) and terminate the processing of makefiles immediately.
+#*seerule Message Warning
+    rule Error   { EXIT *** ERROR ":" $(1) ; }
+#* $(1) warning-message ...
+#* Print $(1), but continue to process makefiles.
+#*seerule Error Message
+    rule Warning { ECHO "#" WARNING ":" $(1) ; }
+
+#* $(1) target ...
+#* Terminate processing of makefiles immediately unless all the targets
+#* listed in $(1) have a grist.  This rule is typically used by other
+#* lower-level rules to assert that they have been used correctly by
+#* higher-level, user-visible rules.
+#*section rulecons
+if $(JAMDEBUG) {
+    rule CheckGristed { if "" in $(1:G) { Error Using gristed rule with ungristed target $(1) ; } }
+} else {
+    rule CheckGristed { }
+}
+
+#* $(1) variablename
+#* $(2) path elements ...
+#* Construct a path by stitching all the $(2) together with the
+#* platform-specific file-separator character $(FS).  This function has
+#* limited use, since paths can be constructed from individual elements
+#* using the <code>$/</code> operator (eg. <code>parent$/subdir</code>)
+#* or the <code>:/</code> modifier (eg. <code>$(pathlist:/)</code>).
+#*eg MakePath ExecDir : $(CurrentPath) $(C-Exec-Directory) ;
+#*seerule ChangeDirectory
+#*seevar FS
+    rule MakePath { $(1) = $(2:/) ; }
+
+#* $(1) pathvariablename
+#* $(2) path
+#* Add the $(2) elements to the path stored in $(1).  This function is
+#* only necessary for clarity, as it is equivalent to
+#* <code>$(1) = $($(1):/)$/$(2) ;</code>
+#*eg ChangeDirectory PWD : subdir ;
+#*seerule MakePath
+#*seevar FS
+    rule ChangeDirectory { $(1) = $($(1):/)$/$(2) ; }
+
+#* $(1) variablename
+#* $(2) targets
+#* $(3) rooted path ...
+#* For each of the targets listed in $(2), look to see if they already
+#* have a grist.  If not, then use the $(3) to construct one for them.
+#* Assign the list of now-gristed targets to $(1).  Note that the path
+#* must be rooted (eg. using $(CurrentPath) or $(BUILDROOT)).
+#*
+#* If you know that none of the $(2) already have a grist, then you can
+#* simply do something like <code>$(1) = $($(2):G=$(CurrentPath))</code>.
+#*eg MakeGristed targets : foo.c bar.c : $(CurrentPath) subdir ;
+#*seevar BUILDROOT CurrentPath
+#*seerule MakeLeafTarget
+#*section rulecons
+    rule MakeGristed {
+        local __MakeGristed__Path = $(3:/) ;
+        local __MakeGristed__ ;
+        {
+            local i Gristed ;
+            for i in $(2) {
+                if $(i:G) {
+                    Gristed = $(i) ;
+                }
+                else {
+		    # TODO VC8 builds failing for some reason, can't find cause
+		    # so comment out error for now.
+                    #if ! $(__MakeGristed__Path) {
+                    #    Error "MakeGristed called with no grist on $(i)" ;
+                    #}
+                    Gristed = $(i:G=$(__MakeGristed__Path)) ;
+                    # Make top-level targets visible
+                    if $(__MakeGristed__Path) in . ":" { DEPENDS $(i) : $(Gristed) ; }
+                }
+
+                __MakeGristed__ += $(Gristed) ;
+            }
+        }
+        $(1) = $(__MakeGristed__) ;
+    }
+
+#* $(1) targets ...
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* Make $(1) depend on $(2).  Those $(1) that are not already gristed
+#* will be gristed with $(CurrentPath).  Those $(2) that are not already
+#* gristed will be gristed with $(CurrentPath) (or, optionally,
+#* $(CurrentPath) followed by $(3)).
+#*eg DependsOn all : myexec ;
+#*seerule FileIncludes MakeGristed
+    rule DependsOn {
+        local Target ; MakeGristed Target : $(<) : $(CurrentPath) ;
+        local Sources ; MakeGristed Sources : $(>) : $(CurrentPath) $(3) ;
+        DEPENDS $(Target) : $(Sources) ;
+    }
+
+#* $(1) targets ...
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* Make all those targets that depend on $(1) also depend on $(2).
+#* Those $(1) that are not already gristed will be gristed with
+#* $(CurrentPath).  Those $(2) that are not already gristed will be
+#* gristed with $(CurrentPath) (or, optionally, $(CurrentPath) followed
+#* by $(3)).  This rule is typically used to convey the dependency
+#* between source files and their <em>included</em> header files.
+#*eg FileIncludes foo.c : foo.h ;
+#*seerule DependsOn MakeGristed
+#*section rulecons
+    rule FileIncludes {
+        local Target ; MakeGristed Target : $(<) : $(CurrentPath) ;
+        local Sources ; MakeGristed Sources : $(>) : $(CurrentPath) $(3) ;
+        INCLUDES $(Target) : $(Sources) ;
+    }
+
+#* $(1) first
+#* $(2) second
+#* After the $(1) target has been updated, update the $(2) target.  This
+#* works by making all those targets that depend on $(1) also depend on
+#* $(2), whilst also making $(2) depend on $(1).
+#*
+#* Prior to version 2.2.5.3, this would create a circular dependency
+#* between $(1) and $(2).  However, starting with version 2.2.5.3, a
+#* special type of <code>DEPENDS</code> dependency was introduced which
+#* is not observed by the <code>INCLUDES</code> rule.
+#*eg After $(LinkTarget) : $(SignTarget) ;
+#*section rulecons
+if $(SWIGVERSION) = 2.2.5.2 {
+    rule After { INCLUDES $(1) : $(2) ; DEPENDS $(2) : $(1) ; }
+}
+else {
+    rule After { INCLUDES $(1) : $(2) ; NIDEPENDS $(2) : $(1) ; }
+}
+
+
+#* Add $(1) to list of sources to export.
+#*
+#* $(1) file path or gristed target
+#* [$(2)] file type
+#* [$(3)] c-defines
+#* [$(4)] c-undefines
+#* [$(5)] directory in exported source tree
+#*
+#* Supported file types are: Binary C Jam Perl Swf Text ThirdPartyBinary.
+#*
+#* C-defines $(3) is a list of preprocessor symbols to define.
+#* C-undefines $(4) is a list of preprocessor symbols to undefine.
+#* Both $(3) and $(4) are recorded in a form suitable to pass to unifdef,
+#* and are only applied to files of type C.
+#*
+#*seerule DontExportSource DoExport ExportZipAndRebuildSource
+#*section Export Source
+if $(NT) {
+  actions quietly together _CleanExportedSrcList {
+    echo "something" > $(exportsfile)
+    del $(exportsfile)
+    echo "anything" > $(nonexportsfile)
+    del $(nonexportsfile)
+  }
+} else {
+  actions quietly together _CleanExportedSrcList {
+    rm -f $(exportsfile)
+    rm -f $(nonexportsfile)
+  }
+}
+
+if $(NT) {
+  actions quietly together _CleanWdkSrcList {
+    echo "something" > $(srclistfile)
+    del $(srclistfile)
+  }
+} else {
+  actions quietly together _CleanWdkSrcList {
+    rm -rf $(srclistfile)
+  }
+}
+
+actions quietly together _ExportSourceFile {
+  echo $(srcfile) $(filetype) $(destdir) $(defines) >> $(exportsfile)
+}
+
+actions quietly together _ExportSourceTarget bind srctarget {
+  echo $(srctarget) $(filetype) $(destdir) $(defines) >> $(exportsfile)
+}
+
+actions quietly together _WdkSourceFile {
+  echo $(srcfile) $(filetype) $(defines) >> $(srclistfile)
+}
+
+actions quietly together _WdkSourceTarget bind srctarget {
+  echo $(srctarget) $(filetype) $(defines) >> $(srclistfile)
+}
+
+rule ExportSource {
+  if exportsrc in $(JAM_ARGUMENTS) || wdkbuild in $(JAM_ARGUMENTS)
+  {
+    # Must match ExportedSrcList in ExportZipAndRebuildSource rule in exportsrc.jam
+    local ExportedSrcList ; MakeGristed ExportedSrcList : exportedsource.txt : $(BUILDROOT) ;
+    local CleanExportedSrcList ; MakeGristed CleanExportedSrcList : Clean-exportedsource.txt : $(BUILDROOT) ;
+    exportsfile on $(CleanExportedSrcList) = $(BUILDROOT)$/obj$/exportedsource.txt ;  # As in DoExport in exportsrc.jam
+    nonexportsfile on $(CleanExportedSrcList) = $(BUILDROOT)$/obj$/nonexportedsource.txt ;
+    _CleanExportedSrcList $(CleanExportedSrcList) ;
+
+    # Must match WdkSrcList in DoWDKBuild rule in wdkbuild.jam
+    local WdkSrcList ; MakeGristed WdkSrcList : wdksource.txt : $(BUILDROOT) ;
+    MakeGristed CleanWdkSrcList : Clean-wdksource.txt : $(BUILDROOT) ;
+    srclistfile on $(CleanWdkSrcList) = $(BUILDROOT)$/obj$/wdksource.txt ;  # As in CopyWDKSources in wdkbuild.jam
+    _CleanWdkSrcList $(CleanWdkSrcList) ;
+
+    local filetype = $(2) ;
+    filetype ?= Unknown ;
+
+    local destdir = $(5) ;
+    destdir ?= UseSrcDir ;
+
+    if $(filetype) = "ThirdPartyBinary"
+    {
+      # Get path via TargetFile, binding srctarget to _ExportSourceTarget
+      local ExportSourceTarget ; MakeGristed ExportSourceTarget : ExportSource-$(1) : $(CurrentPath) ;
+
+      local T ; MakeGristed T : $(1) : $(CurrentPath) ;
+
+      if ! $(NotedExport-$(ExportSourceTarget))
+      {
+        srctarget on $(ExportSourceTarget) = $(TargetFile-$(T)) ;
+        filetype on $(ExportSourceTarget) = $(filetype) ;
+        destdir on $(ExportSourceTarget) = $(destdir) ;
+        defines on $(ExportSourceTarget) = -D$(3) -U$(4) ;
+        exportsfile on $(ExportSourceTarget) ?= $(BUILDROOT)$/obj$/exportedsource.txt ;
+        _ExportSourceTarget $(ExportSourceTarget) ;
+
+        NOTFILE $(ExportSourceTarget) ;
+        DEPENDS $(CleanExportedSrcList) : $(T) ;
+        DEPENDS $(ExportSourceTarget) : $(CleanExportedSrcList) ;
+        DEPENDS $(ExportedSrcList) : $(ExportSourceTarget) ;
+        ALWAYS $(ExportSourceTarget) ;
+
+        NotedExport-$(ExportSourceTarget) = 1 ;
+      }
+
+      # WDK build has to build everything again, so we don't add
+      # ThirdPartyBinary files to the WDK source list
+    }
+    else if $(1:G) = ""
+    {
+      # Ungristed.  Determine path relative to ${BUILDROOT}
+      local ExportSourceTarget = ExportSource-$(1) ;
+
+      if ! $(NotedExport-$(ExportSourceTarget))
+      {
+        local Parent = $(1:P) ;
+        local Leafname = $(1:BS) ;
+        local PathRelativeToBuildRoot = "" ;
+        local BuildRootParent = $(BUILDROOT:P) ;
+
+        local i ; for i in 1 2 3 4 5 6 7 8  # Enough for the deepest sub-directory in BUILDROOT
+        {
+          if $(Parent) != "" && $(Parent) != "." && $(Parent) != $(BUILDROOT)
+          {
+            if $(Parent) = $(BuildRootParent)
+            {
+              PathRelativeToBuildRoot = ..$/$(PathRelativeToBuildRoot) ;
+              Parent = "" ;
+            }
+            else
+            {
+              PathRelativeToBuildRoot = $(Parent:BS)$/$(PathRelativeToBuildRoot) ;
+              Parent = $(Parent:P) ;
+            }
+          }
+        }
+
+        srcfile on $(ExportSourceTarget) = .$/$(PathRelativeToBuildRoot)$/$(Leafname) ;
+        filetype on $(ExportSourceTarget) = $(filetype) ;
+        destdir on $(ExportSourceTarget) = $(destdir) ;
+        defines on $(ExportSourceTarget) = -D$(3) -U$(4) ;
+        exportsfile on $(ExportSourceTarget) ?= $(BUILDROOT)$/obj$/exportedsource.txt ;
+        _ExportSourceFile $(ExportSourceTarget) ;
+
+        DEPENDS $(ExportSourceTarget) : $(CleanExportedSrcList) ;
+        DEPENDS $(ExportedSrcList) : $(ExportSourceTarget) ;
+        ALWAYS $(ExportSourceTarget) ;
+
+        NotedExport-$(ExportSourceTarget) = 1 ;
+      }
+ 
+      local WdkSourceTarget = WdkSource-$(1) ;
+
+      if ! $(NotedWdkSource-$(WdkSourceTarget))
+      {
+        local Parent = $(1:P) ;
+        local Leafname = $(1:BS) ;
+        local PathRelativeToBuildRoot = "" ;
+        local BuildRootParent = $(BUILDROOT:P) ;
+
+        local i ; for i in 1 2 3 4 5 6 7 8  # Enough for the deepest sub-directory in BUILDROOT
+        {
+          if $(Parent) != "" && $(Parent) != "." && $(Parent) != $(BUILDROOT)
+          {
+            if $(Parent) = $(BuildRootParent)
+            {
+              PathRelativeToBuildRoot = ..$/$(PathRelativeToBuildRoot) ;
+              Parent = "" ;
+            }
+            else
+            {
+              PathRelativeToBuildRoot = $(Parent:BS)$/$(PathRelativeToBuildRoot) ;
+              Parent = $(Parent:P) ;
+            }
+          }
+        }
+
+        srcfile on $(WdkSourceTarget) = .$/$(PathRelativeToBuildRoot)$/$(Leafname) ;
+        filetype on $(WdkSourceTarget) = $(filetype) ;
+        defines on $(WdkSourceTarget) = -D$(3) -U$(4) ;
+        srclistfile on $(WdkSourceTarget) = $(BUILDROOT)$/obj$/wdksource.txt ;
+        _WdkSourceFile $(WdkSourceTarget) ;
+
+        DEPENDS $(WdkSourceTarget) : $(CleanWdkSrcList) ;
+        DEPENDS $(WdkSrcList) : $(WdkSourceTarget) ;
+        ALWAYS $(WdkSourceTarget) ;
+
+        NotedWdkSource-$(WdkSourceTarget) = 1 ;
+      }
+    }
+    else
+    {
+      # Gristed.  Get path by binding srctarget to _ExportSourceTarget
+      local ExportSourceTarget ; MakeGristed ExportSourceTarget : ExportSource-$(1:BS) : $(1:G) ;
+
+      if ! $(NotedExport-$(ExportSourceTarget))
+      {
+        srctarget on $(ExportSourceTarget) = $(1) ;
+        filetype on $(ExportSourceTarget) = $(filetype) ;
+        destdir on $(ExportSourceTarget) = $(destdir) ;
+        defines on $(ExportSourceTarget) = -D$(3) -U$(4) ;
+        exportsfile on $(ExportSourceTarget) ?= $(BUILDROOT)$/obj$/exportedsource.txt ;
+        _ExportSourceTarget $(ExportSourceTarget) ;
+
+        NOTFILE $(ExportSourceTarget) ;
+        DEPENDS $(ExportSourceTarget) : $(CleanExportedSrcList) ;
+        DEPENDS $(ExportedSrcList) : $(ExportSourceTarget) ;
+        ALWAYS $(ExportSourceTarget) ;
+
+        NotedExport-$(ExportSourceTarget) = 1 ;
+      }
+
+      local WdkSourceTarget ; MakeGristed WdkSourceTarget : WdkSource-$(1:BS) : $(1:G) ;
+
+      if ! $(NotedWdkSource-$(WdkSourceTarget))
+      {
+        srctarget on $(WdkSourceTarget) = $(1) ;
+        filetype on $(WdkSourceTarget) = $(filetype) ;
+        defines on $(WdkSourceTarget) = -D$(3) -U$(4) ;
+        srclistfile on $(WdkSourceTarget) = $(BUILDROOT)$/obj$/wdksource.txt ;
+        _WdkSourceTarget $(WdkSourceTarget) ;
+
+        NOTFILE $(WdkSourceTarget) ;
+        DEPENDS $(WdkSourceTarget) : $(CleanWdkSrcList) ;
+        DEPENDS $(WdkSrcList) : $(WdkSourceTarget) ;
+        ALWAYS $(WdkSourceTarget) ;
+
+        NotedWdkSource-$(WdkSourceTarget) = 1 ;
+      }
+    }
+  }
+}
+
+
+#* Exclude $(1) to list of sources to export.
+#*
+#* $(1) file path or gristed target
+#*
+#*seerule ExportSource
+#*section Export Source
+rule DontExportSource {
+  # Has to calculate $(Target) in the same way as ExportSource so
+  # as to be able to subvert its actions by either changing
+  # exportsfile (as is normally the case for .c files) or setting
+  # NotedExport-$(Target) (as is normally the case for .h files)
+  if exportsrc in $(JAM_ARGUMENTS)
+  {
+    if $(1:G) = ""
+    {
+      local Target = ExportSource-$(1) ;
+
+      exportsfile on $(Target) = $(BUILDROOT)$/obj$/nonexportedsource.txt ;
+      NotedExport-$(Target) = 1 ;
+    }
+    else
+    {
+      local Target ; MakeGristed Target : ExportSource-$(1:BS) : $(1:G) ;
+
+      exportsfile on $(Target) = $(BUILDROOT)$/obj$/nonexportedsource.txt ;
+      NotedExport-$(Target) = 1 ;
+    }
+  }
+}
+
+#
+# When exporting source code for a Win32 product we should include the relevant Jam files for
+# both win32 and win64 hosted builds (so the user can do either).
+# This means we need to add whichever are not included automatically by the source generation process.
+# Note: called from PlatformBits so auto-includes items used in generation process.
+#
+# $(1) basename for jambits files
+
+rule ExportWinBits {
+  if win_32-pentium in $(JamTargetPlat) {
+    local WinHostPath ;
+    if win_32-pentium in $(JamHostPlat) {
+      # building on win32, so need to add win64-host jambits
+      WinHostPath = win_64-amd64 win_64-all ;
+	} else if win_64-amd64 in $(JamHostPlat) {
+      # building on win64, so need to add win32-host jambits
+      WinHostPath = win_32-pentium win_32-all ;
+	}
+    if $(WinHostPath) {	
+      # target is always win32
+      local Win32TargetPath = win_32-pentium win_32-all all-all ;
+
+      # construct list of jam files and add them to exported source list
+      local ExtraWinPath = $(CurrentPath)$/bt$/jambits$/$(WinHostPath) ;
+      ExtraWinPath = $(ExtraWinPath:E)$/$(Win32TargetPath) ;
+      ExtraWinPath = $(ExtraWinPath:E) ;
+      local ExtraFiles = $(ExtraWinPath)$/$(1:S=.jam) ;
+      local i ; for i in $(ExtraFiles:E) {
+        ExportSource $(i) : Jam ;
+      }
+	}
+  }
+}
+    
+
+#
+# When exporting source code we may wish to export jambits files that are not used in the source generation process
+# e.g. for a different compiler version. 
+#
+# $(1) list of basenames for jambits files
+
+rule ExportJamBits {
+  local name ; for name in $(1) {
+    local Files = $(JamPlatformPath)$/$(name:S=.jam) ;
+    local i ; for i in $(Files:E) {
+      ExportSource $(i) : Jam ;
+    }
+    # export source of additional jambit files if necessary
+    if $(NT) {
+       ExportWinBits $(name) ;
+	}
+  }
+}
+
+	
+#* $(1) file
+#* Include $(1).
+#*section rulecons
+rule Include {
+    # FloatingDepends uses this path to set up a dependency to the makefile
+    # from which a rule was invoked.
+    local CurrentMakefile = $(1) ;
+
+    NOTFILE $(CurrentMakefile) ;
+    DEPENDS $(CurrentMakefile) : <$(CurrentMakefile:D)>$(CurrentMakefile:BS) ;
+    LOCATE on <$(CurrentMakefile:D)>$(CurrentMakefile:BS) = $(CurrentMakefile:D) ;
+
+    ExportSource $(CurrentMakefile) : Jam ;
+
+    if $(JAMDEBUG_INCLUDE) {
+      ECHO "  loading jam file $(1)" ;
+    }
+    include $(CurrentMakefile) ;
+    #if $(JAMDEBUG_INCLUDE) {
+    #  ECHO done with ($(1)) ;
+    #}
+}
+
+#* $(1) path
+#* Include $(1) from the <em>HQNjambits</em> compound.
+#*seerule PlatformBits CompilerBits
+#*section rulecons
+    rule JamBits {
+        Include $(HQNjambits)$/$(1:/) ;
+    }
+
+#* $(1) path ...
+#* Construct a path using the $(1) elements. Introduce a target of the
+#* same name which creates this directory if it does not already exist.
+#* Except in unusual circumstances, this path should be absolute (eg
+#* using $(CurrentPath) or $(BUILDROOT)).  It is not necessary to call
+#* this rule on all the parent directories of $(1): That is taken care
+#* of for you.
+#*eg MakeDirectory $(CurrentPath) $(C-Exec-Directory) ;
+#*seerule DirectoryFor Locate
+#*seevar CurrentPath BUILDROOT
+#*section rulecons
+    actions quietly together _MakeDirectory {
+$(MkDir) $(1)
+    }
+    rule MakeDirectory {
+        local P ; MakePath P : $(1) ;
+        if ! $(__MakeDirectory__$(P)) {
+            __MakeDirectory__$(P) = 1 ;
+            _MakeDirectory $(P) ; NOUPDATE $(P) ;
+        }
+    }
+
+#* Rule for finding all the files of a given name along the platform-specific
+#* search paths.
+#*
+#* $(1) basename ...
+#*
+#*seerule CompilerBits JamBits
+#*section internal
+    rule PlatformBits {
+        local Files = $(JamPlatformPath)$/$(1:S=.jam) ;
+        local i ; for i in $(Files:E) {
+            Include $(i) ;
+        }
+        # add this to export source of additional jambit files if necessary
+        if $(NT) && exportsrc in $(JAM_ARGUMENTS) {
+            ExportWinBits $(1) ;
+	    }
+    }
+
+#* Rule for doing essentially the same thing as @PlatformBits but setting up
+#* a hidden variable containing the name of the first file thus included for
+#* automatically setting the compiler name into any qualified variables set.
+#* It also assigns the value of the appropriate CV_ environment variable to
+#* $(CompilerVariable).
+#*
+#* $(1) compiler ...
+#*
+#*seerule PlatformBits JamBits
+#*section internal
+    rule CompilerBits {
+        local i ; for i in $(1) {
+            local CompilerVariable = $(CompilerVariable) ;
+            local _CompilerVersion = $(_CompilerVersion) ;
+            local CV_Name = $(CV_Name) ;
+            if ! $(_CompilerVersion) {
+                _CompilerVersion = $(i) ;
+                CV_Name = CV_$(_CompilerVersion:U) ;
+                if $($(CV_Name)) {
+                  Join $(CV_Name) : " " : $($(CV_Name)) ;
+                }
+                CompilerVariable = $($(CV_Name)) ;
+
+                ExportSourceCVList += $(CV_Name) ;
+            }
+            PlatformBits $(i) ;
+        }
+    }
+
+#* $(1) variablename
+#* If $(1) is not set, then terminate processing of makefiles
+#* immediately with an error message.  If $(1) has the special value
+#* <code>CompilerVariable</code>, then check the current
+#* CompilerVariable instead.  This is a good thing to have at the
+#* beginning of any compiler definition jambits.
+#*eg FatalIfNotSet CompilerVariable ;
+    rule FatalIfNotSet {
+        local VarName = $(1) ;
+        if $(VarName) = CompilerVariable { VarName = $(CV_Name) ; }
+        MustBeSet $(VarName) : Cannot use $(_CompilerVersion) unless $(VarName) is set ;
+    }
+
+# Generic rule for checking a variable is defined
+#*section internal
+    rule MustBeSet {
+        local Msg = $(2) ; Msg ?= $(1) not set ;
+        if ! defined-$($(1)) { Error $(Msg) ; }
+    }
+
+
+########################
+# Some trivial actions #
+########################
+
+actions quietly together no-op { }
+
+###############################
+# Include other JamBits files #
+###############################
+
+# Explicity export the jambits used en route to here
+    if win-all in $(JamHostPlat) {
+      ExportSource $(BUILDROOT)$/bt$/hqmake.bat : Text ;
+      ExportSource $(BUILDROOT)$/bt$/win_32-all$/touch.exe : Binary ;
+      ExportSource $(BUILDROOT)$/bt$/win_64-all$/touch.exe : Binary ;
+    } else {
+      ExportSource $(BUILDROOT)$/bt$/hqmake : Text ;
+    }
+    ExportSource $(BUILDROOT)$/bt$/Hqmake.pm : Perl ;
+    ExportSource $(BUILDROOT)$/bt$/jambits$/base.jam : Jam ;
+
+    ExportSource $(BUILDROOT)$/bt$/subst.pl : Perl ;
+    ExportSource $(BUILDROOT)$/bt$/perl5libs$/Complain.pm : Perl ;
+    ExportSource $(BUILDROOT)$/bt$/perl5libs$/Fileutil.pm : Perl ;
+    ExportSource $(BUILDROOT)$/bt$/perl5libs$/Platform.pm : Perl ;
+    ExportSource $(BUILDROOT)$/bt$/perl5libs$/Universalfile.pm : Perl ;
+    if win-all in $(JamHostPlat) {
+      ExportSource $(BUILDROOT)$/bt$/perl5libs$/MSWin32-x86-thread$/Auto$/Fileutil$/Fileutil.dll : Binary ;
+    } else if mac-all in $(JamHostPlat) {
+      ExportSource $(BUILDROOT)$/bt$/perl5libs$/5.8.0$/darwin-thread-multi-2level$/Auto$/Fileutil$/Fileutil.bundle : Binary ;
+    }
+
+# Include rules for binding flavours
+    JamBits flavours.jam ;
+
+# Process requested variants on command line
+    if $(JAM_VARIANTS) {
+        local i ; for i in $(JAM_VARIANTS) {
+            RequiresVariant $(i) : $(Variant_$(i)) ;
+        }
+    }
+
+# Include platform-specific bits (least specific first, so more specific ones
+# can override them)
+    PlatformBits all ;
+
+# Include dependency rules
+    JamBits depends.jam ;
+
+# Include compilation rules
+    JamBits comprule all.jam ;
+
+# Include personal overrides if they exist
+    if $(OVERRIDES) {
+        if $(RELEASE) = 1 {
+            Warning Ignoring OVERRIDES for release build ;
+        }
+        else {
+            local i ; for i in $(OVERRIDES:E) {
+              Include $(i) ;
+            }
+        }
+    }
+
+# Include top-level makefile
+    Makefile "" ;
+
+# Include dependencies
+    if $(_DependencyFiles) { _IncludeDependencies $(_DependencyFiles) ; }
+
+# Log stripped

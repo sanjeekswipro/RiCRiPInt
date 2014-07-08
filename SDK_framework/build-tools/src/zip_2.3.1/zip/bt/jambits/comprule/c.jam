@@ -1,0 +1,783 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# C compilation rules.
+#
+# $HopeName: HQNjambits!comprule:c.jam(trunk.86) $
+#
+
+##################
+# Initialisation #
+##################
+
+# Variables that can be flavoured, specific to C.
+    C-LinkTypes = Dll Exec Lib ;
+
+
+##############################
+# Low-level updating actions #
+##############################
+
+# This is more complicated than it could be, simply because people want to
+# produce browse files in the same compile as objects, but we may need more
+# than one copy of the sbr file, so it gets a little tricky.  Because we don't
+# know how many copies of the sbr are needed (usually it's only one) at the
+# time we encounter the compile rule, and we don't know how the full command
+# line at the time we do know how many, we need a cunning hack.
+#
+# Except for the first sbr file (which we can create on the command line), we
+# store the command line information for compiling the sbr file in a NOTFILE
+# target which is going to be responsible for producing our other sbr copies.
+# In order for it to be called correctly, it must depend on the sbr copies
+# which are real file-targets but without any updating actions.  All the sbr
+# files depend on the object, but dependencies on the sbr copies must be
+# copied to the NOTFILE target.
+    actions quietly together __Compile bind Sbr {
+$(echocompiling)$(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Cc) $(-I)$(>:D) $(-I)$($(Meta-I)-C-ExportDirectories) $(-I)"$(IncDirs)" $(-bo)$(Sbr) $(-o)$(<[1]) $(>) $(and_touch_)$(Sbr)
+    }
+    actions quietly together __CompileWithPREfast bind Sbr {
+echo ...COMPILING (with PREfast) $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(PrefastCmd) /log=$(<[1]:S=.prefast.xml) $(Cc) $(-I)$(>:D) $(-I)$($(Meta-I)-C-ExportDirectories) $(-I)"$(IncDirs)" $(-bo)$(Sbr) $(-o)$(<[1]) $(>) $(and_touch_)$(Sbr)
+    }
+    actions quietly together __SbrCopies bind Sbr {
+$(echocompiling)$(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Cc) $(-I)$(>:D) $(-I)$($(Meta-I)-C-ExportDirectories) $(-I)"$(IncDirs)" $(-bo)$(Sbr[1]) $(>)
+$(Cp)$(Sbr[1])$(Space)$(Sbr[2-])$(NewLine)
+    }
+
+    actions quietly together __Preprocess {
+echo ...COMPILING $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Cpp) -I$(>:D) -I$($(Meta-I)-C-ExportDirectories) -I"$(IncDirs)" $(>) > $(<)
+    }
+
+    actions quietly together __ResourceCompile {
+echo ...COMPILING $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Rc) $(-S)$(Cwd) $(-S)$(<:D) $(-I)$(Cwd) $(-I)$(>:D) $(-I)$($(Meta-I)-Resource-ExportDirectories) $(-I)"$(IncDirs)" $(-o)$(<) $(>)
+    }
+
+# For Splint checking - the 'ignore' is because Splint returns failure if
+# there are any lint errors, and goodness knows every file of ours will
+# have errors...
+
+    actions quietly together ignore Splint {
+echo ...SPLINT CHECKING $(>)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Splint) $(SplintOptions) -D$(SplintDefines) -I$(>:D) -I$($(Meta-I)-C-ExportDirectories) -I"$(IncDirs)" $(>)
+    }
+
+# Unfortunately GCov is brain damaged and always puts the report files
+# in the current directory (albeit with the path mangled into the name
+# if you want that) so after it is generated we copy them to the current
+# object directory and then erase them from the current directory.
+# The reason there is more than one is that the included files are
+# generated as well. Unfortunately included files are usually shared
+# so if we want to see proper statistics on those you will need to add
+# the -l option to GCovOptions to make distinct filenames. This isn't done
+# by default because it mangles all filenames in an ugly way and mostly
+# you won't be interested in .h files for coverage.
+#
+# Even more unfortunately gcov under Windows (specifically MinGW)
+# is brain-damaged in a different way:
+# It puts the *.gcov annotated source output file into the correct place
+# but only if you supply Unix/MacOS type paths (i.e. using "/" (slash))
+
+    actions quietly together GCov {
+echo ...GENERATING COVERAGE FILE $(<)...
+$(SetEnv)$(ENV)$(NewLine)
+$(GCov) $(GCovOptions) -o $(GCovObjectDirectory) $(GCovSourceFile)
+$(Copy) -d *.gcov "$(GCovObjectDirectory)"
+$(Erase) *.gcov
+    }
+
+# Stage 1 - object link
+    # Type 1 : a rule that just puts all the sources on the command line
+    actions quietly together C-Link-Ld1 {
+echo ...MAKING $(<)...
+$(SetEnv)$(ENV)$(NewLine)
+$(GenerateExports_)$(Source)$(GenerateExports2)$(ExportsFile)
+$(Ld) $(-exp)$(Exports)$(-expend) $(-expfile)$(ExportsFile) $(-o)$(<) $(>) $(libs)
+$(RemoveExportsFile_)$(ExportsFile)
+    }
+    # Type 2 : a rule that uses a temporary file listing the sources
+    actions quietly together C-Link-Ld2 bind ResponseFile {
+echo ...MAKING $(<)...
+$(SetEnv)$(ENV)$(NewLine)
+$(GenerateExports_)$(Source)$(GenerateExports2)$(ExportsFile)
+$(Ld) $(-exp)$(Exports)$(-expend) $(-expfile)$(ExportsFile) $(-o)$(<) $(-fr)$(ResponseFile) $(libs)
+$(RemoveExportsFile_)$(ExportsFile)
+    }
+
+# Stage 2 - post link
+    actions quietly together C-Link-Post bind Target Source {
+$(Post_Linker0_)$(Target)
+$(GenerateExports_)$(Source)$(GenerateExports2)$(ExportsFile)
+$(Post_Linker_)$(Target)
+$(RemoveExportsFile_)$(ExportsFile)
+    }
+
+# Stage 3 - resource link (for macs)
+    actions quietly together C-Link-Rez bind Target {
+$(Compiler) $(Compiler_Arguments) $(Compiler_OutputFile=)$(Target) $(>)
+    }
+
+# Stage 3a - (optionally) extract resources to a separate .rsrc file
+# Controlled by DoIt set by SeparateRsrc
+if $(MACOSX) {
+    actions quietly together C-Link-SeparateRsrc bind Target DummyRsrc {
+$(DoIt)$(TakeRsrcFork)$(Target)$(OutputTo)$(Target)$(Rsrc)
+$(DoIt)$(ZapRsrcFork)$(OutputTo)$(Target) $(DoIt)$(DummyRsrc)
+    }
+}
+
+# Stage 4 - setfile
+    actions quietly together C-Link-SetFile bind Target {
+$(_SetFile_)$(SetFileArgs)$(Space)$(Target)
+$(_SetFile_)$(TypeAndCreator)$(Space)$(Target)
+    }
+
+# Stage 5 - sign
+#  The mac needs to have the full path to the target given to the signtool
+if $(MAC) || $(MACOSX) {
+    actions quietly together C-Link-Sign bind Target {
+$(Sign_)$(BUILDROOT)$/$(Target)
+    }
+    if $(MACOSX) {
+        # OS X needs an extra action to sign the (optional) .rsrc resource file
+        # Controlled by DoIt set by SeparateRsrc
+        actions quietly together C-Link-Sign-Rsrc bind Target {
+$(DoIt)$(Sign_)$(BUILDROOT)$/$(Target)$(Rsrc)
+        }
+    }
+}
+else {
+    actions quietly together C-Link-Sign bind Target {
+$(Sign_)$(Target)
+    }
+}
+
+# HACK!
+if $(MACOSX) {
+    local SetFile ;
+    SetFile = /usr/bin/CpMac ;
+    if $(SetFile:E) {
+        _SetFile_ = $(NewLine)"$/usr$/bin$/SetFile " ;
+    } else {
+        SetFile = /Developer/Tools/CpMac ;
+        if $(SetFile:E) {
+            _SetFile_ = $(NewLine)"$/Developer$/Tools$/SetFile " ;
+        } else {
+            Error Unable to locate SetFile in HQNjambits!comprule:c.jam ;
+        }
+    }
+} else {
+    _SetFile_ = $(NewLine)"SetFile " ;
+}
+
+
+# SetFileAttributes <target> : aBcDeF ;
+    rule SetFileAttributes {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+        SetFileArgs on $(SetFile-$(Target)) += $(2) ;
+    }
+
+
+# SeparateRsrc <target>
+# To generate resources in the data fork of a separate file <target>.rsrc
+# instead of in the resource fork of <target>
+#
+# This is enacted via the "cunning hack" of defining DoIt, which turns on
+# the C-Link-SeparateRsrc and C-Link-Sign-Rsrc actions
+if $(MACOSX) {
+    rule SeparateRsrc {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+
+        local RsrcTarget = Rsrc-$(Target) ;
+        DoIt on $(RsrcTarget) = " " ;
+
+        local SignTarget = Sign-$(Target) ;
+        DoIt on $(SignTarget) = " " ;
+    }
+}
+
+
+# A rule for creating a dependency between a library or executable and its sources
+#
+#   _C-LinkWith_ <target> : <source> ... : [ <path> ... ] : [ <targettype> ] : <sourcetype> : (C|C++) ;
+#
+    rule _C-LinkWith_ {
+        if $(6) in $(EnabledCompilers) {
+            local Sources ; MakeGristed Sources : $(2) : $(CurrentPath) $(3) ;
+
+            local Source ; LocateGeneric Source : $(2) : $(3) : $(6)-$(5) : SEARCH ;
+            local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+
+            LinkType-$(Target) ?= $(4) ;
+            local Type = $(LinkType-$(Target)) ;
+
+            AddUnique CType-$(Target) : $(6) $(CType-$(Source)) ;
+            if $(CType-$(Target)[2-]) { CType-$(Target) = mixedC ; }
+            local CType = $(CType-$(Target)) ;
+
+            local Prefix = $(CType)-$(Type) ;
+            if ! $(Prefix) {
+                Error Can't link $(Source) into $(Target) without knowing what $(Target) is ;
+            }
+            MustBeSet $(Prefix)-Linker : $(Prefix)-Linker is not defined ;
+
+            local TargetFile ; LocateGeneric TargetFile : $(Target) : : $(Prefix) : LOCATE ;
+            CleanFile $(TargetFile) ;
+            TargetFile-$(Target) = $(TargetFile) ; # For distributing, etc...
+            if $(Target) != $(TargetFile) {
+                DEPENDS $(Target) : $(TargetFile) ; NOTFILE $(Target) ;
+                LinkType-$(TargetFile) = $(Type) ;
+                CType-$(TargetFile) = $(CType) ;
+            }
+
+            if $(5) = Lib
+            {
+              NoteWDKTargetLibs $(Target) : $(Source) ;
+            }
+
+            # Hack for DLL stubs
+            if $(Type) = Dll && $($(Prefix)Stub-Suffix) {
+                local StubTarget ; LocateGeneric StubTarget : $(Target) : : $(Prefix)Stub : LOCATE ;
+                CleanFile $(StubTarget) ;
+                After $(TargetFile) : $(StubTarget) ;
+#                AddUnique DistribComponents-$(TargetFile) : $(StubTarget) ;
+            }
+
+            # Browse hook
+            switch $(5) {
+                case Lib    : Browse-LinkWithLibraries $(Target) : $(TargetFile) : $(Sources) ;
+                case Object : Browse-LinkWithObjects   $(Target) : $(TargetFile) : $(Sources).sbr ;
+            }
+
+            FloatingDepends $(TargetFile) ;
+
+            local Directory = $(CurrentPath) $($(Prefix)-Directory) ;
+
+
+            # Stage 1 - object link
+
+            # The mac doesn't link resource output
+            if ! ( $(MAC) || $(MACOSX) ) || $(5) != RCOutput {
+                if $($(Prefix)-Linker_InputFile=) {
+                    local ResFile = $(TargetFile:S=.rs1) ;
+                    DirectoryFor $(ResFile) : $(Directory) ;
+                    ResponseFile $(TargetFile) : $(ResFile) : $(Source) ;
+                    C-Link-Ld2 $(TargetFile) : $(ResFile) ;
+                }
+                else {
+                    DEPENDS $(TargetFile) : $(Source) ;
+                    C-Link-Ld1 $(TargetFile) : $(Source) ;
+                }
+                ENV  on $(TargetFile) = $($(Prefix)-Linker_Environment) ;
+                Ld   on $(TargetFile) = $($(Prefix)-Linker) $($(Prefix)-Linker_Arguments) ;
+                -fr  on $(TargetFile) = $($(Prefix)-Linker_InputFile=) ;
+                -o   on $(TargetFile) = $($(Prefix)-Linker_OutputFile=) ;
+                -exp on $(TargetFile) = $($(Prefix)-Linker_Exports=) ;
+                local -expend = $($(Prefix)-Linker_ExportsEnd) ; -expend ?= "" ;
+                -expend on $(TargetFile) = $(-expend) ;
+                libs on $(TargetFile) = $($(Prefix)-Linker_Libraries) ;
+                if $($(TargetFile)-SpecifyDllExportsAt) = Link
+                {
+                    if $($(CType-$(Target))-$(Type)-Linker_ExportsFileArgument)
+                    {
+                        # Linker requires a file containing the exported symbols
+                        ExportsFile = $(Target:B)-exports ;
+                        ExportsFile on $(TargetFile) = $(ExportsFile) ;
+                        -expfile on $(TargetFile) = $($(CType-$(Target))-$(Type)-Linker_ExportsFileArgument) ;
+                    }
+                }
+            }
+
+            # Stage 2 - post link
+
+            local LinkTarget = PostLink-$(TargetFile) ;
+
+            if $($(Prefix)-Post_Linker0)
+            {
+                local pl0 ;
+                Join pl0 : " " : $($(Prefix)-Post_Linker0) "" ;
+                Post_Linker0_ on $(LinkTarget) = $(pl0) ;
+            }
+
+            if $(Type) = Exec || $($(TargetFile)-SpecifyDllExportsAt) = PostLink
+            {
+                if $($(Prefix)-Post_Linker)
+                {
+                    local pl ;
+
+                    if $($(CType-$(Target))-$(Type)-Post_Linker_ExportsFileArgument)
+                    {
+                        # Post_linker requires a file containing the exported symbols
+                        ExportsFile = $(Target:B)-exports ;
+                        ExportsFile on $(LinkTarget) = $(ExportsFile) ;
+
+                        Join pl : " " : $($(Prefix)-Post_Linker) $($(Prefix)-Post_Linker_Arguments) $($(CType-$(Target))-$(Type)-Post_Linker_ExportsFileArgument) $(ExportsFile) $($(CType-$(Target))-$(Type)-Post_Linker_AfterExportsFile) "" ;
+                    }
+                    else
+                    {
+                        Join pl : " " : $($(Prefix)-Post_Linker) $($(Prefix)-Post_Linker_Arguments) "" ;
+                    }
+
+                    Post_Linker_ on $(LinkTarget) = $(pl) ;
+                }
+            }
+            Target on $(LinkTarget) = $(TargetFile) ;
+
+            NOTFILE $(LinkTarget) ;
+            After $(TargetFile) : $(LinkTarget) ;
+
+            C-Link-Post $(LinkTarget) ;
+
+            # Stage 3 - resource link (for macs)
+
+            if $(MAC) || $(MACOSX) {
+                local HaveResources i ;
+                switch $(5) {
+                    case Lib :
+                        for i in $(Source) {
+                            if $(HaveResources-$(i)) {
+                                HaveResources += $(i) ;
+                            }
+                        }
+                    case RCOutput :
+                        HaveResources = $(Source) ;
+                }
+                if $(HaveResources) {
+                    local LinkTarget = Rez-$(TargetFile) ;
+                    local ResFile = $(TargetFile:S=.rs2) ;
+                    DirectoryFor $(ResFile) : $(Directory) ;
+                    ResponseFile $(LinkTarget) : $(ResFile) : $(HaveResources) : "include \"" : "\" \;" ;
+                    C-Link-Rez $(LinkTarget) : $(ResFile) ; HaveResources-$(TargetFile) = 1 ;
+                    After $(TargetFile) : $(LinkTarget) ;
+                    NOTFILE $(LinkTarget) ;
+                    Target on $(LinkTarget) = $(TargetFile) ;
+
+                    for i in Compiler Compiler_Arguments Compiler_OutputFile= {
+                        $(i) on $(LinkTarget) = $(C-Resource-$(i)) ;
+                    }
+
+                    if $(MACOSX) {
+                        local RsrcTarget = Rsrc-$(TargetFile) ;
+                        Target on $(RsrcTarget) = $(TargetFile) ;
+
+                        NOTFILE $(RsrcTarget) ;
+                        After $(LinkTarget) : $(RsrcTarget) ;
+
+                        local DummyRsrcTarget ; MakeGristed DummyRsrcTarget : "dummyResource.r" : $(CurrentPath) ;
+                        DirectoryFor $(DummyRsrcTarget) : $(Directory) ;
+                        Touch on $(DummyRsrcTarget) = $(Touch) ;
+                        TouchFile $(DummyRsrcTarget) ;
+                        DEPENDS $(RsrcTarget) : $(DummyRsrcTarget) ;
+
+                        local ResMerger ; ResMerger = /usr/bin/ResMerger ;
+                        if $(ResMerger:E) {
+                          TakeRsrcFork on $(RsrcTarget) = "/usr/bin/ResMerger -srcIs RSRC -dstIs DF " ;
+                          ZapRsrcFork on $(RsrcTarget) = "/usr/bin/Rez " ;
+                        } else {
+                          TakeRsrcFork on $(RsrcTarget) = "/Developer/Tools/ResMerger -srcIs RSRC -dstIs DF " ;
+                          ZapRsrcFork on $(RsrcTarget) = "/Developer/Tools/Rez " ;
+                        }
+                        OutputTo on $(RsrcTarget) = " -o " ;
+                        Rsrc on $(RsrcTarget) = ".rsrc" ;
+                        DummyRsrc on $(RsrcTarget) = $(DummyRsrcTarget) ;
+                        C-Link-SeparateRsrc $(RsrcTarget) ;
+                   }
+                }
+            }
+
+            # Stage 4 - setfile
+
+            local SetFileTarget = SetFile-$(TargetFile) ;
+            Target on $(SetFileTarget) = $(TargetFile) ;
+
+            SetFile-$(Target) = $(SetFileTarget) ;    # For SetFileAttributes rule
+
+            NOTFILE $(SetFileTarget) ;
+            After $(LinkTarget) : $(SetFileTarget) ;
+            if $(HaveResources-$(TargetFile)) { DEPENDS $(SetFileTarget) : Rez-$(TargetFile) ; }
+
+            TypeAndCreator on $(SetFileTarget) = "-t '"$($(Prefix)-Type)"'" "-c '"$($(Prefix)-Creator)"'" ;
+
+            C-Link-SetFile $(SetFileTarget) ;
+
+            # Stage 5 - sign
+
+            local SignTarget = Sign-$(TargetFile) ;
+            Target on $(SignTarget) = $(TargetFile) ;
+
+            NOTFILE $(SignTarget) ;
+            After $(SetFileTarget) : $(SignTarget) ;
+
+            C-Link-Sign $(SignTarget) ;
+
+            if $(MACOSX) {
+                # Also sign any separate rsrc file
+                Rsrc on $(SignTarget) = ".rsrc" ;
+                C-Link-Sign-Rsrc $(SignTarget) ;
+            }
+        }
+    }
+
+
+######################
+# Intermediate rules #
+######################
+
+# A rule for compiling either type of C(++) source files into object
+# files.  If specified, a specific grist is used for the objects.
+#
+#   _Compile <source> ... : [ <path> ... ] : (C|C++) [ : <grist> ] ;
+#
+    rule _Compile {
+        if $(3) in $(EnabledCompilers) {
+            local Dir ; MakePath Dir : $(CurrentPath) $(2) ;
+            local Sources ; MakeGristed Sources : $(1) : $(Dir) ;
+            local .o = $($(3)-Object-Suffix) ;
+            local objgrist = $(4) ; objgrist ?= $(CurrentPath) ;
+            local Targets = $(1:S=$(.o):G=$(objgrist)) ;
+            local BrowseTargets ;
+            if $(EnableBrowse) { BrowseTargets = $(Targets:S=.sbr) ; Compound-$(BrowseTargets) = $(CurrentPath) ; }
+
+            MustBeSet $(3)-Compiler : $(3)-Compiler is not defined ;
+
+            C-Dependencies $(Sources) ;
+
+            SEARCH on $(Sources) += $(Dir)$/$($(3)-SourceDirectories) ;
+            local ObjectPath = $(CurrentPath)$/$($(3)-Object-Directory) ;
+            DirectoryFor $(Targets) : $(ObjectPath) ;
+
+            local B S T ;
+            for S in $(Sources) {
+                T = $(S:S=$(.o):G=$(objgrist)) ;
+                if $(EnableBrowse) {
+                    B = $(T:S=.sbr) ;
+                    __SbrCopies Copies-$(B) : $(S) ;
+                }
+                DEPENDS $(T) : $(S) ;
+                DEPENDS $(T) : $($(3)-Compiler_Prerequisites) ;
+
+                if $(EnablePrefast) {
+                    __CompileWithPREfast $(T) $(B) : $(S) ;
+                } else {
+                    __Compile $(T) $(B) : $(S) ;
+                }
+
+                if $(EnableSplint) && "C++" != $(3) {
+                    local _bindir = $(Splint:P) ;
+                    local SplintTarget = Splint-$(T) ;
+                    Target on $(SplintTarget) = $(T) ;
+
+                    Splint on $(SplintTarget) = $(Splint) ;
+                    SplintOptions on $(SplintTarget) = +larchpath $(_bindir:P)$/lib +lclimportdir $(_bindir:P)$/imports $(SplintOptions) ;
+                    SplintDefines on $(SplintTarget) = $(C-Defines) ;
+                    IncDirs on $(SplintTarget) = $(C-IncludeDirectories) $(C-SystemIncludeDirectories) ;
+                    Meta-I  on $(SplintTarget) = $(Meta-IncludedExportDirectories) ;
+                    ENV     on $(SplintTarget) = $($(3)-Compiler_Environment) ;
+
+                    NOTFILE $(SplintTarget) ;
+                    After $(T) : $(SplintTarget) ;
+                    Splint $(SplintTarget} : $(S) ;
+                }
+                if $(EnableGCov) {
+                    local GCovDataTarget = $(T:S=.bb) ; # These are the data files generated by the run, and
+                    local GCovReportTarget = $(S).gcov ; # these are the annotated source files we want to see.
+                    DirectoryFor $(GCovReportTarget) : $(ObjectPath) ; # The report file lives in the object directory.
+                    DirectoryFor $(GCovDataTarget) : $(ObjectPath) ; # As does the data file.
+                    DEPENDS $(GCovReportTarget) : $(GCovDataTarget) ; # Make the gcov file depend on data file.
+                    DEPENDS gcov : $(GCovReportTarget) ; # Make the overal gcov pseudo target depend on each gcov file.
+                    GCovObjectDirectory on $(GCovReportTarget) = $(ObjectPath) ; # Stash the object directory for the actions.
+                    GCovSourceFile on $(GCovReportTarget) = $(S:BS) ; # Stash the source file name for the actions.
+                    GCov on $(GCovReportTarget) = $(GCov) ;
+                    GCov $(GCovReportTarget) : $(GCovDataTarget) ; # Describe how to make a gcov file from a data file.
+                }
+            }
+
+            FloatingDepends $(Targets) ;
+
+            # (See the comments on the __Compile actions above)
+            # Variables that we need for compiling the sbr and obj
+            # files need to be set for both.  Those that are used when
+            # compiling the sbr file on its own only need to be set on
+            # the sbr, and those for producing the sbr when the obj is
+            # being compiled as well set only on the obj.  We also
+            # stooge in that other NOTFILE target here:
+
+            local Cp ; Join Cp : " " : $(Copy) "" ;
+            Cp on Copies-$(BrowseTargets) = $(Cp) ;
+            BrowseTargets += Copies-$(BrowseTargets) ;
+
+            # Common
+            ENV     on $(Targets) $(BrowseTargets) = $($(3)-Compiler_Environment) ;
+            Cc      on $(Targets) $(BrowseTargets) = $($(3)-Compiler) $($(3)-Compiler_Arguments) $($(3)-Compiler_HashDefine)$(C-Defines) ;
+            -I      on $(Targets) $(BrowseTargets) = $($(3)-Compiler_AddIncludeDir) ;
+            IncDirs on $(Targets) $(BrowseTargets) = $(C-IncludeDirectories) $(C-SystemIncludeDirectories) ;
+            Meta-I  on $(Targets) $(BrowseTargets) = $(Meta-IncludedExportDirectories) ;
+
+            if $(EnablePrefast) {
+                PrefastCmd on $(Targets) = $(PrefastApp) ;
+            }
+
+            # When building the obj as well as the sbr:
+            echocompiling on $(Targets) = "echo ...COMPILING " ;
+            -o            on $(Targets) = $($(3)-Compiler_OutputFile=) ;
+            -bo           on $(Targets) = $($(3)-Compiler_BrowseFile=) ;
+            and_touch_    on $(Targets) = "&& "$(Touch)" " ;
+
+            # When building the sbr alone:
+            echocompiling on $(BrowseTargets) = "echo ...UPDATING BROWSE INFO for " ;
+            -bo           on $(BrowseTargets) = $($(3)-Compiler_BrowseFileOnly=) ;
+
+            CleanDir $(CurrentPath)$/obj ;
+        }
+    }
+
+
+#############
+# Interface #
+#############
+
+#* $(1) source files ...
+#* [$(2)] subdir ...
+#* [$(3)] object grist
+#* Use the C compiler to compile $(1) into objects.  If $(2) is
+#* specified, find them in subdirectories of that $(2) rather that the
+#* current compound.
+#*seerule C++-Compile
+#*seevar C-SourceDirectories C-Object-Directory
+#*section c
+    rule C-Compile   { _Compile $(1) : $(2) : C : $(3) ; }
+#* $(1) source files ...
+#* [$(2)] subdir ...
+#* [$(3)] object grist
+#* Use the C++ compiler to compile $(1) into objects.  If $(2) is
+#* specified, find them in subdirectories of that $(2) rather that the
+#* current compound.
+#*seerule C-Compile
+#*seevar C++-SourceDirectories C++-Object-Directory
+#*section c
+    rule C++-Compile { _Compile $(1) : $(2) : C++ : $(3) ; }
+
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Link $(1) with $(2), which are libraries compiled from C code.
+#* If $(3) is specified, the libraries are targets from the makefile in
+#* that $(3).  If $(4) is specified (<code>Dll</code>, <code>Exec</code>
+#* or <code>Lib</code>), use it to infer the type.  You shouldn't have
+#* to pass the $(4).  Instead, make sure there is at least one
+#* invocation of <code>@DynamicLibrary $(1)</code>, <code>@Executable
+#* $(1)</code> or <code>@Library $(1)</code> in the makefile before
+#* invoking this rule.
+#*eg C-LinkWithLibraries myexec : standard : standard ;
+#*seerule C-LinkWithObjects C-LinkWithResources C++-LinkWithLibraries C++-LinkWithObjects C++-LinkWithResources DynamicLibrary Executable Library
+#*section c
+    rule C-LinkWithLibraries   {
+      _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : Lib      : C   ;
+    }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Identical to @C-LinkWithLibraries, but links with objects instead of
+#* libraries.
+#*seerule C-LinkWithLibraries
+#*section c
+    rule C-LinkWithObjects     { _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : Object   : C   ; }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Identical to @C-LinkWithLibraries, but links with resources instead of
+#* libraries.
+#*seerule C-LinkWithLibraries
+#*section c
+    rule C-LinkWithResources   { _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : RCOutput : C   ; }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Identical to @C-LinkWithLibraries, but links with libraries compiled
+#* from C++ source instead of C source.
+#*seerule C-LinkWithLibraries
+#*section c
+    rule C++-LinkWithLibraries { _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : Lib      : C++ ; }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Identical to @C++-LinkWithLibraries, but links with objects instead of
+#* libraries.
+#*seerule C++-LinkWithLibraries
+#*section c
+    rule C++-LinkWithObjects   { _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : Object   : C++ ; }
+#* $(1) target
+#* $(2) sources ...
+#* [$(3)] subdir ...
+#* [$(4)] targettype
+#* Identical to @C++-LinkWithLibraries, but links with resources instead of
+#* libraries.
+#*seerule C++-LinkWithLibraries
+#*section c
+    rule C++-LinkWithResources { _C-LinkWith_ $(1) : $(2) : $(3) : $(4) : RCOutput : C++ ; }
+
+#* $(1) target
+#* $(2) source
+#* [$(3)] subdir ...
+#* Preprocess $(2) (which is in a subdirectory of (optional) $(3),
+#* rather than the current one), placing the output in a file called $(1).
+#*seerule C-Compile
+#*seevar C-SourceDirectories GeneratedC-Directory
+#*section c
+    rule C-Preprocess {
+        if C in $(EnabledCompilers) {
+            local Dir = $(CurrentPath) $(3) ; Dir = $(Dir:/) ;
+            local Source ; MakeGristed Source : $(2) : $(Dir) ;
+            local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+            local OutputDir = $(4) ; OutputDir ?= $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+            ExportSource $(Source) : C ;
+
+            SEARCH on $(Source) += $(Dir)$/$(C-SourceDirectories) ;
+            DirectoryFor $(Target) : $(OutputDir) ;
+            GeneratedIncludable $(Target) ;
+            DeclareExport C-ExportDirectories : $(OutputDir) ;
+
+            DEPENDS $(Target) : $(Source) ;
+            __Preprocess $(Target) : $(Source) ;
+            FloatingDepends $(Target) ;
+
+            ENV     on $(Target) = $(C-Preprocessor_Environment) ;
+            Cpp     on $(Target) = $(C-Preprocessor) $(C-Preprocessor_Arguments) -D$(C-Defines) ;
+            IncDirs on $(Target) = $(C-IncludeDirectories) $(C-SystemIncludeDirectories) ;
+            Meta-I  on $(Target) = $(Meta-IncludedExportDirectories) ;
+
+            CleanDir $(CurrentPath)$/obj ;
+        }
+    }
+
+#* $(1) source files ...
+#* [$(2)] subdir ...
+#* [$(3)] object grist
+#* Compile the $(1) as resources.  If $(2) is specified, find the in the
+#* appropriate subdirectory of $(2) rather than the current directory.
+#*seerule C-Compile
+#*seevar C-ResourceDirectories C-RCOutput-Directory
+#*section c
+    rule Resource-Compile {
+        if RC in $(EnabledCompilers) {
+            local Dir = $(CurrentPath) $(2) ; Dir = $(Dir:/) ;
+            local objgrist = $(3) ; objgrist ?= $(CurrentPath) ;
+            local i ; for i in $(1) {
+                local Source ; MakeGristed Source : $(i) : $(Dir) ;
+                local Target ; LocateGeneric Target : $(i:S=:G=$(objgrist)) : : C-RCOutput : LOCATE ;
+                local SearchDirs = $(Dir)$/$(C-ResourceDirectories) ;
+
+                ExportSource $(Source) : C ;
+
+                SEARCH on $(Source) += $(SearchDirs) ;
+
+                Resource-Dependencies $(Source) : $(CurrentPath) $(SearchDirs) $(C-IncludeDirectories) ;
+
+                DEPENDS $(Target) : $(Source) ;
+                __ResourceCompile $(Target) : $(Source) ;
+                FloatingDepends $(Target) ;
+
+                ENV     on $(Target) = $(C-Resource-Compiler_Environment) ;
+                Rc      on $(Target) = $(C-Resource-Compiler) $(C-Resource-Compiler_Arguments) $(C-Resource-Compiler_HashDefine)$(C-Defines) ;
+                -I      on $(Target) = $(C-Resource-Compiler_AddIncludeDir) ;
+                -S      on $(Target) = $(C-Resource-Compiler_AddSearchDir) ;
+                -o      on $(Target) = $(C-Resource-Compiler_OutputFile=) ;
+                Cwd     on $(Target) = $(CurrentPath) ;
+                IncDirs on $(Target) = $(C-IncludeDirectories) $(C-SystemIncludeDirectories) ;
+                Meta-I  on $(Target) = $(Meta-IncludedExportDirectories) ;
+
+                CleanDir $(CurrentPath)$/obj ;
+            }
+        }
+    }
+
+
+#* $(1) dynamiclibrarytarget
+#* $(2) symbols ...
+#* Mark $(2) as the <em>only</em> symbols to be exported from $(1).
+#* This should be specified after at least one @DynamicLibrary rule for
+#* $(1).  If not specified, the default is linker-specific but typically
+#* all global symbols are exported.
+#*eg DynamicLibraryExports mydll : interfacefn interfaceptr ;
+#*seerule DynamicLibrary
+#*section c
+    rule DynamicLibraryExports {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+
+        WDKExports-$(Target) += $(2) ;
+
+        if $(TargetFile-$(Target)) { Target = $(TargetFile-$(Target)) ; }
+
+        local When ; When = $(3) ;
+        When ?= $(DynamicLibraryExports-When) ;
+        When ?= PostLink ;
+        $(Target)-SpecifyDllExportsAt = $(When) ;
+
+        CType-$(Target)    ?= C ;
+        LinkType-$(Target) ?= Dll ;
+
+        local Type = $(LinkType-$(Target)) ;
+        if $(Type) != Dll && $(Type) != Dylib { Error Cannot use DynamicLibraryExports on a $(Type) ; }
+
+        local Sep = $($(CType-$(Target))-$(Type)-Linker_ExportsSeparator) ;
+
+        Join Exports-$(Target) : $(Sep) : $(Exports-$(Target)) $(2) ;
+        Exports on $(Target) = $(Exports-$(Target)) ;
+
+        if $($(CType-$(Target))-$(Type)-Linker_ExportsFileArgument)
+        {
+            # Linker requires a file containing the exported symbols
+            # Set up snippets for generating and deleting that file
+            local Link-Sep = $($(CType-$(Target))-$(Type)-Linker_ExportsFileSeparator) ;
+            Join Link-Exports-$(Target) : $(Link-Sep) : $(Link-Exports-$(Target)) $(2) ;
+
+            GenerateExports_ on $(Target) = $($(CType-$(Target))-$(Type)-Linker_GenerateExportsFilePrefix)$(Link-Exports-$(Target))$($(CType-$(Target))-$(Type)-Linker_GenerateExportsFileSuffix) ;
+            GenerateExports2 on $(Target) = "" ;
+            Source on $(Target) = "" ;
+            RemoveExportsFile_ on $(Target) = $($(CType-$(Target))-$(Type)-Linker_RemoveExportsFile) ;
+        }
+
+        if $($(CType-$(Target))-$(Type)-Post_Linker_ExportsFileArgument)
+        {
+            # Post_linker requires a file containing the exported symbols
+            # Set up snippets for generating and deleting that file
+            local PostLink-Sep = $($(CType-$(Target))-$(Type)-Post_Linker_ExportsFileSeparator) ;
+            Join PostLink-Exports-$(Target) : $(PostLink-Sep) : $(PostLink-Exports-$(Target)) $(2) ;
+
+            GenerateExports_ on PostLink-$(Target) = $($(CType-$(Target))-$(Type)-Post_Linker_GenerateExportsFilePrefix)$(PostLink-Exports-$(Target))$($(CType-$(Target))-$(Type)-Post_Linker_GenerateExportsFileSuffix) ;
+            GenerateExports2 on PostLink-$(Target) = "" ;
+            Source on PostLink-$(Target) = "" ;
+            RemoveExportsFile_ on PostLink-$(Target) = $($(CType-$(Target))-$(Type)-Post_Linker_RemoveExportsFile) ;
+        }
+    }
+
+
+#* $(1) subdirs ...
+#* [$(2)] path to subdirs parent ...
+#* [$(3)] inheritance
+#* [$(4)] conditions
+#*obsolete
+#*seerule IncludeExportDirectories
+#*section c
+    rule C-IncludeExportDirectories {
+        local Inheritance = $(3) ; Inheritance ?= Local ;
+        IncludeExportDirectories $(Inheritance) : $(1) : $(2) : $(4) ;
+    }
+
+
+# Log stripped

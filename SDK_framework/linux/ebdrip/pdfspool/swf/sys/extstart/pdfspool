@@ -1,0 +1,24 @@
+%!PS
+%%Title: PDFSpool init
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2008 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWpdfspool!swf:sys:extstart:pdfspool(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% ExtraStart file to remove any files from the directory used by
+% the PDF spooler on RIP startup
+%
+
+% Note enabledness of device, enable it, delete files, restore enabledness
+(%tmp%) currentdevparams /Enable get
+(%tmp%) << /Enable true >> setdevparams
+(%tmp%PDFspool/*) { { deletefile } stopped { pop } if } 200 string filenameforall
+(%tmp%) << /Enable 4 -1 roll >> setdevparams
+
+

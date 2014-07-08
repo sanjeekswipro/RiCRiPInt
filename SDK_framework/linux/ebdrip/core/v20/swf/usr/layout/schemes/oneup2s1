@@ -1,0 +1,76 @@
+%!PS-Adobe-3.0
+%%Title: OneUp_2s_1
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sept 2004
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.5.10.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:schemes:oneup2s1(EBDSDK_P.1) $
+
+
+% This file defines the 2-sided one-up imposition scheme for use with the 
+% HqnLayout procset.
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+
+	<<
+
+	/Name (OneUp_2s_1)
+	
+	/UserName (One-up, two-sided)
+
+	/SchemeVersion	(2.0.0)
+
+	/Sides 2
+	
+	/CheckDivisor 0
+
+	/LocalValidate <<
+	>>
+	/LocalValues []
+	
+	/SetOnce true
+	
+	/Initialize {
+		/OU2S1Array [
+				[ % front
+				[ << /PN 0 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY 0 >> ]
+			]
+				[ % back
+				[ << /PN 1 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY 0 >> ]
+			]
+		] def
+		PageRotate /BestFit eq ImageWidth -1 eq and {
+			/PageRotate /Rot0 store
+		} if
+	} bind	
+	
+	/TableInitialize {
+			<<
+			/PageCountAcross 1
+			/PageCountUp 1
+			/PageFlow /FlatWork
+		>>
+	} bind
+	
+	% No SetLayout, because Initialize has called TableBasedInit_2. Instead, we have GetAutoSpine
+	% and GetPageArray
+
+	/GetAutoSpine {
+		% Shouldn't happen - should be caught by call validation
+		(HqnLayout Error: Auto SpineFold used with OneUp_1s_1 scheme\n) ErrPrint
+		/OneUp_1s_1 errordict /undefinedresult get exec
+	} bind
+
+	/GetPageArray {
+		OU2S1Array
+	} bind
+			
+	% PageSequence is called on each sheet to obtain the page indices to run 
+	% on this page
+	% It's set automatically as part of TableBasedLayout
+	
+	/SurfaceCount { PaddedPages } bind
+	
+>>

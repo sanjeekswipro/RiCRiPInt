@@ -1,0 +1,99 @@
+Set DistFolder `Perl -Sx "{0}" "{1}" "{TempFolder}"Distribute.Dup` 	&&	¶
+	"{TempFolder}"Distribute.Dup													&&	¶
+	Stuff -r "{DistFolder}" -o "{2}"												&&	¶
+	Delete -y "{DistFolder}" "{TempFolder}"Distribute.Dup
+Exit
+
+#!perl
+#######################################################################
+#	Project	:	Distr				-	
+#	File		:	Distribute		-	Build a distribution
+#	Author	:	Matthias Neeracher
+#	Started	:	29Jun93								Language	:	MPW Perl
+#	Modified	:	31Jul93	MN	Some unpleasant bugs
+#	Last		:	31Jul93
+#######################################################################
+
+($distfile,$dup) = @ARGV;
+
+open(DIST, $distfile) || die "$0: Could not open \"$distfile\"";
+open(DUP, ">$dup") || die "$0: Could not open \"$dup\"";
+
+while (<DIST>) {
+	next if /^\s*$/;
+	next if /^\s*#/;
+	
+	if (/^\s*TARGET\s+(\S+)\s*$/) {
+		$target = $1;
+		
+		$target = ":$target" unless ($target =~ /^:/);
+		$target = "$target:" unless ($target =~ /:$/);
+			
+		&mkdirs($target);
+	} elsif (/^\s*(\S+)\s+AS\s+(\S+)\s*$/) {
+		&linkfile($1, "$target$2", 0);
+	} elsif (/^\s*(\S+)\s*$/) {
+		&linkfiles($1, $target);
+	} else {
+		print STDERR "File \"$distfile\"; Line $. # Syntax Error\n";
+	}
+}
+
+$target =~ /^:?([^:]+)/;
+
+print "$1\n";
+
+sub mkdirs 
+{
+	local($dir) = @_;
+	
+	if (!-d $dir) {
+		if ($dir =~ /(.*:)[^:]+:/) {
+			&mkdirs($1);
+		}
+		
+		mkdir($dir, 0777) || die "Couldn't create directory \"$dir\"";
+	}
+}
+
+sub linkfile
+{
+	local($from,$to,$linkem) = @_;
+	
+	print STDERR "\t\t\t$from -> $to\n";
+	
+	unlink $to if (-e $to);
+	
+	if ($linkem) {
+		symlink($from, $to) || die "Couldn't link \"$from\" to \"$to\"";
+	} else {
+		print DUP "Duplicate \'$from\' \'$to\'\n";
+	}
+}
+
+sub linkfiles
+{
+	local($from,$target) = @_;
+	
+	if ($from =~ /^(.*):([^:]+)$/) {
+		($fromdir,$fromfile) = ($1,$2);
+	} else {
+		($fromdir,$fromfile) = (":",$from);
+	}
+	
+	if ($fromfile =~ /[Å?]/) {
+		$fromfile =~ s/\./\\./;
+		$fromfile =~ s/Å/.*/;
+		$fromfile =~ s/\?/./;
+		
+		opendir(FROMDIR, $fromdir) || "Could not open \"$fromdir\"";
+		
+		while ($from = readdir(FROMDIR)) {
+			next unless $from =~ /^$fromfile$/;
+			
+			&linkfile("$fromdir:$from", "$target$from", 1);
+		}
+	} else {
+		&linkfile($from,"$target$fromfile", 1);
+	}
+}

@@ -1,0 +1,185 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pagescaling.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code configures support for PageScaling (which may be processed
+% further by the main PrintTicket procset).
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+% scalingdict SetPageScalingFromDict -
+%
+% Examines the specified scaling dictionary and uses it to set the
+% appropriate x and y page scale factors (in the range [0..1.0])
+/SetPageScalingFromDict {
+  (->SetPageScalingFromDict) PTDebug
+  dup type /dicttype ne { /SetPageScalingFromDict errordict /typecheck get exec }if
+
+  dup /Scale known {
+    /Scale get /Value get cvr 100.0 div dup % scale scale
+  }{
+    dup /ScaleWidth << /Value 100.0 >> GetDictValueWithDefault /Value get cvr 100.0 div
+    exch
+    % scalex scalingdict
+
+    /ScaleHeight << /Value 100.0 >> GetDictValueWithDefault /Value get cvr 100.0 div
+  }ifelse
+
+  % scalex scaley
+  2 array astore //InternalState /PageScaleXY 3 -1 roll put
+  //InternalState /CustomPageScaling true put
+
+  (<-SetPageScalingFromDict) PTDebug
+} bind def
+
+% microns micronTo72DPI dpi
+/micronTo72DPI {
+  cvr 72.0 mul 25400.0 div
+} bind def
+
+% microns micronTo96DPI dpi
+/micronTo96DPI {
+  cvr 96.0 mul 25400.0 div
+} bind def
+
+% scalingdict SetPageOffsetsFromDict -
+%
+% Examines the specified scaling dictionary and uses it to set the
+% appropriate x and y page offsets (in XPS units)
+/SetPageOffsetsFromDict {
+  (->SetPageOffsetsFromDict) PTDebug
+  dup type /dicttype ne { /SetPageOffsetsFromDict errordict /typecheck get exec }if
+
+  dup /OffsetWidth << /Value 0.0 >> GetDictValueWithDefault /Value get //micronTo96DPI exec
+  exch
+  % offsetx scalingdict
+
+  /OffsetHeight << /Value 0.0 >> GetDictValueWithDefault /Value get //micronTo96DPI exec
+
+  % offsetx offsety
+  2 array astore //InternalState /PageOffsetXY 3 -1 roll put
+
+  (<-SetPageOffsetsFromDict) PTDebug
+} bind def
+
+% Determine in which section of the page the output image should be placed
+% when page scaling is specified.
+% The procedures accept no arguments and return xalign and yalign values.
+%   - -> xalign yalign
+% where xalign can be -1 (left), 0 (center), or 1 (right)
+%   and yalign can be -1 (top), 0 (center), or 1 (bottom)
+/ScaleOffsetAlignments <<
+  /BottomCenter {  0  1 } bind
+  /BottomLeft   { -1  1 } bind
+  /BottomRight  {  1  1 } bind
+  /Center       {  0  0 } bind
+  /LeftCenter   { -1  0 } bind
+  /RightCenter  {  1  0 } bind
+  /TopCenter    {  0 -1 } bind
+  /TopLeft      { -1 -1 } bind
+  /TopRight     {  1 -1 } bind
+>> def
+
+% scalingdict SetPageAlignmentFromDict -
+%
+% Examines the specified scaling dictionary and uses it to set the
+% alignment of the page image on the media (TopLeft, BottomRight, etc)
+/SetPageAlignmentFromDict {
+  (->SetPageAlignmentFromDict) PTDebug
+  dup type /dicttype ne { /SetPageAlignmentFromDict errordict /typecheck get exec }if
+
+  dup /ScaleOffsetAlignment known {
+    /ScaleOffsetAlignment get /Value get
+  }{
+    pop
+    /TopLeft % Default option
+  }ifelse
+
+  //ScaleOffsetAlignments exch get exec
+
+  % xalign yalign
+  2 array astore //InternalState /PageAlignment 3 -1 roll put
+
+  (<-SetPageAlignmentFromDict) PTDebug
+} bind def
+
+% Dictionary containing 'custom' and 'none' options.
+% Some options use /None and require more processing in the main PT procset.
+/PageScalingOptionDict <<
+  /Custom { % scalingdict -> -
+    dup //SetPageScalingFromDict exec
+    dup //SetPageOffsetsFromDict exec
+    //SetPageAlignmentFromDict exec
+  } bind
+
+  /None { % scalingdict -> -
+    //InternalState begin
+      /PageScaleXY  [1.0 1.0] def
+      /PageOffsetXY [0.0 0.0] def
+    end
+    //SetPageAlignmentFromDict exec
+  } bind
+>> def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/DoPageScaling {
+  begin
+    (->DoPageScaling) PTDebug
+
+    % Store PageScaling dict so the main PrintTicket procset can use it
+    InternalState /PageScaling pt_value put
+
+    % Configure scaling/alignment options
+    pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+    dup [/CustomSquare /FitToPaper] IsOneOf {
+      pop /Custom
+    }if
+
+    dup //PageScalingOptionDict exch known not {
+      % Use /None when a non-custom option has been specified
+      pop /None
+    }if
+
+    pt_value //PageScalingOptionDict 3 -1 roll get exec
+
+    (<-DoPageScaling) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageScaling <<
+    /Action //DoPageScaling
+    /Default << /Value /None >>
+  >>
+>>
+
+end

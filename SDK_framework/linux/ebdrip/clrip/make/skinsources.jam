@@ -1,0 +1,973 @@
+# Copyright (C) 2012-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# 
+# Sources that should be included in the distributed skin
+#
+# $HopeName: SWprod_hqnrip!clrip:make:skinsources.jam(EBDSDK_P.1) $
+#
+
+ReplaceVar Local : SDKSources :
+  skinkit$/src$/caldev.c
+  skinkit$/src$/config.c
+  skinkit$/src$/devparam.h
+  skinkit$/src$/devutils.c
+  skinkit$/src$/devutils.h
+  skinkit$/src$/fdecrypt.c
+  skinkit$/src$/file.c
+  skinkit$/src$/filedev.c
+  skinkit$/src$/fndcrypt.c
+  skinkit$/src$/hybridev.c
+  skinkit$/src$/kit.h
+  skinkit$/src$/mem.c
+  skinkit$/src$/memfs.c
+  skinkit$/src$/monitor.c
+  skinkit$/src$/paths.c
+  skinkit$/src$/pgbdev.c
+  skinkit$/src$/progdev.c
+  skinkit$/src$/progevts.c
+  skinkit$/src$/probelog.c
+  skinkit$/src$/probelog.h
+  skinkit$/src$/psock.h
+  skinkit$/src$/ramdev.c
+  skinkit$/src$/ripthread.c
+  skinkit$/src$/ripthread.h
+  skinkit$/src$/skinkit.c
+  skinkit$/src$/strutils.c
+  skinkit$/src$/streamdev.c
+  skinkit$/src$/sync.c
+  skinkit$/src$/sync.h
+  skinkit$/src$/zlibutil.c
+  skinkit$/src$/zlibutil.h
+  skinkit$/export$/file.h
+  skinkit$/export$/hqnstrutils.h
+  skinkit$/export$/ktime.h
+  skinkit$/export$/mem.h
+  skinkit$/export$/memfs.h
+  skinkit$/export$/paths.h
+  skinkit$/export$/pgbdev.h
+  skinkit$/export$/progevts.h
+  skinkit$/export$/skindevs.h
+  skinkit$/export$/skinkit.h
+  skinkit$/export$/skinras.h
+  skinkit$/export$/streamdev.h
+  skinkit$/export$/streams.h
+;
+
+if $(MACOSX) || $(UNIX) {
+  AddToVar Local : SDKSources :
+    skinkit$/unix$/src$/pfile.c
+    skinkit$/unix$/src$/pmem.c
+    skinkit$/unix$/src$/pprobelog.c
+    skinkit$/unix$/src$/ptime.c
+    skinkit$/unix$/export$/pfile.h
+  ;
+} else if $(NT) {
+  AddToVar Local : SDKSources :
+    skinkit$/pc$/src$/pfile.c
+    skinkit$/pc$/src$/printerdev.c
+    skinkit$/pc$/src$/pmem.c
+    skinkit$/pc$/src$/pprobelog.c
+    skinkit$/pc$/src$/ptime.c
+    skinkit$/pc$/export$/pfile.h
+  ;
+}
+
+# RDR and Event
+AddToVar Local : SDKSources :
+  rdrevent$/export$/rdrapi.h
+  rdrevent$/export$/eventapi.h
+  rdrevent$/export$/apis.h
+  rdrevent$/src$/rdr.c
+  rdrevent$/src$/event.c
+  rdrevent$/src$/rdrglue.c
+  rdrevent$/src$/rdrpriv.h
+;
+
+# Standard (deliberately excluding name remapper and hqosarch)
+AddToVar Local : SDKSources :
+  standard$/export$/caching.h
+  standard$/export$/c99protos.h
+  standard$/export$/hq32x2.h
+  standard$/export$/hqassert.h
+  standard$/export$/hqatomic.h
+  standard$/export$/hqbitops.h
+  standard$/export$/hqbitvector.h
+  standard$/export$/hqcstass.h
+  standard$/export$/hqexcept.h
+  standard$/export$/hqmemcmp.h
+  standard$/export$/hqmemcpy.h
+  standard$/export$/hqmemset.h
+  standard$/export$/hqncall.h
+  standard$/export$/hqspin.h
+  standard$/export$/hqstr.h
+  standard$/export$/hqtypes.h
+  standard$/export$/hsiehhash32.h
+  standard$/export$/osprotos.h
+  standard$/export$/platform.h
+  standard$/export$/proto.h
+  standard$/export$/std.h
+  standard$/export$/warnings.h
+  standard$/pc$/export$/hqwindows.h
+;
+
+# pthreads
+AddToVar Local : SDKSources :
+  threads$/export$/threadapi.h
+;
+if $(MACOSX) {
+  AddToVar Local : SDKSources :
+    threads$/macos$/src$/ggsthreads.c
+  ;
+} else if $(NT) {
+  AddToVar Local : SDKSources :
+    threads$/pc$/src$/ggsthreads.c
+  ;
+} else if $(UNIX) {
+  AddToVar Local : SDKSources :
+    threads$/unix$/src$/ggsthreads.c
+  ;
+}
+
+# timeline
+AddToVar Local : SDKSources :
+  timeline$/export$/timelineapi.h
+  timeline$/src$/timeline.c
+;
+
+# Timer
+AddToVar Local : SDKSources :
+  timer$/export$/timer.h
+  timer$/export$/timerapi.h
+  timer$/src$/timer.c
+  timer$/src$/timerimp.h
+;
+if $(MACOSX) {
+  AddToVar Local : SDKSources :
+    timer$/macos$/src$/timerimp.c
+  ;
+} else if $(NT) {
+  AddToVar Local : SDKSources :
+    timer$/pc$/src$/timerimp.c
+  ;
+} else if $(UNIX) {
+  AddToVar Local : SDKSources :
+    timer$/unix$/src$/timerimp.c
+  ;
+}
+
+if $(C-Compiler-Family) = msvc {
+  AddToVar Local : SDKSources :
+    pthreads$/export$/pthread.h
+    pthreads$/export$/sched.h
+    pthreads$/export$/semaphore.h
+    pthreads$/pc$/src$/config.h
+  ;
+}
+
+if $(ProductName) = ebd {
+  if vxworks in $(TargetOS) {
+    AddToVar Local : SDKSources :
+      skinkit$/vxworks$/src$/pfile.c
+      skinkit$/vxworks$/src$/pmem.c
+      skinkit$/vxworks$/src$/psync.c
+      skinkit$/vxworks$/src$/ptime.c
+      skinkit$/vxworks$/export$/pfile.h
+    ;
+  } else if threadx in $(TargetOS) {
+    AddToVar Local : SDKSources :
+      skinkit$/threadx$/src$/pfile.c
+      skinkit$/threadx$/src$/pmem.c
+      skinkit$/threadx$/src$/psync.c
+      skinkit$/threadx$/src$/ptime.c
+      skinkit$/threadx$/export$/pfile.h
+    ;
+  }
+} else { # Non-embedded
+  AddToVar Local : SDKSources :
+    skinkit$/src$/scrndev.c
+    skinkit$/src$/scrndev.h
+    skinkit$/src$/sockdev.c
+  ;
+  AddToVar Local : SkinSources :
+    cmmeg$/export$/cmm_example.h
+    cmmeg$/export$/cmm_littlecms.h
+    cmmeg$/src$/cmm_example.c
+    cmmeg$/src$/cmm_littlecms.c
+    htmeg$/export$/htm4x4.h
+    htmeg$/export$/htm8ml.h
+    htmeg$/src$/htm4x4.c
+    htmeg$/src$/htm8ml.c
+    liblittlecms$/export$/icc34.h
+    liblittlecms$/export$/lcms.h
+    liblittlecms$/src$/cmscam02.c
+    liblittlecms$/src$/cmscam97.c
+    liblittlecms$/src$/cmscgats.c
+    liblittlecms$/src$/cmscnvrt.c
+    liblittlecms$/src$/cmserr.c
+    liblittlecms$/src$/cmsgamma.c
+    liblittlecms$/src$/cmsgmt.c
+    liblittlecms$/src$/cmsintrp.c
+    liblittlecms$/src$/cmsio0.c
+    liblittlecms$/src$/cmsio1.c
+    liblittlecms$/src$/cmslut.c
+    liblittlecms$/src$/cmsmatsh.c
+    liblittlecms$/src$/cmsmtrx.c
+    liblittlecms$/src$/cmsnamed.c
+    liblittlecms$/src$/cmspack.c
+    liblittlecms$/src$/cmspcs.c
+    liblittlecms$/src$/cmsps2.c
+    liblittlecms$/src$/cmssamp.c
+    liblittlecms$/src$/cmsvirt.c
+    liblittlecms$/src$/cmswtpnt.c
+    liblittlecms$/src$/cmsxform.c
+    skintest$/src$/rasthand.h
+    skintest$/src$/skintest.c
+    skintest$/src$/skintest.h
+    skintest$/src$/tiffrast.h
+    skintest$/src$/tiffrast.c
+    skintest$/src$/frametiffrast.h
+    skintest$/src$/frametiffrast.c
+    skintest$/src$/hvdnone.h
+    skintest$/src$/hvdnone.c
+    skintest$/src$/hvdraw.h
+    skintest$/src$/hvdraw.c
+    skintest$/src$/jpegrast.h
+    skintest$/src$/jpegrast.c
+    skintest$/src$/libtiffrast.c
+    skintest$/src$/libtiffrast.h
+    skintest$/src$/pclcommon.h
+    skintest$/src$/pclcommon.c
+    skintest$/src$/pcl5rast.h
+    skintest$/src$/pcl5rast.c
+    skintest$/src$/pcl6rast.h
+    skintest$/src$/pcl6rast.c
+    skintest$/src$/rlerast.h
+    skintest$/src$/rlerast.c
+    skintest$/src$/oemraster.h
+    skintest$/src$/oemraster.c
+  ;
+  if $(MACOSX) || $(UNIX) {
+    AddToVar Local : SDKSources :
+      skinkit$/unix$/src$/psock.c
+    ;
+    AddToVar Local : SkinSources :
+      skintest$/unix$/src$/main.c
+    ;
+  } else if $(NT) {
+    AddToVar Local : SDKSources :
+      skinkit$/pc$/src$/psock.c
+    ;
+    AddToVar Local : SkinSources :
+      skintest$/pc$/src$/main.c
+    ;
+  }
+
+  if $(Variant_skin) = regression || $(DEBUG) = 1 {
+    AddToVar Local : SkinSources :
+      skintest$/src$/pdfrast.c
+      skintest$/src$/pdfrast.h
+    ;
+  }
+}
+
+AddToVar Local : SDKSources :
+  skinkit$/export$/xpsbuild.h
+  skinkit$/export$/xpsconfstate.h
+  skinkit$/export$/xpsdev.h
+  skinkit$/src$/xpsconfstate.c
+  skinkit$/src$/swzipreaddev.c
+  skinkit$/src$/xpsbuild.c
+  skinkit$/src$/xpsdev.c
+: Variant xps=yes ;
+
+AddToVar Local : SDKSources :
+  ptdev$/export$/ptdev.h
+  ptdev$/src$/dynstring.h
+  ptdev$/src$/dynstring.c
+  ptdev$/src$/ggxml.c
+  ptdev$/src$/ggxml.h
+  ptdev$/src$/msxml.c
+  ptdev$/src$/msxml.h
+  ptdev$/src$/prnttckt.c
+  ptdev$/src$/prnttckt.h
+  ptdev$/src$/prnttcktutils.c
+  ptdev$/src$/prnttcktutils.h
+  ptdev$/src$/ptdev.c
+  ptdev$/src$/ptincs.h
+  ptdev$/src$/xmlcbcks.c
+  ptdev$/src$/xmlcbcks.h
+  ptdev$/src$/xpsconf.c
+  ptdev$/src$/xpsconf.h
+: Variant xps=yes ;
+
+if $(ProductName) = le
+{
+  AddToVar Local : SDKSources :
+    refiface$/export$/refdefs.h
+  : Variant xps=yes ;
+
+  AddToVar Local : SkinSources :
+    skintest$/src$/refimpl.c
+    skintest$/src$/rawrast.h
+    skintest$/src$/rawrast.c
+  : Variant xps=yes ;
+}
+
+if $(C-Compiler-Family) = msvc && $(ProductName) = le
+{
+  AddToVar Local : SkinSources :
+    cmmeg$/pc$/export$/cmm_icm2.h
+    cmmeg$/pc$/src$/cmm_icm2.c
+    skintest$/pc$/src$/winprint.c
+    skintest$/pc$/src$/winprint.h ;
+
+  if $(Variant_wintel_cpp_compiler) = gcc_3_4_2
+  {
+    AddToVar Local : SkinSources :
+      cmmeg$/pc$/src$/mingw_icm_patch.h ;
+  }
+
+  AddToVar Local : SkinSources :
+    skintest$/pc$/src$/dllmain.c
+  : Variant xps=yes ;
+
+  AddToVar Local : SkinSources :
+    xpsdrv$/dirs
+    xpsdrv$/common$/ConfigClass.h
+    xpsdrv$/common$/DriverConfigClass.cpp
+    xpsdrv$/common$/DriverConfigClass.h
+    xpsdrv$/common$/makefile
+    xpsdrv$/common$/smartptr.h
+    xpsdrv$/common$/sources
+    xpsdrv$/common$/trace.h
+    xpsdrv$/common$/XMLConfigClass.cpp
+    xpsdrv$/common$/XMLConfigClass.h
+    xpsdrv$/common$/XPSModel.cpp
+    xpsdrv$/common$/XPSModel.h
+    xpsdrv$/digsig$/digsigcheck.cpp
+    xpsdrv$/digsig$/digsigcheck.h
+    xpsdrv$/digsig$/DigSigFilter.cpp
+    xpsdrv$/digsig$/DigSigFilter.h
+    xpsdrv$/digsig$/digsigutil$/app.rc
+    xpsdrv$/digsig$/digsigutil$/AssemblyInfo.cpp
+    xpsdrv$/digsig$/digsigutil$/build.bat
+    xpsdrv$/digsig$/digsigutil$/compile.rsp
+    xpsdrv$/digsig$/digsigutil$/DigSigUtil.cpp
+    xpsdrv$/digsig$/digsigutil$/DigSigUtil.h
+    xpsdrv$/digsig$/digsigutil$/link.rsp
+    xpsdrv$/digsig$/digsigutil$/manifest.dat
+    xpsdrv$/digsig$/digsigutil$/resource.h
+    xpsdrv$/digsig$/main.cpp
+    xpsdrv$/digsig$/main.h
+    xpsdrv$/digsig$/makefile
+    xpsdrv$/digsig$/precomp.h
+    xpsdrv$/digsig$/sources
+    xpsdrv$/digsig$/xpsdigsigdrv.def
+    xpsdrv$/ggfilterhost$/makefile
+    xpsdrv$/ggfilterhost$/precomp.h
+    xpsdrv$/ggfilterhost$/server.cpp
+    xpsdrv$/ggfilterhost$/server.h
+    xpsdrv$/ggfilterhost$/sources
+    xpsdrv$/interface$/GGFilterHostIface.def
+    xpsdrv$/interface$/ggfilterhost.idl
+    xpsdrv$/interface$/ggpipelineutil.h
+    xpsdrv$/interface$/Makefile
+    xpsdrv$/interface$/sources
+    xpsdrv$/multifilter$/makefile
+    xpsdrv$/multifilter$/multidrv.h
+    xpsdrv$/multifilter$/multidrv.cpp
+    xpsdrv$/multifilter$/ripfarm.h
+    xpsdrv$/multifilter$/ripfarm.cpp
+    xpsdrv$/multifilter$/precomp.h
+    xpsdrv$/multifilter$/sources
+    xpsdrv$/multifilter$/MultiFilterHqn.def
+    xpsdrv$/multifilter$/main.cpp
+    xpsdrv$/multifilter$/main.h
+    xpsdrv$/ripfilter$/ripobject.cpp
+    xpsdrv$/ripfilter$/ripobject.h
+    xpsdrv$/ripfilter$/swio.cpp
+    xpsdrv$/ripfilter$/swio.h
+    xpsdrv$/ripfilter$/xpspt.cpp
+    xpsdrv$/ripfilter$/xpspt.h
+    xpsdrv$/ripfilter$/makefile
+    xpsdrv$/ripfilter$/precomp.h
+    xpsdrv$/ripfilter$/sources
+    xpsdrv$/ripfilter$/streaminput.cpp
+    xpsdrv$/ripfilter$/xpsdrv.cpp
+    xpsdrv$/ripfilter$/xpsdrv.def
+    xpsdrv$/ripfilter$/xpsdrv.h
+    xpsdrv$/ripfilter$/xpsinput.cpp
+    xpsdrv$/ripfilter$/xpsmain.cpp
+    xpsdrv$/ripfilter$/xpsmain.h
+    xpsdrv$/ggrefrip.inf
+  : Variant xpsdrv ;
+}
+
+AddToVar Local : SDKSources :
+  skinkit$/src$/handshake.h
+: Variant security=le ;
+
+AddToVar Local : SDKSources :
+  le-security$/export$/lesec.h
+: Variant security=le ;
+
+if $(ProductName) = ebd {
+  AddToVar Local : SkinSources :
+    pdfparse$/export$/pdfparse.h
+  ;
+} else {
+  AddToVar Local : SkinSources :
+    pfinufst5$/export$/pfinufst5.h
+    pfinufst5$/src$/hqnpcleo.h
+    pfinufst5$/src$/pfinufst5.c
+    skintest$/src$/ufstrom.c
+    skintest$/src$/ufstrom.h
+    skintest$/src$/ufstutil.c
+    skintest$/src$/ufstutil.h
+    ufst$/rts$/fco$/fc_da.h
+    ufst$/rts$/fco$/fc_dafil.h
+    ufst$/rts$/fco$/fc_intfl.h
+    ufst$/rts$/fco$/fc_syntl.h
+    ufst$/rts$/inc$/cgconfig.h
+    ufst$/rts$/inc$/cgif.h
+    ufst$/rts$/inc$/ifmem.h
+    ufst$/rts$/inc$/pcleomgt.h
+    ufst$/rts$/inc$/shareinc.h
+    ufst$/rts$/tt$/fnt.h
+    ufst$/rts$/tt$/fontmath.h
+    ufst$/rts$/tt$/fontscal.h
+    ufst$/rts$/tt$/fscdefs.h
+    ufst$/rts$/tt$/fserror.h
+    ufst$/rts$/tt$/fsglue.h
+    ufst$/rts$/tt$/sfnt.h
+    ufst$/rts$/tt$/sfntenum.h
+    ufst$/sys$/inc$/adj_skel.h
+    ufst$/sys$/inc$/if_type.h
+    ufst$/sys$/inc$/ix.h
+    ufst$/sys$/inc$/kanji.h
+    ufst$/sys$/inc$/pcleo.h
+    ufst$/sys$/inc$/sym.h
+    ufst$/sys$/inc$/ufstport.h
+    ufst$/sys$/inc$/ufst_hqn.h
+  : Variant fontlib=ufst5inrip ;
+
+  AddToVar Local : SkinSources :
+    pfinufst7$/export$/pfinufst5.h
+    pfinufst7$/src$/hqnpcleo.h
+    pfinufst7$/src$/pfinufst7.c
+    skintest$/src$/ufstrom.c
+    skintest$/src$/ufstrom.h
+    skintest$/src$/ufstutil.c
+    skintest$/src$/ufstutil.h
+    ufst7$/rts$/fco$/fc_da.h
+    ufst7$/rts$/fco$/fc_dafil.h
+    ufst7$/rts$/fco$/fc_intfl.h
+    ufst7$/rts$/fco$/fc_syntl.h
+    ufst7$/rts$/inc$/cgconfig.h
+    ufst7$/rts$/inc$/cgif.h
+    ufst7$/rts$/inc$/ifmem.h
+    ufst7$/rts$/inc$/pcleomgt.h
+    ufst7$/rts$/inc$/shareinc.h
+    ufst7$/rts$/inc$/mixmodel.h # \todo Review with build options
+    ufst7$/rts$/inc$/dbg_ufst.h # \todo Review with build options
+    ufst7$/rts$/tt$/fnt.h
+    ufst7$/rts$/tt$/fontmath.h
+    ufst7$/rts$/tt$/fontscal.h
+    ufst7$/rts$/tt$/fscdefs.h
+    ufst7$/rts$/tt$/fserror.h
+    ufst7$/rts$/tt$/fsglue.h
+    ufst7$/rts$/tt$/sfnt.h
+    ufst7$/rts$/tt$/sfntenum.h
+    ufst7$/sys$/inc$/adj_skel.h
+    ufst7$/sys$/inc$/if_type.h
+    ufst7$/sys$/inc$/ix.h
+    ufst7$/sys$/inc$/kanji.h
+    ufst7$/sys$/inc$/pcleo.h
+    ufst7$/sys$/inc$/sym.h
+    ufst7$/sys$/inc$/ufstport.h
+    ufst7$/sys$/inc$/ufst_hqn.h
+    ufst7$/sys$/inc$/cgmacros.h # \todo Review with build options
+  : Variant fontlib=ufst7inrip ;
+}
+
+ReplaceVar Local : CoreInterfaces :
+  core$/interface$/control$/ripcall.h
+  core$/interface$/control$/swapi.h
+  core$/interface$/control$/swblobapi.h
+  core$/interface$/control$/swblobfactory.h
+  core$/interface$/control$/swcmm.h
+  core$/interface$/control$/swdataapi.h
+  core$/interface$/control$/swcopyf.h
+  core$/interface$/control$/swctype.h
+  core$/interface$/control$/swdevice.h
+  core$/interface$/control$/swenv.h
+  core$/interface$/control$/swevents.h
+  core$/interface$/control$/swflt.h
+  core$/interface$/control$/swmemapi.h
+  core$/interface$/control$/swoften.h
+  core$/interface$/control$/swpfinapi.h
+  core$/interface$/control$/swpfinpcl.h
+  core$/interface$/control$/swstart.h
+  core$/interface$/control$/swtimelines.h
+  core$/interface$/control$/swtrace.h
+  core$/interface$/control$/swtracegroups.h
+  core$/interface$/control$/swvalues.h
+  core$/interface$/pgb$/swpgb.h
+  core$/interface$/pgb$/swraster.h
+  core$/interface$/rle$/swrle.h
+  core$/interface$/screening$/swhtm.h
+  core$/interface$/swzip$/swzip.h
+  core$/interface$/version$/copyrite.h
+  core$/interface$/version$/ripversn.h
+;
+
+AddToVar Local : SDKSources :
+  dlliface$/export$/dlliface.h
+  mps$/export$/mps.h
+  mps$/export$/mpslib.h
+  mps$/export$/mpsavm.h
+  mps$/export$/mpsacl.h
+  mps$/export$/mpsash.h
+  mps$/export$/mpscmvff.h
+  zlib$/export$/zconf.h
+  zlib$/export$/zlib.h
+  zlib$/export$/zlib_redefs.h
+;
+# EBDSDK uses zlib functions in corelib static library 
+if $(ProductName) = le {
+  AddToVar Local : SDKSources :
+    zlib$/src$/adler32.c
+    zlib$/src$/compress.c
+    zlib$/src$/crc32.c
+    zlib$/src$/crc32.h
+    zlib$/src$/deflate.c
+    zlib$/src$/deflate.h
+    zlib$/src$/gzio.c
+    zlib$/src$/infback.c
+    zlib$/src$/inffast.c
+    zlib$/src$/inffast.h
+    zlib$/src$/inffixed.h
+    zlib$/src$/inflate.c
+    zlib$/src$/inflate.h
+    zlib$/src$/inftrees.c
+    zlib$/src$/inftrees.h
+    zlib$/src$/trees.c
+    zlib$/src$/trees.h
+    zlib$/src$/uncompr.c
+    zlib$/src$/zutil.c
+    zlib$/src$/zutil.h
+  ;
+
+  ReplaceVar Local : MinSources :
+    skinmin$/src$/skinmin.c
+  ;
+}
+
+if $(C-Compiler-Family) = msvc {
+  AddToVar Local : SkinSources :
+    jpeg$/export$/jpegapi.h
+    libjpeg$/export$/libjpeg.h
+    libjpeg$/src$/nolibjpeg.c
+    libjpeg-turbo$/export$/libjpegturbo.h
+    libjpeg-turbo$/src$/jconfig.h
+    libjpeg-turbo$/src$/jerror.h
+    libjpeg-turbo$/src$/jmorecfg.h
+    libjpeg-turbo$/src$/jpeglib.h
+    libjpeg-turbo$/src$/libjpegturbo.c
+    libjpeg-turbo$/src$/turbojpeg.h
+  ;
+} else {
+  AddToVar Local : SkinSources :
+    jpeg$/export$/jpegapi.h
+    libjpeg$/export$/jconfig.h
+    libjpeg$/export$/jerror.h
+    libjpeg$/export$/jmorecfg.h
+    libjpeg$/export$/jpeglib.h
+    libjpeg$/export$/libjpeg.h
+    libjpeg$/src$/jaricom.c
+    libjpeg$/src$/jcapimin.c
+    libjpeg$/src$/jcapistd.c
+    libjpeg$/src$/jcarith.c
+    libjpeg$/src$/jccoefct.c
+    libjpeg$/src$/jccolor.c
+    libjpeg$/src$/jcdctmgr.c
+    libjpeg$/src$/jchuff.c
+    libjpeg$/src$/jcinit.c
+    libjpeg$/src$/jcmainct.c
+    libjpeg$/src$/jcmarker.c
+    libjpeg$/src$/jcmaster.c
+    libjpeg$/src$/jcomapi.c
+    libjpeg$/src$/jcparam.c
+    libjpeg$/src$/jcprepct.c
+    libjpeg$/src$/jcsample.c
+    libjpeg$/src$/jctrans.c
+    libjpeg$/src$/jdapimin.c
+    libjpeg$/src$/jdapistd.c
+    libjpeg$/src$/jdarith.c
+    libjpeg$/src$/jdatadst.c
+    libjpeg$/src$/jdatasrc.c
+    libjpeg$/src$/jdcoefct.c
+    libjpeg$/src$/jdcolor.c
+    libjpeg$/src$/jdct.h
+    libjpeg$/src$/jddctmgr.c
+    libjpeg$/src$/jdhuff.c
+    libjpeg$/src$/jdinput.c
+    libjpeg$/src$/jdmainct.c
+    libjpeg$/src$/jdmarker.c
+    libjpeg$/src$/jdmaster.c
+    libjpeg$/src$/jdmerge.c
+    libjpeg$/src$/jdpostct.c
+    libjpeg$/src$/jdsample.c
+    libjpeg$/src$/jdtrans.c
+    libjpeg$/src$/jerror.c
+    libjpeg$/src$/jfdctflt.c
+    libjpeg$/src$/jfdctfst.c
+    libjpeg$/src$/jfdctint.c
+    libjpeg$/src$/jidctflt.c
+    libjpeg$/src$/jidctfst.c
+    libjpeg$/src$/jidctint.c
+    libjpeg$/src$/jinclude.h
+    libjpeg$/src$/jmemmgr.c
+    libjpeg$/src$/jmemnobs.c
+    libjpeg$/src$/jmemsys.h
+    libjpeg$/src$/jpegint.h
+    libjpeg$/src$/jquant1.c
+    libjpeg$/src$/jquant2.c
+    libjpeg$/src$/jutils.c
+    libjpeg$/src$/jversion.h
+    libjpeg$/src$/libjpeg.c
+    libjpeg-turbo$/export$/libjpegturbo.h
+    libjpeg-turbo$/src$/nolibjpegturbo.c
+  ;
+
+  AddToVar Local : SkinSources :
+    libtiff$/export$/tiff.h
+    libtiff$/export$/tiffconf.h
+    libtiff$/export$/tiffio.h
+    libtiff$/export$/tiffvers.h
+    libtiff$/export$/tiffio.hxx
+    libtiff$/export$/tif_fax3.h
+    libtiff$/export$/t4.h
+    libtiff$/export$/tif_config.h
+    libtiff$/export$/tif_dir.h
+    libtiff$/export$/tif_predict.h
+    libtiff$/export$/tiffiop.h
+    libtiff$/export$/uvcode.h
+    libtiff$/src$/tif_aux.c
+    libtiff$/src$/tif_close.c
+    libtiff$/src$/tif_codec.c
+    libtiff$/src$/tif_color.c
+    libtiff$/src$/tif_compress.c
+    libtiff$/src$/tif_dir.c
+    libtiff$/src$/tif_dirinfo.c
+    libtiff$/src$/tif_dirread.c
+    libtiff$/src$/tif_dirwrite.c
+    libtiff$/src$/tif_dumpmode.c
+    libtiff$/src$/tif_error.c
+    libtiff$/src$/tif_extension.c
+    libtiff$/src$/tif_fax3.c
+    libtiff$/src$/tif_fax3sm.c
+    libtiff$/src$/tif_flush.c
+    libtiff$/src$/tif_getimage.c
+    libtiff$/src$/tif_jpeg.c
+    libtiff$/src$/tif_luv.c
+    libtiff$/src$/tif_lzw.c
+    libtiff$/src$/tif_next.c
+    libtiff$/src$/tif_ojpeg.c
+    libtiff$/src$/tif_open.c
+    libtiff$/src$/tif_packbits.c
+    libtiff$/src$/tif_pixarlog.c
+    libtiff$/src$/tif_predict.c
+    libtiff$/src$/tif_print.c
+    libtiff$/src$/tif_read.c
+    libtiff$/src$/tif_strip.c
+    libtiff$/src$/tif_swab.c
+    libtiff$/src$/tif_thunder.c
+    libtiff$/src$/tif_tile.c
+    libtiff$/src$/tif_unix.c
+    libtiff$/src$/tif_version.c
+    libtiff$/src$/tif_warning.c
+    libtiff$/src$/tif_write.c
+    libtiff$/src$/tif_zip.c
+    libtiff$/src$/tif_stream.cpp
+  ;
+}
+
+AddToVar Local : CoreInterfaces :
+  core$/interface$/xps$/printticket.h
+: Variant xps=yes ;
+
+AddToVar Local : SDKSources :
+  refiface$/export$/refapi.h
+: Variant xps=yes ;
+
+AddToVar Local : SDKSources :
+  libgenxml$/libexpat$/export$/expat.h
+  libgenxml$/libexpat$/export$/expat_external.h
+: Variant xps=yes ;
+if $(MACOSX) {
+  AddToVar Local : SDKSources :
+    libgenxml$/libexpat$/macos$/src$/expat_config.h
+  : Variant xps=yes ;
+} else if $(UNIX) {
+  AddToVar Local : SDKSources :
+    libgenxml$/libexpat$/unix$/src$/expat_config.h
+  : Variant xps=yes ;
+}
+# EBDSDK requires expat_redefs to reuse the renamed expat 
+# functions in the static corelib lib.
+if $(ProductName) = ebd 
+{
+  if vxworks in $(TargetOS) {
+    AddToVar Local : SDKSources :
+      libgenxml$/libexpat$/vxworks$/src$/expat_config.h
+    : Variant xps=yes ;
+  } else if threadx in $(TargetOS) {
+    AddToVar Local : SDKSources :
+      libgenxml$/libexpat$/threadx$/src$/expat_config.h
+    : Variant xps=yes ;
+  }
+  AddToVar Local : SDKSources :
+    libgenxml$/libexpat$/export$/expat_redefs.h
+  : Variant xps=yes ;
+}
+else
+{
+  AddToVar Local : SDKSources :
+    libgenxml$/libexpat$/src$/ascii.h
+    libgenxml$/libexpat$/src$/asciitab.h
+    libgenxml$/libexpat$/src$/iasciitab.h
+    libgenxml$/libexpat$/src$/internal.h
+    libgenxml$/libexpat$/src$/latin1tab.h
+    libgenxml$/libexpat$/src$/nametab.h
+    libgenxml$/libexpat$/src$/utf8tab.h
+    libgenxml$/libexpat$/src$/winconfig.h
+    libgenxml$/libexpat$/src$/xmlparse.c
+    libgenxml$/libexpat$/src$/xmlrole.c
+    libgenxml$/libexpat$/src$/xmlrole.h
+    libgenxml$/libexpat$/src$/xmltok.c
+    libgenxml$/libexpat$/src$/xmltok.h
+    libgenxml$/libexpat$/src$/xmltok_impl.c
+    libgenxml$/libexpat$/src$/xmltok_impl.h
+    libgenxml$/libexpat$/src$/xmltok_ns.c
+  : Variant xps=yes ;
+  if $(NT) {
+    AddToVar Local : SDKSources :
+      libgenxml$/libexpat$/src$/libexpat.def
+    : Variant xps=yes ;
+  }
+}
+
+# Add embedded skin sources
+if $(ProductName) = ebd
+{
+    # Extra sources for the Embedded SDK are defined in ./ebdrip/make/skinsources.jam
+    local EmbeddedJambits = $(BUILDROOT)$/ebdrip$/make$/skinsources.jam ;
+    Include $(EmbeddedJambits) ;
+}
+
+# Add customisation-specific skin sources
+
+local CustomerSkinSources = $(BUILDROOT)$/$(ProductDir)$/make$/skinsources-$(Variant_customised).jam ;
+if $(CustomerSkinSources:E)
+{
+  Include $(CustomerSkinSources) ;
+}
+
+#* LESkinPreprocessSource
+#* This rule controls the use of unifdef to strip out parts of the LE skin
+#* source before it is compiled and/or distributed.
+#*
+#* $(1) source path
+#* $(2) target path prefix
+#* $(3) unifdef args
+#* $(4) unifdef needs
+#* $(5) dependent targets
+#* [ $(5) Flatten ]
+#*
+#* The source file $(1), declared relative the current directory, is
+#* preprocessed with @Unifdef, using extra arguments $(3). $(2) is a path
+#* prefix introduced between product directory and the
+#* preprocessed destination file. The action of this rule is basically
+#* to take $(1) and create $(2)/$(1), eg <code>skinkit/src/config.c</code> is
+#* preprocessed into <code>obj/skinsrc-XXX/skinkit/src/config.c</code>, in which
+#* case $(2)=<code>obj/skinsrc-XXX</code>.
+#* Any $(5) is set to depend on the preprocessed file.
+#* Passing Flatten for $(6) flattens the destination tree by omitting the path
+#* from $(1).
+#*
+#*seerule Unifdef _LESkinPreprocessDepends
+#*eg LESkinPreprocessSource file$/in.c : obj$/skinsrc : -DDONGLE -UHQN ;
+#*
+#*section LE
+rule LESkinPreprocessSource
+{
+  local Prefix ; MakePath Prefix : $(CurrentPath) $(2) ;
+  local TargetPath ;
+
+  if $(6) = Flatten
+  {
+    MakePath TargetPath : $(Prefix) $(1:BS) ;
+  }
+  else
+  {
+    MakePath TargetPath : $(Prefix) $(1) ;
+  }
+
+  # Prepend .$/ to match .h file names from depends.jam
+  if $(1:BS) = "manifest.dat" {
+    ExportSource .$/$(1) : Binary ;    # Binary so that the file is just copied
+  } else {
+    ExportSource .$/$(1) : C ;
+  }
+
+  # unifdef requires at least one -D/-U/-iD/-iU symbol. We use unifdef
+  # regardless of whether skin debug is on, so define a symbol that
+  # is not used.
+  local UnifdefArgs = -iD__NOT_DEFINED__ ;
+  if $(Variant_skin_debug) {
+    ReplaceVar Local : Unifdef-Needs : ;
+  } else {
+    UnifdefArgs += $(3) ;
+  }
+  Unifdef $(TargetPath) : $(CurrentPath) $(1) : $(UnifdefArgs) : ...Preprocessing $(1) : $(4) ;
+
+  # The Unifdef rule creates a leaf target for the path given. Use this
+  # for the clrip dependency.
+  local Target ; MakeLeafTarget Target : $(TargetPath) : : DirectoryFor ;
+
+  if $(5) {
+    DependsOn $(5) : $(Target) ;
+  }
+
+  # Make the ultimate ancestor directory depend on the target, so
+  # distributing it causes the leaves to be built.
+  _LESkinPreprocessDepends $(1) : $(Prefix) : $(Target) ;
+}
+
+#* Helper rule to set up an include chain such that anything depending
+#* on a parent directory depends on the full directory structure having
+#* been created.
+#*
+#* $(1) path
+#* $(2) directory
+#* $(3) target
+#*
+#* A leaf directory or file path $(1) is specified relative to $(2). The
+#* top ancestor directory in the $(1) path is made to depend on $(3).
+#*
+#*seerule LESkinPreprocessSource
+#*section LE
+rule _LESkinPreprocessDepends {
+  local Parent = $(1:P) ;
+  if $(Parent) {
+    _LESkinPreprocessDepends $(Parent) : $(2) : $(3) ;
+  } else {
+    # Use a slightly circuitous route to set up the dependencies
+    # to avoid dependency loops in two-level directory structures. If
+    # we're preprocessing ./a/b, and distributing ./a, the Unifdef
+    # rule will update using <./a>b, then set up a dependency
+    # ./a/b-><./a>b, and call DirectoryFor, which sets up
+    # <./a>b->./a. We don't want to set the reverse dependency
+    # ./a-><./a>b here, so we use TargetFile-a to make Distribute use
+    # source <.>a, which can depend on <./a>b safely.
+    local Path ; MakePath Path : $(2) $(1) ;
+    local Target ; MakeLeafTarget Target : $(Path) : : Locate Distribute ;
+    DEPENDS $(Target) : $(3) ;
+    NOUPDATE $(Target) ;
+  }
+}
+
+
+
+# SW folder
+# Add files from skinkit and skintest to SW
+SWF skinkit swf : config : Config : : normalclebdrip ;
+SWF skinkit swf : config compfont : ComposedFontsCache : : normalclebdrip ;
+
+SWF skinkit swf : sys : Sys : : normalclrip normalclebdrip ;
+SWF skinkit swf : sys extmedia : ExtraMediaSelectionKeys : : normalclebdrip ;
+
+if $(ProductName) = le
+{
+  SWF skinkit swf : sys extdevic : ExtraDevices : : normalclrip ;
+  SWF skinkit swf : sys extpgedk : ExtraPageDeviceKeys : : normalclrip ;
+  
+  SWF skinkit swf : sys hqnprod : HqnProduct : : normalclrip ;
+}
+ 
+# PrintTicket procset and external modules
+local ptswf-path = ptdev swf ;
+local ptswf-subsets = xpsclebdrip ;
+Include $(BUILDROOT)$/ptdev$/make$/swf.jam ;
+
+SWF skinkit swf : oemconfig : OEMConfig : : normalclebdrip ;
+SWF skinkit swf : oemconfig ggcustomcmm.ps    : GGCustomCMM.ps    : "CUSTOM.PS"   : normalclebdrip ;
+SWF skinkit swf : oemconfig ggexternalcmm1.ps : GGExternalCMM1.ps : "EXTERN1.PS"  : normalclebdrip ;
+SWF skinkit swf : oemconfig ggexternalcmm2.ps : GGExternalCMM2.ps : "EXTERN2.PS"  : normalclebdrip ;
+SWF skinkit swf : oemconfig gginternalcmm.ps  : GGInternalCMM.ps  : "INTERN.PS"   : normalclebdrip ;
+SWF skinkit swf : oemconfig ggnonecmm.ps      : GGNoneCMM.ps      : "NONE.PS"     : normalclebdrip ;
+SWF skinkit swf : oemconfig gghalftone1.ps    : GGHalftone1.ps    : "HALFTONE.PS" : normalclebdrip ;
+
+if $(ProductName) = le
+{
+  # Custom GG fonts for XPS backend
+  SWF skintest : SWggfonts                 : ggfonts         :               : xpsclebdrip ;
+  SWF skintest : SWggfonts Sans-Medium.otf : Sans-Medium.otf : "SMEDIUM.OTF" : xpsclebdrip ;
+  
+  # HHR TestConfig files
+  SWF skintest swf : testconf                         : TestConfig                      :                : normalclrip ;
+  SWF skintest swf : testconf cmykcomp300             : CMYKComposite300dpi             : "CMYKCOMP.300" : normalclrip ;
+  SWF skintest swf : testconf cmykcompband300         : CMYKCompositeBand300dpi         : "CMYKCMPB.300" : normalclrip ;
+  SWF skintest swf : testconf cmykcompband300_16      : CMYKCompositeBand300dpi16bit    : "CMYKCB16.300" : normalclrip ;
+  SWF skintest swf : testconf cmykcompframe300        : CMYKCompositeFrame300dpi        : "CMYKCMPF.300" : normalclrip ;
+  SWF skintest swf : testconf cmykhtmegcomp300        : CMYKCompHtmEgBand300dpi         : "CMYKHEGB.300" : normalclrip ;
+  SWF skintest swf : testconf cmykrecomb300           : CMYKRecombined300dpi            : "CMYKRCMB.300" : normalclrip ;
+  SWF skintest swf : testconf cmykseps300             : CMYKSeparations300dpi           : "CMYKSEPS.300" : normalclrip ;
+  SWF skintest swf : testconf cmyksepsgold72          : CMYKSepsGold72dpi               : "CMYKSEPG.300" : normalclrip ;
+  SWF skintest swf : testconf hvdnonecmykcompframe300 : HVDNONECMYKCompositeFrame300dpi : "HVDNONE.300"  : normalclrip ;
+  SWF skintest swf : testconf hvdrawcmykcompframe300  : HVDRAWCMYKCompositeFrame300dpi  : "HVDRAW.300"   : normalclrip ;
+  SWF skintest swf : testconf mono72                  : Monochrome72dpi                 : "MONO.72"      : normalclrip ;
+  SWF skintest swf : testconf rgbcomp300              : RGBComposite300dpi              : "RGBCOMP.300"  : normalclrip ;
+  SWF skintest swf : testconf rgbcompband300_16       : RGBCompositeBand300dpi16bit     : "RGBCB16.300"  : normalclrip ;
+  SWF skintest swf : testconf rgbxcomp300             : RGBXComposite300dpi             : "RGBXCOMP.300" : normalclrip ;
+  SWF skintest swf : testconf xbgrcomp300             : XBGRComposite300dpi             : "XBGRCOMP.300" : normalclrip ;
+  SWF skintest swf : testconf cmykcmmcomp300          : CMYKCMMComposite300dpi          : "CMYKCMM.300"  : normalclrip ;
+  SWF skintest swf : testconf cmykcolorrle300         : CMYKRle300dpi                   : "CMYKRLE.300"  : normalclrip ;
+  
+  SWF skintest swf : testconf cmykhtm4x4band300_1bpp  : CMYKCompHtm4x4Band300dpi1bit    : "CMYKH44B.300" : normalclrip ;
+  SWF skintest swf : testconf cmykhtm4x4frame300_1bpp : CMYKCompHtm4x4Frame300dpi1bit   : "CMYKH44F.300" : normalclrip ;
+  SWF skintest swf : testconf cmykhtm4x4seps300_1bpp  : CMYKCompHtm4x4Seps300dpi1bit    : "CMYKH44S.300" : normalclrip ;
+  SWF skintest swf : testconf cmykhtm8mlband300_2bpp  : CMYKCompHtm8mlBand300dpi2bit    : "CMYKH8B.300"  : normalclrip ;
+  SWF skintest swf : testconf cmykhtm8mlframe300_2bpp : CMYKCompHtm8mlFrame300dpi2bit   : "CMYKH8F.300"  : normalclrip ;
+  SWF skintest swf : testconf cmykhtm8mlseps300_2bpp  : CMYKCompHtm8mlSeps300dpi2bit    : "CMYKH8S.300"  : normalclrip ;
+  SWF skintest swf : testconf cmykhtm8mlseps300_3bpp  : CMYKCompHtm8mlSeps300dpi3bit    : "CMYKH8S3.300" : normalclrip ;
+  SWF skintest swf : testconf monohtm4x4300_1bpp      : MonochromeHtm4x4300dpi1bit      : "MONOH44.300"  : normalclrip ;
+  SWF skintest swf : testconf monohtm8ml300_1bpp      : MonochromeHtm8ml300dpi1bit      : "MONOH8M1.300" : normalclrip ;
+  SWF skintest swf : testconf monohtm8ml300_2bpp      : MonochromeHtm8ml300dpi2bit      : "MONOH8M2.300" : normalclrip ;
+  SWF skintest swf : testconf monohtm8ml300_4bpp      : MonochromeHtm8ml300dpi4bit      : "MONOH8M4.300" : normalclrip ;
+  
+  SWF skintest swf : sys                              : Sys                             :                : normalclrip ;
+  SWF skintest swf : sys extstart                     : ExtraStart                      : "EXTSTART"     : normalclrip ;
+  SWF skintest swf : sys extstart htmeg               : HtmEg                           :                : normalclrip ;
+  
+  SWF skintest swf : testconf                         : TestConfig                      :                : normalhostrr ;
+  SWF skintest swf : testconf rrthumbnail72           : Thumbnail                       : "THMBNAIL.72"  : normalhostrr ;
+  
+  # Regression system thumbnailer
+  if $(Variant_rrthumbnailer) {
+    AddUnique SW-Folder-Variants : normalhostrr ; 
+  }
+
+  local CustomerSwfJambits = $(BUILDROOT)$/clrip$/make$/swf-$(Variant_customised).jam ;
+  if $(CustomerSwfJambits:E)
+  {
+    Include $(CustomerSwfJambits) ;
+  } else {
+    # Needed to at least being in an ExtraStart fiel to set passwords
+    Error Required file clrip$/make$/swf-$(Variant_customised).jam not found ;
+  }
+}
+
+
+# Log stripped

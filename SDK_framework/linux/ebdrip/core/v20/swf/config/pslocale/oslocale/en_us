@@ -1,0 +1,25 @@
+%!PS-Adobe-3.0
+%%Title: en_US	OS locales
+%%CreationDate: Dec 2004
+% Copyright (C) Global Graphics Software Limited, 2004. All Rights Reserved.
+% $Revision: 1.3.4.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:oslocale:en_us(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Encoding map for en_US OS locales
+
+% Strings entered in operating system or RIP user interfaces
+% are assumed to match the encoding used by
+% the platform on which the RIP is running.
+/OSLocale	<<
+	/Mac		/macos-0_2-10.2
+	/MacX		/UTF-8
+	/Win		/ibm-5348_P100-1997
+	/Unix		/ISO-8859-1
+>>
+	
+%%EOF

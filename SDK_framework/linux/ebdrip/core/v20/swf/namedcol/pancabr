@@ -1,0 +1,101 @@
+%!PS-Adobe
+%%Title: PantoneCoatedAbr
+%%Creator: Global Graphics Software Limited
+%%CreationDate: December 12, 2000
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:namedcol:pancabr(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% this header will create a dictionary containing all the named colours in this file,
+% along with their XYZ values.
+% Done this way to minimise VM use.
+
+	<<
+	/Globalness currentglobal false setglobal		% Will be reverted by initialize
+	/ResName /PantoneCoatedAbr	% The name of this resource
+	/BaseSpace /XYZ-D50		% Underlying color space for the values below
+	/RetrySuffix false			% If a name can't be found, try stripping the suffix to 'CV'
+	/Divisor 100				% Divide values by 100
+>> /HqnColorDatabase /ProcSet findresource /initialize get exec
+PANTONE PRO. BLUE C
+10.77	16.34	47.45
+PANTONE PRO. YEL. C
+69.17	73.88	4.89
+PANTONE YEL. 012 C
+68.09	69.75	2.58
+PANTONE YEL. C
+70.39	74.91	3.52
+PANTONE RHOD. RED C
+39.26	19.81	25.63
+PANTONE RUB. RED C
+29.65	13.92	9.16
+PANTONE REF. BLUE C
+4.65	2.71	24.62
+PANTONE PRO. MAGEN. C
+30.85	14.77	11.45
+PANTONE PRO. CYAN C
+16.56	25.22	53.17
+PANTONE PRO. BLACK C
+0.96	0.99	0.84
+PANTONE OR. 021 C
+50.16	31.27	0.7
+PANTONE WM GY 1 C
+69.62	71.83	57.72
+PANTONE WM GY 2 C
+65.37	67.31	53.55
+PANTONE WM GY 3 C
+54.07	55.41	43.12
+PANTONE WM GY 4 C
+46.41	47.36	36.22
+PANTONE WM GY 5 C
+40.29	40.96	30.98
+PANTONE WM GY 6 C
+35.91	36.42	27.28
+PANTONE WM GY 7 C
+30.27	30.57	22.48
+PANTONE WM GY 8 C
+24.78	24.92	17.93
+PANTONE WM GY 9 C
+21.22	21.26	15.01
+PANTONE WM GY 10 C
+16.53	16.45	11.31
+PANTONE WM GY 11 C
+11.58	11.41	7.52
+PANTONE CL GY 1 C
+72.94	75.6	62.58
+PANTONE CL GY 2 C
+65.13	67.51	56.23
+PANTONE CL GY 3 C
+56.75	58.85	49.16
+PANTONE CL GY 4 C
+49.29	51.11	42.83
+PANTONE CL GY 5 C
+43.21	44.82	37.85
+PANTONE CL GY 6 C
+42.21	43.78	37.18
+PANTONE CL GY 7 C
+34.13	35.39	30.27
+PANTONE CL GY 8 C
+28.46	29.51	25.46
+PANTONE CL GY 9 C
+22.7	23.54	20.54
+PANTONE CL GY 10 C
+16.12	16.71	14.81
+PANTONE CL GY 11 C
+12.21	12.63	11.39
+PANTONE HEX. CYAN C
+11.77	18.23	48.78
+PANTONE HEX. YELLOW C
+71.53	75.18	5.05
+PANTONE HEX. MAGENTA C
+35.98	17.27	19.12
+PANTONE HEX. BLACK C
+1.48	1.54	1.35
+PANTONE HEX. ORANGE C
+54.84	36.77	1.49
+PANTONE HEX. GREEN C
+10.43	25.49	7.71

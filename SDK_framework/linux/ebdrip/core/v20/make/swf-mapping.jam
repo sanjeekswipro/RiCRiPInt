@@ -1,0 +1,40 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# $HopeName: SWv20!make:swf-mapping.jam(EBDSDK_P.1) $
+# SWv20 mappings for SW 
+
+    # SW folder mappings without files
+    SWF swf :  : BootDevices : BOOTDEVI ;
+    SWF swf :  : Euclidean : EUCLIDEA ;
+    SWF swf :  : "Exposure Sweep" : EXPSWEEP ;
+    SWF swf :  : Preview : PREVIEW ;
+    SWF swf :  : "Process Seps" : PROCSEPS ;
+    SWF swf :  : T1 : T1 ;
+    SWF swf :  : T2 : T2 ;
+    SWF swf :  : THROUGHPUT.CTL : THROUGHP.CTL ;
+    SWF swf :  : alldicts.psb : ALLDICTS.PSB ;
+    SWF swf :  : altsdpss.psb : ALTSDPSS.PSB ;
+    SWF swf :  : comntpss.psb : COMNTPSS.PSB ;
+    SWF swf :  : edpdpss.psb : EDPDPSS.PSB ;
+    SWF swf :  : errorpss.psb : ERRORPSS.PSB ;
+    SWF swf :  : execupss.psb : EXECUPSS.PSB ;
+    SWF swf :  : fontlist : FONTLIST ;
+    SWF swf :  : fontmap.ps : FONTMAP.PS ;
+    SWF swf :  : gstatpss.psb : GSTATPSS.PSB ;
+    SWF swf :  : idlepss.psb : IDLEPSS.PSB ;
+    SWF swf :  : jobpss.psb : JOBPSS.PSB ;
+    SWF swf :  : miscpss.psb : MISCPSS.PSB ;
+    SWF swf :  : newsf.ps : NEWSF.PS ;
+    SWF swf :  : odict_.psb : ODICT_.PSB ;
+    SWF swf :  : pagedev.psb : PAGEDEV.PSB ;
+    SWF swf :  : printpss.psb : PRINTPSS.PSB ;
+    SWF swf :  : pseudpss.psb : PSEUDPSS.PSB ;
+    SWF swf :  : resource.psb : RESOURCE.PSB ;
+    SWF swf :  : sdict_.psb : SDICT_.PSB ;
+    SWF swf :  : srvrpss.psb : SRVRPSS.PSB ;
+    SWF swf :  : type1Todld1.ps : TYPE1TOD.PS ;
+    SWF swf :  : version : VERSION ;
+    SWF swf :  : encoding : ENCODING ;
+    SWF swf :  : CustomImpose : CUSTIMP ;
+
+# Log stripped

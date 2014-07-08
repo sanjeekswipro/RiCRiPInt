@@ -1,0 +1,436 @@
+% /* $HopeName: SWv20!src:miscpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007-2011 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+#include "ripversn.h" /* RIP_VERSION */
+
+% miscellaneous defintions eraly in the bootstrap sequence.
+
+% ----------------------------------------------------------------------
+% make null in systemdict its value
+systemdict /null null put
+
+% ----------------------------------------------------------------------
+% m_op not required after bootstrapping:
+
+systemdict /m_op undef
+
+% ----------------------------------------------------------------------
+% miscellaneous definitions in userdict
+
+userdict begin
+  /EncodingDirectory    30 dict def
+  /CharStringsDirectory 50 dict def
+  
+  EncodingDirectory begin
+    /StandardEncoding   StandardEncoding def
+    /ISOLatin1Encoding ISOLatin1Encoding def
+  end % EncodingDirectory
+  
+  % UVS is used to mark simple strings which require translation
+  % These strings can then be automatically extracted
+  % Message templates must be marked with UVM in a comment
+  % e.g. UVM(Serial number: %s)
+  /UVS {} def
+
+  /bd { bind def } bind def
+  /xd { exch def } bd
+  /#copies 1 def
+  
+  systemdict begin
+    % Move startpage to systemdict so that it doesnt interfere with the Windows Level II Nup driver
+    /startpage (
+      save
+      {
+        statusdict /jobname (HqnLogo) put
+        /HqnLogo /ProcSet findresource begin
+          << /BorderAll true
+             /BorderTile true
+             /ScriptWorks true
+             /Color statusdict /processcolors get exec 1 gt
+          >>
+          gsave
+            80 180 translate 6.5 6.5 scale
+            hqnlogo
+          grestore
+        end
+      } stopped pop
+      restore
+    ) def
+  end
+
+  /harlequin /startpage load def
+#ifndef WIN32
+  /hqnversion (RIP_VERSION) def
+#endif
+#ifdef WIN32
+#ifdef WIN64
+  /hqnversion (RIP_VERSION 64-bit Edition) def
+#else
+  /hqnversion (RIP_VERSION 32-bit Edition) def
+#endif
+#endif
+
+  /hqnproductversion (PRODUCT_VERSION) def
+
+  % avoid problems with control D and Z
+  (\004) cvn {} def
+  (\032) cvn {} def
+  (\004\032) cvn {} def
+  (\032\004) cvn {} def
+  (\004\004) cvn {} def
+
+end % userdict
+
+statusdict
+  /TechnologyVersions <<
+    /hqnversion_major PRODUCT_VERSION_MAJOR
+    /hqnversion_minor PRODUCT_VERSION_MINOR
+    /hqnversion_revision PRODUCT_VERSION_REVISION
+  >> put
+
+% ----------------------------------------------------------------------
+% miscellaneous definitions defining the product: note these may be changed
+% by setlanguagelevel
+true setglobal
+
+% product and revision are duplicated in statusdict, and stay there at level1;
+% version needs to be changed when languagelevel changes, but exists in
+% systemdict in both levels, hence setlanguageversion
+
+1183615869 internaldict begin
+  /l3version (3015.102) readonly def
+  /l2version (2017.0) readonly def
+  /l1version (52.3) readonly def
+  /changelanguagelevel {
+    {
+      { systemdict /languagelevel get } stopped { pop pop 1 } if 
+      dup 1 eq {
+        systemdict /version //l1version put
+        % note: // required below to mean the LEVEL 2 system dict not 
+        % the level 1 one with which it has by now been replaced
+        userdict /prompt //systemdict /prompt get put
+        userdict /pstack //systemdict /pstack get put
+        userdict /start //systemdict /start get put
+        % note: undef will still work here at level 1 because
+        %  the procedure is bound. The systemdict here is the level1 one and
+        % undef does not fail if it has already been removed as it will
+        % have been after the first time.
+        systemdict /pstack undef 
+        systemdict /start undef
+        systemdict /languagelevel undef
+      } if
+      dup 2 eq {
+        systemdict /version //l2version put 
+        % note: there is a prompt in both dictionaries 
+        % in level2 (despite RB2 p564)
+        userdict /pstack undef
+        userdict /start  undef
+      } if
+      3 eq {
+        systemdict /version //l3version put 
+        % note: there is a prompt in both dictionaries 
+        % in level3 (despite RB2 p564)
+        userdict /pstack undef
+        userdict /start  undef
+      } if
+    } superexec
+  } bind executeonly def
+end
+
+systemdict begin
+% /product (Harlequin ScriptWorks) def      % Can not have this
+  /product (LaserWriter-Sim) def
+  /revision 1 def
+  /version 1183615869 internaldict /l3version get def
+  /languagelevel 3 def
+end
+
+% Support for primogenital fonts (PGFonts). This stuff goes in local VM
+% because some of it is referenced from within local font definitions
+
+currentglobal false setglobal
+
+userdict begin
+  /CDevProcDirectory 32 dict def
+  CDevProcDirectory /StandardCDevProc
+    {pop pop pop pop 0 exch -1000 exch 2 div 880} bind put
+  /findcdevproc
+  { dup userdict /CDevProcDirectory get exch known not
+      {(cdevprocs/) AppendName PrependRoot run} if
+    userdict /CDevProcDirectory get exch get
+  } bind def
+end
+
+% More internaldict support for PG fonts
+1183615869 internaldict begin
+  /$PGFMergeKeys { % Merge keys from Primogenital fonts
+    userdict /PGFsave save put
+    {
+      userdict /PGFSuffix (PGFKeys.xxxxxxxx) serialnumber 16
+        2 index 8 8 getinterval cvrs pop put
+      userdict /PGFAddSuffix { % Add a PGFKeys.serialnumber suffix
+        dup length PGFSuffix length add string dup dup 4 2 roll copy
+        length PGFSuffix putinterval PrependRoot dup length string copy
+      } put
+      userdict /PGFString 128 string put
+      (temp/) PGFAddSuffix dup status {
+        pop pop pop pop % temp keys filename left on stack
+        userdict /PGFKeysDict 200 dict put
+        (Sys/) PGFAddSuffix dup status {
+          pop pop pop pop
+          dup run % load existing PGF keys
+          PGFKeysDict begin $PGFKeys { def } forall end
+          (Sys/O) PGFAddSuffix dup status {
+            pop pop pop pop dup deletefile % remove old backup file
+          } if
+          renamefile
+        } { pop } ifelse
+        dup run % run new key file
+        PGFKeysDict begin $PGFKeys { def } forall end
+        (temp/A) PGFAddSuffix dup status {
+          pop pop pop pop dup deletefile % remove old backup file
+        } if
+        renamefile
+
+        (Sys/) PGFAddSuffix (w) file
+
+        dup (%!PS-Adobe-2.0\n) writestring
+        dup (%%Title: ) writestring
+        dup PGFSuffix writestring
+        dup (\n\n) writestring
+        dup PGFKeysDict length PGFString cvs writestring
+        dup ( dict begin\n) writestring
+        PGFKeysDict
+        { 2 index (/) writestring
+          exch PGFString cvs 2 index exch writestring
+          1 index (\n<) writestring
+          1 index exch writehexstring
+          dup (>\nreadonly def\n) writestring
+        } forall
+        dup (currentdict\n) writestring
+        dup (end\n) writestring
+        dup (userdict exch /$PGFKeys exch put\n) writestring
+        closefile
+      } { pop } ifelse
+    } stopped pop
+    userdict /PGFsave get restore
+  } executeonly def
+  /$DiskPGFont 32 dict def
+  $DiskPGFont begin
+    /CurName () def
+    /CurFile 0 def
+    /CurOpen false def
+    /NameBuffer 64 string def
+    /DataBuffer 500 string def
+    /c 0 def
+    /fd 0 def
+    /cn 0 def
+    /co 0 def
+    /pf 0 def
+    /pd 0 def
+    /po1 0 def
+    /po2 0 def
+    /pl 0 def
+    /tn 0 def
+    /ri 0 def
+    /BuildChar
+    { //$DiskPGFont begin
+        /c exch def
+        /fd exch def
+        /cn fd /Encoding get c get def
+        fd /CharStrings get dup cn known
+        {cn get} {/.notdef get} ifelse
+        dup xcheck
+        { //systemdict begin fd begin c exch exec end end }
+        { /co exch fd /CharOffsets get exch 6 mul 6 getinterval def
+          /pf co 0 get fd /PGFArray get exch get
+            dup type /dicttype ne {findpgfont} if def
+          /po1 co 1 get def
+          /po2 co 2 get 8 bitshift co 3 get add def
+          /pl co 4 get 8 bitshift co 5 get add def
+          fd c
+          pf /CharStringsArray get dup type /stringtype eq
+          { /CurOpen CurFile type /filetype ne {false} {CurFile status} ifelse def
+            CurName ne CurOpen not or
+            { CurOpen {CurFile closefile} if
+              pf /CharStringsArray get length dup NameBuffer length gt
+                {string /NameBuffer exch def} {pop} ifelse
+              /CurName pf /CharStringsArray get NameBuffer copy def
+              /CurFile CurName (r) file def
+            } if
+            CurFile po1 16 bitshift po2 add setfileposition
+            pl DataBuffer length gt {/DataBuffer pl 1.1 mul cvi string def} if
+            CurFile DataBuffer 0 pl getinterval readstring pop
+          }
+          { po1 get po2 pl getinterval }
+          ifelse
+          cvx
+          /pd fd /Private get def
+          fd /Private pf /Private get {dup /RunInt get /ri exch def put}
+            //systemdict /internaldict get 1183615869 exch exec /superexec get exec
+          ri /CCRun eq ri /BMRun eq or ri /eCCRun eq or
+          { //systemdict /internaldict get 1183615869 exch exec ri get exec }
+          { ri load exec }
+          ifelse
+          fd /Private pd { put }
+            //systemdict /internaldict get 1183615869 exch exec /superexec get exec
+        } ifelse
+      end
+    } bind executeonly def
+
+    /MDID 0 def
+    /MDFV [] def
+    /MDFS 1536 string def
+    /MDFF
+    { FontDirectory 4 index known dup
+      { pop 3 index findfont /Private get {/UniqueID get}
+        //systemdict /internaldict get 1183615869 exch exec /superexec get exec
+        3 index eq
+      } executeonly if
+      { //$DiskPGFont /MDFS get exch 0 exch getinterval currentfile exch readstring
+        pop pop pop pop findfont
+      } executeonly
+      { 15 dict begin
+        string currentfile exch readstring pop /CharOffsets exch readonly def
+        //$DiskPGFont /MDFV get exch get
+          dup 0 get /Encoding exch findencoding def
+          dup 1 get /CharStrings exch findcharstrings def
+          dup 2 get /FontBBox exch readonly def
+          dup 3 get /PGFArray exch readonly def
+          dup 4 get /FontMatrix exch readonly def
+          5 get dup null eq {pop}{/CDevProc exch findcdevproc def} ifelse
+        dup true eq
+        { pop //$DiskPGFont /MDID 2 copy get dup null eq
+          { pop pop pop null } { dup 1 add exch 4 1 roll put } ifelse
+        } if
+        dup null ne { /UniqueID 1 index def } if exch
+        /FontName exch def
+        /FontType 4 def
+        /PaintType 0 def
+        /BuildChar //$DiskPGFont /BuildChar get def
+        /Private 2 dict dup begin
+          /password 5839 def
+          /UniqueID 4 -1 roll dup false eq {pop null} if def
+        end noaccess def
+        currentdict end
+        dup /FontName get exch definefont
+      } executeonly
+      ifelse
+    } bind executeonly def
+  end % $DiskPGFont
+  
+  % And the PDF Type3 /.notdef definition
+  /.notdef {pop pop 0 0 setcharwidth} bind def
+end % internaldict
+
+setglobal % reset to currentglobal
+
+
+% ----------------------------------------------------------------------
+% The halftone type 1 dictionary has the extension /DCS. When such a DCS
+% entry is found, the following procedure is called with the separation name
+% and the DCS dictionary on the operand stack. The procedure then copies the 
+% keys of this dictionary (either a string or an array of strings) into global
+% equivalents.
+% The rest of the DCS is handled by the DCSCommentParser ProcSet.
+% 
+1183615869 internaldict begin
+
+  currentglobal true setglobal
+  /DCSDictionaries 20 dict def
+
+  false setglobal
+  /copystring {
+    dup length string copy
+  } bind def
+
+% separationname  DCSdict  DCS  --> -
+  /DCS {
+    currentglobal true setglobal exch
+    begin 
+      currentdict { %forall
+        dup gcheck not {
+          dup type dup /stringtype eq {
+            pop //copystring exec
+          } {
+            /arraytype eq {
+              [ 
+                exch {
+                  dup type /stringtype eq {
+                    //copystring exec
+                  } if
+                } forall
+              ]
+            } {
+              /DCS /typecheck .error
+            } ifelse
+          } ifelse
+        } if
+        def
+      } forall
+      currentdict gcheck not { % copy the dictionary into a global one 
+        currentdict dup length dict copy
+        end begin
+      } if
+      setglobal
+     //DCSDictionaries exch currentdict put
+     end
+  } bind def
+
+  currentdict /copystring undef
+  setglobal
+end %internaldict
+
+serverdict begin
+  currentglobal false setglobal
+  
+  % Level 2
+  /execlevel2 << /LanguageLevel 2 /Password 0 /level2save 0 >> 
+  dup /level2save undef def
+  /execlevel2 {
+    { systemdict /languagelevel get } stopped { pop pop 1 } if
+    2 ne {
+      //execlevel2 setsystemparams
+    } if
+    save //execlevel2 /level2save 3 -1 roll put
+      exec % the given procedure
+    //execlevel2 /level2save get restore
+  } bind def
+  
+  % Level 3
+  /execlevel3 << /LanguageLevel 3 /Password 0 /level3save 0 >> 
+  dup /level3save undef def
+  /execlevel3 {
+    { systemdict /languagelevel get } stopped { pop pop 1 } if
+    3 ne {
+      //execlevel3 setsystemparams
+    } if
+    save //execlevel3 /level3save 3 -1 roll put
+      exec % the given procedure
+    //execlevel3 /level3save get restore
+  } bind def
+  
+  setglobal % back to what it was
+end % serverdict
+
+statusdict begin
+  /hqnchecksum {
+    % a 2 digit checksum for a 16 bit serialnumber or other such
+    0 exch
+    { 2 3 1 2 3 } { 1 index 10 mod mul 3 -1 roll add exch 10 idiv } forall
+    pop
+  } bind def
+
+  systemdict begin
+    /devdismount dup load def
+    /devmount    dup load def
+    /devforall   dup load def
+    /devstatus   dup load def
+    /devformat   { UVS(%%[ devformat: not permitted in this product ]%%\n) print stop } def
+  end
+end
+% end of miscpss.pss

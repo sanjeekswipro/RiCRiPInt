@@ -1,0 +1,279 @@
+%!PS-Adobe-3.0
+%%Title: Photoshop5Duotone
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri, Oct 2, 1998
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% Adobe PhotoShop is a registered trademark of Adobe Systems, Incorporated.
+
+% $HopeName: SWv20!swf:idioms:ps5duo(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This file corrects for several problems in rendition of Photoshop 5 duotones.
+% Principally:
+%
+% (1) the tint transforms used in photoshop are not pure procedures
+% without side effects as required by the specification, and rely on being
+% called at particular times. This causes problems for probing the tint transform to
+% find an equivalent color, and also would require us to call the tint transform at 
+% exactly the same time as Adobe do in their rips.
+% 
+% (2) the tint mapping table for the Indexed color space used when rendering separations
+% of the duotone is inverted. If you rip the file on an Adobe rip, you get a negative.
+% This is corrected for here, but for true, but unhelpful, compatibility with the original
+% Photoshop file, this behavior can be turned off with the Honor Photoshop Color Management
+% button in the GUI.
+%
+% The technique used here relies on Harlequin extension to idiom recognition, namely that
+% idiom templates can have wildcards, and a callback is called to construct the 
+% substitution. This callback has side effects and relies on knowing the layout of
+% the execution stack that Photoshop 5 duotone jobs create. It also relies on another
+% extension, namely that we always bind tint transforms (Photoshop 5 duotone ones
+% arent bound otherwise, so idiom recognition wouldn't kick in).
+
+%%BeginResource: IdiomSet Photoshop5Duotone
+
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+currentglobal false setglobal
+
+1 dict begin
+
+/ProcessList <<
+	/Cyan [ 1 0 0 0 ]
+	/Magenta [ 0 1 0 0 ]
+	/Yellow [ 0 0 1 0 ]
+	/Black [ 0 0 0 1 ]
+>> def
+
+/Photoshop5Duotone <<
+
+  /Photoshop5Duotone [
+    { /integertype {pop} repeat false 0 } bind  % the template
+    { }                                         % substitute ignored - constructed by callback
+
+    {
+      % original <n+1> 1 template subst -> new-subst
+      % { 4 { pop } repeat false 0 } => genuine tint transform
+
+      pop pop 
+	  dup 1 ne {
+		{ pop } repeat
+	  }	{
+		  pop 
+		  16 dict begin
+			/n exch 1 sub def
+			/original exch def
+			/lookup 256 dict def
+
+			% get the remainder of the Adobe ps, remembering that the top tow elements on estack
+			% are the callback marker and this callback, hence the minus 3. OTOH, if we are in a 
+			% shadow we might have to go further back up the stack to find the Adobe code.
+			% confirm the length and the presence of the name PSDuotoneList in the correct place.
+			/estack 256 array execstack def
+
+			estack length 3 sub -1 0 {
+			  estack exch get dup type dup /arraytype eq exch /packedarraytype eq or {
+				dup length n 6 add eq {
+				  dup 3 n add get dup type dup /arraytype eq exch /packedarraytype eq or {
+					dup length 13 eq {
+					  dup 4 get /PSDuotoneList cvx eq {
+						pop 
+						/eremainder exch def
+						exit
+					  } if
+					} if
+				  } if
+				  pop
+				} if
+			  } if
+			  pop
+			} for
+
+			currentdict /eremainder known {
+				/array-dn   /eremainder load dup length 3 sub get def
+				% could check: array-dn is an executable array length 13 
+				% with first element mark and last element array-op
+
+				/string-dn  /array-dn  load dup length 2 sub get def
+				% could check string-dn is string
+
+				/array-cie /eremainder load dup length 2 sub get def
+				% could check: array-cie is an executable array length 28 
+				% with first element mark and last element array-op
+
+				/string-cie /array-cie load dup length 2 sub get def
+				% could check string-cie is string
+
+				% unfortunately, the string-dn is actually negated - an Adobe bug. Invert it.
+				0 1 256 n mul 1 sub {
+				  string-dn exch 2 copy get 255 exch sub put
+				} for
+
+				/psv502 false def
+			}	{
+				estack length 3 sub -1 0 {
+				  estack exch get dup type dup /arraytype eq exch /packedarraytype eq or {
+					dup length n 57 add eq {
+					  dup n 8 add get /PhotoshopDuotoneList cvx eq {
+						/eremainder exch def
+						exit
+					  } if
+					} if
+				  } if
+				  pop	% estack[i]
+				} for
+
+				currentdict /eremainder known {
+					/array-dn   /eremainder load n 4 add 13 getinterval cvx exec def
+
+					/string-dn  /array-dn  load dup length 1 sub get def
+
+					/array-cie /eremainder load n 19 add 34 getinterval cvx exec def
+
+					/string-cie /array-cie load dup length 1 sub get def
+
+					/psv502 true def
+				} if
+			} ifelse
+
+			currentdict /eremainder known {
+				% populate the reverse lookup table to go from DeviceN to the source index
+				% take components in reverse order - it is easier picking them off the stack later
+				0 1 255 {
+				  /string-dn load 1 index n mul n getinterval dup n 1 sub get 
+				  n 2 sub -1 0 { 2 index exch get exch 8 bitshift or } for
+				  exch pop
+				  lookup 3 1 roll exch put
+				} for
+
+				% construct a suitable tint transform to go from the DeviceN 
+				% space to CIE space via the original index found in the lookup table and the 
+				% CIE table provided
+
+				/tt [
+				  systemdict begin
+
+				  255.0
+				  /mul load
+				  0.1
+				  /add load % add .1 to avoid rounding issues
+				  /cvi load
+
+				  n 1 sub
+				  { 8 bitshift exch 255.0 mul 0.1 add cvi or }
+				  /repeat load
+
+				  lookup
+				  /exch load
+				  2
+				  /copy load
+				  /known load
+				  { get } { pop 0 } 
+				  /ifelse load
+
+				  /string-cie load
+				  /exch load
+				  3     % string consists of 3 bytes per entry for CIE
+				  /mul load
+				  3
+				  /getinterval load
+
+				  { cvr 255.0 div }
+				  /forall load
+
+				  end % systemdict
+				] cvx def
+
+				systemdict begin
+				/eremainder load 
+				  dup 0 /grestore load put
+				  dup 1 /array-dn load put
+				  dup 2 /exec load put
+				  dup 3 /mark load put
+				  4 1 2 index length 1 sub { 1 index exch 0 put } for
+				  dup length 1 sub /cleartomark load put
+				end % systemdict
+
+				% substitute the cie space as the underlying space of the device N
+				psv502 {
+					/array-dn load 1 get 
+					dup 2 /array-cie load 1 get put
+					3 /tt load put
+				}	{
+					/array-dn load 6 
+					  /array-cie load 3 1 index length 6 sub getinterval
+					put
+					/array-dn load 7 /exec load put
+
+					% insert new tint transform
+					/array-dn load 8 /tt load put
+				} ifelse
+
+				% for the probe color space, which is where we are hooked onto here,
+				% return a white color so we treat it skeptically for roam
+				% The real roam colour should be set by the next chunk of code.
+				{ pop 1 }
+
+				% Try setting up individual separation channels for each spot colour in
+				% the duotone, in an attempt to set roam colours correctly.
+				%    PS v5.0           PS v5.02
+				{ /PSDuotoneList /PhotoshopDuotoneList } {
+					dup where {
+						pop
+						load {
+							% colour name on stack
+							statusdict /CMYKCustomColors get 1 index 2 copy known {
+								% It's a spot colour that we've seen a 
+								% %%CMYKCustomColor: comment refering to.
+								get
+							}	{ 
+								exch pop
+								//ProcessList exch 2 copy known {
+									% It's a process colour
+									get
+								}	{
+									% Neither recognised spot nor process. Don't
+									% know a CMYK equivalent for this - give up.
+									pop pop null 
+								} ifelse
+							} ifelse
+							% name cmyk
+							dup type /nulltype ne {
+									systemdict begin
+									[ 
+									/Separation 4 -1 roll /DeviceCMYK 
+										[
+										6 -1 roll {
+											/dup load exch /mul load /exch load
+										} forall
+										/pop load
+									] cvx
+									end % systemdict
+								] setcolorspace
+							} { pop pop } ifelse
+						} forall
+					} { pop } ifelse
+				} forall
+			}	{
+				/original load
+			} ifelse
+		  end
+		} ifelse
+    } bind
+  ]
+
+>> /IdiomSet defineresource pop
+
+end
+
+setglobal
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+
+%%EndResource
+
+%%EOF

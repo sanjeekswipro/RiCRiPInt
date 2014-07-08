@@ -1,0 +1,14 @@
+% $HopeName: SWv20!swf:sys:bootlist(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+
+%!PS-Hqn
+%%Title: Sys/Bootlist
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri Mar  6 19:31:0
+
+(Sys/Start)
+(Usr/Start)

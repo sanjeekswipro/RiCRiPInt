@@ -1,0 +1,88 @@
+# =============================================================================
+# $HopeName: COREpcl_pclxl!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.26.4.1.1.1 2013/12/19 11:25:03 anon Exp $
+#
+# Copyright (C) 2007-2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+# Variant details come before dependant compilation rules
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant pcl ;
+
+    # Compilation rules
+
+    DependsOn all : pclxlin ;
+
+    IncludeExportDirectories Inherited Local :
+        devices
+        fileio
+        fonts
+        gstate
+        images
+        mm
+        objects
+        pcl
+        pcl5in
+        tables
+        v20
+    : .. ;
+
+    ReplaceVar Local : CFILES :
+        pclxlattributes.c
+        pclxlcontext.c
+        pclxlcursor.c
+        pclxldatasource.c
+        pclxldebug.c
+        pclxlerrors.c
+        pclxlfont.c
+        pclxlgraphicsstate.c
+        pclxlimage.c
+        pclxloperators.c
+        pclxlops.c
+        pclxlpage.c
+        pclxlparsercontext.c
+        pclxlpassthrough.c
+        pclxlpath.c
+        pclxlpattern.c
+        pclxlpen.c
+        pclxlpsinterface.c
+        pclxlscan.c
+        pclxlsession.c
+        pclxlsmtable.c
+        pclxlstream.c
+        pclxltags.c
+        pclxltest.c
+        pclxltext.c
+        pclxluserstream.c
+    : Variant pcl=pclall ;
+
+    ReplaceVar Local : CFILES : nopclxl.c : Variant pcl=no ;
+    ReplaceVar Local : CFILES : nopclxl.c : Variant pcl=pcl5 ;
+
+    Library pclxlin : $(CFILES) ;
+
+    # N.B. Don't use AddToVar with conditions, because we want this to propagate
+    # to the SW folder without having to make the product implement the pcl
+    # variant.
+    if $(Variant_pcl) = pclall {
+        AddUnique SW-Folder-Variants : pclxl ;
+    }
+
+    if $(Variant_pcl) = pclall {
+        # So that exported source can be built without pclxl if required
+        ExportSource $(CurrentPath)$/src$/nopclxl.c : C ;
+    }
+
+    SWF swf : procsets : procsets : : pclxl ;
+    SWF swf : procsets pclxlhalftone : PCLXLHalftone : : pclxl ;
+
+# =============================================================================
+# Log stripped
+
+# EOF makefile.jam

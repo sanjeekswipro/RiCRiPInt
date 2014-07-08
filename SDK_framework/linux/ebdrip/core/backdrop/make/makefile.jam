@@ -1,0 +1,44 @@
+# Copyright (C) 2002-2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Backdrop
+#
+# $HopeName: COREbackdrop!make:makefile.jam(EBDSDK_P.1) $
+#
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant metrics ;
+
+# Compilation rules
+
+    DependsOn all : backdrop ;
+
+    IncludeExportDirectories Inherited Local :
+      cce
+      functions
+      gstate
+      halftone
+      mm
+      multi
+      objects
+      render
+      v20
+    : .. ;
+
+    Library backdrop :
+      backdrop.c
+      block.c
+      coalesce.c
+      complete.c
+      composite.c
+      compositecolor.c
+      context.c
+      iterator.c
+      pcl.c
+      resource.c
+      table.c
+    ;
+
+# Log stripped

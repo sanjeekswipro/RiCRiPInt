@@ -1,0 +1,67 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP image filters
+#
+# $HopeName: COREimages!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : images ;
+
+    ReplaceVar Local : Libraries :
+        ccitt
+        filtering
+        jbig
+        jpeg
+        jpeg2k
+        png
+        tiff
+        tiffcore
+        wmphoto
+    ;
+
+    # Propagate export directories from sub-directories to parent
+    AddExportDirectories $(Libraries) ;
+
+    # Allow access to these compounds locally
+    IncludeExportDirectories Local :
+        gstate
+        imstore
+        objects
+        v20
+    : .. ;
+
+    ReplaceVar Local : CFILES :
+        imagesinit.c
+    ;
+
+    Library images : $(CFILES) ;
+
+    Makefile $(Libraries) ;
+
+    # If we want separate libraries for each variant, we need to implement the
+    # union of the sub-compound variants. If you add a new sub-compound which
+    # implements a variant, add the variant to this list. There is no glue code
+    # in this compound, but we implement this after the Makefile so that it
+    # won't affect any that is added.
+    ImplementsVariant jbig jpeg2000 metrics png jpeg tiff tiffcore wmphoto ;
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries images : $(i) : $(i) ;
+    }
+
+
+    # SW file mappings and files for COREimages
+    SWF swf : procsets : procsets ;
+    SWF swf : procsets hqngif : HqnGIF ;
+    SWF swf : procsets hqnimage : HqnImage ;
+
+
+# Log stripped

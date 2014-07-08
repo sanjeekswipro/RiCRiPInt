@@ -1,0 +1,337 @@
+%!PS-Adobe-3.0
+%%Title: EBDPCLXLHalftone
+%%Creator: Global Graphics Software Ltd.
+%%CreationDate: Oct 9, 2008
+%%For: Harlequin
+%{EBDPCLXLHalftone version #1 1
+% Copyright (C) 2008 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(EBDPCLXLHalftone)" 1 1
+
+% $HopeName: SWebd_OIL_example_gg!swf:procsets:ebdpclxlht(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+% Log stripped
+
+% EBDPCLXLHalftone procset is invoked by the PCLXL interpreter via the
+% PCLXLHalftone procset to provide control over attempts to configure
+% screening from inside PCLXL jobs.
+%
+% EBDPCLXLSetHalftone takes a dictionary parameter defining the requested
+% PCLXL halftoning.
+% If the /JobThreshold value is true then the job has already installed
+% its own threshold array.
+% Otherwise the keys indicate object categories whose screening is to be
+% set and the values indicates the details of the required halftone for
+% those categories.
+% Valid object category keys are : /Text, /Picture, /Linework.
+% Valid values are : /HighLPI, /MediumLPI, /LowLPI.
+% For 1 bpp it uses pagedevice hooks to switch between the various halftone
+% screens defined in Usr/HqnEmbedded/Htm1bpp.
+% For 2 and 4 bpp it sets %embedded% device params.
+%
+% EBDPCLXLSetHalftonePhase takes two numbers as parameters, giving the device
+% coordinates of the halftone cell origin.
+%
+% Both procedures only do anything if /GGEBDScreenMode is 5, i.e. use
+% job settings.
+
+currentglobal false setglobal
+
+10 dict begin
+  /globalness exch def
+
+  /EBDPCLXLHalftoneWorkspaceDict 5 dict def
+
+  % Example Low, Medium and High LPI halftones (based on Euclidean spotfunction)
+  /PCLXLLowLPI <<
+    /HalftoneType 5
+    /HalftoneName /PCLXLLowLPI
+    /OverrideAngle false
+    /InheritAngle false
+
+    (Cyan) cvn <<
+      /HalftoneType 1
+      /Frequency 80
+      /Angle 15
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Magenta) cvn <<
+      /HalftoneType 1
+      /Frequency 80
+      /Angle 75
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Yellow) cvn <<
+      /HalftoneType 1
+      /Frequency 80
+      /Angle 0
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+
+    (Black) cvn <<
+      /HalftoneType 1
+      /Frequency 80
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    /Default <<
+      /HalftoneType 1
+      /Frequency 80
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+  >> def
+
+  /PCLXLMediumLPI <<
+    /HalftoneType 5
+    /HalftoneName /PCLXLMediumLPI
+    /OverrideAngle false
+    /InheritAngle false
+
+    (Cyan) cvn <<
+      /HalftoneType 1
+      /Frequency 100
+      /Angle 15
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Magenta) cvn <<
+      /HalftoneType 1
+      /Frequency 100
+      /Angle 75
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Yellow) cvn <<
+      /HalftoneType 1
+      /Frequency 100
+      /Angle 0
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+
+    (Black) cvn <<
+      /HalftoneType 1
+      /Frequency 100
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    /Default <<
+      /HalftoneType 1
+      /Frequency 100
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+  >> def
+
+  /PCLXLHighLPI <<
+    /HalftoneType 5
+    /HalftoneName /PCLXLHighLPI
+    /OverrideAngle false
+    /InheritAngle false
+
+    (Cyan) cvn <<
+      /HalftoneType 1
+      /Frequency 120
+      /Angle 15
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Magenta) cvn <<
+      /HalftoneType 1
+      /Frequency 120
+      /Angle 75
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    (Yellow) cvn <<
+      /HalftoneType 1
+      /Frequency 120
+      /Angle 0
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+
+    (Black) cvn <<
+      /HalftoneType 1
+      /Frequency 120
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >> 
+
+    /Default <<
+      /HalftoneType 1
+      /Frequency 120
+      /Angle 45
+      /SpotFunction {abs exch abs 2 copy add 1 gt{1 sub dup mul exch 1 sub dup mul add 1 sub}{dup mul exch dup mul add 1 exch sub}ifelse} bind
+    >>
+  >> def
+  
+  % Maps object categoryvalues from dict passed to /EBDPCLXLSetHalftone to
+  % 1 bpp halftone names known to the RIP.
+#ifdef SDK_1BPP_EXAMPLE
+  % This example uses the example EBD*_Line screens.
+  % Alternatively you could change the screens used to something else, for example;
+#endif
+  % The following PCLXL*LPI screen are defined earlier in this file and are 
+  % based upon the Euclidean spotfunction screen.
+#ifndef SDK_1BPP_EXAMPLE
+  %  /HighLPI     PCLXLHighLPI
+  %  /MediumLPI   PCLXLMediumLPI
+  %  /LowLPI      PCLXLLowLPI
+#endif
+  /GGEBDPCLXL1bppHalftoneMapping
+  <<
+#ifdef SDK_1BPP_EXAMPLE
+    /HighLPI     << /HalftoneType 199 /Halftone /EBDText_Line >>
+    /MediumLPI   << /HalftoneType 199 /Halftone /EBDGraphic_Line >>
+    /LowLPI      << /HalftoneType 199 /Halftone /EBDPhoto_Line >>
+#else
+    /HighLPI     PCLXLHighLPI
+    /MediumLPI   PCLXLMediumLPI
+    /LowLPI      PCLXLLowLPI
+#endif
+  >> def
+
+  % Maps object category values from a dict passed to /EBDPCLXLSetHalftone to
+  % 2 bpp halftone names known to the RIP.
+#ifdef SDK_2BPP_EXAMPLE
+  % This example uses the example EBD*_Line screens.
+  % Alternatively you could change the screens used to something else, for example;
+#endif
+  % The following PCLXL*LPI screen are defined earlier in this file and are 
+  % based upon the Euclidean spotfunction screen.
+#ifndef SDK_2BPP_EXAMPLE
+  %  /HighLPI     PCLXLHighLPI
+  %  /MediumLPI   PCLXLMediumLPI
+  %  /LowLPI      PCLXLLowLPI
+#endif
+  /GGEBDPCLXL2bppHalftoneMapping
+  <<
+#ifdef SDK_2BPP_EXAMPLE
+    /HighLPI     << /HalftoneType 199 /Halftone /irsCMYK2bpp_Text >>
+    /MediumLPI   << /HalftoneType 199 /Halftone /irsCMYK2bpp_Gfx >>
+    /LowLPI      << /HalftoneType 199 /Halftone /irsCMYK2bpp_Photo >>
+#else
+    /HighLPI     PCLXLHighLPI
+    /MediumLPI   PCLXLMediumLPI
+    /LowLPI      PCLXLLowLPI
+#endif
+  >> def
+
+  % Maps object categoryvalues from dict passed to /EBDPCLXLSetHalftone to
+  % 4 bpp halftone names known to the RIP.
+#ifdef SDK_4BPP_EXAMPLE
+  % This example uses the example EBD*_Line screens.
+  % Alternatively you could change the screens used to something else, for example;
+#endif
+  % The following PCLXL*LPI screen are defined earlier in this file and are 
+  % based upon the Euclidean spotfunction screen.
+#ifndef SDK_4BPP_EXAMPLE
+  %  /HighLPI     PCLXLHighLPI
+  %  /MediumLPI   PCLXLMediumLPI
+  %  /LowLPI      PCLXLLowLPI
+#endif
+  /GGEBDPCLXL4bppHalftoneMapping
+  <<
+#ifdef SDK_4BPP_EXAMPLE
+    /HighLPI     << /HalftoneType 199 /Halftone /irsCMYK4bpp_Text >>
+    /MediumLPI   << /HalftoneType 199 /Halftone /irsCMYK4bpp_Gfx >>
+    /LowLPI      << /HalftoneType 199 /Halftone /irsCMYK4bpp_Photo >>
+#else
+    /HighLPI     PCLXLHighLPI
+    /MediumLPI   PCLXLMediumLPI
+    /LowLPI      PCLXLLowLPI
+#endif
+  >> def
+
+  /EBDPCLXLSetHalftone
+  { % config_dict
+
+    statusdict /GGEBDScreenMode get 5 eq
+    {
+      % Screen mode is use job settings
+
+      dup /JobThreshold known { dup /JobThreshold get } { false } ifelse
+      {
+        % The job has already installed a threshold array.
+        % PCLXL will have installed the threshold array already.
+        statusdict /GGEBDPCLXLStartImageHalftone null put
+        statusdict /GGEBDPCLXLStartVignetteHalftone null put
+        statusdict /GGEBDPCLXLEndImageHalftone null put
+        statusdict /GGEBDPCLXLEndVignetteHalftone null put
+
+      } {
+
+        % Set requested screeens for each object category
+        //EBDPCLXLHalftoneWorkspaceDict begin
+
+          % Get mapping table for bit depth
+          currentpagedevice /ValuesPerComponent get
+          dup 4 eq
+          {
+            % 2 bpp
+            /mappingtable //GGEBDPCLXL2bppHalftoneMapping def
+            pop
+          } {
+            16 eq {
+              % 4 bpp
+              /mappingtable //GGEBDPCLXL4bppHalftoneMapping def
+            } {
+              % 1 bpp
+              /mappingtable //GGEBDPCLXL1bppHalftoneMapping def
+            } ifelse
+          } ifelse
+
+          % Look up screen name for each object category
+          dup /Text get mappingtable exch get /textscreen exch def
+          dup /Picture get mappingtable exch get /picturescreen exch def
+          dup /Linework get mappingtable exch get /lineworkscreen exch def
+
+          % Set screeens
+          <<
+            /HalftoneType 195
+            /Default  lineworkscreen 
+            /Text     textscreen 
+            /Linework lineworkscreen 
+            /Picture  picturescreen 
+            /Vignette picturescreen 
+          >> sethalftone
+
+        end
+
+      } ifelse
+
+    } if
+
+    pop
+
+  } bind def
+
+  /EBDPCLXLSetHalftonePhase
+  { % phase_x phase_y
+
+    % Just pass values to sethalftonephase if screen mode is use job settings
+    statusdict /GGEBDScreenMode get 5 eq
+    {
+      sethalftonephase
+    } {
+      pop pop
+    } ifelse
+    
+  } bind def
+
+  currentdict
+end
+
+/EBDPCLXLHalftone exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet

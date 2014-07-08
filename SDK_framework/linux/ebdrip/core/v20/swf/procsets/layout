@@ -1,0 +1,6396 @@
+%!PS-Adobe-3.0
+%%Title: HqnLayout
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 2004
+%%VMusage: -1 -1
+% Copyright (C) 2004-2011 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.22.1.1.1.1 $
+%%EndComments
+%%BeginProcSet: (HqnLayout) 1 0
+
+% $HopeName: SWv20!swf:procsets:layout(EBDSDK_P.1) $
+
+<< /UVPS {} >> 1183615869 internaldict /defineop get exec
+
+currentglobal false setglobal
+
+statusdict /HqnLayoutInitialized 0 put
+statusdict /jobnamename null put
+
+180 dict begin
+
+/LayoutDebug false def                          % Show HqnLayout debug reports
+/HqnImpose2DebugReport false def        % Show HqnImpose2 debug reports
+/ReloadImpose2 false def                        % re-load HqnImpose2 from disk every job?
+
+/DebugOverlay false def
+/DebugOutlines false def
+/RegSize 18 def         % Size of register marks
+/RegMovement 0.33 def   % Proportion of free space to move reg marks inwards
+
+/Layout currentdict def
+statusdict /HqnLayoutDict Layout put
+
+/procsetversion
+($Revision: 1.22.1.1.1.1 $) 11 1 index length 13 sub getinterval
+  dup length 1 add string exch
+  mark exch
+  (1.) anchorsearch {
+    exch
+    dup length 1 add string exch mark exch
+    (.) search {
+      cvi 22 add 3 string cvs
+      1183615869  internaldict /concattomark get exec
+    }{
+      3 1 roll pop pop
+      cvi 22 add 3 string cvs
+    } ifelse
+    exch 1183615869  internaldict /concattomark get exec
+  } if
+def
+
+/globalness exch def
+
+/HqnAssert /ProcSet findresource
+{ /ErrPrint /ExtraError /StartStackCheck /StackCheck0 /StackCheck3 }{ 2 copy get def } forall
+/Initialize get exec
+
+/closeonefile {
+  begin
+  currentdict /FileType known {
+    FileType /PDF eq {
+      mark {
+        currentdict /context known { context }{ pdfcontextid } ifelse
+        virtualcontext { PDFClose }{ pdfclose } ifelse
+      } stopped cleartomark
+    } if
+  } if
+  currentdict /FileObject known {
+    /FileObject load dup status {
+      closefile
+    } {
+      pop
+    } ifelse
+  } if
+  end
+} bind def
+
+% Try to make sure that all content files are closed to avoid any issues with
+% spool folder failing to move/delete them after an error.
+/closeallfiles {
+  /Request where {
+    pop
+    Request /FileList 2 copy known {
+      get {
+        dup type /dicttype eq {
+          //closeonefile exec
+        } { pop } ifelse
+      } forall
+    } { pop pop } ifelse
+  } if
+  //Layout /InputFileList 2 copy known {
+    get {
+      //closeonefile exec
+      pop             % the index
+    } forall
+  } {
+    pop pop
+  } ifelse
+} bind def
+
+/abortjobnow {
+  erasepage
+  //closeallfiles exec
+  mark /HqnLayout errordict /undefinedresult get stopped cleartomark
+  serverdict /abortjobnow get exec
+} bind def
+
+/layoutstop {
+  % "stopped pop superstop" just reinforces the error handling.
+  stopped pop
+  % Close files after the stop so that error reporting includes the
+  % real file data
+  //closeallfiles exec
+  superstop
+} bind def
+
+save
+% UVM (Loading simple in-RIP imposition v%s - Copyright (c) 2004-%d Global Graphics Software Ltd. All Rights Reserved.\n)
+(Loading simple in-RIP imposition v) ErrPrint
+procsetversion ErrPrint
+( - Copyright (c) 2004-2006 Global Graphics Software Ltd. All Rights Reserved.\n) ErrPrint
+restore
+
+% For debugging use, so that it's reloaded from disk every time.
+ReloadImpose2 { (procsets/HqnImpose2)run } if
+/HqnImpose2 /ProcSet findresource
+{ /HqnInitImpose /HqnUnloadImpose /HqnImpose2Active /HqnFlushFilm /HqnMergeConfig }{
+  2 copy get def
+} forall
+pop
+
+/buffer 2048 string def
+
+/inputplugin (%ip:) def
+
+/nulldict 1 dict def
+/nullarray [] def
+
+/ValidateOneDict <<
+
+  /Enumeration {
+    % can be int or name.
+    dup xcheck { exec } if
+    vals 1 index known not {
+      /HqnLayoutInitialize_1 /undefined 3 -1 roll ExtraError
+    } if
+    dup type /stringtype eq { cvn } if
+    % dictfortest name val
+    3 copy put
+    pop
+  } bind
+
+  /NumberRange  {
+    dup type dup /integertype ne exch /realtype ne and {
+      /HqnLayoutInitialize_1 /typecheck 5 -1 roll ExtraError
+    } if
+    /min load dup xcheck { exec } if
+    dup type /nulltype eq { pop false }{ 1 index gt } ifelse
+    % val toosmall
+    /max load dup xcheck { exec } if
+    dup type /nulltype eq { pop exch pop false }{ 3 -1 roll lt } ifelse
+    or {
+      /HqnLayoutInitialize_1 /rangecheck name ExtraError
+    } if
+  } bind
+
+  /IntegerRange  {
+    dup type /integertype ne {
+      /HqnLayoutInitialize_1 /typecheck 5 -1 roll ExtraError
+    } if
+    min dup xcheck { exec } if
+    dup type /nulltype eq { pop false }{ 1 index gt } ifelse
+    % val toosmall
+    max dup xcheck { exec } if
+    dup type /nulltype eq { pop exch pop false }{ 3 -1 roll lt } ifelse
+    or {
+      /HqnLayoutInitialize_1 /rangecheck name ExtraError
+    } if
+  } bind
+
+  /Bool {
+    type /booleantype ne {
+      /HqnLayoutInitialize_1 /typecheck name ExtraError
+    } if
+  } bind
+
+  /Database {
+    load db exch 2 copy known not {
+      /HqnLayoutInitialize_1 /undefined 3 -1 roll ExtraError
+    } if
+    get
+    % Still checking in Request ##################
+    Request begin {
+      % key val
+      Request 2 index known {
+        pop pop
+      }  {
+        def
+      } ifelse
+    } forall end
+  } bind
+
+  /String {
+    type /stringtype ne {
+      /HqnLayoutInitialize_1 /typecheck name ExtraError
+    } if
+  } bind
+
+  /Name {
+    dup type /stringtype eq {
+      % dictfortest name val
+      cvn 3 copy put
+    } if
+    type /nametype ne {
+      /HqnLayoutInitialize_1 /typecheck name ExtraError
+    } if
+  } bind
+
+  /Dict {
+    % Contents not individually validated
+    type /dicttype ne {
+      /HqnLayoutInitialize_1 /typecheck name ExtraError
+    } if
+  } bind
+
+  /Array {
+    dup type /arraytype ne {
+      /HqnLayoutInitialize_1 /typecheck name ExtraError
+    } if
+    xcheck {
+      /HqnLayoutInitialize_1 /invalidaccess name ExtraError
+    } if
+  } bind
+
+  /Proc {
+    dup type dup /nulltype eq {
+      pop
+    } {
+      /arraytype ne {
+        /HqnLayoutInitialize_1 /typecheck name ExtraError
+      } if
+      xcheck not {
+        /HqnLayoutInitialize_1 /invalidaccess name ExtraError
+      } if
+    } ifelse
+  } bind
+
+  /BoolProc {             % boolean or proc
+    dup type /booleantype eq { pop }{
+      dup type /arraytype ne {
+        /HqnLayoutInitialize_1 /typecheck name ExtraError
+      } if
+      xcheck not {
+        /HqnLayoutInitialize_1 /invalidaccess name ExtraError
+      } if
+    } ifelse
+  } bind
+
+>> def
+/ValidateOneDict {
+  {
+    //LayoutDebug { (ValidateOneDict+: )ErrPrint dup length 0 gt { dup 0 get /name get }{ (ZERO-LENGTH) } ifelse ErrPrint (\n) ErrPrint } if
+
+    /DictInValidation 2 index def
+
+    % dictfortest ValidationList -> ValidateOneDict -> dictfortest
+    1 index begin
+    {
+      % dict valdict
+      begin
+      %  //LayoutDebug { name == } if
+
+      //Layout /LocalValidate known {
+        LocalValidate name 2 copy known { get }{ pop pop //nulldict } ifelse
+      } { //nulldict } ifelse begin
+
+      % /name load =print (   )print /style load =print (   )print dup name 2 copy known { get }{ pop pop (UNKNOWN) } ifelse ==
+
+      % dictfortest
+      /override where {
+        pop
+        /override load null ne
+      } { false } ifelse
+      {
+        dup begin
+        name override def
+        end
+      } if
+
+      dup name 2 copy
+      % dictfortest dictfortest name dictfortest name
+      known {
+        % dictfortest dictfortest name
+
+        2 copy get
+        % (known )=
+
+        % dictfortest dictfortest name val
+
+        //ValidateOneDict style
+        2 copy known not {
+          % Broken work style definition
+          /HqnLayoutInitialize_1 /unregistered 3 -1 roll ExtraError
+        } if
+        get exec
+        pop pop
+        % dictfortest
+      } {
+        % (unknown)=
+        /default where {
+          pop
+          % dictfortest dictfortest name
+          /default load
+          dup xcheck {
+            2 index gcheck {
+              currentglobal true setglobal
+              exch exec
+              exch setglobal
+            } {
+              exec
+            } ifelse
+          } if
+          % dictfortest dictfortest name defaultval
+          put
+          % dictfortest
+        } {
+          % Missing required key
+          /HqnLayoutInitialize_1 /undefined 3 -1 roll ExtraError
+        } ifelse
+      } ifelse
+
+      end             % LocalValidate
+      end             % ValidateRequestDict subdict
+    } forall
+    end
+  } stopped { defaulthandleerror stop } if
+  //LayoutDebug { (ValidateOneDict-\n) ErrPrint } if
+} bind def
+
+% ValidateRequestDict defines all of the active keys to be used from the request dictionary
+% passed to HqnLayoutInitialize_1, along with default values, ranges for
+% numeric values and lists of supported values for enumerations
+% styles:
+%   Enumeration - integer or name taken from a closed list
+%   NumberRange - integer or real in a limited range
+%       Bool - boolean
+%   Database - set other values in request from pre-defined database
+/ValidateRequestDict [
+  <<
+    /name   /Scheme
+    /style  /Name
+    % no default - required field
+  >>
+  <<
+    /name /BindingEdge
+    /style /Enumeration
+    /default /Left
+    /vals << { /Left /Right /TopA /TopB /TopC }{ null } forall >>
+  >>
+  <<
+    /name /SpineFold
+    /style /Enumeration
+    /default /None
+    /override /None
+    /vals << { /None /Auto /Horizontal /Vertical }{ null } forall >>
+  >>
+  <<
+    /name /Geometry
+    /style /Enumeration
+    /default /Head2Head
+    /vals << { /Head2Head /Foot2Foot /Left2Right /Right2Left /Auto }{ null } forall >>
+  >>
+  <<
+    /name   /PlateSize
+    /style  /Database
+    /default (Undefined)
+    /db             /PlateDB
+  >>
+  <<
+    /name   /ImageWidth
+    /style  /NumberRange
+    /default -2
+    /min    -2
+    /max    null
+  >>
+  <<
+    /name   /ImageHeight
+    /style  /NumberRange
+    /default -2
+    /min    -2
+    /max    null
+  >>
+  <<
+    /name   /GutterA
+    /style  /NumberRange
+    /default { Request SpineFold /Horizontal eq { /HorGutter }{ /VertGutter } ifelse 2 copy known { get }{ pop pop 0 } ifelse }
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /MinGutterA
+    /style  /NumberRange
+    /default { Request SpineFold /Horizontal eq { /MinHorGutter }{ /MinVertGutter } ifelse 2 copy known { get }{ pop pop 0 } ifelse }
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /GutterB
+    /style  /NumberRange
+    /default { Request SpineFold /Horizontal eq { /VertGutter }{ /HorGutter } ifelse 2 copy known { get }{ pop pop 0 } ifelse }
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /MinGutterB
+    /style  /NumberRange
+    /default { Request SpineFold /Horizontal eq { /MinVertGutter }{ /MinHorGutter } ifelse 2 copy known { get }{ pop pop 0 } ifelse }
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /PageRotate
+    /style  /Enumeration
+    /default /Rot0
+    /vals   << { /Rot0 /Rot90 /Rot180 /Rot270 /BestFit /Portrait /Landscape }{ dup } forall >>
+    % Ignored if scheme sets /UsePageRotate to false.
+    % Then page orientations are individually set in /PO in the PageArray from the scheme.
+  >>
+  <<
+    /name   /PageFlipTopBottom
+    /style  /Bool
+    /default false
+    % Ignored if scheme sets /UsePageRotate to false.
+  >>
+  <<
+    /name   /NotDivisor
+    /style  /Enumeration
+    /default        /Abort
+    /vals   << {
+      /Abort
+      /InsertAtEnd /InsertBeforeEnd /InsertBeforeCover
+      /SplitBeforeEnd /SplitBeforeCover
+    }{ null } forall >>
+  >>
+  <<
+    /name   /Bleed
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /PagesAcross
+    /style  /IntegerRange
+    /default 1
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /PagesUp
+    /style  /IntegerRange
+    /default 1
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /TurnTopBottom
+    /style  /Bool
+    /default        false
+  >>
+  <<
+    /name   /OverSize
+    /style  /Enumeration
+    /default        /AbortJob
+    /vals   << { /AbortJob /Crop /ScaleToFit /Tile /BottomLeft /BottomCenter /BottomRight /CenterLeft /CropCenter /CenterRight /TopLeft /TopCenter /TopRight }{ null } forall >>
+  >>
+  <<
+    /name   /MinTileOverlapX
+    /style  /NumberRange
+    /default 36
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /MinTileOverlapY
+    /style  /NumberRange
+    /default { MinTileOverlapX }
+    /min    0
+    /max    1000
+  >>
+  <<
+    /name   /FrontVals
+    /style  /Dict
+    /default        << >>
+  >>
+  <<
+    /name   /BackVals
+    /style  /Dict
+    /default        << >>
+  >>
+  <<
+    /name /Creep
+    /style /NumberRange
+    /default 0
+    /min 0
+    /max 1000
+  >>
+  <<
+    /name /CreepStyle
+    /style /Enumeration
+    /default /PushOut
+    /vals << /PushOut dup /PullIn dup /CenterLine dup >>
+  >>
+  <<
+    /name /WorkTurn
+    /style /Enumeration
+    /default /None
+    /vals << { /None /LeftRight /RightLeft }{ null } forall >>
+  >>
+  <<
+    /name   /WTGutter
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { ImageHeight 0 gt { ImageHeight }{ null } ifelse }
+  >>
+  <<
+    /name   /WTMinGutter
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { WTGutter }
+  >>
+  <<
+    /name   /Units
+    /style /Name
+    /default /points
+  >>
+] def
+
+/SchemeMigration 12 dict def
+
+/ValidateSurface [
+  <<
+    /name   /FillOrder
+    /style  /Enumeration
+    /default        /L2RT2B
+    /vals   << { /L2RT2B /L2RB2T /R2LT2B /R2LB2T /T2BL2R /T2BR2L /B2TL2R /B2TR2L }{ null } forall >>
+  >>
+  <<
+    /name   /Left
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { ImageWidth 0 gt { ImageWidth }{ null } ifelse }
+  >>
+  <<
+    /name   /Bottom
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { ImageHeight 0 gt { ImageHeight }{ null } ifelse }
+  >>
+  <<
+    /name   /Right
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { ImageWidth 0 gt { ImageWidth }{ null } ifelse }
+  >>
+  <<
+    /name   /Top
+    /style  /NumberRange
+    /default 0
+    /min    0
+    /max    { ImageHeight 0 gt { ImageHeight }{ null } ifelse }
+  >>
+  <<
+    /name   /HorAlign
+    /style  /Enumeration
+    /vals << { /AlignLeft /AlignCenter /AlignRight }{ null } forall >>
+    /default {
+      DictInValidation /HorCenter known {
+        DictInValidation /HorCenter get { /AlignCenter }{ /AlignLeft } ifelse
+      }       { /AlignLeft } ifelse
+    }
+  >>
+  <<
+    /name   /VertAlign
+    /style  /Enumeration
+    /vals << { /AlignTop /AlignCenter /AlignBottom }{ null } forall >>
+    /default {
+      DictInValidation /VertCenter known {
+        DictInValidation /VertCenter get { /AlignCenter }{ /AlignBottom } ifelse
+      }  { /AlignBottom } ifelse
+    }
+  >>
+  <<
+    /name   /MarginPolicy
+    /style  /Enumeration
+    /default /Clip
+    /vals << { /Abort /Clip /Enlarge }{ null } forall >>
+  >>
+  <<
+    /name   /RegMarks
+    /style  /Enumeration
+    /default /None
+    /vals << { /None /Desired /Required }{ null } forall >>
+  >>
+  <<
+    /name   /Crops
+    /style  /Enumeration
+    /default /None
+    /vals << { /None /Small /Full /PageBoxes }{ null } forall >>
+  >>
+  <<
+    /name   /FoldCut
+    /style  /Bool
+    /default false
+  >>
+  <<
+    /name   /PageBox
+    /style  /Bool
+    /default false
+  >>
+  <<
+    /name   /StripName
+    /style  /String
+    /default (Default)
+  >>
+  <<
+    /name   /StripEdge
+    /style  /Enumeration
+    /default        /None
+    /vals   << { /None /Left /Right /Top /Bottom }{ null } forall >>
+  >>
+  <<
+    /name   /Annotations
+    /style  /Array
+    /default //nullarray
+  >>
+] def
+
+/ValidateAnnot [
+  <<
+    /name   /AnnotName
+    /style  /String
+    /default (Default)
+  >>
+  <<
+    /name   /AnnotEdge
+    /style  /Enumeration
+    /default        /None
+    /vals   << { /None /Left /Right /Top /Bottom }{ null } forall >>
+  >>
+  <<
+    /name   /HeadOut
+    /style  /BoolProc
+    /default        false
+  >>
+] def
+
+/ValidateKeys <<
+  ValidateRequestDict {
+    dup /name get exch
+  } forall
+>> def
+
+
+% A plate database may be defined in (Usr/PlateDB):
+% /PlateDB <<
+%       /12x18 <<
+%               /ImageWidth ...
+%               /ImageHeight ...
+%               % other keys to be merged into Request
+%       >>
+%       /AnotherSize <<
+%               ...
+%       >>
+% >>
+% keys must be names or strings
+(Usr/PlateDB) mark 1 index status {
+  cleartomark mark exch run
+  counttomark 2 ne {
+    /PlateDB errordict /undefinedresult get exec
+  } if    1 index /PlateDB ne
+  1 index type /dicttype ne
+  or {
+    /PlateDB errordict /undefinedresult get exec
+  } if
+  dup {
+    1 index type dup /nametype ne exch /stringtype ne {
+      /PlateDB /typecheck 3 index ExtraError
+    } if
+    {
+      pop //ValidateKeys exch 2 copy known not {
+        % No UVS - this is an OEM developer warning
+        (%%[ Warning: HqnLayout: Unknown key in plate database: ) ErrPrint
+          ErrPrint ( in ) ErrPrint dup ErrPrint ( ]%%\n) ErrPrint
+        } if
+      } forall
+      pop
+    } forall
+    def
+  } {
+    pop pop
+    /PlateDB nulldict def
+} ifelse
+
+% default values:
+/SurfaceCount { PaddedPages } bind def
+
+/UsingTableBasedLayout false def
+
+currentglobal true setglobal
+
+/TopCSequence <<
+  4 [
+      {       % Back right
+        PaddedPages 2 idiv
+        Surface Sides idiv sub
+        1 sub
+      } bind
+      {       % Front Left
+        PaddedPages 2 idiv
+        Surface Sides idiv add
+      } bind
+      {       % Front right
+        Surface Sides idiv
+      } bind
+      {       % Back left
+        PaddedPages
+        Surface Sides idiv sub
+        1 sub
+      } bind
+    ]
+  8 [
+      {       % -4
+        PaddedPages 2 idiv
+        Surface WorkTurn /None ne { 2 mul } if
+        add
+      } bind
+      {
+        PaddedPages 2 idiv
+        Surface WorkTurn /None ne { 2 mul add 1 } if
+        add
+      } bind
+      {       % -2
+        PaddedPages
+        Surface WorkTurn /None ne { 2 mul } if
+        sub 2 sub
+      } bind
+      {       % -1
+        PaddedPages
+        Surface WorkTurn /None ne { 2 mul sub 1 } if
+        sub
+      } bind
+      {       % 0
+        Surface
+        WorkTurn /None ne { 2 mul } if
+      } bind
+      {       % 1
+        Surface
+        WorkTurn /None ne { 2 mul 1 add } if
+      } bind
+      {
+        PaddedPages 2 idiv
+        Surface WorkTurn /None ne { 2 mul } if
+        sub 2 sub
+      } bind
+      {       % 3
+        PaddedPages 2 idiv
+        Surface WorkTurn /None ne { 2 mul sub 1 } if
+        sub
+      } bind
+    ]
+>> def
+
+/TableBasedPageSequences <<
+  /FlatWork {
+    PagesPerSurface Sides mul
+    Surface Sides idiv mul
+    PN add
+  } bind
+  /StepRepeat {
+    WorkTurn /None ne { 2 } { Sides } ifelse
+    Surface Sides idiv mul
+    PN add
+  } bind
+  /CutStack {
+    WorkTurn /None ne {
+      PN 2 idiv SurfaceCount mul 2 mul
+      Surface 2 mul add
+      PN 2 mod add
+    }  {
+      PN Sides idiv SurfaceCount mul
+      Surface add
+    } ifelse
+  } bind
+  /JobSaddle {
+    PN 0 ge {
+      PagesPerSurface Sides mul 2 idiv        % 1/2 pages per sheet
+      Surface Sides idiv                                      % sheet no
+      mul
+      PN add
+    }  {
+      PaddedPages
+      Surface Sides idiv              % sheet no
+      PagesPerSurface Sides mul % pages per sheet
+      mul                                             % pages in previous sheets
+      2 idiv sub
+      PN add
+    } ifelse
+  } bind
+  /Signature {
+    PagesPerSignature
+    Surface Sides idiv
+    mul
+    PN add  % multi-sheet sigs ############################
+  } bind
+  /TopC {
+    % Hard-wired mappings from PN to
+    % page ordinals.
+    //TopCSequence PagesPerSignature 2 copy known not {
+      pop 4
+      /PagesPerSignature 4 store
+    } if
+    get PN PagesPerSignature 2 idiv add get exec
+  } bind
+>> def
+
+/TableBasedPageSequence {
+  {
+    //LayoutDebug { (TableBasedPageSequence+\n) ErrPrint } if
+
+    UsingTableBasedLayout not {
+      /TableBasedPageSequence errordict /undefinedresult get exec
+    } if
+    [
+      PagesArray Surface Sides mod get
+      {
+        % row
+        {
+          % individual page dictionary
+          begin
+          //TableBasedPageSequences PageFlow get exec
+          end
+        } forall
+      } forall
+    ]
+
+    //LayoutDebug {
+      (PAGESEQUENCE: )print dup ==
+      (TableBasedPageSequence-\n) ErrPrint
+    } if
+  } stopped { defaulthandleerror serverdict /terminatejobnow get exec } if
+} bind def
+
+/RegMargins << { /Left /Right /Top /Bottom }{ false } forall >> def
+
+/LayoutCropMarkSetup <<
+  /Horizontal [
+    {
+      0 ListCreep 1 get
+      ListCoords 1 get 2 mod 0 eq {
+        neg
+      } {
+        MaxHCreep add neg
+      } ifelse
+% (H0: )print dup ==
+      translate
+      /Ht Ht MaxHCreep add store
+    } bind
+    {
+      ListCreep 1 get
+      ListCoords 1 get 2 mod 0 eq {
+        neg
+      } {
+        MaxHCreep add neg
+      } ifelse
+% (H1: )print dup ==
+      0 translate
+      /Wid Wid MaxHCreep add store
+    } bind
+    {
+      0 ListCreep 1 get
+      ListCoords 1 get 2 mod 0 eq {
+        MaxHCreep sub
+      } {
+        % Do nothing here
+      } ifelse
+% (H2: )print dup ==
+      translate
+      /Ht Ht MaxHCreep add store
+    } bind
+    {
+      ListCreep 1 get
+      ListCoords 1 get 2 mod 0 eq {
+        MaxHCreep sub
+      } {
+        % Do nothing here
+      } ifelse
+% (H3: )print dup ==
+      0 translate
+      /Wid Wid MaxHCreep add store
+    } bind
+  ]
+  /Vertical [
+    {
+      ListCreep 0 get
+      ListCoords 0 get 2 mod 0 eq {
+        neg
+      } {
+        MaxVCreep add neg
+      } ifelse
+% (V0: )print dup ==
+      0 translate
+      /Wid Wid MaxVCreep add store
+    } bind
+    {
+      0 ListCreep 0 get
+      ListCoords 0 get 2 mod 0 eq {
+        MaxVCreep sub
+      } {
+        % Do nothing here
+      } ifelse
+% (V1: )print dup ==
+      translate
+      /Ht Ht MaxVCreep add store
+    } bind
+    {
+      ListCreep 0 get
+      ListCoords 0 get 2 mod 0 eq {
+        MaxVCreep sub
+      } {
+        % do nothing here
+      } ifelse
+% (V2: )print dup ==
+      0 translate
+      /Wid Wid MaxVCreep add store
+    } bind
+    {
+      0 ListCreep 0 get
+      ListCoords 0 get 2 mod 0 eq {
+        neg
+      } {
+        MaxVCreep add neg
+      } ifelse
+% (V3: )print dup ==
+      translate
+      /Ht Ht MaxVCreep add store
+    } bind
+  ]
+  /None [ {} {} {} {} ]
+>> def
+
+/LayoutCropMarkSetup {
+  {
+    //LayoutDebug { (LayoutCropMarkSetup+\n) ErrPrint } if
+    statusdict /HqnLayoutDict get begin
+
+    PageList PageCount get begin
+
+% (>>>>>>>>>>>>>>>>>>>>>>  )print ListCoords == dup ==
+% { /Ht /Wid }{ dup =print (  )print load == } forall
+% SpineFold /Vertical eq { MaxVCreep }{ 0 } ifelse =print (  )print SpineFold /Horizontal eq { MaxHCreep }{ 0 } ifelse ==
+% ListPosition ==
+    //LayoutCropMarkSetup SpineFold get
+    ListRotation 90 div round cvi get exec
+
+    end             % PageList dict
+% { /Ht /Wid }{ dup =print (  )print load == } forall
+
+% gsave initclip 5 setlinewidth 1 0 0 setrgbcolor 0 0 Wid Ht rectstroke grestore
+
+    end             % Layout
+    //LayoutDebug { (LayoutCropMarkSetup-\n) ErrPrint } if
+  } stopped { defaulthandleerror stop } if
+} bind def
+
+setglobal
+
+% Load and validate Imposition Schemes from individual disk files
+/ValidateSchemes [
+  <<
+    /name   /Name
+    /style  /String
+    % No default - required field
+  >>
+  <<
+    /name   /UserName
+    /style  /String
+    /default { Name //buffer cvs dup length string copy }
+  >>
+  <<
+    /name   /SchemeVersion
+    /style  /String
+    /default        ()
+  >>
+  <<
+    /name   /Sides
+    /style  /Enumeration
+    /default        1
+    /vals << 1 1 2 2 >>
+  >>
+  <<
+    /name   /CheckDivisor
+    /style  /Enumeration
+    /default 1
+    /vals   << { 0 1 2 4 }{ dup } forall >>
+  >>
+  <<
+    /name   /EarlyImposeDesign
+    /style  /BoolProc
+    /default false
+  >>
+  <<
+    /name   /LocalValidate
+    /style  /Dict
+    /default //nulldict
+  >>
+  <<
+    /name   /LocalValues
+    /style  /Array
+    /default //nullarray
+  >>
+  <<
+    /name   /SetOnce
+    /style  /BoolProc
+    /default false
+  >>
+  <<
+    /name   /FixedPageCount
+    /style /BoolProc
+    /default false
+  >>
+  <<
+    /name   /CreepPerSheet
+    /style /IntegerRange
+    /default 1
+    /min 1
+    /max 2
+  >>
+  <<
+    /name   /StepRepeat
+    /style  /BoolProc
+    /default false
+  >>
+  <<
+    /name   /Initialize
+    /style  /Proc
+    /default null
+  >>
+  <<
+    /name   /TableInitialize
+    /style  /Proc
+    /default null
+  >>
+  <<
+    /name   /SetLayout
+    /style  /Proc
+    currentglobal true setglobal
+    /default { {
+      % should never happen - broken scheme
+      /HqnLayout /undefinedresult
+      (Missing SetLayout procedure) ExtraError
+    }} bind
+    3 -1 roll setglobal
+  >>
+  <<
+    /name   /GetAutoSpine
+    /style  /Proc
+    /default null
+  >>
+  <<
+    /name   /GetPageArray
+    /style  /Proc
+    /default null
+  >>
+  <<
+    /name   /PageSequence
+    /style  /Proc
+    /default        { //TableBasedPageSequence }
+  >>
+  <<
+    /name   /SurfaceCount
+    /style  /Proc
+    currentglobal true setglobal
+    /default { {
+      PaddedPages
+      PageCountUp 0 gt PageCountAcross 0 gt and {
+        PageCountUp PageCountAcross mul
+        dup 1 sub 3 -1 roll add exch
+        idiv
+      } if
+    } } bind
+    3 -1 roll setglobal
+  >>
+  <<
+    /name   /FoldMarks
+    /style  /Array
+    /default currentglobal true setglobal [ false false ] exch setglobal
+  >>
+  <<
+    /name   /CutMarks
+    /style  /Array
+    /default currentglobal true setglobal [ false false ] exch setglobal
+  >>
+  <<
+    /name   /UsePageRotate
+    /style  /Bool
+    /default        true
+  >>
+] def
+
+/ValidateStdInit [
+  <<
+    /name   /PageCountAcross
+    /style  /NumberRange
+    /default 1
+    /min    1
+    /max    9999
+  >>
+  <<
+    /name   /PageCountUp
+    /style  /NumberRange
+    /default 1
+    /min    1
+    /max    9999
+  >>
+  <<
+    /name   /PageFlow
+    /style  /Enumeration
+    /default /FlatWork
+    /vals //TableBasedPageSequences % Usable values are defined there as dictionary keys already
+  >>
+] def
+
+% Default values, will be overriden using TableBasedInit
+/PageCountAcross 0 def
+/PageCountUp 0 def
+
+/ValidateStdLayout [
+  <<
+    /name   /PN             % page number
+    /style  /NumberRange
+    /default 0
+    /min    { Active begin PageCountAcross PageCountUp mul Sides mul 1 sub end neg } bind
+    /max    { Active begin PageCountAcross PageCountUp mul Sides mul 1 sub end } bind
+  >>
+  <<
+    /name   /PO             % Page orientation
+    /style  /Enumeration
+    /default 0
+    /vals << 0 0 90 90 180 180 270 270 >>
+  >>
+  <<
+    /name   /PF             % Front of sheet. Not set in schemes, but added in this procset
+    /style  /Bool
+    /default true
+  >>
+  <<
+    /name   /CX             % Creep X (within sheet)
+    /style  /IntegerRange
+    /default 0
+    /min    -99
+    /max    99
+  >>
+  <<
+    /name   /CY             % Creep Y (within sheet)
+    /style  /IntegerRange
+    /default 0
+    /min    -99
+    /max    99
+  >>
+  <<
+    /name   /SCX            % Creep X (from other sheets)
+    /style  /IntegerRange
+    /default 0
+    /min    -99
+    /max    99
+  >>
+  <<
+    /name   /SCY            % Creep Y (from other sheets)
+    /style  /IntegerRange
+    /default 0
+    /min    -99
+    /max    99
+  >>
+] def
+
+/ImpositionSchemes 12 dict def
+
+currentglobal true setglobal
+
+/AnnotCache 6 dict def
+
+/gdict 0 dict def
+
+setglobal
+
+
+{ /concattomark /recombinestatus /fileseekable /getPDFcontext }{
+  1183615869 internaldict 1 index get def
+} forall
+
+/HqnPDFContextManager /ProcSet findresource { def } forall
+
+/HqnPDFPages /ProcSet findresource {
+  /getboundingboxes /getpagecount /rangeboundingbox
+} { 2 copy get def } forall pop
+
+/HqnMedia /ProcSet resourcestatus {
+  pop pop
+  /GetMedia /HqnMedia /ProcSet findresource /GetMedia get def
+} {
+  /GetMedia   <<
+    /MediaUserName null
+    /MediaSelected null
+    /TopMargin 0
+    /RightMargin 0
+    /BottomMargin 0
+    /LeftMargin 0
+    /DeviceType /deviceTypeUnlimited
+    /MediaHeight 0
+    /MediaWidth 0
+  >> def
+} ifelse
+
+/HqnColorBar /ProcSet resourcestatus {
+  pop pop
+  /HqnColorBar /ProcSet findresource {
+    /ColorBarStart /ColorBarImposeExtras /AddControlBar
+    /ClearControlBars /InstallSpotTracker /InstallBPE
+  } { 2 copy get def } forall pop
+} {
+  /ColorBarStart { } bind def
+  /ColorBarImposeExtras  { } bind def
+  /AddControlBar  { } bind def
+  /ClearControlBars  { } bind def
+  /InstallSpotTracker  { } bind def
+  /InstallBPE  { } bind def
+} ifelse
+
+/HqnControl /ProcSet findresource {
+  /ExecFile /CheckType /InstallSubmissionProc /ClearExecFileStop /SetExecFileStop
+  /DidExecFileStop /LoadingSetup /SetLoadSetupTrailer /CurrentExecChannel
+} { 2 copy get def } forall pop
+
+/SafeLoadFile {
+  % filename
+  currentglobal true setglobal
+  /mymark mark 3 index { run } stopped {
+    {
+      cleartomark
+      dup /mymark eq { exit } if
+    } loop
+    mark 3 index
+    1183615869 internaldict /_hqxrun get stopped {
+      {
+        cleartomark
+        dup /mymark eq { exit } if
+      } loop
+      pop
+      % UVM (%%%%[ Error: HqnLayout: Selected file could not be loaded: "%s" ]%%%%\n)
+      (%%[ Error: HqnLayout: Selected file could not be loaded: ") ErrPrint
+      ErrPrint (" ]%%\n) ErrPrint
+      stop
+    } if
+  } if
+  % filename glob /mymark mark dict
+  counttomark 1 ne {
+    {
+      cleartomark
+      dup /mymark eq { exit } if
+    } loop
+    pop
+    % UVM (%%%%[ Error: HqnLayout: Selected file left unexpected objects on stack: "%s" ]%%%%\n)
+    (%%[ Error: HqnLayout: Selected file left unexpected objects on stack: ") ErrPrint
+    ErrPrint (" ]%%\n) ErrPrint
+    /HqnLayout errordict /undefinedresult get exec
+  } if
+
+  % filename glob /mymark mark dict
+  5 1 roll
+  pop pop         % mark /mymark
+  setglobal
+  pop                     % filename
+} bind def
+
+/CoreLoadFile {
+  /HqnLayout /CoreLoadFile //StartStackCheck exec
+  % valarray cachedict name filename
+  //SafeLoadFile exec
+
+  % valarray cachedict name dict
+  4 -1 roll ValidateOneDict
+
+  % cachedict name dict
+
+  1 index null eq {
+    exch pop
+    dup /Name get
+    exch
+  } if
+
+  dup 4 1 roll
+  put
+  /CoreLoadFile /End 0 0 -3 //StackCheck3 exec
+} bind def
+
+/LoadFile {
+  /HqnLayout /LoadFile //StartStackCheck exec
+  % valarray dirpath cachedict name
+  //LayoutDebug { (LoadFile+: )ErrPrint dup ErrPrint (\n) ErrPrint } if
+
+  2 copy known {
+    get
+    3 1 roll pop pop
+  }       {
+    % valarray dirpath cachedict name
+    //buffer mark 2 index 6 -1 roll concattomark
+    mark 1 index status not {
+      % UVM (%%%%[ Error: HqnLayout: Selected file not found: "%s" ]%%%%\n)
+      (%%[ Error: HqnLayout: Selected file not found: ") ErrPrint
+      pop ErrPrint (" ]%%\n) ErrPrint
+      /HqnLayout errordict /undefinedfilename get exec
+    } if
+    cleartomark
+
+    % valarray cachedict name filename
+    //CoreLoadFile exec
+  } ifelse
+  /LoadFile /End 0 0 -3 //StackCheck3 exec
+  //LayoutDebug { (LoadFile-\n) ErrPrint } if
+} bind def
+
+/SideNo << /Left 0 /Top 1 /Right 2 /Bottom 3 >> def
+
+/AnnotAlloc 4 array def
+
+/DoBaseAngle {
+  BaseAngle add
+  dup 360 ge { 360 sub }{ dup 0 lt { 360 add }if } ifelse
+} bind def
+
+/MarkOrientation <<
+  % stack: "Pre-allocation on this side", "horizontal shift"
+
+  /Left {
+    HeadOut {
+      /Y BaseX AnnotAlloc 3 get add 3 -1 roll add def
+      /X exch BaseY sub AnnotSpace add def
+      /Angle 90 //DoBaseAngle exec def
+    } {
+      /Y BaseX neg AnnotAlloc 1 get sub 3 -1 roll sub
+      dup 0 eq { pop -0.1 } if
+      def
+      /X exch BaseY add def
+      /Angle -90 //DoBaseAngle exec def
+    } ifelse
+  } bind
+  /Right {
+    HeadOut {
+      /Y BaseX neg AnnotAlloc 1 get sub 3 -1 roll sub
+      dup 0 eq { pop -0.1 } if
+      def
+      /X exch BaseY sub AnnotSpace add neg
+      dup 0 eq { pop -0.1 } if
+      def
+      /Angle -90 //DoBaseAngle exec def
+    } {
+      /Y BaseX AnnotAlloc 3 get add 3 -1 roll add def
+      /X exch BaseY add neg
+      dup 0 eq { pop -0.1 } if
+      def
+      /Angle 90 //DoBaseAngle exec def
+    } ifelse
+  } bind
+  /Top {
+    HeadOut {
+      /Y 3 -1 roll BaseY sub AnnotSpace add neg
+      dup 0 eq { pop -0.1 } if
+      def
+      /X BaseX AnnotAlloc 1 get add 3 -1 roll add def
+      /Angle 0 //DoBaseAngle exec def
+    } {
+      /Y 3 -1 roll BaseY add neg
+      dup 0 eq { pop -0.1 } if
+      def
+      /X BaseX neg AnnotAlloc 2 get sub 3 -1 roll sub
+      dup 0 eq { pop -0.1 } if
+      def
+      /Angle 180 //DoBaseAngle exec def
+    } ifelse
+  } bind
+  /Bottom {
+    HeadOut {
+      /Y 3 -1 roll BaseY sub AnnotSpace add def
+      /X BaseX neg AnnotAlloc 2 get sub 3 -1 roll sub
+      dup 0 eq { pop -0.1 } if
+      def
+      /Angle 180 //DoBaseAngle exec def
+    } {
+      /Y 3 -1 roll BaseY add def
+      /X BaseX AnnotAlloc 0 get add 3 -1 roll add def
+      /Angle 0 //DoBaseAngle exec def
+    } ifelse
+  } bind
+
+>> def
+
+/MarkWidOrientation <<
+  % Pre-allocation on this side on top of stack
+
+  /Left {
+    HqnImpose2GlobalDict /FilmHeight get AnnotAlloc 1 get sub AnnotAlloc 3 get sub
+  } bind
+  /Right 1 index
+  /Top {
+    HqnImpose2GlobalDict /FilmWidth get AnnotAlloc 0 get sub AnnotAlloc 2 get sub
+  } bind
+  /Bottom 1 index
+
+>> def
+
+/AnnotValidate [
+  <<
+    /name   /Name
+    /style  /String
+    % No default - required field
+  >>
+  <<
+    /name   /AnnotType
+    /style  /Enumeration
+    /vals   << { /Mark /MultiMark /ControlBar /Spacer }{ null } forall>>
+    % no default - required field
+  >>
+  <<
+    /name   /AnnotSpace
+    /style  /NumberRange
+    /default { AnnotType dup /Mark eq exch /Spacer eq or { 12 }{ 0 } ifelse }
+    /min    0
+    /max    72000
+  >>
+  <<
+    /name   /Mark
+    /style  /Dict
+    /default {
+      AnnotType /Mark eq {
+        % UVM (%%%%[ Error: HqnLayout: Mark annotation "%s" missing Mark element ]%%%%\n)
+        (%%[ Error: HqnLayout: Mark annotation ") ErrPrint
+        Name ErrPrint (" missing Mark element ]%%\n) ErrPrint
+        /HqnLayout errordict /undefined get exec
+      } if
+      //gdict
+    }
+  >>
+  <<
+    /name   /MarkList
+    /style  /Array
+    /default {
+      AnnotType /MarkList eq {
+        % UVM (%%%%[ Error: HqnLayout: MultiMark annotation "%s" missing MarkList element ]%%%%\n)
+        (%%[ Error: HqnLayout: MultiMark annotation ") ErrPrint
+        Name ErrPrint (" missing MarkList element ]%%\n) ErrPrint
+        /HqnLayout errordict /undefined get exec
+      } if
+      null
+    }
+  >>
+  <<
+    /name   /BarName
+    /style  /Name
+    /default {
+      AnnotType /ControlBar eq {
+        % UVM (%%%%[ Error: HqnLayout: ControlBar annotation "%s" missing BarName element ]%%%%\n)
+        (%%[ Error: HqnLayout: ControlBar annotation ") ErrPrint
+        Name ErrPrint (" missing BarName element ]%%\n) ErrPrint
+        /HqnLayout errordict /undefined get exec
+      } if
+      /Ignore
+    }
+  >>
+
+] def
+
+/PlateMarks 6 dict def
+/DeferredMarks 3 dict def
+
+/EdgeTrans << /Left /FilmLeft /Right /FilmRight /Top /FilmTop /Bottom /FilmBottom >> def
+/EdgeAxis << /Left 0 /Right 0 /Top 1 /Bottom 1 >> def
+
+/PlaceSingleMark {
+  % stack: "reset wid" "Pre-allocation on this side", "horizontal shift" "mark dict"
+  % Need to take a copy so that it can be placed multiple times if necessary
+  currentglobal true setglobal exch
+% (PLACE)= currentdict { exch =print (  )print == } forall (*************)=
+  dup length 4 add dict copy begin
+  setglobal
+  //MarkOrientation AnnotEdge get exec
+  { /MarkWidth //MarkWidOrientation AnnotEdge get exec def } if
+  /MarkAnnot true def
+% { X Y Angle AnnotEdge MarkWidth MarkHeight }{ dup =print (   )print load == } forall (____)=
+  currentdict end % Mark copy
+  PlateMarks dup length 3 -1 roll put
+} bind def
+
+/DoAnnotTypes <<
+
+  /Mark {
+    Mark begin
+    currentdict /MarkWidth known
+    currentdict /Repeat known { Repeat }{ false } ifelse
+    and {
+      pop     % prealloc
+      % We may want multiple copies, and we can't figure out the MarkWidth yet anyway.
+      % Store away for handling in FilmOverlay
+      end             % Mark
+      currentglobal true setglobal
+      Mark dup length 1 add dict copy begin
+
+      % Take local copies to carry with this copy of the mark
+      /AnnotAlloc AnnotAlloc 4 array copy def
+      /AnnotEdge AnnotEdge def
+      setglobal
+      /Mark currentdict def
+      currentdict end
+      //DeferredMarks dup length 3 -1 roll put
+    } {
+      end             % Mark
+      false exch 0 Mark //PlaceSingleMark exec
+    } ifelse
+    AnnotSpace
+  } bind
+
+  /MultiMark {
+    MarkList {
+      % reset markdict
+      false 2 index 0 4 -1 roll //PlaceSingleMark exec
+    } forall
+    pop
+    AnnotSpace
+  } bind
+
+  /ControlBar {
+    % pre-alloc on stack now
+    HeadOut exch
+    //AnnotAlloc //SideNo AnnotEdge get 1 add 4 mod get % pre-alloc on start
+    //AnnotAlloc //SideNo AnnotEdge get 1 sub 4 add 4 mod get % pre-alloc on end
+    //EdgeTrans AnnotEdge get                                                       % edge to use
+    BarName                                                                                         % Which bar
+    AddControlBar
+    /ControlDepth get
+  } bind
+
+  /Spacer {
+    pop
+    AnnotSpace
+  } bind
+
+>> def
+
+/PrintUnits <<
+  /points [ 1 (pt) ]
+  /inches [ 72 (in) ]
+  /feet [ 864 (ft) ]
+  /millimeters [ 2.8346 (mm) ]
+  /centimeters [ 28.346 (cm) ]
+  /meters [ 2834.6 (m) ]
+>> def
+/PrintUnits {
+  //PrintUnits Units 2 copy known not { pop /points } if
+  get aload pop
+  3 1 roll div 1000 mul round 1000 div
+  ErrPrint
+  ( )ErrPrint
+  ErrPrint
+} bind def
+
+/MarginReports <<
+  /Abort (aborting job)
+  /Clip (clipping will occur)
+  /Enlarge (margin will be enlarged)
+>> def
+/MarginReports2 MarginReports 3 dict copy dup /Clip (clipping/overlaps will occur) put def
+/CheckMargins 3 dict def
+/CheckMargins {
+  /HqnLayout /CheckMargins //StartStackCheck exec
+  //CheckMargins begin
+  /edge 1 index def
+  /margin //EdgeTrans 2 index get load def
+  /alloc //AnnotAlloc //SideNo 4 -1 roll get get def
+
+  margin alloc sub
+  RegSize gt {
+    //RegMargins edge true put
+  } if
+
+  margin alloc
+  CropMarks {
+    sub CropSpace lt {
+      % UVM (%%%%[ Error: HqnLayout: %(Left%|Right%|Top%|Bottom%) margin (%d %t) too small for selected annotations and crop marks and/or bleed (%d %t); %(aborting job%|clipping/overlaps will occur%|margin will be enlarged%) ]%%%%\n)
+      % UVM (%%%%[ Warning: HqnLayout: %(Left%|Right%|Top%|Bottom%) margin (%d %t) too small for selected annotations and crop marks and/or bleed (%d %t); %(aborting job%|clipping/overlaps will occur%|margin will be enlarged%) ]%%%%\n)
+      MarginPolicy /Abort eq { (%%[ Error) }{ (%%[ Warning) } ifelse ErrPrint
+      (: HqnLayout: ) ErrPrint
+      edge ErrPrint
+      ( margin \() ErrPrint
+      margin //PrintUnits exec
+      (\) too small for selected annotations and crop marks and/or bleed \() ErrPrint
+      CropSpace alloc add //PrintUnits exec
+      (\); ) ErrPrint
+      //MarginReports2 MarginPolicy get ErrPrint
+      ( ]%%\n) ErrPrint
+
+      MarginPolicy /Abort eq {
+        /MarginAbort true store
+      } {
+        MarginPolicy /Enlarge eq {
+          edge alloc CropSpace add store
+          //EdgeTrans edge get edge load store
+        } if
+      } ifelse
+    } if
+  } {
+    2 copy lt {
+      % margin alloc
+      % UVM (%%%%[ Error: HqnLayout: %(Left%|Right%|Top%|Bottom%) margin (%d %t) too small for selected annotations (%d %t); %(aborting job%|clipping will occur%|margin will be enlarged%) Tiling
+      % UVM (%%%%[ Warning: HqnLayout: %(Left%|Right%|Top%|Bottom%) margin (%d %t) too small for selected annotations (%d %t); %(aborting job%|clipping will occur%|margin will be enlarged%) Tiling
+      MarginPolicy /Abort eq { (%%[ Error) }{ (%%[ Warning) } ifelse ErrPrint
+      (: HqnLayout: ) ErrPrint
+      edge ErrPrint
+      ( margin \() ErrPrint
+      exch //PrintUnits exec
+      (\) too small for selected annotations \() ErrPrint
+      //PrintUnits exec
+      (\); ) ErrPrint
+      //MarginReports MarginPolicy get ErrPrint
+      ( ]%%\n) ErrPrint
+      MarginPolicy /Abort eq {
+        /MarginAbort true store
+      } {
+        MarginPolicy /Enlarge eq {
+          edge alloc store
+          //EdgeTrans edge get alloc store
+        } if
+      } ifelse
+    } {
+      pop pop
+    } ifelse
+  } ifelse
+  end
+  /CheckMargins /End 0 0 -1 //StackCheck3 exec
+} bind def
+
+/LoadAnnots (Usr/HqnLayout/Annots/) def
+/LoadAnnots {
+  {
+    /HqnLayout /LoadAnnots //StartStackCheck exec
+    //PlateMarks { pop //PlateMarks exch undef } forall
+    //DeferredMarks { pop //DeferredMarks exch undef } forall
+    0 1 3 { //AnnotAlloc exch 0 put } for
+
+    Annotations {
+      begin HeadOut AnnotName AnnotEdge end
+      dup /None ne {
+        { /AnnotEdge /AnnotName /HeadOut }{ exch def } forall
+
+        //LayoutDebug { (LoadAnnot+\n) ErrPrint } if
+
+        % Load annot from disk/VM and position.
+        % AnnotEdge and AnnotName are defined
+        % valdict dirpath cachedict name
+        //AnnotValidate //LoadAnnots AnnotCache AnnotName //LoadFile exec
+
+        begin
+
+        //AnnotAlloc //SideNo AnnotEdge get get
+        % prealloc
+
+        //DoAnnotTypes AnnotType get exec
+        //AnnotAlloc //SideNo AnnotEdge get
+        % thisspace //AA side
+        2 copy get
+        % thisspace //AA side prealloc
+        4 -1 roll add put
+
+        end     % annotation
+
+        //LayoutDebug { (LoadAnnot-\n) ErrPrint } if
+      } { pop pop pop } ifelse
+    } forall
+
+    currentglobal true setglobal
+    /Marks [ 0 1 //PlateMarks length 1 sub { //PlateMarks exch get } for ] def
+    setglobal
+
+    % Make sure that the pages won't overlap the annotations
+    /MarginAbort false def
+    //RegMargins begin { /Left /Right /Top /Bottom }{ false def } forall end
+    { /Left /Right /Top /Bottom }{ //CheckMargins exec } forall
+    MarginAbort {
+      //abortjobnow exec
+    } if
+
+    RegMarks /None ne ImageWidth -1 eq and {
+      false //RegMargins { exch pop or } forall
+      not {
+        % Enlarge margins for reg marks on left & right
+        { /Left /FilmLeft /Right /FilmRight }{
+          dup load /RegSize load add store
+        } forall
+        //RegMargins /Left true put
+        //RegMargins /Right true put
+      } if
+    } if
+    /LoadAnnots /End //StackCheck0 exec
+  } stopped { defaulthandleerror serverdict /terminatejobnow get exec } if
+} bind def
+
+/BootLoadFiles {
+  % valdict cachedict dirpath
+  {
+    dup length string copy
+    % valdict cachedict filename
+    3 copy null exch
+    % valdict cachedict filename valdict cachedict null filename
+    //CoreLoadFile exec
+    % valdict cachedict filename dict
+    pop pop
+  } //buffer filenameforall
+  pop pop % cachedict valdict
+} bind def
+
+% Load all at boot time, or just the required one if save level 2 or higher
+vmstatus pop pop 0 eq {
+  //ValidateSchemes //ImpositionSchemes (Usr/HqnLayout/Schemes/*) //BootLoadFiles exec
+  //ImpositionSchemes length 0 eq {
+    UVS (%%[ Error: HqnLayout: No imposition schemes installed in RIP ]%%\n) ErrPrint
+    stop
+  } if
+  //AnnotValidate AnnotCache (Usr/HqnLayout/Annots/*) //BootLoadFiles exec
+  /HqnColorBar /ProcSet resourcestatus {
+    pop pop
+    /HqnColorBar /ProcSet findresource /PreLoad get exec
+  } if
+} if
+
+% This one needs loading as the procset is loaded, even if that's not at VM 0
+(Usr/HqnLayout/Backward/*) {
+  dup
+  //SafeLoadFile exec
+  //SchemeMigration begin {
+    dup type /arraytype ne
+    1 index xcheck not or {
+      % filename key proc
+      % UVM (%%%%[ Error: HqnLayout: Backward compatibility file is invalid: "%s" ]%%%%\n)
+      (%%[ Error: HqnLayout: Backward compatibility file is invalid: ") ErrPrint
+      2 index ErrPrint (" ]%%\n) ErrPrint
+      /HqnLayout errordict /undefinedresult get exec
+    } if
+    def
+  } forall end
+  pop     % filename
+} //buffer filenameforall
+
+currentglobal true setglobal
+
+/TextEncodings <<
+  1       /ISOLatin1Encoding
+  2       /WinAnsiEncoding
+  3       /MacRomanEncoding
+  9       /WinAnsiEncoding                % used for job name
+>> def
+
+/ShowIfNotPad { 1183615869 internaldict /fileType get /Pad ne } bind def
+
+setglobal
+
+/SetCrops <<
+  /None {
+    /CropMarks false def
+  } bind
+  /Small {
+    /CropMarks                      true def
+    /ShowCropMarks          //ShowIfNotPad def
+    /ShowRegisterMarks      false def
+    /ShowProgressives       false def
+    /ShowSepNames           false def
+    /ShowWedges                     false def
+    /ShowJobName            false def
+    /CropSpace                      12 def
+  } bind
+  /Full {
+    /CropMarks                      true def
+    /ShowCropMarks          //ShowIfNotPad def
+    /ShowRegisterMarks      //ShowIfNotPad def
+    /ShowProgressives       //ShowIfNotPad def
+    /ShowSepNames           //ShowIfNotPad def
+    /ShowWedges                     //ShowIfNotPad def
+    /ShowJobName            //ShowIfNotPad def
+    /CropSpace                      30 def
+  } bind
+  /PageBoxes {
+    /CropMarks                      true def
+    /ShowRegisterMarks      false def
+    /ShowProgressives       false def
+    /ShowSepNames           false def
+    /ShowWedges                     false def
+    /ShowJobName            false def
+    /CropSpace                      12 def
+    ActiveFileType /PDF eq {
+      /PDFBoxes                       /Crops def
+      /ShowCropMarks          false def
+    } {
+      /ShowCropMarks          //ShowIfNotPad def
+    } ifelse
+  } bind
+>> def
+
+/PageSpin [
+  {       % 0
+    FilmUpPerPage add exch
+    FilmAcrossPerPage add exch
+  }
+  {       % 90
+    FilmUpPerPage add exch
+    FilmAcrossPerPage sub exch
+  }
+  {       % 180
+    FilmUpPerPage sub exch
+    FilmAcrossPerPage sub exch
+  }
+  {       % 270
+    FilmUpPerPage sub exch
+    FilmAcrossPerPage add exch
+  }
+] def
+
+/BaseOrigin [
+  {       % 0
+    newX
+    newY
+  }
+  {       % 90
+    newX FilmAcrossPerPage sub
+    newY
+  }
+  {       % 180
+    newX FilmAcrossPerPage sub
+    newY FilmUpPerPage sub
+  }
+  {       % 270
+    newX
+    newY FilmUpPerPage sub
+  }
+] def
+
+/UnfixedLayoutD 8 dict def
+UnfixedLayoutD begin
+  /newX 0 def
+  /newY 0 def
+end
+
+/TableBasedCreep <<
+
+  /Signature { 0 0 }      % no creep from previous signatures
+  /FlatWork 1 index
+  /StepRepeat 1 index
+  /CutStack 1 index
+
+  /JobSaddle {
+    Surface Sides idiv
+    PagesPerSurface 2 idiv mul
+    GutterCreep mul 2 div
+    WorkTurn /None ne { 2 div } if
+    0
+    SpineFold /Horizontal eq { exch } if
+  } bind
+
+  /TopC 1 index
+
+>> def
+
+/LayoutPrefixes <<
+
+  /LayoutPrefix {
+    //LayoutDebug { (LayoutPrefix+\n) //ErrPrint exec } if
+    //Layout begin
+
+    end             % Layout
+    //LayoutDebug { (LayoutPrefix-\n) //ErrPrint exec } if
+  } bind
+
+>> def
+
+/TempGutters 3 dict def
+
+/PagePosition <<
+  % llx lly wid ht -> llx lly urx ury
+
+  0 {
+    2 index add exch
+    3 index add exch
+  } bind
+  1 {
+    neg 3 index add exch
+    2 index add
+  } bind
+  2 {
+    neg 2 index add exch
+    neg 3 index add exch
+  } bind
+  3 {
+    3 index add exch
+    neg 2 index add
+  } bind
+>> def
+
+/CheckRegMarkD 4 dict def
+/CheckRegMarks {
+  LayoutDebug { (CheckRegMarks+\n) ErrPrint } if
+  RegMarks /None ne {
+    HqnImpose2GlobalDict begin HqnImpose2Dict begin
+    % Figure out where the reg marks would fit
+    //CheckRegMarkD begin
+    /Left FilmWidth def /Right 0 def
+    /Bottom FilmHeight def /Top 0 def
+
+    PageList {
+      begin pop
+      ListPosition aload pop
+      % X1 Y1
+      ListPanelSize aload pop
+      % X1 Y1 W H
+      //PagePosition ListRotation 90 div round cvi 4 mod get exec
+      % X1 Y1 X2 Y2
+      2 {
+        FilmBottom AdjustY add ScaleY div add
+        dup Top gt { /Top 1 index store } if
+        dup Bottom lt { /Bottom 1 index store } if
+        pop
+        FilmLeft AdjustX add ScaleX div add
+        dup Right gt { /Right 1 index store } if
+        dup Left lt { /Left 1 index store } if
+        pop
+      } repeat
+      end
+    } forall
+    /Top FilmHeight Top sub ScaleY mul def
+    /Right FilmWidth Right sub ScaleX mul def
+    /Left Left ScaleX mul def
+    /Bottom Bottom ScaleY mul def
+
+    RegMarks /Desired eq {
+      % if there is any space, shrink and fit the marks
+      mark //Layout /RegSize
+      Top Bottom add Left Right add gt {
+        /VertAlign load /AlignCenter eq {
+          Top Bottom gt { Bottom } { Top } ifelse
+        } {
+          Top Bottom gt { Top } { Bottom } ifelse
+        } ifelse
+      } {
+        /HorAlign load /AlignCenter eq {
+          Left Right gt { Right } { Left } ifelse
+        }{
+          Left Right gt { Left } { Right } ifelse
+        } ifelse
+      } ifelse
+      dup //RegSize gt { pop //RegSize  } if
+
+      /RegSize 1 index store % store in /InstallImpose dict, too
+      put
+      cleartomark
+    } if
+
+    { /Left /Right /Top /Bottom }{
+% dup =print (  )print
+      //RegMargins exch
+      //AnnotAlloc //SideNo 2 index get get   % allocation for annotations
+% dup =print (  )print
+      1 index load
+% dup =print (  )print
+      exch sub
+% dup ==
+      /RegSize load ge put
+    } forall
+% (CRM: )= //RegMargins { exch =print (  )print == } forall (+++++++++++)=
+    end             % CheckRegMarkD
+
+    end end % HqnImpose2 dicts
+  } if
+  LayoutDebug { (CheckRegMarks-\n) ErrPrint } if
+} bind def
+
+/RotatePages [
+  % x y w h
+  {
+    3 -1 roll add
+    % x w y+h
+    3 1 roll add
+    % y+h x+w
+    exch
+    % x+w y+h
+  } bind
+  {
+    neg 4 -1 roll add
+    3 1 roll
+    add
+  } bind
+  {
+    neg 3 -1 roll add
+    3 1 roll sub
+    exch
+  } bind
+  {
+    4 -1 roll add
+    3 1 roll
+    sub
+  } bind
+] def
+
+/DoBackRotation {
+  % Make sure it's an integer between 0 and 270
+  /ListRotation ListRotation 90 div round cvi 8 add 4 mod 90 mul def
+  ListRotation SourceRotate sub 180 mod 0 eq TurnTopBottom eq
+  PageFlipTopBottom { not } if
+  {
+    ListPosition aload
+    3 1 roll
+    % LP x y
+    ListPageSize aload pop
+    % LP x y w h
+    //RotatePages ListRotation 90 idiv get exec
+    3 -1 roll astore pop
+    /ListRotation ListRotation 180 add 360 mod def
+  } if
+} bind def
+
+/BackRotation <<
+
+  /None {
+    Front not {
+      PageList {
+        begin pop
+        //DoBackRotation exec
+        end
+      } forall
+    } if
+  } bind
+
+  /LeftRight {
+    PageList {
+      begin pop
+      TurnTopBottom {
+        ListRow //HqnImpose2GlobalDict /PagesUp get 2 idiv lt {
+          //DoBackRotation exec
+        } if
+      } {
+        ListCol //HqnImpose2GlobalDict /PagesAcross get 2 idiv ge {
+          //DoBackRotation exec
+        } if
+      } ifelse
+      end
+    } forall
+  } bind
+
+  /RightLeft {
+    PageList {
+      begin pop
+      TurnTopBottom {
+        ListRow //HqnImpose2GlobalDict /PagesUp get 2 idiv ge {
+          //DoBackRotation exec
+        } if
+      } {
+        ListCol //HqnImpose2GlobalDict /PagesAcross get 2 idiv lt {
+          //DoBackRotation exec
+        } if
+      } ifelse
+      end
+    } forall
+  } bind
+
+>> def
+
+/LayoutSuffixes 2 dict dup begin
+
+/UnfixedLayout {
+  //LayoutDebug { (UnfixedLayout+\n) ErrPrint } if
+
+  /HqnLayout /UnfixedLayout //StartStackCheck exec
+
+  //Layout begin
+
+  /PSUOrientation where { pop }{
+    % Interrupts have a tendency to end up here and trigger errors ...
+    % No idea why!
+    //abortjobnow exec
+  } ifelse
+  pagedevicePassBack /ExtraOrientation PSUOrientation put
+% (A: )print PageList { begin ListCol =print (/)print ListRow =print (/)print ListRotation =print (  )print end } forall ()=
+
+  % Rotate pages as necessary for back of sheet
+  UsePageRotate { //BackRotation WorkTurn get exec } if
+  % Rotation will be done by comparison of PO values if UsePageRotate is false.
+% ReportPageArray
+% (B: )print PageList { begin ListCol =print (/)print ListRow =print (/)print ListRotation =print (  )print end } forall ()=
+% PagesArray { { { begin { /PN /PO /CY }{ load =print (/)print } forall end (   )print } forall ()= } forall (++++++++)= } forall (__________________________)=
+% BasePageRotate ==
+
+  /UnfixedLayout /A 0 1 0 //StackCheck3 exec
+
+  % Adjust page positions for creep, PO (page orientation) and spine vs other gutters
+  UsingTableBasedLayout //Layout /VertGutters known and {
+    //LayoutDebug { (UsingTableBasedLayout+\n) ErrPrint } if
+
+    % { /PageCountAcross VerticalGutter GutterA MinGutterA VertGutters }{ dup =print (  )print load == } forall dup == (++++++++++++++++++++++++++++++++++++++)=
+    //UnfixedLayoutD begin
+
+    % Update gutters with real values
+    //TempGutters begin
+    /GutterB 0 def /GutterA 0 def /WTGutter 0 def
+    PageCountAcross 1 sub VerticalGutter mul        % Total gutter allocation
+    VertGutters {
+      dup type /nametype eq {
+        dup load 1 add def
+      } {
+        sub
+      } ifelse
+    } forall
+    % gutter left for WT and B
+    /GutterB GutterB GutterA add def
+    WTGutter 0 eq {
+      % All to B
+      GutterB 0 ne {
+        /GutterB exch GutterB div def
+      } { pop } ifelse
+    } {
+      GutterB 0 eq {
+        % All to WT
+        /WTGutter exch def      % there can be only one
+      } {
+        % Split between them. Give priority to gutters within each surface
+        dup WTMinGutter sub GutterB div
+        dup //Layout /GutterB get gt {
+          pop //Layout /GutterB get
+        } if
+        /WTGutter 3 -1 roll 2 index GutterB mul sub def
+        /GutterB exch def
+      } ifelse
+    } ifelse
+    /GutterA GutterB def
+    % Now update array
+    VertGutters {
+      dup type /nametype eq { load } if
+    } forall VertGutters astore pop
+    % (VertGutters )print VertGutters ==
+    /GutterB 0 def /GutterA 0 def /WTGutter 0 def
+    PageCountUp 1 sub HorizontalGutter mul  % Total gutter allocation
+    HorGutters {
+      dup type /nametype eq {
+        dup load 1 add def
+      } {
+        sub
+      } ifelse
+    } forall
+    % gutter left for WT and B
+    /GutterB GutterA GutterB add def        % Only one of the two, and it doesn't matter which at this point
+    % { WTGutter GutterB HorGutters }{ dup =print load == } forall dup == (++++++++++++++++++++++++++++++++++++++)=
+    WTGutter 0 eq {
+      % All to B
+      GutterB 0 ne {
+        /GutterB exch GutterB div def
+      } { pop } ifelse
+    } {
+      GutterB 0 eq {
+        % All to WT
+        /WTGutter exch def      % there can be only one
+      } {
+        % Split between them. Give priority to gutters within each surface
+        dup WTMinGutter sub GutterB div
+        dup //Layout /GutterB get gt {
+          pop //Layout /GutterB get
+        } if
+        % total gutterb
+        /WTGutter 3 -1 roll 2 index GutterB mul sub def
+        /GutterB exch def
+      } ifelse
+    } ifelse
+    % Now update array
+    /GutterA GutterB def
+    HorGutters {
+      dup type /nametype eq { load } if
+    } forall HorGutters astore pop
+    % { WTGutter GutterB HorGutters }{ dup =print load == } forall dup == (++++++++++++++++++++++++++++++++++++++)=
+
+    end     % TempGutters
+
+    /UnfixedLayout /B 0 2 0 //StackCheck3 exec
+
+    /i 0 def
+    PagesArray Surface Sides mod get
+    {
+      {
+        % /UnfixedLayout /B1 0 2 1 //StackCheck3 exec
+        % PagesArraydict
+        begin
+        PageList i get begin
+
+        currentdict /ListCol known not {
+          /ListCol 0 def
+          /ListRow 0 def
+        } if
+        /newX ListPosition aload pop /newY exch store store
+        % (A: )print { col ListRow newX newY }{ dup =print (: )print load =print (   )print } forall ()=
+
+        % /UnfixedLayout /B2 0 4 0 //StackCheck3 exec
+        SpineFold /None ne WorkTurn /None ne or {
+          % account for averaging of spine and other gutters
+          PageCountAcross 2 gt {
+            0 0 1 ListCol 1 sub { VertGutters exch get add } for    % Desired gutter total
+            ListCol VerticalGutter mul                              % Real gutter total
+            sub                                                     % Movement required
+            newX add /newX exch store
+          } if
+          PageCountUp 2 gt {
+            0 0 1 ListRow 1 sub { HorGutters exch get add } for     % Desired gutter total
+            ListRow HorizontalGutter mul                            % Real gutter total
+            sub                                                     % Movement required
+            newY add /newY exch store
+          } if
+          % (B: )print { ListCol ListRow newX newY }{ dup =print (: )print load =print (   )print } forall ()=
+          % /UnfixedLayout /Ba 0 4 0 //StackCheck3 exec
+
+          % Recalculate ListGutterClip
+          % { ListCol ListRow /OptVGutter /CropSpace /OtherVGutter /MaxVGutter /FilmUpPerPage FilmAcrossPerPage }{ dup =print (   )print load == } forall (===========)=
+
+          //BaseOrigin ListRotation 90 div round cvi get exec
+
+          % adjusted page: LLx LLy
+          % Left:
+          % (left)=
+          % /UnfixedLayout /Bb 0 4 2 //StackCheck3 exec
+          ListCol 0 eq {
+            CropsInside CropMarks not or { 0 }{ FilmLeft ScaleX mul neg } ifelse
+          } {
+            1 index         % LLx
+            VertGutters ListCol 1 sub get
+            2 div sub
+          } ifelse
+          % Bottom:
+          % (bottom)=
+          ListRow 0 eq {
+            CropsInside CropMarks not or { 0 }{ FilmBottom ScaleY mul neg } ifelse
+          } {
+            1 index         % LLy
+            HorGutters ListRow 1 sub get
+            2 div sub
+          } ifelse
+          4 2 roll exch
+          % /UnfixedLayout /Bc 0 4 4 //StackCheck3 exec
+          % Right:
+          % (right)=
+          ListCol PageCountAcross 1 sub eq { pop FilmWidth 2 mul } {
+            FilmAcrossPerPage add
+            VertGutters ListCol get
+            2 div add
+          } ifelse
+          exch
+          % Top:
+          % (top)=
+          ListRow PageCountUp 1 sub eq { pop FilmHeight 2 mul } {
+            FilmUpPerPage add
+            HorGutters ListRow get
+            2 div add
+          } ifelse
+          % clip: LLx LLy URx URy
+          % /UnfixedLayout /Bd 0 4 4 //StackCheck3 exec
+
+          currentdict /ListGutterClip known not {
+            currentglobal true setglobal
+            /ListGutterClip 4 array def
+            setglobal
+          } if
+          ListGutterClip astore pop
+          % (STORED: )print ListGutterClip ==
+        } if
+        % /UnfixedLayout /B2b 0 4 0 //StackCheck3 exec
+
+        % Spin the page if this one doesn't match the base rotation
+        UsePageRotate not {
+          PO BasePageRotate ne
+          WorkTurn /None eq { Front }{ PF } ifelse
+          not { TurnTopBottom ne } if {
+            % Must rotate page by 180 (assume no 90 degree diffs)
+            newX newY
+            //PageSpin ListRotation 90 div round cvi get exec
+            /newY exch store /newX exch store
+            /ListRotation ListRotation 180 add 360 mod def
+          } if
+        } if
+        % (C: )print { ListCol ListRow newX newY }{ dup =print (: )print load =print (   )print } forall ()=
+
+        % /UnfixedLayout /B3 0 4 0 //StackCheck3 exec
+        currentglobal true setglobal
+        /ListCreep [ 0 0 ] def
+        /ListCoords [ ListCol ListRow ] def
+        setglobal
+
+        SpineFold /None ne {
+          % Now adjust for creep
+          GutterCreep 0 ne {
+            //TableBasedCreep PageFlow get exec
+            % (SCreep: )print 1 index =print (   )print dup ==
+            % SurfX SurfY
+            SCY mul
+            CY GutterCreep mul 2 div add
+            dup abs MaxHCreep gt { 0 lt { -1 }{ 1 } ifelse MaxHCreep mul } if
+            % (CY: )print dup == MaxHCreep ==
+            SpineFold /Horizontal eq { dup }{ 0 } ifelse
+            ListCreep 1 3 -1 roll put
+
+            newY add /newY exch store
+            SCX mul
+            CX GutterCreep mul 2 div add
+            dup abs MaxVCreep gt { 0 lt { -1 }{ 1 } ifelse MaxVCreep mul } if
+            % (CX: )print dup == MaxVCreep ==
+            SpineFold /Vertical eq { dup } { 0 } ifelse
+            ListCreep 0 3 -1 roll put
+
+            newX add /newX exch store
+          } if
+          % (D: )print { ListCol ListRow newX newY }{ dup =print (: )print load =print (   )print } forall ()=
+        } if
+
+        newX newY ListPosition astore pop
+
+        end             % PageList dict
+        end             % PageArray dict
+        /i i 1 add def
+        % /UnfixedLayout /B5 0 2 0 //StackCheck3 exec
+      } forall        % cols
+    } forall        % rows
+
+    end             % UnfixedLayout
+    //LayoutDebug { (UsingTableBasedLayout-\n) ErrPrint } if
+  } if
+
+  end             % Layout
+  % (&&&&&&&&&&&&&&&&&&&&&&&&&&&&&)= ReportPageArray
+  % (C: )print PageList { begin ListCol =print (/)print ListRow =print (/)print ListRotation =print (  )print end } forall ()=
+  //LayoutDebug { (UnfixedLayout-\n) ErrPrint } if
+  % ReportPageArray
+  /UnfixedLayout /End //StackCheck0 exec
+} bind def
+
+/FixedLayout {
+  //LayoutDebug { (FixedLayout+\n) ErrPrint } if
+
+  //Layout begin
+
+  RegMarks /Required eq {
+    //RegMargins length 0 eq //CheckRegMarkD length 0 eq or {
+      //CheckRegMarks exec
+    } if
+    false //RegMargins { exch pop or } forall
+    not {
+      % Must add reg marks, and none will currently fit.
+      null -1
+      { /Left /Right /Top /Bottom }{
+        % maxside max thisside
+        //CheckRegMarkD 1 index get
+        % maxside max thisside thisgridpos
+        //AnnotAlloc //SideNo 3 index get get
+        sub
+        % maxside max thisside thisval
+        dup 3 index gt { 4 2 roll } if
+        pop pop
+      } forall
+      pop
+      //EdgeTrans 1 index get dup load /RegSize load add store
+      { /FilmWidth /FilmHeight } //EdgeAxis 3 -1 roll get get
+      dup load /RegSize load add store
+    } if
+  } if
+
+  end             % Layout
+
+  Suffixes /FixedSizeSheet get exec
+
+  //Layout begin
+
+  //CheckRegMarks exec
+
+  //UnfixedLayout exec
+
+  end             % Layout
+
+  //LayoutDebug { (FixedLayout-\n) ErrPrint } if
+} bind def
+
+end def
+
+/LayoutResponses <<
+
+  /RespondLayout {
+    /HqnLayout /rangecheck
+    UVS (Simple imposition requires that all pages are the same size and orientation) ExtraError
+  } bind
+
+>> def
+
+/SourceCompensate <<
+  0 << >>
+  90 <<
+    /Rot0   /Rot90
+    /Rot90  /Rot180
+    /Rot180 /Rot270
+    /Rot270 /Rot0
+  >>
+  180 <<
+    /Rot0   /Rot180
+    /Rot90  /Rot270
+    /Rot180 /Rot0
+    /Rot270 /Rot90
+  >>
+  270 <<
+    /Rot0   /Rot270
+    /Rot90  /Rot0
+    /Rot180 /Rot90
+    /Rot270 /Rot180
+  >>
+  -90 <<
+    /Rot0   /Rot270
+    /Rot90  /Rot0
+    /Rot180 /Rot90
+    /Rot270 /Rot180
+  >>
+>> def
+
+/Aspects <<
+  /Rot0   /Original
+  /Rot90  /Rotated
+  /Rot180 /Original
+  /Rot270 /Rotated
+  /BestFit        /BestFit
+  /Portrait       /Portrait
+  /Landscape      /Landscape
+>> def
+
+/RotAngles <<
+  /Rot0   0
+  /Rot90  90
+  /Rot180 180
+  /Rot270 270
+  /BestFit        0
+  /Portrait       { PageSize aload pop gt { 90 }{ 0 } ifelse } bind
+  /Landscape      { PageSize aload pop lt { 90 }{ 0 } ifelse } bind
+>> def
+
+/AngleRot <<
+  0       /Rot0
+  90      /Rot90
+  180     /Rot180
+  270     /Rot270
+>> def
+
+/ExtraFlips <<
+  /Rot0   false
+  /Rot90  false
+  /Rot180 true
+  /Rot270 true
+  /BestFit        false
+  /Portrait       false
+  /Landscape      false
+>> def
+
+/LayoutMessages <<
+  /IncompatibleGutters    UVS (Gutter and Creep values are incompatible for this number of sheets - Aborting job ]%%\n)
+>> def
+
+/LayoutPageOverlay {
+  //Layout /PageBox get {
+    //Layout /ActiveFileType get /Pad ne {
+      save
+
+      << /OverprintProcess true >> setuserparams % just in case. It'll be restored out again.
+      CropRule setlinewidth 0 setlinejoin
+      0 setgray
+      []0 setdash
+      CropsInside {
+        CropSpace dup PageWidth CropSpace dup add sub PageHeight CropSpace dup add sub
+      } {
+        0 0 PageWidth PageHeight
+      } ifelse
+      rectstroke
+      restore
+    } if
+  } if
+  //Layout /DebugOverlay get {
+    save
+    1 0 0 setrgbcolor
+    /lead PageHeight 32 sub 42 div def
+    /Helvetica-Bold lead selectfont
+    5
+    PageHeight 16 sub
+    //Layout begin
+    {
+      /Surface /Front
+      /Scheme
+      /BindingEdge /SpineFold /Geometry
+      /PageRotate /PageFlipTopBottom
+      /TurnTopBottom
+      /ImageWidth /ImageHeight
+      /GutterA /MinGutterA /GutterB /MinGutterB
+      /CheckDivisor /NotDivisor
+      /Bleed
+      /OverSize
+      /Creep /CreepStyle
+      /PagesAcross /PagesUp
+      /WorkTurn /WTGutter /WTMinGutter
+
+      /Left /Bottom /Right /Top
+      /Crops /FoldCut /RegMarks /PageBox /FillOrder
+      /HorAlign /VertAlign
+    } {
+      % x y name
+      3 copy pop moveto
+      dup //buffer cvs show (  )show
+      currentdict 1 index known { load }{ pop (Unknown) } ifelse
+      dup type /stringtype ne { //buffer cvs } if
+      show
+      lead sub
+    } forall
+
+    Annotations {
+      3 copy pop moveto
+      (ANNOT: )show
+      begin AnnotEdge dup type /stringtype ne { //buffer cvs } if show
+      (,  )show
+      AnnotName dup type /stringtype ne { //buffer cvs } if show
+      end
+      lead sub
+    } forall
+
+    pop pop
+
+    end
+    restore
+  } if
+} bind def
+
+% Called from FoldMarks procedures in schemes
+% X1 Y1 X2 Y2 DrawDashed -
+% The line from X1, Y1 to X2, Y2 is assumed to be orthogonal, just bend the dash pattern to fit
+% the length slightly so the ends of the line appear where they should.
+/DrawDashed {
+% (DD: )print 3 -1 0 { index =print (  )print } for ()=
+  newpath
+  gsave
+  2 { 1 index 4 index sub } repeat
+  add abs                 % Can just add the two since the line is not diagonal
+  dup 3 add
+  9 div           % 3 from white space in dash pattern, 9 from total of [ 6 3 ] dash length
+  round cvi
+  dup 2 lt { pop 2 } if
+  .3333 sub       % white (3) as proportion of one repeat (6 + 3)
+  div
+  [ exch 3 div dup 2 mul exch ] 0 setdash
+  moveto lineto
+  stroke
+  grestore
+} bind def
+
+/DrawSolid {
+  newpath
+  gsave
+% (DS: )print 3 -1 0 { index =print (  )print } for ()=
+  moveto lineto
+  stroke
+  grestore
+} bind def
+
+/DrawLineD 3 dict def
+
+/DrawVLines {
+  //LayoutDebug { (DrawVLines+\n) ErrPrint } if
+  % Draw vertical cut or fold marks
+  /DrawType exch def
+
+  HqnImpose2GlobalDict begin
+  //DrawLineD begin
+
+  VerticalGutter CropSpace 2 mul add 0 gt {
+    1 1 PagesAcross 1 sub {
+      % x
+      /col 1 index 1 sub def
+
+      /WTFlip WorkTurn /None ne TurnTopBottom not and
+      col 1 add 2 mul PagesAcross eq and def
+      0 1 PagesUp 1 sub {
+        % X Y
+        /row 1 index def
+
+        UsingTableBasedLayout {
+          FilmAcrossPerPage col 1 add mul
+          0 1 col 1 sub { VertGutters exch get add } for
+          VertGutters col get 2 div add
+        } {
+          FilmAcrossPerPage VerticalGutter add 2 index mul
+          VerticalGutter 2 div sub
+        } ifelse
+
+        % X Y Xpos
+        UsingTableBasedLayout {
+          FilmUpPerPage row mul
+          0 1 row 1 sub { HorGutters exch get add } for
+        } {
+          FilmUpPerPage HorizontalGutter add 2 index mul
+        } ifelse
+
+        % X Y XPos YPos, at bottom of gutter
+
+        HorizontalGutter 0 gt 3 index 0 eq or {
+          % Only draw lower one on first pass, if H gutter < 0
+          2 copy 2 copy
+          % X Y XPos YPos XPos YPos XPos YPos
+          CropSpace 0 gt {
+            CropSpace 2 mul add
+          } {
+            12 add
+          } ifelse
+          % X Y XPos YPos XPos YPos XPos YPos
+          WTFlip { //DrawSolid } { DrawType } ifelse exec
+          % X Y XPos YPos
+        } if
+
+        % X Y XPos YPos
+        HorizontalGutter 0 gt 3 index PagesUp 1 sub eq or {
+          FilmUpPerPage add
+          % X Y XPos YPos
+          2 copy
+          % X Y XPos YPos XPos YPos
+          CropSpace 0 gt {
+            CropSpace 2 mul sub
+          } {
+            12 sub
+          } ifelse
+          % X Y XPos YPos XPos YPos
+        } {
+          % Middle row with neg H gutter
+          % X Y XPos YPos
+
+          FilmUpPerPage add
+          CropSpace 0 gt {
+            CropSpace 2 mul sub
+          } {
+            12 sub
+          } ifelse
+          1 index
+          % X Y XPos YPos XPos (bottom end of rule)
+
+          3 index 1 add FilmUpPerPage HorizontalGutter add mul
+          % X Y XPos YPos XPos YPos
+          CropSpace 0 gt {
+            CropSpace 2 mul add
+          } {
+            12 add
+          } ifelse
+          % X Y XPos YPos XPos YPos
+        } ifelse
+        WTFlip { //DrawSolid } { DrawType } ifelse exec
+        % X Y
+        pop
+        % X
+      } for
+      pop             % X
+    } for
+  } if
+  end             % DrawLineD
+  end             % HqnImpose2GlobalDict
+  //LayoutDebug { (DrawVLines-\n) ErrPrint } if
+} bind def
+
+/DrawHLines {
+  //LayoutDebug { (DrawHLines+\n) ErrPrint } if
+  % Draw horizontal cut or fold marks
+  /DrawType exch def
+
+  HqnImpose2GlobalDict begin
+  //DrawLineD begin
+
+  VerticalGutter CropSpace 2 mul add 0 gt {
+    1 1 PagesUp 1 sub {
+      % Y
+      /row 1 index 1 sub def
+
+      /WTFlip WorkTurn /None ne TurnTopBottom and
+      row 1 add 2 mul PagesUp eq and def
+
+      0 1 PagesAcross 1 sub {
+        % Y X
+        /col 1 index def
+
+        % X Y Xpos
+        UsingTableBasedLayout {
+          FilmUpPerPage row 1 add mul
+          0 1 row 1 sub { HorGutters exch get add } for
+          HorGutters row get 2 div add
+        } {
+          FilmUpPerPage HorizontalGutter add 2 index mul
+          HorizontalGutter 2 div sub
+        } ifelse
+
+        UsingTableBasedLayout {
+          FilmAcrossPerPage col mul
+          0 1 col 1 sub { VertGutters exch get add } for
+        } {
+          FilmAcrossPerPage VerticalGutter add 2 index mul
+        } ifelse
+
+        % Y X YPos XPos, at left end of gutter
+
+        VerticalGutter 0 gt 3 index 0 eq or {
+          % Only draw leftmost one on first pass, if V gutter < 0
+          2 copy 2 copy
+          % Y X YPos XPos YPos XPos YPos XPos
+          CropSpace 0 gt {
+            CropSpace 2 mul add
+          } {
+            12 add
+          } ifelse
+          % Y X YPos XPos YPos XPos YPos XPos
+          exch 4 2 roll exch
+          WTFlip { //DrawSolid } { DrawType } ifelse exec
+          % Y X YPos XPos
+        } if
+
+        % Y X YPos XPos
+        VerticalGutter 0 gt 3 index PagesAcross 1 sub eq or {
+          FilmAcrossPerPage add
+          % Y X YPos XPos
+          2 copy
+          % Y X YPos XPos YPos XPos
+          CropSpace 0 gt {
+            CropSpace 2 mul sub
+          } {
+            12 sub
+          } ifelse
+          % Y X YPos XPos YPos XPos
+        } {
+          % Middle row with neg V gutter
+          % Y X YPos XPos
+
+          FilmAcrossPerPage add
+          CropSpace 0 gt {
+            CropSpace 2 mul sub
+          } {
+            12 sub
+          } ifelse
+          1 index
+          % Y X YPos XPos YPos (left end of rule)
+
+          3 index 1 add FilmAcrossPerPage VerticalGutter add mul
+          % Y X YPos XPos YPos XPos
+          CropSpace 0 gt {
+            CropSpace 2 mul add
+          } {
+            12 add
+          } ifelse
+          % Y X YPos XPos YPos XPos
+        } ifelse
+        exch 4 2 roll exch
+        WTFlip { //DrawSolid } { DrawType } ifelse exec
+
+        % Y X
+        pop
+        % Y
+      } for
+      pop             % Y
+    } for
+  } if
+
+  end             % DrawLineD
+  end             % HqnImpose2GlobalDict
+  //LayoutDebug { (DrawHLines-\n) ErrPrint } if
+} bind def
+
+/SimpleRegMark <<
+  /MarkType       /ControlRegMark
+  /Enabled        true
+  /X                      0
+  /Y                      0
+  /Angle          0
+  /Size           RegSize
+  /ClipMarksToMargins false
+>> def
+
+/TileBottomTag {
+  gsave
+  currentpoint translate
+  % gsave 10 setlinewidth 1 0 0 setrgbcolor -30 -30 moveto 30 30 lineto -30 30 moveto 30 -30 lineto stroke grestore
+  0 -1 moveto 0 -6 lineto stroke
+  -1 -5.5 moveto dup //buffer cvs
+  dup stringwidth pop neg 0 rmoveto
+  show
+  1 -5.5 moveto 1 add //buffer cvs show
+  grestore
+} bind def
+
+/TileTopTag {
+  gsave
+  currentpoint translate
+  % gsave 10 setlinewidth 1 0 0 setrgbcolor -30 -30 moveto 30 30 lineto -30 30 moveto 30 -30 lineto stroke grestore
+  0 1 moveto 0 6 lineto stroke
+  180 rotate
+  1 -5.5 moveto dup //buffer cvs show
+  -1 -5.5 moveto 1 add //buffer cvs
+  dup stringwidth pop neg 0 rmoveto
+  show
+  grestore
+} bind def
+
+/LayoutFilmOverlay {
+  //Layout begin
+  LayoutDebug { (LayoutFilmOverlay+\n) //ErrPrint exec } if
+
+  DebugOutlines {
+    //CheckRegMarks exec
+
+    save
+    1.5 setlinewidth []0 setdash
+
+    1 1 0 0 setcmykcolor
+    FilmLeft ScaleX div
+    FilmBottom ScaleY div
+    FilmWidth FilmLeft FilmRight add ScaleX div sub
+    FilmHeight FilmTop FilmBottom add ScaleY div sub
+    rectstroke
+
+    1 0 1 0 setcmykcolor
+    CheckRegMarkD begin
+    Left ScaleX div
+    Bottom ScaleY div
+    FilmWidth Left Right add ScaleX div sub
+    FilmHeight Top Bottom add ScaleY div sub
+    rectstroke
+    end
+
+    restore
+  } if
+
+  FoldCut {
+    gsave
+    % move to the page position
+    FilmLeft AdjustX add ScaleX div
+    FilmBottom AdjustY add ScaleY div
+    translate
+    CropRule setlinewidth 0 setlinejoin
+    0 setgray
+
+    Active /FoldMarks get
+    dup xcheck { exec } if
+    aload pop
+    { //DrawDashed DrawVLines } if
+    { //DrawDashed DrawHLines } if
+
+    Active /CutMarks get
+    dup xcheck { exec } if
+    aload pop
+    { //DrawSolid DrawVLines } if
+    { //DrawSolid DrawHLines } if
+
+    grestore
+  } if
+
+  RegMarks /None ne {
+    % Select sides for reg marks
+    % //RegMargins { exch =print (  )print == } forall (+++++++++++)=
+    //CheckRegMarkD length 0 eq {
+      //CheckRegMarks exec
+    } if
+
+    RegMarks /Desired eq {
+      false //RegMargins { exch pop or } forall
+      not {
+        UVS (%%[ Warning: HqnLayout: No space for Desired registration marks; none will be printed ]%%\n)
+        ErrPrint
+      } if
+    } if
+
+    % And draw the marks
+    currentglobal true setglobal
+    % RegSize might have shrunk if RegMarks "desired"
+    //SimpleRegMark /Size //Layout /RegSize get put
+    /Marks [ Marks aload pop
+      //RegMargins /Left get //RegMargins /Top get or {
+        8 dict dup begin
+        //SimpleRegMark { def } forall
+        /X //AnnotAlloc 0 get dup 0 lt { pop 0 } if
+        //CheckRegMarkD /Left get 1 index sub /RegSize load sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        def
+        /Y //AnnotAlloc 1 get /RegSize load add
+        //CheckRegMarkD /Top get 1 index sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        neg def
+        end
+      } if
+      //RegMargins /Left get //RegMargins /Bottom get or {
+        8 dict dup begin
+        //SimpleRegMark { def } forall
+        /X //AnnotAlloc 0 get dup 0 lt { pop 0 } if
+        //CheckRegMarkD /Left get 1 index sub /RegSize load sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        def
+        /Y //AnnotAlloc 3 get
+        //CheckRegMarkD /Bottom get 1 index sub /RegSize load sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        def
+        end
+      } if
+      //RegMargins /Right get //RegMargins /Top get or {
+        8 dict dup begin
+        //SimpleRegMark { def } forall
+        /X //AnnotAlloc 2 get dup 0 lt { pop 0 } if
+        /RegSize load add
+        //CheckRegMarkD /Right get 1 index sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        neg def
+        /Y //AnnotAlloc 1 get /RegSize load add
+        //CheckRegMarkD /Top get 1 index sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        neg def
+        end
+      } if
+      //RegMargins /Right get //RegMargins /Bottom get or {
+        8 dict dup begin
+        //SimpleRegMark { def } forall
+        /X //AnnotAlloc 2 get dup 0 lt { pop 0 } if /RegSize load add
+        //CheckRegMarkD /Right get 1 index sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        neg def
+        /Y //AnnotAlloc 3 get
+        //CheckRegMarkD /Bottom get 1 index sub /RegSize load sub
+        dup 0 gt { //RegMovement mul add }{ pop } ifelse
+        def
+        end
+      } if
+    ] store
+    setglobal
+  } if
+
+  //DeferredMarks length 0 ne {
+    //PlateMarks { pop //PlateMarks exch undef } forall
+    //DeferredMarks {
+      begin
+
+      % Pre-allocation this side
+      AnnotAlloc //SideNo AnnotEdge get get
+
+      % Calc space available:
+      //MarkWidOrientation AnnotEdge get exec
+
+      % Now, how many copies will fit?
+      MarkWidth div cvi
+      dup 1 le {
+        % Just one copy
+        pop
+        true exch 0 Mark //PlaceSingleMark exec
+      } {
+        % stack: "Pre-allocation on this side" "repeat count"
+        //MarkWidOrientation AnnotEdge get exec MarkWidth sub
+        % stack: "Pre-allocation on this side" "repeat count" "available length"
+        1 index 1 sub div
+        % stack: "Pre-allocation on this side" "repeat count" "horizontal shift per mark"
+        3 1 roll
+        % stack: "horizontal shift per mark" "Pre-allocation on this side" "repeat count"
+        0 1 3 -1 roll 1 sub {
+          % stack:  "horizontal shift per mark" "Pre-allocation on this side" i
+          2 index mul
+          % stack: "horizontal shift per mark" "Pre-allocation on this side" "horizontal shift"
+          false 2 index
+          3 -1 roll
+          % stack: "horizontal shift per mark" "Pre-allocation on this side" false "Pre-allocation on this side", "horizontal shift"
+          Mark //PlaceSingleMark exec
+          % stack: "horizontal shift per mark" "Pre-allocation on this side"
+        } for
+        pop pop
+      } ifelse
+
+      end
+    } forall
+    currentglobal true setglobal
+    HqnImpose2GlobalDict /Marks 2 copy get
+    [
+      exch {} forall
+      0 1 //PlateMarks length 1 sub { //PlateMarks exch get } for
+    ] put
+    setglobal
+  } if
+
+  gsave
+
+  Tiling {
+    gsave
+    /Helvetica 6 selectfont
+    0 setgray HqnImpose2GlobalDict /CropRule get setlinewidth
+    TileAcross 0 ne {
+      FilmLeft ScaleX div TileOverlapX add
+      dup FilmBottom ScaleY div moveto
+      TileAcross TileBottomTag
+      FilmHeight FilmTop ScaleY div sub moveto
+      TileAcross TileTopTag
+    } if
+    TileAcross TilesAcross 1 sub ne {
+      FilmWidth FilmRight ScaleX div sub TileOverlapX sub
+      dup FilmBottom ScaleY div moveto
+      TileAcross 1 add TileBottomTag
+      FilmHeight FilmTop ScaleY div sub moveto
+      TileAcross 1 add TileTopTag
+    } if
+    0 FilmHeight translate -90 rotate
+    TileUp 0 ne {
+      FilmTop ScaleY div TileOverlapY add
+      dup FilmLeft ScaleX div moveto
+      TilesUp TileUp sub TileBottomTag
+      FilmWidth FilmRight ScaleX div sub moveto
+      TilesUp TileUp sub TileTopTag
+    } if
+    TileUp TilesUp 1 sub ne {
+      FilmHeight FilmBottom ScaleY div sub TileOverlapY sub
+      dup FilmLeft ScaleX div moveto
+      TilesUp TileUp sub 1 sub TileBottomTag
+      FilmWidth FilmRight ScaleX div sub moveto
+      TilesUp TileUp sub 1 sub TileTopTag
+    } if
+
+    grestore
+  } if
+
+  grestore
+
+  LayoutDebug { (LayoutFilmOverlay-\n) //ErrPrint exec } if
+  end             % Layout
+} bind def
+
+/OneOffImposeConfig 20 dict def OneOffImposeConfig begin
+
+  /HqnColorBar /ProcSet resourcestatus {
+    pop pop
+    % Load the code for handling control strip marks
+    ColorBarImposeExtras
+
+    % Now wrap our own procedures round those from HqnColorBar
+    /PageOverlay [
+      /PageOverlay load /exec load
+      //LayoutPageOverlay /exec load
+    ] cvx bind def
+
+    /FilmOverlay [
+      /FilmOverlay load /exec load
+      //LayoutFilmOverlay /exec load
+    ] cvx bind def
+
+    Messages begin //LayoutMessages { def } forall end
+  }{
+    /PageOverlay [
+      //LayoutPageOverlay /exec load
+    ] cvx bind def
+
+    /FilmOverlay [
+      //LayoutFilmOverlay /exec load
+    ] cvx bind def
+  } ifelse
+
+
+end
+
+/TileD 6 dict def
+
+/LayoutOversizeStrategies <<
+
+  % Tiling can't be added in HqnImpose2 itself because that has no mechanism for
+  % multiple passes over the same source data.
+  % What about spinning tiles for best fit? ############################################################################
+  /Tile {
+    XDivider 1 lt YDivider 1 lt or {
+      % Yes, needs tiling
+      //Layout begin
+
+      /Tiling true def
+
+      /TileWidth MaxWidth FilmLeft sub FilmRight sub ScaleX div def
+      /LocMinTileOverlapX MinTileOverlapX TileWidth 2 div
+      2 copy gt { exch } if pop def
+      /TileHeight MaxHeight FilmTop sub FilmBottom sub ScaleY div def
+      /LocMinTileOverlapY MinTileOverlapY TileHeight 2 div
+      2 copy gt { exch } if pop def
+
+      //TileD begin
+
+      /XSize LocFilmWidth FilmLeft FilmRight add ScaleX div sub def
+      /YSize LocFilmHeight FilmTop FilmBottom add ScaleY div sub def
+
+      XSize TileWidth gt TileWidth 0.1 gt and {
+        /TilesAcross
+        XSize LocMinTileOverlapX sub
+        TileWidth LocMinTileOverlapX sub
+        div ceiling cvi store
+        /TileOverlapX TilesAcross 1 eq { 999999 } {
+          TilesAcross TileWidth mul XSize sub
+          TilesAcross 1 sub div
+        } ifelse store
+      } {
+        /TilesAcross 1 store
+        /TileOverlapX 999999 store
+      } ifelse
+      YSize TileHeight gt TileHeight 0.1 gt and {
+        /TilesUp
+        YSize LocMinTileOverlapY sub
+        TileHeight LocMinTileOverlapY sub
+        div ceiling cvi store
+        /TileOverlapY TilesUp 1 eq { 999999 }{
+          TilesUp TileHeight mul YSize sub
+          TilesUp 1 sub div
+        } ifelse store
+      } {
+        /TilesUp 1 store
+        /TileOverlapY 999999 store
+      } ifelse
+
+      DebugReport {
+        (   TilesAcross: )print TilesAcross =print
+        (, TileWidth: )print TileWidth =print
+        (, TileOverlapX: )print TileOverlapX =
+        (   TilesUp: )print TilesUp =print
+        (, TileHeight: )print TileHeight =print
+        (, TileOverlapY: )print TileOverlapY =
+      } if
+
+      end             % TileD
+      end             % Layout
+    } if
+  } bind
+
+>> def
+
+% Used in slug lines to determine whether to report tiled output.
+/LayoutIsTiled {
+  //Layout /Tiling get
+} bind def
+
+/LayoutTextTags <<
+
+  % Don't use <+! CDNOSV - already used in HqnColorBar
+
+  % report tiling
+  8448 84 add {
+    //Layout begin
+    Tiling {
+      TileAcross 1 add ImpoString cvs FixedTextShow
+      (/) FixedTextShow
+      TilesAcross ImpoString cvs FixedTextShow
+      ( x ) FixedTextShow
+      TileUp 1 add ImpoString cvs FixedTextShow
+      (/) FixedTextShow
+      TilesUp ImpoString cvs FixedTextShow
+    } if
+    end
+  } bind
+
+  8448 (P)0 get add {             % <+!P          PressSheet number
+    //Layout begin
+    OnePass {
+      HqnImpose2GlobalDict /FilmCount get
+    } {
+      Surface
+    } ifelse
+    Sides idiv 1 add //buffer cvs
+    ControlTextShow
+    end             % Layout
+  } bind
+
+>> def
+
+/BaseImposeStart {
+  /HqnLayout /BaseImposeStart //StartStackCheck exec
+  % Allow use at save levels deeper than 2, for control job submissions.
+  /AllowSaveLevel true def
+
+  % Clear out control bars from previous layouts
+  ClearControlBars
+
+  /BaseImposeStart /A //StackCheck0 exec
+
+  //OneOffImposeConfig { def } forall
+  /PDFBoxes /None def
+
+  /FilmLeft       Left def
+  /FilmBottom     Bottom def
+  /FilmRight      Right def
+  /FilmTop        Top def
+
+  /CropSpace 0 def
+  //SetCrops Crops get exec
+  /CropsInside false def
+  /CropMarkSetup //LayoutCropMarkSetup def
+
+  { /RegSize /LeftMargin /RightMargin /TopMargin /BottomMargin /HorAlign /VertAlign } {
+    dup load def
+  } forall
+
+  /StandardBackstop false def
+
+  /Prefixes //LayoutPrefixes def
+  /Prefix /LayoutPrefix def
+
+  /Suffixes //LayoutSuffixes def
+
+  /BaseImposeStart /B //StackCheck0 exec
+
+  % Fixed size sheet if raster size not set from job, and if
+  % at least one of dimensions is not unlimited
+  ImageHeight 0 ge ImageWidth 0 ge and
+  ImageHeight 0 gt ImageWidth 0 gt or
+  and {
+    /Suffix         /FixedLayout def
+
+    /MaxWidth       ImageWidth def
+    /MinWidth       ImageWidth def
+    /MaxHeight      ImageHeight def
+    /MinHeight      ImageHeight def
+
+    /OversizeStrategy OverSize
+    dup type /nametype ne { cvn } if
+    dup /AbortJob eq {
+      pop /AbortOnGraphics
+    } if
+    def
+
+    /OversizeStrategies //LayoutOversizeStrategies def
+  } {
+    /Suffix /UnfixedLayout def
+  } ifelse
+
+  /BaseImposeStart /C //StackCheck0 exec
+
+  /Responses //LayoutResponses def
+
+  ActiveFileType /PDF eq {
+    /Response /RespondLayout def
+    /AlwaysRespond  true def
+  } if
+  /JobFinished false def
+
+  /ClipMarksToMargins true def
+
+  /Trailer        {} def
+  /ParseBoundingBox true def              % always parse for EPS bounding boxes.
+  /BoundingSaveLevel vmstatus pop pop 1 add def           % and at this save level, because that's what they will be run at
+
+  PageSize null ne {
+    /PageWidth PageSize aload pop /PageHeight exch def def
+  } {
+    PagesAcross 0 ne {
+      /PageWidth 1 def
+      /PageHeight 1 def
+    } if
+  } ifelse
+
+  /Tactic FillOrder def           % can be overridden by schemes.
+
+  /Bleed          Bleed def
+  Bleed 0 gt {
+    CropMarks {
+      Bleed CropSpace gt {
+        /CropSpace Bleed def
+      } if
+    } {
+      /CropMarks                      true def
+      /CropSpace                      Bleed def
+      /ShowCropMarks          false def
+      /ShowRegisterMarks      false def
+      /ShowProgressives       false def
+      /ShowSepNames           false def
+      /ShowWedges                     false def
+      /ShowJobName            false def
+    } ifelse
+  } if
+
+  SpineFold dup /Horizontal eq exch /None eq or {
+    /OptHGutter GutterA def
+    /MinHGutter     MinGutterA def
+    /OptVGutter GutterB def
+    /MinVGutter     MinGutterB def
+  } {
+    /OptHGutter GutterB def
+    /MinHGutter     MinGutterB def
+    /OptVGutter GutterA def
+    /MinVGutter     MinGutterA def
+  } ifelse
+  /MinHCropGutter MinHGutter def
+  /MinVCropGutter MinVGutter def
+  % { CropMarks CropSpace OptVGutter MinVCropGutter /GutterB MinGutterB OptHGutter MinHCropGutter GutterA MinGutterA }{ dup =print (  )print load == } forall (++++)=
+
+  /BaseImposeStart /E //StackCheck0 exec
+
+  /IsSheetFront {
+    //Layout /OnePass get {
+      HqnImpose2GlobalDict /FilmCount get //Layout /Sides get mod 0 eq
+    } {
+      //Layout /Front get
+    } ifelse
+  } bind def
+
+  /IsTiled //LayoutIsTiled def
+
+  /BaseImposeStart /F //StackCheck0 exec
+
+  currentdict /ControlTextTags known {
+    ControlTextTags begin
+    //LayoutTextTags { def } forall end
+  } {
+    /ControlTextTags //LayoutTextTags def
+  } ifelse
+
+  /LabelFont 4 def                % Monospaced - Courier for Type 1 Latin
+  /ProgressiveFont 3 def  % Narrow emphasis
+
+  /BaseImposeStart /G //StackCheck0 exec
+
+  LoadAnnots
+
+  /BaseImposeStart /H //StackCheck0 exec
+
+  InstallBPE
+
+  /BaseImposeStart /End //StackCheck0 exec
+  /DebugReport HqnImpose2DebugReport def
+  %       /ProgressReport true def
+
+} bind def
+
+% pagerange FilterPageRange |-> filtered pagerange without 0s
+/FilterPageRange {
+  //Layout begin
+  /zeroflag false def
+
+  % PageRange
+  dup length 0 ne {
+      [ exch
+        {
+          dup type /integertype eq {
+            dup 0 le {
+              pop % pop if integer 0 or negative
+              % signal that we might end up with an empty array
+              /zeroflag true def
+            } if
+          } {
+            % array
+            dup length 1 eq {
+              dup 0 get 0 le { % [0] -> [1], [-n] -> [1]
+                pop
+                [ 1 ]
+              } if
+            } {
+              dup 0 get 0 le 1 index 1 get 0 le and {
+                pop % [0 0] or [-n 0] or [0 -n] or [-n -m]
+                % signal that we might end up with an empty array
+                /zeroflag true def
+                } {
+                dup 0 get 0 le 1 index 1 get 0 ne and { %[0 n] or [-m n] -> [1 n]
+                  % increase to 1
+                  [ exch
+                    aload pop
+                    exch pop
+                    1 exch ]
+                } if
+                dup 1 get 0 le 1 index 0 get 0 ne and { %[n 0] or [n -m] -> [n 1]
+                  % increase to 1
+                  [ exch
+                    aload pop
+                    pop
+                    1 ]
+                } if
+              } ifelse % ! [0 0]
+            } ifelse % dup length 1 eq
+          } ifelse % dup type /integertype eq
+        } forall
+      ]
+
+      zeroflag {
+        dup length 0 eq {
+          % we managed to empty the array, replace with [0]
+          pop
+          [0]
+        } if
+      } if
+  } if
+
+  end % workspace
+
+} bind def
+
+
+/BaseImposeEnd {
+} bind def
+
+% The parameters to use when PDF contexts are opened.
+/PDFOPENPARAMS <<
+  /WarnSkippedPages false
+>> def
+
+/BoxCrops [ /MediaBox /BleedBox /TrimBox /ArtBox /CropBox ] def
+
+/FileTypeCapture <<
+
+>> def
+
+/CaptureStdin {
+  //LayoutDebug { (CaptureStdin+\n) ErrPrint } if
+  [
+    <<
+
+      % Document this for OEMs using non-Classic RIPs ##############################
+
+      /virtualcontext false
+
+      1183615869 internaldict /fileType 2 copy known {
+        get
+
+        dup /FLAT eq {
+          /FileList /undefinedresult
+          UVS (Simple imposition cannot be used with Pagebuffer files or flats) ExtraError
+        } if
+
+        dup /PDF eq {
+          /PageRange currentpdfparams /PageRange get //FilterPageRange exec
+          3 -1 roll
+
+          mark { currentpdfcontext /ContextID get } stopped {
+            cleartomark
+          } {
+            exch pop
+            /pdfcontextid exch
+          } ifelse
+        } if
+
+        /FileType exch
+        //FileTypeCapture 1 index 2 copy known {
+          get exec
+          false
+        } {
+          pop pop
+          true
+        } ifelse
+      } {
+        pop pop
+        true
+      } ifelse
+      {
+        /FileObject //Layout /OriginalFileObject 2 copy known {
+          get
+        } {
+          pop pop
+          //CurrentExecChannel exec not {
+            serverdict /stdin get
+          } if
+        } ifelse
+
+        dup 1183615869 internaldict /fileseekable get { exec } stopped { pop false } if {
+          /FilePos 1 index fileposition
+          4 2 roll
+        } if
+
+        /FileName
+        statusdict begin
+        1 index //buffer filename
+        not {
+          cleartomark
+          % (Error: supplied file is not open\n) ErrPrint
+          % /FileList errordict /undefinedresult get exec
+        } {
+          dup (%exec%) eq {
+            /FileList /undefinedresult
+            UVS (Simple in-RIP imposition cannot be used in the Executive) ExtraError
+          } if
+          dup length string copy
+        } ifelse
+        end             % statusdict
+      } if
+
+      dup type /marktype ne {
+      >>
+
+    } if
+  ]
+  //LayoutDebug { (CaptureStdin-\n) ErrPrint } if
+} bind def
+
+/PS (%!PS-) def
+/EPSF (EPSF) def
+/BBox (%%BoundingBox:) def
+
+/OverSizeStartPainting {
+  //LayoutDebug { (OverSizeStartPainting+\n) ErrPrint } if
+  /HqnLayout /OverSizeStartPainting //StartStackCheck exec
+  HqnImpose2GlobalDict begin HqnImpose2Dict begin //Layout begin
+
+  AbortOversize {
+    UVS (%%[ Warning: HqnLayout: Surface is too large to fit - Aborting job ]%%\n) ErrPrint
+    true
+  } {
+    % UVM (%%%%[ Warning: HqnLayout: Surface is too large to fit, it will be %(clipped%|scaled by %f%%%|tiled (%d x %d)%) ]%%%%)
+    PageClipped
+    PageScaleX ScaleX mul BaseScaleX sub abs 0.01 gt
+    or Tiling or {
+      (%%[ Warning: HqnLayout: Surface is too large to fit, it will be ) ErrPrint
+      PageClipped {
+        (clipped) ErrPrint
+      } {
+        Tiling {
+          (tiled \() ErrPrint
+          TilesAcross ErrPrint ( x ) ErrPrint TilesUp ErrPrint
+          (\)) ErrPrint
+        } {
+          (scaled by ) ErrPrint
+          mark PageScaleX ScaleX mul
+          { 1000 10000 100000 } {
+            % x i
+            2 copy mul round cvi
+            % x i xx
+            2 copy ne {
+              3 2 roll pop
+              % i xx
+              exit
+            } if
+            % x i xx
+            pop pop
+          } forall
+          counttomark 1 eq { 1 exch } if
+          % i xx
+          100 mul
+          exch div ErrPrint
+          (%) ErrPrint
+          pop             % the mark
+        } ifelse
+      } ifelse
+      ( ]%%\n) ErrPrint
+      true
+    } { false } ifelse
+  } ifelse
+
+  {
+    % UVM (%%%%[    %(Width%|Height%) available: %d %t, required: %d %t, short-fall: %d %t ]%%%%\n)
+    MaxWidth dup 0 le { pop } {
+      InitialFilmWidth BaseScaleX mul 2 copy lt {
+        (%%[    Width available: ) ErrPrint exch dup //PrintUnits exec
+        (, required: ) ErrPrint 1 index //PrintUnits exec
+        (, short-fall: ) ErrPrint sub //PrintUnits exec
+        ( ]%%\n) ErrPrint
+      } { pop pop } ifelse
+    } ifelse
+
+    MaxHeight dup 0 le { pop } {
+      InitialFilmHeight BaseScaleY mul 2 copy lt {
+        (%%[    Height available: ) ErrPrint exch dup //PrintUnits exec
+        (, required: ) ErrPrint 1 index //PrintUnits exec
+        (, short-fall: ) ErrPrint sub //PrintUnits exec
+        ( ]%%\n) ErrPrint
+      } { pop pop } ifelse
+    } ifelse
+
+    AbortOversize {
+      //HqnImpose2GlobalDict /AbortingJob true put
+      /HqnLayout errordict /rangecheck get stopped pop
+      superstop
+    } if
+  } if
+  end end end
+  /OverSizeStartPainting /End //StackCheck0 exec
+  //LayoutDebug { (OverSizeStartPainting-\n) ErrPrint } if
+} bind def
+
+/ReportPageCount {
+  % for flatwork, on the first surface
+  SpineFold /None eq //HqnImpose2GlobalDict /FilmCount get 0 eq and {
+    % ... with an automatic fill count
+    Request dup /PagesAcross get 0 eq exch /PagesUp get 0 eq or  {
+      % UVM (Imposition calculated as %d pages across, by %d pages up)
+      (Imposition calculated as ) //ErrPrint exec
+      PageCountAcross //ErrPrint exec ( pages across, by )//ErrPrint exec
+      PageCountUp //ErrPrint exec ( pages up\n) //ErrPrint exec
+
+      % And also report page rotation if BestFit was requested
+      PageRotate /BestFit eq {
+        % UVM ((Pages are rotated by %d degrees)
+        (Pages are rotated by ) //ErrPrint exec
+        % report rotation as clockwise
+        360 //HqnImpose2GlobalDict /Rotate get sub //ErrPrint exec
+        ( degrees\n) //ErrPrint exec
+      } if
+    } if
+  } if
+} bind def
+
+/ReportPS {
+  % UVM (%%%%[ Error: HqnLayout: PostScript files may not be used with the "%t" imposition scheme ]%%%%\n)
+  (%%[ Error: HqnLayout: PostScript files may not be used with the ") ErrPrint
+  Active /Username 2 copy known { get }{ pop pop Scheme } ifelse ErrPrint
+  (" imposition scheme ]%%\n) ErrPrint
+} bind def
+
+/Backstop  <<
+  /StartPainting <<
+    (0HqnLayout) {
+      //LayoutDebug { (Backstop StartPainting+\n) //ErrPrint exec } if
+      statusdict /HqnLayoutInitialized get 1 gt {
+        % Abort if we're still running a PS file with the wrong scheme
+        //Layout begin
+        OnePass not {
+          SetOnce not {
+            //ReportPS exec
+          } if
+          OverSize /Tile eq {
+            UVS (%%[ Error: HqnLayout: PostScript files may not be used with Tiling ]%%\n) ErrPrint
+          } if
+          /HqnLayout errordict /undefinedresult get //layoutstop exec
+        } if
+        CheckDivisor 1 ne {
+          UVS (%%[ Error: HqnLayout: Blank page insertion must be disabled with PostScript files ]%%\n") ErrPrint
+          /HqnLayout errordict /undefinedresult get //layoutstop exec
+        } if
+
+        ValidatePageCount
+
+        //CheckRegMarks exec
+
+        //ReportPageCount exec
+
+        end             % Layout
+      } if
+      //LayoutDebug { (Backstop StartPainting-\n) //ErrPrint exec } if
+    } bind
+    (@HqnLayoutOverSize) //OverSizeStartPainting
+  >>
+>> def
+/Backstop {
+  //LayoutDebug { (Backstop+\n) ErrPrint } if
+  //Backstop setpagedevice
+  //Layout /Backstopped true put
+  //LayoutDebug { (Backstop-\n) ErrPrint } if
+} bind def
+
+/NoBackstop <<
+  /StartPainting <<
+    (0HqnLayout) {
+      //LayoutDebug { (NoBackstop StartPainting+\n) //ErrPrint exec } if
+      statusdict /HqnLayoutInitialized get 1 gt {
+        //Layout begin
+
+        //CheckRegMarks exec % stopped { defaulthandleerror stop } if
+
+        //ReportPageCount exec
+
+        end             % Layout
+      } if
+
+      //LayoutDebug { (NoBackstop StartPainting-\n) //ErrPrint exec } if
+    }
+    (@HqnLayoutOverSize) //OverSizeStartPainting
+  >>
+>> def
+/NoBackstop {
+  //LayoutDebug { (NoBackstop+\n) ErrPrint } if
+  //NoBackstop setpagedevice
+  //Layout /Backstopped false put
+  //LayoutDebug { (NoBackstop-\n) ErrPrint } if
+} bind def
+
+/Backstopped false def
+
+% countpagerange counts the number of pages in the PageRange
+% and assigns it to /pages
+/countpagerange {
+  currentdict /PageRange known {
+    PageRange length 0 eq {
+      currentdict /PageRange undef
+      /pages docpages def
+    } {
+      % We're not using all of this file -
+      % validate the range against the pages available & count pages to do
+      % We are not expecting any negative values here because PageRange has
+      % been filtered, but we could have a range of [0], which
+      % means 'just print page 0', ie. print no pages
+
+      PageRange length 1 eq PageRange 0 get 0 eq and {
+        % the PageRange is just [0]
+        0
+      } {
+        0 PageRange {
+          dup type /arraytype eq {
+            dup length 1 eq {
+              % from X to end
+              0 get
+              dup docpages le {
+                docpages exch sub 1 add add
+              } {
+                pop       % zero from this range
+              } ifelse
+            } {
+              % from X to Y
+              aload pop
+              % tot x y
+              2 copy gt { % Deal with reverse page range
+                exch
+              } if
+              dup docpages gt { pop docpages } if
+              2 copy le {
+                exch sub 1 add add
+              } {
+                pop pop
+              } ifelse
+            } ifelse
+          } {
+            docpages le {
+              1 add
+            } if
+          } ifelse
+        } forall
+      } ifelse % != [0]
+      /pages exch def
+    } ifelse
+  } {
+    /pages docpages def
+  } ifelse
+} bind def
+
+/EPSfilesize {
+  /HqnLayout /EPSfilesize //StartStackCheck exec
+  % Now try to find the page size
+  dup //buffer 0 1024 getinterval readstring
+  not {
+    exch pop
+    /FileObject FileName (r) file def
+    FileObject exch
+  } if
+  % file string
+  //BBox search {
+    % file post match pre
+    pop pop mark exch
+    4 {
+      token {
+        dup type
+        dup /integertype ne exch /realtype ne and {
+          cleartomark
+          exit
+        } if
+        exch
+      } {
+        cleartomark
+        exit
+      } ifelse
+    } repeat
+
+    dup type /stringtype eq {
+      pop
+      3 -1 roll sub abs
+      3 1 roll
+      sub abs
+      exch
+      2 array astore
+      /PageSize exch def
+
+      pop     % mark
+    } if
+  } {
+    pop
+  } ifelse
+  0 setfileposition
+  /EPSfilesize /End 0 0 -1 //StackCheck3 exec
+} bind def
+
+/SizeMismatch {
+  /HqnLayoutInitialize_1 /rangecheck (Different page sizes or rotations) ExtraError
+} bind def
+
+% Scan supplied list of files, check file type, page count, etc.
+% FileList is taken from the input config dictionary, and must be an array
+% Each element must be a string (filename), or a dictionary.
+% if a dictionary, it must contain either:
+%       FileName - string, full file name
+% or
+%       /FileType /Pad - for blank pages
+% For PDF files it may also contain:
+%       PageRange - PDF-format page range defining which pages to use.
+% For Pad pages it may also contain:
+%       pages - integer (default 1) the number of blank pages to insert
+/PrepareFileList {
+  {
+    //LayoutDebug { (PrepareFileList+\n) ErrPrint } if
+
+    /HqnLayout /PrepareFileList //StartStackCheck exec
+    Request /FileList 2 copy known not {
+      pop pop
+
+      % FileList is not supplied, so construct one referring to the current input file.
+      //CaptureStdin exec
+    } {
+      get
+      % an array of file names or dictionaries
+      dup type /arraytype ne {
+        /FileList errordict /typecheck get exec
+      } if
+      dup length 0 eq {
+        /FileList errordict /rangecheck get exec
+      } if
+
+      4 InitPDFContextManager
+    } ifelse
+
+    /PrepareFileList /A 0 0 1 //StackCheck3 exec    % FileList is on the stack
+
+    /TotalPages 0 def
+    /InputFileList 1 index length dict def
+    /PageSize null def
+    /SourceRotate 0 def
+
+    { % run in a stopped context
+      dup type dup /stringtype ne exch /dicttype ne and {
+        /FileList errordict /typecheck get exec
+      } if
+
+      dup type /dicttype eq {
+        dup /FileName known not 1 index /FileType known not and {
+          /HqnLayout /undefined /FileName ExtraError
+        } if
+      } {
+        8 dict
+        dup /FileName 4 -1 roll put
+      } ifelse
+      begin
+
+      /PrepareFileList /B 0 1 0 //StackCheck3 exec
+
+      /SourceRotate 0 def
+
+      currentdict /FileName known not currentdict /FileObject known not and {
+        currentdict /FileType known not {
+          /FileList /undefined /FileType ExtraError
+        } if
+        FileType /Pad ne {
+          /FileList /typecheck /FileType ExtraError
+        } if
+        currentdict /pages known {
+          pages type /integertype ne {
+            /FileList /typecheck /pages ExtraError
+          } if
+        } {
+          /pages 1 def
+        } ifelse
+        /FileName (*Padding*) def
+      } {
+        % Check if the same file is used multiple times.
+        true
+        0 1 InputFileList length 1 sub {
+          InputFileList exch get
+          dup /FileName get FileName eq {
+            { /FileType /FileObject /docpages /pdfcontextid /boxdict /PageSize /SourceRotate /virtualcontext }{
+              % dict key
+              2 copy known { 2 copy get def } { pop } ifelse
+            } forall
+            pop     % dict
+            pop % true
+            false
+            exit
+          } {
+            pop     % dict
+          } ifelse
+        } for
+
+        {
+          currentdict /FileObject known {
+            /FileObject load status
+            not
+          } { true } ifelse {
+            mark
+            FileName dup status not {
+              /FileList /undefinedfilename 3 -1 roll ExtraError
+            } if
+            cleartomark
+          } if
+
+          currentdict /FileType known not {
+            /FileType FileName CheckType def
+          } if
+
+          /PrepareFileList /C 0 1 0 //StackCheck3 exec
+
+          FileType /PDF eq {
+            //NoBackstop exec
+
+            currentdict /virtualcontext known not {
+              /virtualcontext true def
+            } if
+
+            virtualcontext {
+              FileName //PDFOPENPARAMS PDFOpen
+              % |- context-id page-count
+              /pdfcontextid 3 -1 roll def
+            } {
+              % transparency mask
+              currentdict /pdfcontextid known not {
+                currentdict /FileObject known {
+                  /FileObject load status not
+                } { true } ifelse
+                {
+                  /FileObject FileName (r) file def
+                } if
+                /pdfcontextid FileObject getPDFcontext
+                dup 0 eq {
+                  pop
+                  FileObject PDFOPENPARAMS { pdfopen } stopped {
+                    % Have to close the file object here to avoid race conditions with the
+                    % spool folder plugin failing to move the file because it's still open
+                    FileObject closefile
+                    % But having closed the file, we don't get the "flushing to end" messages
+                    stop
+                  } if
+                } if
+                def
+              } if
+              pdfcontextid getpagecount exec
+            } ifelse
+
+            /docpages exch def
+
+            //countpagerange exec
+
+            pages 0 gt {
+              /PrepareFileList /PDF1 0 1 0 //StackCheck3 exec
+              /PageSize
+              currentdict /PageRange known { PageRange }{ //nullarray } ifelse
+              //SizeMismatch
+              //BoxCrops currentpdfparams /PageCropTo get get
+              pdfcontextid
+              rangeboundingbox {
+                /SourceRotate exch def def
+              } {
+                % no trailer in the PDF, or all of PageRange is out of range of real pages
+                UVS (%%[ Warning: HqnLayout: Page sizes & transparency could not be determined ]%%\n) ErrPrint
+              } ifelse
+            } if
+
+            /PrepareFileList /PDF2 0 1 0 //StackCheck3 exec
+          } {
+            OnePass not { /boxdict << >> def } if
+
+            FileType /PS eq {
+              /PrepareFileList /PS1 0 1 0 //StackCheck3 exec
+              % Try to figure out if it's actually an EPS file
+              currentdict /FileObject known not {
+                /FileObject FileName (r) file def
+              } if
+
+              /FileObject load dup status {
+                dup { fileseekable } stopped { pop false } if
+                % fileobj bool
+                {
+                  currentdict /FilePos known { FilePos 0 eq }{ true } ifelse {
+                    dup 0 setfileposition
+                    dup //buffer 0 5 getinterval readstring pop
+                    % |- file str
+                    //PS eq {
+                      dup //buffer 0 16 getinterval readstring pop
+                      //EPSF search {
+                        pop pop pop false exch
+                        //NoBackstop exec
+                        /FileType /eps def              % Note: NOT /EPS
+                      }       {
+                        pop true exch
+                      } ifelse
+                    } { true exch } ifelse
+                    % |- boolean file
+
+                    dup 0 setfileposition
+                    //EPSfilesize exec
+                  } {
+                    pop true
+                  }ifelse
+                } {
+                  pop true
+                } ifelse
+              } {
+                pop true
+              } ifelse
+              /PrepareFileList /PS2 0 1 1 //StackCheck3 exec
+              {
+                % We can't tell whether a PS file is multi-page or not at this point, so
+                % assume the worst and disallow it in any circumstances where we'd have to run
+                % pages out of order or calculate the total page count.
+                //Backstop exec
+              } if
+            } {
+              FileType /EPS eq {
+                /PrepareFileList /EPS1 0 1 0 //StackCheck3 exec
+                currentdict /FileObject known not {
+                  /FileObject FileName (r) file def
+                } if
+
+                /FileObject load dup status {
+                  dup 4 setfileposition
+                  dup
+                  4 {
+                    FileObject read pop
+                    % a b c d
+                  } repeat
+                  0 4 {
+                    3 bitshift add
+                  } repeat
+                  setfileposition
+                  //EPSfilesize exec
+                }       { pop } ifelse
+              } if
+              //NoBackstop exec
+            } ifelse
+
+            currentdict /PageRange known {
+              /HqnLayout /undefinedresult
+              UVS (PageRange not supported for file formats other than PDF\n) ExtraError
+            } if
+            /pages 1 def
+
+          } ifelse
+        } {
+          % A file is being used again. Still need to figure out
+          % how many pages this instance is worth.
+          FileType /PDF eq {
+            //countpagerange exec
+          } {
+            /pages 1 def
+          } ifelse
+        } ifelse
+      } ifelse
+
+      /startpage TotalPages def
+      /endpage TotalPages pages add 1 sub def
+      /fileindex InputFileList length def
+
+      currentdict end
+
+      dup /pages get 0 eq {
+        InputFileList maxlength 1 ne {
+          % don't report if there's only one entry in the file list (whether API or GUI):
+          % It'll get reported as a job page count of zero below.
+          UVS (%%[ Warning: HqnLayout: No pages in requested page range ]%%\n) ErrPrint
+        } if
+        pop
+      } {
+        /PrepareFileList /E 0 0 1 //StackCheck3 exec
+
+        /TotalPages 1 index /pages get TotalPages add def
+
+        dup /PageSize known {
+          dup /PageSize get
+          dup null eq {
+            pop
+          } {
+            PageSize null eq {
+              /PageSize exch def
+              /PageWidth PageSize 0 get def
+              /PageHeight PageSize 1 get def
+              /SourceRotate 1 index /SourceRotate get def
+            } {
+              0 1 1 {
+                % thisPS i
+                2 copy get
+                % thisPS i thisPS[i]
+                PageSize 3 -1 roll get
+                % thisPS thisPS[i] PS[i]
+                sub abs
+                5 gt {
+                  /HqnLayoutInitialize_1 /rangecheck (Different page sizes) ExtraError
+                } if
+              } for
+              pop
+            } ifelse
+          } ifelse
+        } if
+
+        /PrepareFileList /F 0 0 1 //StackCheck3 exec
+
+        InputFileList dup length 3 -1 roll put
+      } ifelse
+    } forall
+    % 0 1 InputFileList length 1 sub { InputFileList exch get { exch =print (   )print == } forall (++++++++)= } for (************)=
+
+    TotalPages 0 eq {
+      UVS (%%[ Error: HqnLayout: No pages in job - Aborting job ]%%\n) ErrPrint
+        abortjobnow
+    } if
+
+    PageSize null eq {
+      /PageSize BasePageSize def
+    } if
+    InputFileList {
+      /PageSize PageSize put
+      pop     % dictionary index
+    } forall
+
+    /PrepareFileList /End //StackCheck0 exec
+
+  } stopped { defaulthandleerror stop } if
+  //LayoutDebug { (PrepareFileList-\n) ErrPrint } if
+} bind def
+
+% PagesToInsert PageToInsertBefore -> InsertPadding
+/InsertPadding {
+  /InsertBefore exch def /InsertCount exch def
+  /secondhalf null def
+
+  % Find the current entry that the padding will come before or in
+  InputFileList length 1 sub -1 0 {
+    InputFileList exch get begin
+    InsertBefore startpage ge { exit } if
+    end
+  } for
+
+  % current pagelist dict open on dict stack
+  InsertBefore startpage eq {
+    % we're lucky - it just slides in before this one
+
+    % push this and later up by one
+    startpage fileindex
+    end             % the one it fits before
+    % startpage fileindex
+
+    InputFileList length 1 sub -1 2 index {
+      % startpage fileindex i
+      InputFileList exch 2 copy get
+      % startpage fileindex IFL i dict
+      dup begin
+      % startpage fileindex IFL i dict
+      /startpage startpage InsertCount add def
+      /endpage endpage InsertCount add def
+      /fileindex fileindex 1 add def
+      end
+      exch 1 add exch
+      put
+    } for
+
+    % startpage fileindex
+
+    InputFileList exch <<
+      /pages InsertCount
+      /startpage InsertBefore
+      /endpage 3 index 2 index add
+      /fileindex 8 index
+      /FileType /Pad
+      /FileName (*Padding*)
+    >> put
+  } {
+    % Have to split this entry and put a new pad in the middle.
+
+    % Make first half split
+    currentdict dup length dict begin
+    { def } forall
+
+    currentdict /PageRange known {
+      % (INPUT: )print PageRange ==
+      % Calc PageRange for 1st block
+      /x InsertBefore startpage sub InsertCount sub def
+      /found false def
+      /PageRange [
+        PageRange {
+          % x =print (   )print dup ==
+          found not {
+            dup type /integertype eq {
+              % leave int on stack
+              /x x 1 sub def
+            } {
+              % array
+              dup length 1 eq {
+                % here to end
+                % Needs to be split
+                aload pop
+                [
+                  1 index
+                  dup x add
+                ]
+
+                % Now the second part
+                /found true def
+                [
+                  % a [ a b1 ] [
+                  [
+                    4 -1 roll
+                    x add 1 add
+                  ]
+                  % must be the end ...
+                  exit
+              } {
+                % a to b
+                dup aload pop
+                exch sub 1 add
+                % [ a b ] pages
+                dup x gt {
+                  % Need to split this one
+                  % first the first part
+                  pop
+                  aload pop
+                  [
+                    2 index
+                    dup x add
+                  ]
+
+                  % Now the second part
+                  /found true def
+                  [
+                    % a b [ a b1 ] [
+                    [
+                      5 -2 roll
+                      exch x add 1 add exch
+                    ]
+                    %                                                                       /x -1 def
+                } {
+                  % All of this in this section
+                  % Leave array on op stack
+                  /x x 3 -1 roll sub def
+                } ifelse
+              } ifelse
+            } ifelse
+            x 0 lt {
+              % Wahay, the break comes between existing entries
+              % Save away the rest for the second half
+              /found true def
+              [
+            } if
+          } if
+        } forall
+        found { ] /secondhalf exch store } if
+      ] def
+      % (PART 1 PAGERANGE: )print PageRange ==
+    } {
+      /PageRange [ [
+        1
+        InsertBefore startpage sub InsertCount sub 1 add
+      ] ] def
+    } ifelse
+
+    % startpage is already correct
+    /endpage InsertBefore InsertCount sub def
+    /pages endpage startpage sub 1 add def
+    currentdict end
+
+    % opstack: firsthalf
+
+    % push this second half and later ones up by 2
+    InputFileList length 1 sub -1 fileindex {
+      % firsthalf
+      InputFileList exch 2 copy get
+      % firsthalf IFL i dict
+      dup begin
+      % firsthalf IFL i dict
+      /startpage startpage InsertCount add def
+      /endpage endpage InsertCount add def
+      /fileindex fileindex 2 add def
+      end
+      exch 2 add exch
+      put
+    } for
+
+    % opstack: firsthalf
+    InputFileList exch dup /fileindex get exch put
+
+    % and second half - dict is already open
+    currentdict /PageRange known {
+      secondhalf null eq {
+        (HELP! Failure splitting file with PageRange\n) ErrPrint
+      } if
+      /PageRange secondhalf def
+      % (PART 2 PAGERANGE: )print PageRange ==
+    } {
+      /PageRange [ [
+        InsertBefore
+        % startpage already incremented by insertcount
+        startpage InsertCount sub
+        sub InsertCount sub 2 add
+      ] ] def
+    } ifelse
+
+    % endpage has already been adjusted
+    % startpage has been adjusted, but needs re-doing for this element
+    /startpage InsertBefore 1 add def
+    /pages endpage startpage sub 1 add def
+
+    fileindex 1 sub
+    end                             % second half dict
+
+    % fileindex
+    InputFileList exch <<
+      /pages InsertCount
+      /startpage InsertBefore InsertCount sub 1 add
+      /endpage 3 index 2 index add 1 sub
+      /fileindex 8 index
+      /FileType /Pad
+      /FileName (*Padding*)
+    >> put
+  } ifelse
+} bind def
+
+/InsertPadEntry {
+  //LayoutDebug { (InsertPadEntry+\n) ErrPrint } if
+  PaddedPages TotalPages ne {
+    InputFileList dup length <<
+      /FileType /Pad
+      /pages PaddedPages TotalPages sub
+      /startpage TotalPages
+      /endpage PaddedPages 1 sub
+      /FileName (*Padding*)
+      /fileindex InputFileList length
+    >> put
+  } if
+  /TotalPages PaddedPages def
+  //LayoutDebug { (InsertPadEntry-\n) ErrPrint } if
+} bind def
+
+/InsertSplit {
+  PaddedPages TotalPages sub
+  dup 2 mod 0 ne {
+    % Odd number of pages, insert one blank in from the end
+    % BeforeEnd ExtraPages
+    1
+    PaddedPages 4 -2 roll add sub
+    InsertPadding
+    /TotalPages TotalPages 1 add store
+  } { pop } ifelse
+  InsertPadEntry
+} bind def
+
+/ValidatePageCount <<
+
+  /Abort {
+    % UVM (%%%%[ Error: HqnLayout: Total page count (%d) is not divisible by %d. Aborting job ]%%%%\n)
+    (%%[ Error: HqnLayout: Total page count \() ErrPrint
+    TotalPages ErrPrint
+    (\) is not divisible by ) ErrPrint
+    LocCheckDivisor ErrPrint
+    (. Aborting job ]%%\n) ErrPrint
+    /HqnLayout errordict /undefinedresult get //layoutstop exec
+  } bind
+
+  /InsertAtEnd {
+    InsertPadEntry
+  } bind
+
+  /InsertBeforeEnd {
+    PaddedPages TotalPages sub
+    PaddedPages 2 sub
+    InsertPadding
+  } bind
+
+  /InsertBeforeCover {
+    PaddedPages TotalPages sub
+    PaddedPages 3 sub
+    InsertPadding
+  } bind
+
+  /SplitBeforeEnd {
+    1 InsertSplit
+  } bind
+
+  /SplitBeforeCover {
+    2 InsertSplit
+  } bind
+
+>> def
+/ValidatePageCount {
+  //LayoutDebug { (ValidatePageCount+\n) ErrPrint } if
+
+  TotalPages PaddedPages ne {
+    % Reconstruct the files list to include padding pages
+    //ValidatePageCount NotDivisor 2 copy known {
+      get exec
+    } {
+      errordict /undefined get //layoutstop exec
+    } ifelse
+  } if
+
+% (%stdout) (w) file InputFileList emit
+  //LayoutDebug { (ValidatePageCount-\n) ErrPrint } if
+} bind def
+
+/ValidateAutoSpine [
+  <<
+    /name   /name
+    /style  /Name
+    /default (NoName)
+  >>
+  <<
+    /name   /geometries
+    /style  /Dict
+    /default << { /Head2Head /Foot2Foot /Left2Right /Right2Left /Auto }{ null } forall >>
+  >>
+  <<
+    /name   /getwidth
+    /style  /Proc
+  >>
+  <<
+    /name   /getheight
+    /style  /Proc
+  >>
+  <<
+    /name   /result
+    /style  /Dict
+  >>
+] def
+
+/AutoSpine 4 dict def
+/AutoSorted 10 array def
+/AutoSpine {
+  LayoutDebug { (AutoSpine+\n) ErrPrint } if
+  /HqnLayout /AutoSpine //StartStackCheck exec
+
+  //AutoSpine begin
+
+  0 1 9 { //AutoSorted exch null put } for
+
+  /inx 1 def
+  //LayoutDebug { (GetAutoSpine+\n) ErrPrint } if
+  { GetAutoSpine } stopped {
+    defaulthandleerror
+    (ERROR IN GetAutoSpine\n) ErrPrint
+    serverdict /terminatejobnow get exec
+  } if
+  //LayoutDebug { (GetAutoSpine-\n) ErrPrint } if
+  {
+    //ValidateAutoSpine ValidateOneDict
+    begin
+    currentdict /geometries known {
+      geometries Geometry 2 copy known {
+        get
+        dup null eq { pop inx } if
+      } { pop pop -1 } ifelse
+    } { inx } ifelse
+    dup 0 gt {
+      /pagegridwidth { getwidth } stopped { defaulthandleerror stop } if def
+      /pagegridheight { getheight } stopped { defaulthandleerror stop } if  def
+
+      //AutoSorted exch 1 sub currentdict put
+    } { pop } ifelse
+    end
+    /inx inx 1 add def
+  } forall
+
+  % Do any fit without clipping/scaling?
+  /chosen null def
+  /selector 0 def
+  //AutoSorted {
+    dup null ne {
+      begin
+% name ==
+      availablewidth 0 eq { 666 }{
+        availablewidth pagegridwidth div
+      } ifelse
+      availableheight 0 eq { 666 }{
+        availableheight pagegridheight div
+      } ifelse
+      2 copy gt { exch } if pop
+      dup 1 ge {
+% (fits)=
+        pop
+        /chosen currentdict end def
+        exit
+      } if
+
+      % In case one doesn't fit, choose the one that requires least scaling
+      selector 1 index lt {
+% (new selection)=
+        /selector exch store
+        /chosen currentdict store
+      } { pop } ifelse
+      end
+    } { pop } ifelse
+  } forall
+
+  chosen null eq {
+    % Shouldn't happen ...
+    /AutoSpine errordict /undefinedresult get exec
+  } if
+  chosen
+  end             % AutoSpine
+  /result get {
+    1 index /Geometry eq {
+      Geometry /Auto eq { //Layout 3 1 roll put }{ pop pop } ifelse
+    }       { //Layout 3 1 roll put } ifelse
+  } forall
+
+  LayoutDebug {
+    (AutoSpine-: )ErrPrint SpineFold ErrPrint ( / )ErrPrint
+    Geometry ErrPrint (, )ErrPrint
+    PageCountAcross ErrPrint ( x )ErrPrint PageCountUp ErrPrint (\n) ErrPrint
+  } if
+  /AutoSpine /End //StackCheck0 exec
+} bind def
+
+/EndBlock {
+    ]       % end of pagerange
+    FileType /PDF eq { /context pdfcontextid /virtualcontext virtualcontext } if
+    /FileName FileName
+    /FileType FileType
+    /FileObject where { pop /FileObject dup load } if
+  >>      % end of dict for this block
+} bind def
+
+/StartBlock {
+  << /pagerange [ % start next block
+} bind def
+
+/MapPageSequence {
+% (MPS: )print countdictstack ==
+  % Map from array of page indices to an array of dicts holding contexts and page numbers
+  % Input - simple array of integer indices.
+  % Output - array of << FileName, pagerange, context, virtualcontext (if PDF) >>
+
+  /PageIndex 0 def
+  InputFileList 0 get begin
+
+  [ //StartBlock exec
+    5 -1 roll {
+      //LayoutDebug { (Mapping: )ErrPrint dup ErrPrint } if
+
+      dup PaddedPages ge {
+        pop
+        %  /HqnLayout /rangecheck (PageSequence) ExtraError
+      } {
+        /PageIndex exch store
+        {
+          PageIndex startpage lt {
+            % step earlier
+            counttomark 0 ne {
+              //EndBlock exec
+              //StartBlock exec
+            } if
+            fileindex 0 le {
+              /MapPageSequence /unregistered (Off Start of file list) ExtraError
+            } if
+            InputFileList fileindex 1 sub get
+            end
+            begin
+          } {
+            PageIndex endpage gt {
+              InputFileList length fileindex 1 add le {
+                Backstopped {
+                  1
+                  exit
+                } {
+                  /MapPageSequence /unregistered (Off End of file list) ExtraError
+                } ifelse
+              } if
+
+              % step later
+              counttomark 0 ne {
+                //EndBlock exec
+                //StartBlock exec
+              } if
+              InputFileList fileindex 1 add get
+              end
+              begin
+            } {
+              % We're in the right InputFileList record
+              % OK, we have a (zero-based) index, which page is this really?
+              currentdict /PageRange known {
+                /PageIndex PageIndex startpage sub store
+                PageRange {
+                  %  prval
+                  dup type /integertype eq {
+                    % just one page
+                    PageIndex 0 eq {
+                      % Yeah, it's this one
+                      exit
+                    } {
+                      % nope, try again
+                      pop
+                      /PageIndex PageIndex 1 sub store
+                    } ifelse
+                  } {
+                    dup length 1 eq {
+                      % [ x ] - from X to end, it MUST be in this group
+                      0 get PageIndex add
+                      exit
+                    } {
+                      % [ x y ] - from X to Y
+                      aload pop
+                      % first last
+                      % Remember that these are 1-based!
+                      exch
+                      % last first
+                      2 copy sub
+                      % last first diff
+                      PageIndex ge {
+                        % in this sequence
+                        exch pop        % last
+                        PageIndex add
+                        exit
+                      } {
+                        % nope, try again
+                        % last first
+                        sub 1 add PageIndex exch sub /PageIndex exch store
+                      } ifelse
+                    } ifelse
+                  } ifelse
+                } forall
+              } {
+                % No PageRange, just convert to 1-based
+                PageIndex startpage sub 1 add
+              } ifelse
+
+              //LayoutDebug { ( -> )ErrPrint dup ErrPrint (\n) ErrPrint } if
+
+              % work round core RIP feature, whereby PDF PageRanges are
+              % re-ordered into reader-order
+              counttomark 1 gt {
+                2 copy ge {
+                  /temp exch def
+                  //EndBlock exec
+                  //StartBlock exec
+                  temp
+                } if
+              } if
+              exit
+            } ifelse
+          } ifelse
+        } loop
+      } ifelse
+    } forall
+
+    counttomark 0 ne {
+      //EndBlock exec
+    } {
+      % Discard what's built so far
+      pop pop pop
+    } ifelse
+    end
+  ]
+
+  % (MPSx: )print countdictstack ==
+} bind def
+
+/MapOnePass {
+  % Map from supplied file list (dict of dicts) to similar array, each with simple pagerange.
+  % There can be only one file in the input file list at this point.
+
+  (HqnLayout: MapOnePass: Called with multiple input files\n) { InputFileList length 1 eq } HqnAssert
+
+  [
+    InputFileList length 0 gt {
+      <<
+        InputFileList 0 get begin
+        /pagerange currentdict /PageRange known { PageRange }{ [ [ 1 ] ] } ifelse
+        /context currentdict /pdfcontextid 2 copy known { get }{ pop pop pop } ifelse
+        { /FileName /FileType } { dup load } forall
+        currentdict /virtualcontext known { /virtualcontext dup load } if
+        currentdict /FileObject known { /FileObject dup load } if
+        end
+      >>
+    } if
+  ]
+} bind def
+
+/DefHere {
+  % sourcedict validationarray
+  % Define all values from source that are in validation to here
+
+  {
+    /name get
+    % sourcedict key
+    2 copy known {
+      2 copy get
+      def
+    } { pop } ifelse
+    % sourcedict
+  } forall
+  pop
+} bind def
+
+/CalcCreep {
+  GutterCreep CreepStyle
+  /PushOut eq {
+    SurfaceCount Sides WorkTurn /None ne { pop 1 } if idiv
+    CreepPerSheet mul
+    1 sub
+  } {
+    CreepStyle /PullIn eq {
+      0
+    } {
+      % Centered
+      SurfaceCount Sides WorkTurn /None ne { pop 1 } if idiv
+      CreepPerSheet mul
+      1 sub 2 div
+    } ifelse
+  } ifelse
+  mul
+} bind def
+
+/SpinPages 3 dict def
+/SpinPages {
+  //SpinPages begin
+  % [ [ <<a>> <<b>> ] [ <<c>> <<d>> ] [ <<e>> <<f>> ] ]
+  [ exch { { } forall } forall ]
+  /a exch def
+  % [ <<a>> <<b>> <<c>> <<d>> <<e>> <<f>> ]
+  [
+    0 1 PageCountUp 1 sub {
+      /r exch def
+      [
+        0 1 PageCountAcross 1 sub {
+          /c exch def
+          a PageCountUp c mul r add get
+        } for
+      ]
+    } for
+  ]
+  % [ [ <<a>> <<d>> ] [ <<b>> <<e>> ] [ <<c>> <<f>> ] ]
+  end
+} bind def
+
+/ReverseRows {
+  % [ [a] [b] [c] ]
+  [ mark 3 -1 roll aload pop
+  % [ mark [a] [b] [c]
+  {
+    dup type /marktype eq { exit } if
+    [
+      exch {
+        % don't redefine in-place; that would mess up the next surface
+        dup length dict copy dup begin
+        /SCY SCY neg def
+        /CY CY neg def
+        end
+      } forall
+    ]
+    counttomark 1 add 1 roll
+  } loop
+  pop ]
+} bind def
+
+/ReverseCols {
+  % reverse the order of columns in each row
+  [ exch {
+    [ mark 3 -1 roll aload pop
+      % [ mark <<a>> <<b>> <<c>>
+      {
+        dup type /marktype eq { exit } if
+        % don't redefine in-place; that would mess up the next surface
+        dup length dict copy dup begin
+        /SCX SCX neg def
+        /CX CX neg def
+        end
+        counttomark 1 add 1 roll
+      } loop
+      pop ]
+    } forall
+  ]
+} bind def
+
+/ReOrderPagesArray <<
+  /L2RT2B {}
+  /L2RB2T {
+    //ReverseRows exec
+  }
+  /R2LT2B {
+    //ReverseCols exec
+  }
+  /R2LB2T {
+    //ReverseRows exec
+    //ReverseCols exec
+  }
+  /T2BL2R {
+    //SpinPages exec
+  }
+  /B2TL2R {
+    //SpinPages exec
+    //ReverseCols exec
+  }
+  /T2BR2L {
+    //SpinPages exec
+    //ReverseRows exec
+  }
+  /B2TR2L {
+    //SpinPages exec
+    //ReverseRows exec
+    //ReverseCols exec
+  }
+>> def
+/ReOrderPagesArray {
+  % i dict
+  //ReOrderPagesArray exch /FillOrder get
+  % (RE_ORDER: )print dup //=string cvs print (  )print 2 index ==
+  get
+  PagesArray 3 -1 roll get exch
+  exec
+} bind def
+
+/MinGValues <<
+  /GutterB        { MinGutterB }
+  /GutterA        { MinGutterA }
+  /WTGutter       { WTMinGutter }
+>> def
+
+/SetupGutters {
+  /HqnLayout /SetupGutters //StartStackCheck exec
+  /OtherHGutter 0 store
+  /OtherVGutter 0 store
+
+  SpineFold /Horizontal eq {
+    /MaxHCreep MinGutterA store
+    /MaxVCreep MinGutterB store
+    /MaxVGutter GutterB store
+    /MaxHGutter GutterA CreepToMax add store
+    /OtherHGutter GutterB CreepToMax sub store
+    PageCountUp 2 gt {
+      OtherHGutter MinGutterB lt {
+        % Creeping the spine gutter will reduce the non-spine gutter beyond it's minimum
+        /MaxHCreep MaxHCreep MinGutterB OtherHGutter sub add store
+        /OtherHGutter MinGutterB store
+      } if
+    } {
+      /OtherHGutter MinGutterB def
+    } ifelse
+  } {
+    SpineFold /Vertical eq {
+      /MaxHCreep MinGutterB store
+      /MaxVCreep MinGutterA store
+      /MaxHGutter GutterB store
+      /MaxVGutter GutterA CreepToMax add store
+      /OtherVGutter GutterB CreepToMax sub store
+
+      PageCountAcross 2 gt {
+        OtherVGutter MinGutterB lt  {
+          % Creeping the spine gutter will reduce the non-spine gutter beyond it's minimum
+          /MaxVCreep MaxVCreep MinGutterB OtherVGutter sub add store
+          /OtherVGutter MinGutterB store
+        } if
+      } {
+        /OtherVGutter MinGutterB def
+      } ifelse
+    } {
+      % /None
+      /MaxHCreep GutterA store
+      /MaxVCreep GutterB store
+      /MaxHGutter GutterA store
+      /OtherHGutter GutterA store
+      /MaxVGutter GutterB store
+      /OtherVGutter GutterB store
+    } ifelse
+  } ifelse
+
+  % Redefine max creeps if ... ####################################
+
+  /MaxHCreep MaxHGutter MaxHCreep sub 2 div store
+  /MaxVCreep MaxVGutter MaxVCreep sub 2 div store
+% { SpineFold PageCountAcross /MaxVCreep /MaxVGutter /GutterA /MaxHGutter }{ dup =print (  )print load == } forall (%%%%%%%%%%%%%%%%%)=
+  /SetupGutters /End //StackCheck0 exec
+} bind def
+
+/TableBasedSetLayout 8 dict def
+/TableBasedSetLayout {
+  {       % stopped
+    //LayoutDebug { (TableBasedSetLayout+\n) ErrPrint } if
+    /HqnLayout /TableBasedSetLayout //StartStackCheck exec
+
+    //Layout begin
+
+    { /SpineFold /Geometry }{ Request 1 index get def } forall
+    { /Sides }{ Active 1 index get def } forall
+    { /PageCountAcross /PageCountUp }{ InitDict 1 index get def } forall
+    /TableBasedSetLayout /A 0 1 0 //StackCheck3 exec
+    Geometry /Auto eq SpineFold /Auto ne and {
+      UVS (%%[ Warning: HqnLayout: SpineFold will be set to Auto because Geometry is Auto ]%%\n) ErrPrint
+      /SpineFold /Auto def
+    } if
+
+    //TableBasedSetLayout begin
+
+
+    /CreepToMax //CalcCreep exec def
+    % Used in some of the external annotation files:
+    /GA GutterA CreepToMax add def
+    /GB GutterB CreepToMax sub def
+    /availablewidth ImageWidth Left sub Right sub dup 0 lt { pop 0 } if def
+    /availableheight ImageHeight Top sub Bottom sub dup 0 lt { pop 0 } if def
+
+    % /TableBasedSetLayout /B 0 2 0 //StackCheck3 exec
+    WorkTurn /None ne {
+      Sides 2 ne {
+        /WorkTurn /None def
+      } {
+        TurnTopBottom {
+          /availableheight availableheight WTMinGutter sub 2 div def
+        } {
+          /availablewidth availablewidth WTMinGutter sub 2 div def
+        } ifelse
+      } ifelse
+    } if
+    % /TableBasedSetLayout /C 0 2 0 //StackCheck3 exec
+    UsePageRotate not {
+      /pw PageSize aload pop
+      SourceRotate 180 mod 0 ne { exch } if
+      /ph exch def def
+    } if
+    % /TableBasedSetLayout /D 0 2 0 //StackCheck3 exec
+    SpineFold /Auto eq {
+      Active /GetAutoSpine known not {
+        /TableBasedLayout_2 /undefinedresult
+        UVS (SpineFold is Auto, scheme does not support Auto\n) ExtraError
+      } if
+
+      //AutoSpine exec
+
+      //SetupGutters exec
+    } if
+
+    Geometry /Auto eq {
+      % This scheme doesn't care about geometry
+      /Geometry /Head2Head def
+    } if
+
+    //LayoutDebug { (GetPageArray+\n) ErrPrint } if
+    /TableBasedSetLayout /Pre-GPA 0 2 0 //StackCheck3 exec
+    { GetPageArray } stopped {
+      defaulthandleerror
+      (ERROR IN GetPageArray\n) ErrPrint
+      serverdict /terminatejobnow get exec
+    } if
+    //LayoutDebug { (GetPageArray-\n) ErrPrint } if
+    /TableBasedSetLayout /Post-GPA 0 2 1 //StackCheck3 exec
+
+    end             % TableBasedSetLayout
+
+    Request begin
+    SpineFold /None ne {
+      /PagesAcross PageCountAcross def
+      /PagesUp PageCountUp def
+    } if
+    end
+
+    /PagesArray 1 index def
+
+    dup null eq {
+      % should never happen - scheme error
+      /TableBasedLayout_2 /undefinedresult
+      (Mismatch of Initialize and GetPageArray in scheme\n) ExtraError
+    } if
+
+    //LayoutDebug { (ValidateStdLayout+\n) ErrPrint } if
+    /TableBasedSetLayout /Pre-VSL 0 1 1 //StackCheck3 exec
+    dup length Sides ne {
+      (Sides )print Sides =print ( != )print length ==
+      /TableBasedLayout_2 errordict /rangecheck get exec
+    } if
+    {
+      dup length PageCountUp ne {
+        (PageCountUp )print PageCountUp =print ( != )print length ==
+        /TableBasedLayout_2 errordict /rangecheck get exec
+      } if
+      {
+        dup length PageCountAcross ne {
+          (PageCountAcross )print PageCountAcross =print ( != )print length ==
+          /TableBasedLayout_2 errordict /rangecheck get exec
+        } if
+        {
+          //ValidateStdLayout ValidateOneDict
+          pop
+        } forall
+      } forall
+    } forall
+    //LayoutDebug { (ValidateStdLayout-\n) ErrPrint } if
+    /TableBasedSetLayout /Post-VSL 0 1 0 //StackCheck3 exec
+
+% PagesArray { { { begin { /PN /PO /CY }{ load =print (/)print } forall end (   )print } forall ()= } forall (++++++++)= } forall (__________________________)=
+    WorkTurn /None eq {
+      SpineFold /None ne Surface 0 eq and {
+        FrontVals /FillOrder /L2RT2B put
+        TurnTopBottom {
+          1 << /FillOrder /R2LB2T >> //ReOrderPagesArray exec
+          PagesArray 1 get copy pop       % Make sure it's written back into the same array
+        } if
+        BackVals /FillOrder /L2RT2B put
+        /Tactic /L2RT2B store
+      } if
+    } {
+      //LayoutDebug { (WorkTurnSetup+\n) ErrPrint } if
+
+      % Fix up PageArray etc for Work & Turn
+      % Re-order PagesArray for L2RT2B
+      /PagesArray
+      0 FrontVals //ReOrderPagesArray exec
+      1 BackVals //ReOrderPagesArray exec
+
+      % Mark backs as backs
+      dup { { /PF false put } forall } forall
+
+      2 array astore def
+% PagesArray { { { begin PN =print (/)print PO =print (/)print CY =print (/)print SCY =print ( )print end } forall ()= } forall (++++++++)= } forall (__________________________)=
+
+      FrontVals /FillOrder /L2RT2B put
+
+      % we have array of front and back, munge into single array for front only
+      TurnTopBottom {
+        SpineFold /None ne {
+          PagesArray 1 1 << /FillOrder /R2LB2T >> //ReOrderPagesArray exec put
+        } if
+        /PagesArray [   % surfaces
+          [               % rows
+            PagesArray aload pop
+            aload pop
+            % [ [ [0] << >> ...
+            counttomark -1 roll
+            aload
+            % [ [ 1 1 1 1 0 0 0 0 [0]
+            WorkTurn /LeftRight eq {
+              length counttomark 1 sub exch roll
+            } { pop } ifelse
+
+          ]       % rows
+        ] def
+        /PageCountUp PageCountUp 2 mul def
+% PagesArray { { { begin PN =print (/)print PO =print (/)print CY =print (/)print SCY =print ( )print end } forall ()= } forall (++++++++)= } forall (^^^^^^^^^^^^^^^^^^^^^^^^^^^)=
+      } {
+        /PagesArray [ [
+          0 1 PagesArray 0 get length 1 sub {
+            /row exch def
+            [
+              WorkTurn /LeftRight eq { 0 1 1 }{ 1 -1 0 } ifelse {
+                PagesArray exch get row get {} forall
+              } for
+            ]
+          } for
+        ] ] def
+
+        /PageCountAcross PageCountAcross 2 mul def
+      } ifelse
+
+      (Layout not current dict) { currentdict //Layout eq } HqnAssert
+      /Sides 1 def
+      /Front true def
+
+      /PagesPerSurface PageCountAcross PageCountUp mul def
+      /PagesPerSignature PagesPerSurface def
+      /SurfaceCount StepRepeat { PaddedPages WorkTurn /None ne { 2 idiv } if }{
+        PaddedPages PagesPerSurface 1 sub add PagesPerSurface idiv
+      } ifelse def
+
+      //LayoutDebug { (WorkTurnSetup-\n) ErrPrint } if
+    } ifelse
+% PageCountAcross =print (, )print PageCountUp ==
+% PagesArray { { { begin { /PN /PO /CY }{ load =print (/)print } forall end (   )print } forall ()= } forall (++++++++)= } forall (__________________________)=
+
+    /TableBasedSetLayout /Post-WTS 0 1 0 //StackCheck3 exec
+
+    % Diff creep at opp ends of same gutter 'cos folded.
+    % therefore set gutters to max, and use Suffix to move individual pages as required.
+    <<
+      /Objective
+      FixedPageCount
+      Request /PagesAcross get 0 ne
+      Request /PagesUp get 0 ne or
+      or {
+        Request /PagesAcross get 1 eq Request /PagesUp get 1 eq and
+        Active /Sides get 1 eq WorkTurn /None eq or
+        and {
+          /OneUp
+          /Strategy /OneUpWithAspect
+        } {
+          /NxN
+        } ifelse
+      } { /FillSpace } ifelse
+
+      /PagesAcross    PageCountAcross
+      /PagesUp        PageCountUp
+
+      UsePageRotate {
+        //SourceCompensate SourceRotate get
+        PageRotate 2 copy known { get }{ exch pop } ifelse
+        /Aspect //Aspects 2 index get
+        /ExtraFlip //ExtraFlips 5 -1 roll get
+        /RotatedAngle 270
+      } {
+        % Rotation of Page 1, which will always be on the front
+        /BasePageRotate -1 PagesArray 0 get {
+          {
+            dup /PN get 0 eq {
+              /PO get
+              exch pop
+              exit
+            } if
+            pop
+          } forall        % cols
+          dup -1 ne { exit } if
+        } forall        % rows
+        dup -1 eq {
+          % Developer report; no U V S
+          /HqnLayout /undefined (Scheme missing first page in PageArray) ExtraError
+        } if
+        def
+        /Aspect //Aspects //AngleRot BasePageRotate SourceRotate sub 360 add 360 mod get get
+        /ExtraFlip BasePageRotate SourceRotate sub 360 add 360 mod 180 ge
+        /RotatedAngle 90
+      } ifelse
+
+      % This overrides gutters set in BaseImposeStart
+      % Set to average of all gutters in one dimension when spine and other gutters are aligned, suffix handling is extended to adjust for differences.
+      SpineFold /Vertical eq {
+        PageCountAcross 2 gt {
+          % We have parallel spine and other gutters
+          OtherVGutter MinGutterB lt {
+            /MaxVGutter MaxVGutter MinGutterB OtherVGutter sub sub def
+            MaxVGutter MinGutterA lt {
+              /Error ShowMessage /IncompatibleGutters ShowMessage
+              /HqnLayout errordict /rangecheck get exec
+            } if
+            /OtherVGutter MinGutterB def
+          } if
+
+          /VertGutters [
+            0 1 PageCountAcross 2 sub {
+              2 mod 0 eq {
+                % Spine
+                MaxVGutter
+              } {
+                OtherVGutter
+              } ifelse
+            } for
+          ] def
+        } {
+          /VertGutters [ MaxVGutter ] def
+        } ifelse
+      } {
+        % No spines
+        /VertGutters [
+          PageCountAcross 1 sub { /GutterB } repeat
+        ] def
+      } ifelse
+      WorkTurn /None ne TurnTopBottom not and {
+        % middle in VertGutters is WT gutter
+        VertGutters dup length 1 sub 2 idiv /WTGutter put
+      } if
+      /OptVGutter PageCountAcross 1 gt {
+        0 VertGutters {
+          dup type /nametype eq { load } if
+          add
+        } forall PageCountAcross 1 sub div
+        0 VertGutters {
+          dup type /nametype eq {
+            //MinGValues exch get exec
+          } if
+          add
+        } forall PageCountAcross 1 sub div
+      } { 0 0 } ifelse
+      /MinVGutter exch
+      /MinVCropGutter 1 index
+
+      SpineFold /Horizontal eq {
+        PageCountUp 2 gt {
+          % We have parallel spine and other gutters
+          OtherHGutter MinGutterB lt {
+            /MaxHGutter MaxHGutter MinGutterB OtherHGutter sub sub def
+            MaxHGutter MinGutterA lt {
+              /Error ShowMessage /IncompatibleGutters ShowMessage
+              /HqnLayout errordict /rangecheck get exec
+            } if
+            /OtherHGutter MinGutterB def
+          } if
+
+          /HorGutters [
+            0 1 PageCountUp 2 sub {
+              2 mod 0 eq {
+                % Spine
+                MaxHGutter
+              } {
+                OtherHGutter
+              } ifelse
+            } for
+          ] def
+        } {
+          % Just one gutter
+          /HorGutters [ MaxHGutter ] def
+        } ifelse
+      } {
+        % No spines
+        /HorGutters [
+          SpineFold /Vertical eq { /GutterB }{ /GutterA } ifelse
+          PageCountUp dup 2 ge {
+            2 sub { dup } repeat
+          } { pop } ifelse
+        ] def
+      } ifelse
+      WorkTurn /None ne TurnTopBottom and {
+        % middle in HorGutters is WT gutter
+        HorGutters dup length 1 sub 2 idiv /WTGutter put
+      } if
+      /OptHGutter PageCountUp 1 gt {
+        0 HorGutters {
+          dup type /nametype eq { load } if
+          add
+        } forall PageCountUp 1 sub div
+        0 HorGutters {
+          dup type /nametype eq {
+            //MinGValues exch get exec
+          } if
+          add
+        } forall PageCountUp 1 sub div
+      } { 0 0 } ifelse
+      /MinHGutter exch
+      /MinHCropGutter 1 index
+
+      % UnFixedLayout Suffix will adjust page positions for creep, and adjust margins to maintain
+      % the centre of the gutter in the same place
+    >>
+% dup { exch =print (   )print == } forall (^^^^^^^^^^^^^^^^^^^^^^^^)=
+
+    end             % Layout
+  } stopped { defaulthandleerror stop } if
+  //LayoutDebug { (TableBasedSetLayout-\n) ErrPrint } if
+  /TableBasedSetLayout /End 0 0 1 //StackCheck3 exec
+} bind def
+
+{ /TileWidth /TileHeight /TileOverlapX /TileOverlapY }{ null def } forall
+
+/InstallImpose 80 dict def
+/CheckImposition << { /Imposition /BeginPage /EndPage /SensePageDevice } { null } forall >> def
+
+/InstallImpose {
+  //LayoutDebug { (InstallImpose+\n) ErrPrint } if
+  /HqnLayout /InstallImpose //StartStackCheck exec
+  PageSize type /nulltype ne {
+    <<
+      /PageSize PageSize
+    >> setpagedevice
+  } if
+
+  /TilesAcross 1 def
+  /TilesUp 1 def
+  /Tiling false def
+
+  //InstallImpose { pop //InstallImpose exch undef } forall
+  //InstallImpose begin
+
+  /InstallImpose /A 0 1 0 //StackCheck3 exec
+
+  //BaseImposeStart exec
+
+  /InstallImpose /B 0 1 0 //StackCheck3 exec
+
+  HqnImpose2Dict /LayoutPassThrough 2 copy known {
+    get {
+      % key val
+      //CheckImposition 2 index known {
+        pop
+        InstallCount 0 eq {
+          % No U V M, intended for developers only
+          (%%[ Warning: HqnLayout: LayoutPassThrough illegal value. Pass through value ignored: ')ErrPrint
+          ErrPrint (' ]%%\n) ErrPrint
+        } { pop } ifelse
+      } {
+        currentdict 2 index known {
+          dup type /dicttype eq {
+            % merge dicts
+            currentdict 2 index get
+            dup type /dicttype eq {
+              begin
+              % key newdict
+              {
+                % key subkey subval
+                currentdict 2 index known {
+                  % subkey clash
+                  pop             % val
+                  InstallCount 0 eq {
+                    % No U V M, intended for developers only
+                    (%%[ Warning: HqnLayout: LayoutPassThrough subkey clash. Pass through value ignored: ')ErrPrint
+                    1 index ErrPrint (' : ') ErrPrint
+                    ErrPrint (' ]%%\n) ErrPrint
+                  } { pop } ifelse
+                } {
+                  % new subkey
+                  def
+                } ifelse
+              } forall
+              end
+              pop
+              false
+            } {
+              pop pop true
+            } ifelse
+          } { pop true } ifelse
+          {
+            InstallCount 0 eq {
+              % Overwrite request
+              % No U V M, intended for developers only
+              (%%[ Warning: HqnLayout: LayoutPassThrough key clash. Pass through value ignored: ')ErrPrint
+              ErrPrint (' ]%%\n) ErrPrint
+            } { pop } ifelse
+          } if
+        } {
+          % new key
+          def
+        } ifelse
+      } ifelse
+    } forall
+  } { pop pop } ifelse
+
+  /InstallImpose /C 0 1 0 //StackCheck3 exec
+
+  UsingTableBasedLayout {
+    % Don't call this in the first pass for EarlyImposeDesign schemes
+    //Layout /InitDict known {
+      TableBasedSetLayout
+    } {
+      <<
+        Request /PagesAcross get 0 eq {
+          /Objective /FillSpace
+        } {
+          /Objective /NxN
+          { /PagesAcross /PagesUp }{ //Layout 1 index get } forall
+        } ifelse
+        /Tactic //Layout Front { /FrontVals }{ /BackVals } ifelse get /FillOrder get
+        /Aspect //Aspects
+        //SourceCompensate SourceRotate get
+        PageRotate 2 copy known { get }{ exch pop } ifelse
+        get
+      >>
+    } ifelse
+  } {
+    { SetLayout } stopped {
+      (%%[ Error: HqnLayout: SetLayout ]%%\n) ErrPrint
+      defaulthandleerror stop
+    } if
+  } ifelse
+  { def } forall
+
+  /InstallImpose /D 0 1 0 //StackCheck3 exec
+
+  BaseImposeEnd
+
+  currentdict end
+% dup { exch =print (   )print == } forall (===============================)=
+
+  /InstallImpose /Pre-HII 0 0 1 //StackCheck3 exec
+
+  HqnInitImpose
+
+  % If using auto-fill and W&T we have to halve the page count in one or other dimension at this stage.
+  HqnImpose2GlobalDict /Objective get /FillSpace eq
+  WorkTurn /None ne
+  and {
+    HqnImpose2GlobalDict begin
+    TurnTopBottom {
+      /PagesUp PagesUp 2 idiv dup 0 eq { pop 1 } if def
+    } {
+      /PagesAcross PagesAcross 2 idiv dup 0 eq { pop 1 } if def
+    } ifelse
+    end
+  } if
+
+  /InstallCount InstallCount 1 add def
+
+  /InstallImpose /End //StackCheck0 exec
+  //LayoutDebug { (InstallImpose-\n) ErrPrint } if
+} bind def
+
+/ExitLoop false def
+
+/ExitIfStopped {
+  stopped {
+    //SetExecFileStop exec
+    /ExitLoop true store
+    exit
+  } if
+} bind def
+
+/Nosetpagedevice << /setpagedevice { (NOSET!\n) ErrPrint pop } bind >> def
+/currentsystemparam 1183615869 internaldict /currentsystemparam get def
+/pagebbox 1183615869 internaldict /pagebbox get def
+
+/RunFiles {
+  % set the layout
+  % call PageSequence from Active to select the page indices
+  % convert to context/pageno
+  % check transparency
+  % run the pages
+
+  //LayoutDebug { (RunFiles+: )ErrPrint OnePass ErrPrint (\n) ErrPrint } if
+  /HqnLayout /RunFiles //StartStackCheck exec
+
+  /Front Sides 1 eq Surface 2 mod 0 eq or def
+
+  Front { FrontVals }{ BackVals } ifelse
+  //ValidateSurface //DefHere exec
+
+  OnePass not Surface 0 eq or {
+    //InstallImpose exec
+  } if
+
+  /RunSave save def
+
+  % Must be there, we've just installed HqnImpose2 ...
+  /HqnImpose2setpagedevice 1183615869 internaldict /shadowproc get /setpagedevice get def
+
+  OnePass {
+    MapOnePass
+  } {
+    InputFileList 0 get /FileType get /PS eq {
+      InputFileList 0 get begin
+      [ <<
+        /pagerange //nullarray
+        /FileName dup load
+        /FileType /PS
+        /FileObject where {
+          pop /FileObject dup load
+          dup status not {
+            //ReportPS exec
+            /HqnLayout errordict /undefinedresult get //layoutstop exec
+          } if
+        } if
+      >> ]
+      end % filelist
+      //Backstop exec
+    } {
+      PageSequence //MapPageSequence exec
+    } ifelse
+  } ifelse
+
+  dup length 0 eq {
+    % Break out of the loop if we've done all pages. used for N-Up
+    % with auto-fill.
+    pop
+    true
+  } {
+    % and finally, run the files.
+    /FilesArray exch def
+
+    null            % to be popped below (standing in for a break-out boolean)
+
+    TilesUp 1 sub -1 0 {
+      /TileUp exch def
+      0 1 TilesAcross 1 sub {
+        /TileAcross exch def
+
+        pop             % break-out boolean from all but the last
+
+        /RunFiles /A 1 0 0 //StackCheck3 exec
+
+        Tiling {
+
+          <<
+            TilesAcross 1 ne {
+              /AdjustX TileAcross TileWidth TileOverlapX sub mul neg HqnImpose2GlobalDict /ScaleX get mul
+            } if
+            TilesUp 1 ne {
+              /AdjustY TileUp TileHeight TileOverlapY sub mul neg HqnImpose2GlobalDict /ScaleY get mul
+            } if
+
+          >>
+          //LayoutDebug {
+            (Tile: )ErrPrint TileAcross 1 add ErrPrint (/)ErrPrint TilesAcross ErrPrint (, )ErrPrint
+            TilesUp TileUp sub ErrPrint (/)ErrPrint TilesUp ErrPrint
+            dup {
+              (, )ErrPrint
+              exch ErrPrint
+              (: )ErrPrint
+              ErrPrint
+            } forall
+            (\n) ErrPrint
+          } if
+          //HqnMergeConfig exec
+          //HqnFlushFilm exec
+        } if
+
+        /ExitLoop false store
+
+        /RunFiles /B 1 0 0 //StackCheck3 exec
+
+        FilesArray {
+% dup { exch =print (   )print == } forall (+++++++++++++)=
+          begin
+          1183615869 internaldict /fileType FileType put
+
+          //LayoutDebug { (Running: )ErrPrint FileName ErrPrint ( as )ErrPrint FileType ErrPrint } if
+
+          FileType /PDF eq {
+%                                       //Nosetpagedevice 1183615869 internaldict /shadowop get exec
+            context <<
+              //LayoutDebug { (  pagerange: )ErrPrint pagerange ErrPrint (\n)ErrPrint } if
+              /PageRange pagerange
+              /WarnSkippedPages false
+            >>
+
+            { virtualcontext { PDFExecID }{ pdfexecid } ifelse } //ExitIfStopped exec
+
+            /RunFiles /C1 1 1 0 //StackCheck3  exec
+
+%                                       << /setpagedevice /HqnImpose2setpagedevice load >> 1183615869 internaldict /shadowop get exec
+          } {
+            //LayoutDebug { (\n)ErrPrint } if
+            FileType /Pad eq {
+              //LayoutDebug { (   pad pages: )ErrPrint pagerange length ErrPrint (\n) ErrPrint } if
+              pagerange length { showpage } { repeat } //ExitIfStopped exec
+            } {
+              HqnImpose2GlobalDict /PagesExposed get
+              FileName <<
+                /FileType FileType
+                dup /eps eq Backstopped OnePass not and or {
+                  pop /PS
+                  userdict /showpage {} put
+                } if
+                % /eps is a HqnLayout internal flag
+                /ForceType true
+
+                currentdict /FileObject known not {
+                  /FileObject FileName (r) file def
+                } if
+
+                /FileObject dup load
+                % Other keys here, e.g. DoPageSize for TIFF ##########################
+                % Handle offset positions for EPS ####################
+              >> ExecFile
+
+              userdict /showpage undef
+
+              //DidExecFileStop exec { % error already reported
+                /ExitLoop true store
+                exit
+              } if
+
+              /ExitLoop where { pop }{
+                % This means that Layout has been closed, which means that the job was a control
+                % file that's loaded a different setup, or submitted a different file.
+                //Layout dup begin begin
+                /ExitLoop true store
+              } ifelse
+              /ExitLoop //HqnImpose2Active exec not ExitLoop or store
+
+              ExitLoop {
+                end
+                pop             % PagesExposed
+                exit
+              } if
+
+              % See comment below re. recombine.
+              % Show the page if there hasn't been a showpage and if
+              % marks have been made or AutoShowpage is on.
+              HqnImpose2GlobalDict /PagesExposed get eq {
+                mark { pagebbox } stopped {
+                  cleartomark false
+                } {
+                  cleartomark true
+                } ifelse
+              } { false } ifelse
+              recombinestatus 2 ge and not and {
+                Backstopped not OnePass or {
+                  % Here for EPS files.
+                  {
+                    showpage
+                  } //ExitIfStopped exec
+                } if
+              } if
+            } ifelse
+          } ifelse
+
+          end
+
+          /RunFiles /D 1 0 0 //StackCheck3 exec
+
+          ExitLoop { exit } if
+        } forall
+
+        ExitLoop { true }{
+          % With recombine on we can only output single pages. This will have
+          % to be revisited when that restriction is lifted. For now we rely
+          % on the rip to flush the single page.
+          recombinestatus 2 ge and not {
+            % Don't output the page if:
+            % * It's PostScript and not a OnePass scheme
+            % * It's a OnePass scheme, but no marks have been made
+            Backstopped not OnePass or {
+              HqnImpose2GlobalDict /PagesExposed get 0 eq {
+                mark { pagebbox } stopped {
+                  cleartomark false
+                } {
+                  cleartomark true
+                } ifelse
+                dup {
+                  showpage % for EPS
+                } if
+              } { true } ifelse
+              {
+                HqnFlushFilm
+              } if
+            } if
+          } if
+
+          ActiveFileType
+
+          statusdict /jobname get dup length 128 lt { cvn } if
+
+          TileAcross 1 add TilesAcross eq TileUp 0 eq and {
+            RunSave restore
+
+            statusdict /jobnamename get 1 index ne {
+              statusdict /jobnamename 2 index put
+              statusdict /jobname 2 index //=string cvs dup length string copy put
+            } if
+            pop
+
+            /ActiveFileType exch def
+
+            /Surface Surface 1 add store
+          } { pop pop } ifelse
+
+          false
+        } ifelse
+
+      } for           % tile columns
+    } for                   % tile rows
+  } ifelse
+
+  OnePass not {
+    HqnUnloadImpose
+    << /Scaling BaseScaling >> setpagedevice
+  } if
+
+  /RunFiles /End 0 0 1 //StackCheck3 exec
+  //LayoutDebug { (RunFiles-\n)ErrPrint } if
+} bind def
+
+/CoreTableBasedInitialize {
+  //LayoutDebug { (CoreTableBasedInitialize+\n) ErrPrint } if
+  count 1 lt {
+    /CoreTableBasedInitialize errordict /stackunderflow get exec
+  } if
+  dup type /dicttype ne {
+    /CoreTableBasedInitialize errordict /typecheck get exec
+  } if
+
+  //Layout begin
+
+  //ValidateStdInit ValidateOneDict
+  dup { def } forall
+  /InitDict exch def
+
+  CheckDivisor 0 eq {
+    /LocCheckDivisor PageCountAcross PageCountUp mul Sides mul def
+    /PaddedPages TotalPages LocCheckDivisor add 1 sub LocCheckDivisor idiv LocCheckDivisor mul def
+  } if
+
+  /UsingTableBasedLayout true def
+  /PagesPerSurface PageCountAcross PageCountUp mul def
+  /PagesPerSignature PageCountAcross PageCountUp mul Sides mul def
+  /SurfaceCount StepRepeat { PaddedPages WorkTurn /None ne { 2 idiv } if }{
+    PaddedPages PagesPerSurface 1 sub add PagesPerSurface idiv
+    Sides 2 eq WorkTurn /None ne and { 1 add 2 idiv } if
+  } ifelse def
+
+  /CreepToMax //CalcCreep exec def
+
+  //SetupGutters exec
+
+  end             % Layout
+  //LayoutDebug { (CoreTableBasedInitialize-\n) ErrPrint } if
+} bind def
+
+/CoreInitialize {
+  //LayoutDebug { (CoreInitialize+\n) ErrPrint } if
+  /HqnLayout /CoreInitialize //StartStackCheck exec
+
+  systemdict /languagelevel 2 copy known { get }{ pop pop 1 } ifelse
+  1 eq {
+    UVS (%%[ Error: HqnLayout: In-RIP imposition cannot be used in PostScript Level 1 mode ]%%\n) ErrPrint
+    abortjobnow
+  } if
+
+  UnloadLayout
+
+  InstallSpotTracker
+
+  //PDFOPENPARAMS setpdfparams
+
+  BaseScaling null eq {
+    /BaseScaling currentpagedevice /Scaling get def
+  } if
+
+  ColorBarStart
+
+  /CoreInitialize /A //StackCheck0 exec
+
+  statusdict /TitleSave 2 copy 2 copy known { get }{ pop pop 2 } ifelse 1 add put
+
+  /OnePass Sides 1 eq SetOnce and OverSize /Tile ne and def
+
+  /GutterCreep Creep 2 mul def
+
+  PrepareFileList
+  % We now have a list of virtual contexts, a total page count, and
+  % a transparency cache for every context
+
+  InputFileList length 1 gt { /OnePass false def } if
+
+  /Surface 0 def
+  /ActiveFileType InputFileList length 0 gt {
+    InputFileList 0 get /FileType get
+  } { /Pad } ifelse def
+
+  Active /TableInitialize known {
+    /UsingTableBasedLayout true def
+  } if
+
+  statusdict /HqnLayoutInitialized 2 put
+
+  /InstallCount 0 def
+
+  /CoreInitialize /B //StackCheck0 exec
+
+  EarlyImposeDesign {
+    % We need to set up the imposition early, so that we know how many sheets there will be
+    % for auto-fill on Cut & Stack, etc.
+    % Set some reasonable values here for the front of a sheet.
+    FrontVals //ValidateSurface //DefHere exec
+    /Front true def
+    /Surface 0 def
+
+    //InstallImpose exec
+
+    /LocCheckDivisor CheckDivisor 0 eq
+    { //HqnImpose2GlobalDict begin PagesAcross PagesUp mul end Sides mul }
+    { CheckDivisor } ifelse def
+    /PaddedPages TotalPages LocCheckDivisor add 1 sub LocCheckDivisor idiv LocCheckDivisor mul def
+
+    /CoreInitialize /B2 //StackCheck0 exec
+
+    Active /Initialize 2 copy known {
+      get dup null eq { pop }{
+        //LayoutDebug { (Initialize+\n) ErrPrint } if
+        stopped {
+          defaulthandleerror
+          (ERROR IN SCHEME Initialize\n) ErrPrint
+          serverdict /terminatejobnow get exec
+        } if
+        //LayoutDebug { (Initialize-\n) ErrPrint } if
+      } ifelse
+    } { pop pop } ifelse
+
+%               /CoreInitialize /B3 //StackCheck0 exec
+
+    Active /TableInitialize 2 copy known {
+      get dup null eq { pop }{
+        //LayoutDebug { (TableInitialize+\n) ErrPrint } if
+        stopped {
+          defaulthandleerror
+          (ERROR IN TableInitialize\n) ErrPrint
+          serverdict /terminatejobnow get exec
+        } if
+        //LayoutDebug { (TableInitialize-\n) ErrPrint } if
+        //CoreTableBasedInitialize exec
+      } ifelse
+    } { pop pop } ifelse
+
+    InputFileList length 1 gt ActiveFileType dup /PS ne exch /Pad ne and or { ValidatePageCount } if
+  } {
+    /LocCheckDivisor CheckDivisor dup 0 eq { pop 1 } if def
+    /PaddedPages TotalPages LocCheckDivisor add 1 sub LocCheckDivisor idiv LocCheckDivisor mul def
+
+
+    Active /Initialize 2 copy known {
+      get dup null eq { pop }{ exec } ifelse
+    } { pop pop } ifelse
+
+%               /CoreInitialize /B4 //StackCheck0 exec
+
+    Active /TableInitialize 2 copy known {
+      get dup null eq { pop }{
+        exec
+        //CoreTableBasedInitialize exec
+      } ifelse
+    } { pop pop } ifelse
+
+    InputFileList length 1 gt ActiveFileType dup /PS ne exch /Pad ne and or { ValidatePageCount } if
+  } ifelse
+
+  /CoreInitialize /C //StackCheck0 exec
+
+  % Don't output separations when they would otherwise be omitted, but are drawn in
+  % EndPage
+  <<
+    /SeparationDetails <<
+      /Ignore
+      currentpagedevice /SeparationDetails get
+      /Ignore 2 copy known {
+        get
+        dup type /dicttype eq {
+          dup length 1 add dict copy
+          dup /EndPage true put
+        } {
+          pop
+          << /EndPage true >>
+        } ifelse
+      } {
+        pop pop
+        << /EndPage true >>
+      } ifelse
+    >>
+    /PageSize PageSize
+    dup type /nulltype eq { pop pop } if
+  >> setpagedevice
+
+  OnePass { 1 }{ SurfaceCount } ifelse
+  {
+    RunFiles
+    { exit } if
+  } repeat
+
+  HqnUnloadImpose % Make sure!
+
+  /CoreInitialize /D //StackCheck0 exec
+
+  InputFileList {
+    exch pop
+    dup /FileObject known {
+      begin
+      /FileObject load status {
+        FileType /PDF eq {
+          mark
+          { pdfcontextid virtualcontext { PDFClose }{ pdfclose } ifelse } stopped
+          cleartomark
+        } if
+
+        /FileObject load closefile
+      } if
+      end
+    } { pop } ifelse
+  } forall
+
+  /CoreInitialize /End //StackCheck0 exec
+  //LayoutDebug { (CoreInitialize-\n) ErrPrint } if
+} bind def
+
+/CoreInJob {
+  statusdict /HqnLayoutDict get begin
+  LayoutDebug { (InJob+\n) ErrPrint } if
+  CoreInitialize
+% NOTE: When using SpoolFolder, this procset and HqnControl enter a recursive sequence:
+% InJob+        - as installed by page setup
+%       CoreInitialize+
+%               RunFiles+: true         - running the PS control stub file from the spool plugin
+%                       EXECFILE+               - stub file
+%                               SUBMITFILE+     - called from that stub PS
+%                                       InitializeFromControl_1+        - SubmitFile is diverted to here
+%                                               CoreInitialize+
+%                                                       RunFiles+       - running the real job file
+%                                                               EXECFILE+
+%                                                               EXECFILE-
+%                                                       RunFiles-
+%                                               CoreInitialize-
+%                                       InitializeFromControl_1-
+%                               SUBMITFILE-
+%                       EXECFILE-
+%               RunFiles-
+%       CoreInitialize-
+% InJob-
+  //DidExecFileStop exec {
+    $error /newerror false put  % avoid false error reports from temp file deletion etc.
+    stop  % Need this to trigger "Job Not Completed"
+  } if
+  LayoutDebug { (InJob-\n) ErrPrint } if
+  end
+} bind def
+
+
+% When using SpoolFolder (see diagram above), CoreInitialize is called twice,
+% once for the PS control job, and again when the actual files are run.
+% We need to reset certain keys in the Layout dictionary, so that Layout calculations
+% are made correctly
+/UnloadLayout {
+  % reset so that they are recalculated from scratch
+  /PageCountAcross 0 store
+  /PageCountUp 0 store
+
+  % undef InitDict so that we don't go into TableBasedSetLayout, in EarlyImposeDesign
+  //Layout /InitDict undef
+
+  % undef so it is recalculated correctly
+  //Layout /VertGutters undef
+
+  % reset because it can be altered during WorkTurnSetup
+  % and we can end up with the wrong SurfaceCount
+  Active /Sides known {
+    //Layout /Sides Active /Sides get put
+  } if
+} bind def
+
+/ImposeSetupManager (%os%Config/ImpositionManager) def
+
+2 dict begin            % ======== the procset ========================
+
+/ProcSetVersion //procsetversion def
+
+% (filename) <<config>> -> InitializeFromControl_1
+% config may include PageRange and/or FileType
+/InitializeFromControl_1 {
+  { % stopped
+    //LayoutDebug { (InitializeFromControl_1+\n) ErrPrint } if
+
+    count 2 lt {
+      /InitializeFromControl_1 errordict /stackunderflow get exec
+    } if
+    dup type /dicttype ne 2 index type /stringtype ne or {
+      /InitializeFromControl_1 errordict /typecheck get exec
+    } if
+    //Layout begin
+
+    % Replace any old requested files with this one
+    Request /FileList [ 6 dict dup 5 1 roll ] put
+    begin
+
+    /FileName 3 -1 roll def
+
+    /FileType 2 copy known {
+      2 copy get def
+    }{
+      FileName CheckType def
+    } ifelse
+
+    /PageRange 2 copy known {
+      2 copy get  //FilterPageRange exec def
+      FileType /PDF eq {
+        % need to set the PageRange here, because the control file is treated as PS,
+        % so the PageRange is not set in pdfparams
+        dup /PageRange get << /PageRange 3 -1 roll >> setpdfparams
+      } if
+    }{
+      FileType /PDF eq {
+        % Honour PDF PageRange, if we are not passed one
+        currentpdfparams /PageRange get  //FilterPageRange exec def
+      } {
+        pop
+      } ifelse
+    } ifelse
+
+    pop             % config dict
+
+    /FileObject FileName (r) file def
+
+    1183615869 internaldict /fileObject FileObject put
+
+    /virtualcontext false def
+
+    end             % FileList
+
+    % remove the backstop
+    //NoBackstop exec
+
+    HqnUnloadImpose
+    << /Scaling BaseScaling >> setpagedevice
+
+    //ClearExecFileStop exec
+
+    //CoreInitialize exec
+
+    % Set a flag to break out of a previously running imposition loop if we've just
+    % executed a different file.
+    /ExitLoop true def
+
+    end             % Layout
+    //LayoutDebug { (InitializeFromControl_1-\n) ErrPrint } if
+  } stopped {
+    //closeallfiles exec
+    stop
+  }if
+} bind def
+
+% Called from LoadSetup in HqnControl, before loading a new page setup
+/DeactivateLayout_1 {
+  //LayoutDebug { (DeactivateLayout_1\n) ErrPrint } if
+
+  % Make sure we don't try to 'finish' the current imposition rendering
+  //Layout /ExitLoop true put
+
+  % remove the backstop
+  //NoBackstop exec
+
+  % Switch back to using the normal execution route for Spool folder, etc
+  //ExecFile //InstallSubmissionProc exec
+
+} bind def
+
+% Hook onto StartJob normally, but if VMstatus is already >=2, then run immediately
+% so that this can be used in a PS stream tacked on the front of the PDF #############
+/HqnLayoutInitialize_1 {
+%       /HqnErrorHandler /ProcSet findresource /FullErrorHandler get exec
+  % Calling this twice (e.g. to override what was set up in an underlying page setup)
+  % will discard previous requests.
+  { % stopped
+    statusdict /HqnLayoutInitialized 0 put
+    //LayoutDebug { (HqnLayoutInitialize_1+\n) ErrPrint } if
+    count 0 eq {
+      /HqnLayoutInitialize_1 errordict /stackunderflow get exec
+    } if
+    dup type /dicttype ne {
+      /HqnLayoutInitialize_1 errordict /typecheck get exec
+    } if
+
+    dup /SetupName known {
+      % Read in the named pre-defined setup
+      dup /SetupName get
+      /HqnLayout /ProcSet findresource /ReadImposeSetup_2 get exec
+
+      % Override the pre-defined setup with other values in this call
+      begin
+      {
+        dup type /dicttype eq {
+          % merge sub-dicts. Does not recurse into sub-sub-dicts, or into arrays within subdicts
+          % calldict key callsubdict
+          currentdict 2 index known {
+            exch load begin
+            { def } forall
+            end
+          } {
+            /HqnLayoutInitialize_1 errordict /undefinedresult get exec
+          } ifelse
+        } {
+          def
+        } ifelse
+      } forall
+
+      % And return the new, combined dictionary
+      currentdict end
+    } if
+
+    dup /Scheme known not {
+      /HqnLayoutInitialize_1 errordict /undefined get exec
+    } if
+
+    //Layout begin
+
+    HqnImpose2Active {
+      null
+      HqnImpose2Dict /LayoutPassThrough 2 copy known {
+        get /ReplacementReport 2 copy known {
+          get exec
+          exch pop
+        } { pop pop } ifelse
+      } {
+        pop pop
+      } ifelse
+      dup null eq {
+        pop
+        UVS (%%[ Warning: HqnLayout: Pre-set imposition will be removed for simple imposition ]%%\n)
+        } if
+        dup length 0 gt {
+          ErrPrint
+        } { pop } ifelse
+        HqnUnloadImpose
+      } if
+
+      % Set up page counting code so we can report page numbers accurately.
+      /HqnPageCounter /ProcSet findresource /Initialize get exec
+
+      /BasePageSize currentpagedevice /PageSize get def
+      /BaseScaling null def
+
+      /Request 1 index def
+      begin
+
+      Scheme type dup /nametype ne exch /stringtype ne and {
+        /Scheme errordict /typecheck get exec
+      } if
+
+      % Migration from Simple Imposition 1.0 (RIP 7.0) to 2.0 (RIP 7.1)
+      //SchemeMigration Scheme known {
+        //SchemeMigration Scheme get exec
+        { def } forall
+      } if
+
+      end             % Request
+
+      % Get the required scheme from cache or disk
+      /Active
+      % valdict dirpath cachedict name
+      //ValidateSchemes (Usr/HqnLayout/Schemes/)
+      //ImpositionSchemes Request /Scheme get
+      //LoadFile exec
+      def
+      Active { def } forall
+
+      Request //ValidateRequestDict ValidateOneDict
+      LocalValues ValidateOneDict
+
+      % Repeated to catch newly defaulted values
+      //ValidateRequestDict //DefHere exec
+      Request LocalValues //DefHere exec
+
+      Sides 1 eq {
+        /WorkTurn /None def
+      } if
+
+      % We will assume that the job itself will trigger us to do the job
+      % (using InitializeFromControl_1, probably indirectly, through
+      % SubmitFile in HqnControl), if:
+      % a) It's submitted through an input plugin (including spool)
+      % b) We've reached this point through a call as a part of loading a page
+      %       setup through LoadSetup (HqnControl)
+      % In both cases, the job will be regarded as PS, because it's not (yet)
+      % hit the type checking in HqnConfigProvider
+      Request /FileList known { false }{
+        1183615869 internaldict /fileType 2 copy known {
+          get /PS eq
+        }       {
+          pop pop true
+        } ifelse
+      } ifelse
+      {
+        //Backstop exec
+        //InitializeFromControl_1 //InstallSubmissionProc exec
+      } if
+
+      //Layout /ExitLoop false put
+
+      % UVM (Using Imposition scheme '%t', version '%s'\n)
+      % UVM (Using Imposition scheme '%t'\n)
+      (Using Imposition scheme ')ErrPrint
+      UserName
+      ErrPrint
+      SchemeVersion length 0 gt {
+        (', version ') ErrPrint
+        SchemeVersion ErrPrint
+      } if
+      ('\n) ErrPrint
+
+      /PSUOrientation currentpagedevice /ExtraOrientation get def
+
+      GetMedia
+        % Dict contains
+        % MediaSelected
+        %          the name for the media size that is in use
+        %          only available if a margins file is supplied
+        % MediaUserName
+        %      External (user) name for the media.
+        % LeftMargin, BottomMargin, TopMargin, RightMargin
+        %          non-printing margins
+        %          only available if a margins file is supplied
+        % DeviceType
+        %          one of:
+        %          deviceTypeSheet, deviceTypeCapstan, deviceTypePartDrum, deviceTypeUnlimited, deviceTypeMediaSaving
+        %   these keys match those used in HqnImpose2 etc.
+        % MediaHeight, MediaWidth
+        %          the media height and width, reduced to the max size that the device
+        %          can image, but including the non-printing margins.
+        %   zero for 'don't care dimensions.
+
+      dup
+
+      % squirrel away Media Size of unlimited devices, before setpagedevive overrides it
+      % with the Page height.
+      begin
+      currentglobal true setglobal
+      HqnImpose2GlobalDict begin
+      MediaHeight 0 eq {
+        /UnlimitedMediaHeight statusdict /mediasize get exec exch pop def
+      } if
+      MediaWidth 0 eq {
+        /UnlimitedMediaWidth  statusdict /mediasize get exec pop def
+      } if
+      end
+      setglobal
+      end
+
+
+      dup /MediaUserName known {
+        dup /MediaUserName get type /nulltype ne {
+          % UVM (Media Selected: '%t'\n)
+          (Media Selected: ') ErrPrint
+          dup /MediaUserName get ErrPrint
+          ('\n) ErrPrint
+        } if
+      } if
+
+      ImageWidth round cvi -2 eq ImageHeight round cvi -2 eq or {
+        % If either is -2, then default to media size
+
+        dup /MediaWidth get 1 index /MediaHeight get
+        PSUOrientation 2 mod 0 ne { exch } if
+        /ImageHeight exch def
+        /ImageWidth exch def
+
+      } if
+
+      ImageHeight 0 gt ImageHeight ImageWidth gt and ImageWidth 0 ge and {
+        /ImageWidth ImageHeight
+        /ImageHeight ImageWidth def def
+        /PSUOrientation dup load 1 sub
+        dup 0 lt { pop 3 } if
+        def
+      } if
+
+      begin   % media definition dict
+      DeviceType BottomMargin RightMargin TopMargin LeftMargin
+      end             % media definition dict
+      4 PSUOrientation roll
+      { /LeftMargin /TopMargin /RightMargin /BottomMargin /DeviceType } { exch def } forall
+
+      << /ExtraOrientation 0 >> setpagedevice
+
+      FrontVals //ValidateSurface ValidateOneDict pop
+      BackVals //ValidateSurface ValidateOneDict pop
+
+      { FrontVals BackVals }{
+        load /Annotations
+        2 copy get
+        [ exch {
+          dup type /dicttype ne {
+            /HqnLayout /typecheck /Annotations ExtraError
+          } if
+          //ValidateAnnot ValidateOneDict
+        } forall
+        ] put
+      } forall
+
+      vmstatus pop pop 2 ge {
+        //LoadingSetup exec {
+          % A page setup using simple imposition is being
+          % loaded using LoadSetup in HqnControl.
+          % Run the job after the whole page setup has been loaded rather
+          % than when the imposition is installed in HqnPageSetupConfig
+          {
+            //LayoutDebug { (LoadSetupTrailer+\n) ErrPrint } if
+
+            % Avoid recursion
+            {} //SetLoadSetupTrailer exec
+
+            % run the job
+            //Layout begin
+            //CoreInitialize exec
+            end
+
+            //LayoutDebug { (LoadSetupTrailer-\n) ErrPrint } if
+          } //SetLoadSetupTrailer exec
+        } {
+          % In clear within a control job.
+          % run immediately
+          //LayoutDebug { (Immediate call+\n) ErrPrint } if
+
+          //CoreInitialize exec
+        } ifelse
+      } {
+        % Called while loading the page setup. Run it as the job
+
+        % DON'T install simple imposition if a flat has been submitted
+        % Otherwise advanced media saving won't work with an
+        % imposing setup
+        Request /FileList known { true }{
+          1183615869 internaldict /fileType 2 copy known {
+            get /FLAT ne
+          } {
+            pop pop true
+          } ifelse
+        } ifelse
+        {
+          % Record the original stdin
+          //Layout /OriginalSoftwareiomode
+          statusdict /softwareiomode get exec put
+          //Layout /OriginalFileObject
+          1183615869 internaldict /fileObject 2 copy known {
+            get
+          } {
+            serverdict /stdin get
+          } ifelse put
+
+          % First save away the current input job if it needs to be used.
+          Request /FileList known not {
+            Request /FileList
+            //CaptureStdin exec
+            /FileList 1 index def put
+          } if
+
+          % Now set up the imposition code to be run later
+          serverdict /stdin (statusdict /HqnLayoutDict get /CoreInJob get exec) 0 () /SubFileDecode filter put
+          0 statusdict /setsoftwareiomode get exec
+
+          statusdict /HqnLayoutInitialized 1 put
+        } if
+      } ifelse
+
+      end             % Layout
+
+      //LayoutDebug { (HqnLayoutInitialize_1-\n) ErrPrint } if
+    } stopped {
+      //closeallfiles exec
+      stop
+    }if
+
+} bind def
+
+% Can be used from a page feature (such as "Install Annotation"), to prevent the installation
+% of simple imposition that has been requested in the page setup that it's running in.
+/CancelRequestedLayout_2 {
+  statusdict /HqnLayoutInitialized get 1 eq {
+    serverdict /stdin //Layout /OriginalFileObject get put
+    //Layout /OriginalSoftwareiomode get
+    statusdict /setsoftwareiomode get exec
+  } if
+} bind def
+
+% List imposition setups from disk.
+% ListImposeSetup_2 -> array of setup names
+/ListImposeSetup_2 {
+  mark //ImposeSetupManager { run } stopped {
+    /ListImposeSetup_2 errordict /undefinedresult get exec
+  } if
+  counttomark 2 ne {
+    ListImposeSetup_2 errordict /undefinedresult get exec
+  } if
+  3 1 roll pop pop
+  /ImpositionSetups get
+  [ exch {
+    /Name get
+  } forall ]
+} bind def
+
+% Load an imposition setup from disk.
+% name -> ReadImposeSetup_2 -> imposesetup
+/ReadImposeSetup_2 {
+  count 1 lt {
+    /ReadImposeSetup_2 errordict /stackunderflow get exec
+  } if
+  dup type /stringtype ne {
+    /ReadImposeSetup_2 errordict /typecheck get exec
+  } if
+
+  mark //ImposeSetupManager { run } stopped {
+    /ReadImposeSetup_2 errordict /undefinedresult get exec
+  } if
+  counttomark 2 ne {
+    /ReadImposeSetup_2 errordict /undefinedresult get exec
+  } if
+  3 1 roll pop pop
+  /ImpositionSetups get {
+    % searchname dict
+    dup /Name get 2 index eq { exit } if
+    pop
+  } forall
+  dup type /dicttype ne {
+    /ReadImposeSetup_2 errordict /undefined get exec
+  } if
+  exch pop
+} bind def
+
+/ImpositionName {
+  statusdict /HqnLayoutInitialized 2 copy known {
+    get 0 gt
+  } {
+    pop pop false
+  } ifelse {
+    //Layout /Request get /Name get
+  } {
+    null
+  } ifelse
+} bind def
+
+% Use with caution!
+/SetLayoutParams {
+  count 1 lt {
+    /SetLayoutParams errordict /stackunderflow get exec
+  } if
+  dup type /dicttype ne {
+    /SetLayoutParams errordict /typecheck get exec
+  } if
+  //Layout begin
+  {
+    def
+  } forall
+  end
+} bind def
+
+
+
+/HqnLayout currentdict end /ProcSet defineresource pop
+
+globalness
+
+end             % Layout
+setglobal
+
+%%EOF

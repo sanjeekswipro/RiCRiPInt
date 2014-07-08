@@ -1,0 +1,61 @@
+%!PS-Adobe-2.0 AdobeEncoding
+%%Title: ShiftJISEncoding
+%%Version: 002.000
+%%CreationDate: Sun Aug  7 12:57:05 PDT 1988
+% Copyright (c) 1984, '85, '86, '87, '88 Adobe Systems Incorporated.
+% All Rights Reserved.
+
+
+/ShiftJISEncoding
+256 array dup 0 1 255 {/.notdef put dup} for pop
+  dup 16#40 /c40 put dup 16#41 /c41 put dup 16#42 /c42 put dup 16#43 /c43 put
+  dup 16#44 /c44 put dup 16#45 /c45 put dup 16#46 /c46 put dup 16#47 /c47 put
+  dup 16#48 /c48 put dup 16#49 /c49 put dup 16#4A /c4A put dup 16#4B /c4B put
+  dup 16#4C /c4C put dup 16#4D /c4D put dup 16#4E /c4E put dup 16#4F /c4F put
+  dup 16#50 /c50 put dup 16#51 /c51 put dup 16#52 /c52 put dup 16#53 /c53 put
+  dup 16#54 /c54 put dup 16#55 /c55 put dup 16#56 /c56 put dup 16#57 /c57 put
+  dup 16#58 /c58 put dup 16#59 /c59 put dup 16#5A /c5A put dup 16#5B /c5B put
+  dup 16#5C /c5C put dup 16#5D /c5D put dup 16#5E /c5E put dup 16#5F /c5F put
+  dup 16#60 /c60 put dup 16#61 /c61 put dup 16#62 /c62 put dup 16#63 /c63 put
+  dup 16#64 /c64 put dup 16#65 /c65 put dup 16#66 /c66 put dup 16#67 /c67 put
+  dup 16#68 /c68 put dup 16#69 /c69 put dup 16#6A /c6A put dup 16#6B /c6B put
+  dup 16#6C /c6C put dup 16#6D /c6D put dup 16#6E /c6E put dup 16#6F /c6F put
+  dup 16#70 /c70 put dup 16#71 /c71 put dup 16#72 /c72 put dup 16#73 /c73 put
+  dup 16#74 /c74 put dup 16#75 /c75 put dup 16#76 /c76 put dup 16#77 /c77 put
+  dup 16#78 /c78 put dup 16#79 /c79 put dup 16#7A /c7A put dup 16#7B /c7B put
+  dup 16#7C /c7C put dup 16#7D /c7D put dup 16#7E /c7E put
+  dup 16#80 /c80 put dup 16#81 /c81 put dup 16#82 /c82 put dup 16#83 /c83 put
+  dup 16#84 /c84 put dup 16#85 /c85 put dup 16#86 /c86 put dup 16#87 /c87 put
+  dup 16#88 /c88 put dup 16#89 /c89 put dup 16#8A /c8A put dup 16#8B /c8B put
+  dup 16#8C /c8C put dup 16#8D /c8D put dup 16#8E /c8E put dup 16#8F /c8F put
+  dup 16#90 /c90 put dup 16#91 /c91 put dup 16#92 /c92 put dup 16#93 /c93 put
+  dup 16#94 /c94 put dup 16#95 /c95 put dup 16#96 /c96 put dup 16#97 /c97 put
+  dup 16#98 /c98 put dup 16#99 /c99 put dup 16#9A /c9A put dup 16#9B /c9B put
+  dup 16#9C /c9C put dup 16#9D /c9D put dup 16#9E /c9E put dup 16#9F /c9F put
+  dup 16#A0 /cA0 put dup 16#A1 /cA1 put dup 16#A2 /cA2 put dup 16#A3 /cA3 put
+  dup 16#A4 /cA4 put dup 16#A5 /cA5 put dup 16#A6 /cA6 put dup 16#A7 /cA7 put
+  dup 16#A8 /cA8 put dup 16#A9 /cA9 put dup 16#AA /cAA put dup 16#AB /cAB put
+  dup 16#AC /cAC put dup 16#AD /cAD put dup 16#AE /cAE put dup 16#AF /cAF put
+  dup 16#B0 /cB0 put dup 16#B1 /cB1 put dup 16#B2 /cB2 put dup 16#B3 /cB3 put
+  dup 16#B4 /cB4 put dup 16#B5 /cB5 put dup 16#B6 /cB6 put dup 16#B7 /cB7 put
+  dup 16#B8 /cB8 put dup 16#B9 /cB9 put dup 16#BA /cBA put dup 16#BB /cBB put
+  dup 16#BC /cBC put dup 16#BD /cBD put dup 16#BE /cBE put dup 16#BF /cBF put
+  dup 16#C0 /cC0 put dup 16#C1 /cC1 put dup 16#C2 /cC2 put dup 16#C3 /cC3 put
+  dup 16#C4 /cC4 put dup 16#C5 /cC5 put dup 16#C6 /cC6 put dup 16#C7 /cC7 put
+  dup 16#C8 /cC8 put dup 16#C9 /cC9 put dup 16#CA /cCA put dup 16#CB /cCB put
+  dup 16#CC /cCC put dup 16#CD /cCD put dup 16#CE /cCE put dup 16#CF /cCF put
+  dup 16#D0 /cD0 put dup 16#D1 /cD1 put dup 16#D2 /cD2 put dup 16#D3 /cD3 put
+  dup 16#D4 /cD4 put dup 16#D5 /cD5 put dup 16#D6 /cD6 put dup 16#D7 /cD7 put
+  dup 16#D8 /cD8 put dup 16#D9 /cD9 put dup 16#DA /cDA put dup 16#DB /cDB put
+  dup 16#DC /cDC put dup 16#DD /cDD put dup 16#DE /cDE put dup 16#DF /cDF put
+  dup 16#E0 /cE0 put dup 16#E1 /cE1 put dup 16#E2 /cE2 put dup 16#E3 /cE3 put
+  dup 16#E4 /cE4 put dup 16#E5 /cE5 put dup 16#E6 /cE6 put dup 16#E7 /cE7 put
+  dup 16#E8 /cE8 put dup 16#E9 /cE9 put dup 16#EA /cEA put dup 16#EB /cEB put
+  dup 16#EC /cEC put dup 16#ED /cED put dup 16#EE /cEE put dup 16#EF /cEF put
+  dup 16#F0 /cF0 put dup 16#F1 /cF1 put dup 16#F2 /cF2 put dup 16#F3 /cF3 put
+  dup 16#F4 /cF4 put dup 16#F5 /cF5 put dup 16#F6 /cF6 put dup 16#F7 /cF7 put
+  dup 16#F8 /cF8 put dup 16#F9 /cF9 put dup 16#FA /cFA put dup 16#FB /cFB put
+  dup 16#FC /cFC put
+/Encoding defineresource pop
+
+%%EndAdobeEncoding

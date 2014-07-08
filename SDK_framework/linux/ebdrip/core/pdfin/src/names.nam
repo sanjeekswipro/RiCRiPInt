@@ -1,0 +1,986 @@
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: SWpdf!src:names.nam(EBDSDK_P.1) $
+
+/* Names table for SWpdf. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+/* Filters */
+ASCII85Decode
+ASCIIHexDecode
+CCITTFaxDecode
+DCTDecode
+Decode
+DecodeParms
+FlateDecode
+LZWDecode
+RC4Decode
+ReusableStreamDecode
+RunLengthDecode
+StreamDecode
+
+% Stream contents
+PDF
+First
+
+%xref and compressed object streams
+XRef
+Index
+Extends
+XRefStm
+
+%Optional content
+OC
+OCG
+OCGs
+OCMD
+OCProperties
+Configs
+ON
+OFF
+Usage
+BaseState
+AllOn
+AnyOn
+AnyOff
+AllOff
+CreatorInfo
+Language
+Export
+Zoom
+Print
+View
+User
+PageElement
+PrintState
+ViewState
+ExportState
+Config
+Event
+VE
+And
+Or
+Not
+Category
+ListMode
+RBGroup
+
+%JPXDecode
+SMaskInData
+
+% PDF Base Font Names
+Courier
+Courier-Bold NAME(CourierBold)
+Courier-BoldOblique NAME(CourierBoldOblique)
+Courier-Oblique NAME(CourierOblique)
+Helvetica
+Helvetica-Bold NAME(HelveticaBold)
+Helvetica-BoldOblique NAME(HelveticaBoldOblique)
+Helvetica-Oblique NAME(HelveticaOblique)
+Symbol
+Times-Bold NAME(TimesBold)
+Times-BoldItalic NAME(TimesBoldItalic)
+Times-Italic NAME(TimesItalic)
+Times-Roman NAME(TimesRoman)
+ZapfDingbats
+
+FontDict
+FontDirectory
+Registry
+Ordering
+Supplement
+SubFont
+findresource
+resourcestatus
+resetstandardfonts
+storestandardfonts
+
+% PDF Predefined CMaps
+% These contain hyphens -> converted to underscores for C names
+83pv-RKSJ-H	NAME(83pv_RKSJ_H)
+90ms-RKSJ-H	NAME(90ms_RKSJ_H)
+90ms-RKSJ-V	NAME(90ms_RKSJ_V)
+90msp-RKSJ-H	NAME(90msp_RKSJ_H)
+90msp-RKSJ-V	NAME(90msp_RKSJ_V)
+90pv-RKSJ-H	NAME(90pv_RKSJ_H)
+Add-RKSJ-H	NAME(Add_RKSJ_H)
+Add-RKSJ-V	NAME(Add_RKSJ_V)
+B5pc-H		NAME(B5pc_H)
+B5pc-V		NAME(B5pc_V)
+CNS-EUC-H	NAME(CNS_EUC_H)
+CNS-EUC-V	NAME(CNS_EUC_V)
+ETen-B5-H	NAME(ETen_B5_H)
+ETen-B5-V	NAME(ETen_B5_V)
+ETenms-B5-H	NAME(ETenms_B5_H)
+ETenms-B5-V	NAME(ETenms_B5_V)
+EUC-H		NAME(EUC_H)
+EUC-V		NAME(EUC_V)
+Ext-RKSJ-H	NAME(Ext_RKSJ_H)
+Ext-RKSJ-V	NAME(Ext_RKSJ_V)
+GB-EUC-H	NAME(GB_EUC_H)
+GB-EUC-V	NAME(GB_EUC_V)
+GBpc-EUC-H	NAME(GBpc_EUC_H)
+GBpc-EUC-V	NAME(GBpc_EUC_V)
+GBK-EUC-H	NAME(GBK_EUC_H)
+GBK-EUC-V	NAME(GBK_EUC_V)
+GBKp-EUC-H	NAME(GBKp_EUC_H)
+GBKp-EUC-V	NAME(GBKp_EUC_V)
+GBK2K-H		NAME(GBK2K_H)
+GBK2K-V		NAME(GBK2K_V)
+H		NAME(H)
+HKscs-B5-H      NAME(HKscs_B5_H)
+HKscs-B5-V      NAME(HKscs_B5_V)
+Hojo-EUC-H	NAME(Hojo_EUC_H)
+Hojo-EUC-V	NAME(Hojo_EUC_V)
+Identity-H	NAME(Identity_H)
+Identity-V	NAME(Identity_V)
+KSC-EUC-H	NAME(KSC_EUC_H)
+KSC-EUC-V	NAME(KSC_EUC_V)
+KSC-Johab-H	NAME(KSC_Johab_H)
+KSC-Johab-V	NAME(KSC_Johab_V)
+KSCms-UHC-H	NAME(KSCms_UHC_H)
+KSCms-UHC-V	NAME(KSCms_UHC_V)
+KSCms-UHC-HW-H	NAME(KSCms_UHC_HW_H)
+KSCms-UHC-HW-V	NAME(KSCms_UHC_HW_V)
+KSCpc-EUC-H	NAME(KSCpc_EUC_H)
+UniGB-UCS2-H    NAME(UniGB_UCS2_H)
+UniGB-UCS2-V    NAME(UniGB_UCS2_V)
+UniGB-UTF16-H   NAME(UniGB_UTF16_H)
+UniGB-UTF16-V   NAME(UniGB_UTF16_V)
+UniCNS-UCS2-H   NAME(UniCNS_UCS2_H)
+UniCNS-UCS2-V   NAME(UniCNS_UCS2_V)
+UniCNS-UTF16-H  NAME(UniCNS_UTF16_H)
+UniCNS-UTF16-V  NAME(UniCNS_UTF16_V)
+UniJIS-UCS2-H   NAME(UniJIS_UCS2_H)
+UniJIS-UCS2-V   NAME(UniJIS_UCS2_V)
+UniJIS-UCS2-HW-H NAME(UniJIS_UCS2_HW_H)
+UniJIS-UCS2-HW-V NAME(UniJIS_UCS2_HW_V)
+UniJIS-UTF16-H  NAME(UniJIS_UTF16_H)
+UniJIS-UTF16-V  NAME(UniJIS_UTF16_V)
+UniKS-UCS2-H    NAME(UniKS_UCS2_H)
+UniKS-UCS2-V    NAME(UniKS_UCS2_V)
+UniKS-UTF16H    NAME(UniKS_UTF16H)
+UniKS-UTF16V    NAME(UniKS_UTF16V)
+V		NAME(V)
+
+% Names for reading pdfparams
+Strict
+PageRange
+Encapsulated
+IgnoreSetPageDevice
+IgnoreShowpage
+% Arrays of passwords for encrypted files.
+OwnerPasswords
+UserPasswords
+% Public key information
+PrivateKeyFiles
+PrivateKeyPasswords
+% We might not honour *this* flag...
+HonorPrintPermissionFlag
+MissingFonts
+PageCropTo
+EnforcePDFVersion
+AbortForInvalidTypes
+WarnSkippedPages
+SizePageToBoundingBox
+OptionalContentOptions
+EnableOptimizedPDFScan
+OptimizedPDFScanLimitPercent
+OptimizedPDFExternal
+OptimizedPDFCacheSize
+OptimizedPDFCacheID
+OptimizedPDFSetupID
+OptimizedPDFCrossXObjectBoundaries
+OptimizedPDFSignificanceMask
+OptimizedPDFScanWindow
+OptimizedPDFImageThreshold
+ErrorOnPDFRepair
+TextStrokeAdjust
+XRefCacheLifetime
+PoorShowPage
+PoorSoftMask
+AdobeRenderingIntent
+
+% Names for Annotation & Acroform parameters
+
+PrintAnnotations
+AnnotationParams
+AlwaysPrint
+DefaultBorderWidth
+DoAcroForms
+AcroFormParams
+DisplayPasswordValue
+MultiLineMaxAutoFontScale
+MultiLineMinAutoFontScale
+MultiLineAutoFontScaleIncr
+TextFieldMinInnerMargin
+TextFieldInnerMarginAsBorder
+TextFieldDefVertDisplacement
+TextFieldFontLeading
+Line
+Rect
+Square
+Q
+
+% PDF param to control whether an incorrect or missing checksum in a
+% Flate stream causes an ioerror. Default is true.
+
+ErrorOnFlateChecksumFailure
+
+% PDF param to control whether PS XObjects are processed or not. Default is true.
+
+IgnorePSXObjects
+
+% Names for reading trailer dictionary
+Size
+Prev
+Root
+Info
+ID
+Encrypt
+
+% Names for encryption dictionary (not used elsewhere)
+SubFilter
+O
+P
+U
+CF
+StmF
+StrF
+Recipients
+EncryptMetadata
+EFF
+
+% Names for crypt filter dictionary (not used elsewhere)
+CFM
+AuthEvent
+
+% Names for reading Info dictionary
+Info
+Title
+Subject
+Author
+Keywords
+Creator
+Producer
+CreationDate
+ModDate
+Trapped
+GTS_PDFXVersion
+GTS_PDFXConformance
+
+% Values for Trapped in info dictionary (PDF 1.3)
+True
+False
+Unknown
+
+% Names for reading Catalog dictionary
+Catalog
+Type
+Pages
+OutputIntents
+PageLabels
+
+% Names for reading name & number tree dictionaries
+Nums
+St
+
+% Names for reading OutputIntents dictionary
+OutputIntent
+OutputCondition
+OutputConditionIdentifier
+RegistryName
+DestOutputProfile
+GTS_PDFX
+
+% Names for reading Pages dictionary
+Pages
+Type
+Parent
+MediaBox
+Resources
+CropBox
+Rotate
+PlateColor
+Kids
+Count
+
+% Names for reading Page dictionary
+Page
+Type
+Parent
+MediaBox
+Resources
+CropBox
+Rotate
+PlateColor
+SeparationInfo
+Annots
+Contents
+ArtBox
+TrimBox
+BleedBox
+UserUnit
+
+%used when imposing (and MediaBox is unavailable)
+PageSize
+
+% Names for reading SeparationInfo dictionary
+DeviceColorant
+ColorSpace
+Pages
+
+% Names for reading Stream
+Length
+Filter
+DecodeParms
+F
+FFilter
+FDecodeParms
+
+% Names for reading Resource dictionary
+ProcSet
+Font
+ColorSpace
+XObject
+ExtGState
+Pattern
+Properties
+
+% Names for reading ExtGState dictionary
+Type
+SA
+OP
+op
+OPM
+BG
+BG2
+UCR
+UCR2
+TR
+TR2
+HT
+HTP
+SM
+Font
+LW
+LC
+LJ
+ML
+D
+FL
+RI
+% Transparency specific names
+ca
+CA
+SMask
+AIS
+BM
+TK
+
+% Names for reading Function dictionary
+Range
+Size
+Order
+Decode
+AESDecode
+RC4Decode
+DataSource
+N
+
+% Name for reading Named Function
+Identity
+
+% Names for XObjects
+Type
+Subtype
+Name
+
+% Subtypes of XObjects defined for PDF 1.2
+Image
+Form
+PS
+
+% Specific to image XObjects
+Width
+Height
+BitsPerComponent
+ColorSpace
+Decode
+Interpolate
+ImageMask
+Intent
+OPI
+Mask
+Alternates
+ID
+Matte
+Matted
+IsSoftMask
+
+% Specific to Alternate (image) dictionaries
+DefaultForPrinting
+
+% Specific to form XObjects
+Type
+Subtype
+BBox
+FormType
+Matrix
+Name
+Resources
+XUID
+OPI
+Subtype2
+Group
+Ref
+
+% Specific to PS XObjects
+Type
+Subtype
+
+% Abbreviated names for inline images
+AHx
+A85
+BPC
+CCF
+CS
+DCT
+D
+DP
+CMYK
+G
+RGB
+F
+Fl
+H
+IM
+% no abbreviation for Intent
+I
+LZW
+RL
+W
+
+% Names for PDF color spaces
+DeviceGray
+DeviceRGB
+DeviceCMYK
+CalGray
+CalRGB
+Lab
+ICCBased
+Indexed
+Pattern
+Separation
+DeviceN
+DefaultGray
+DefaultRGB
+DefaultCMYK
+
+CMYKEquivalents
+statusdict
+
+% PDF Acroforms - entry in Catalog
+AcroForm
+Fields
+NeedAppearances
+OpenAction
+
+% PDF annotation dictionary keys
+a
+A
+r
+Border
+BS
+AP
+AS
+MK
+AA
+
+% PDF annotation dictionary types
+Text
+Link
+FreeText
+Circle
+Highlight
+Underline
+Squiggly
+StrikeOut
+Stamp
+Ink
+Popup
+FileAttachment
+Sound
+Movie
+Widget
+PrinterMark
+TrapNet
+Polygon
+PolyLine
+Polyline
+Caret
+Screen
+3D
+Watermark
+FixedPrint
+
+% PDF Acroform (text) field dictionary keys
+FT
+Ff
+DV
+DR
+DA
+MaxLen
+
+% PDF Acroform field type names
+Btn
+Tx
+Ch
+Sig
+
+% PDF TrapNet annotation fields
+FontFauxing
+
+% PDF annotation appearance characteristics dictionary
+BC
+
+% Names for PDF color space dictionaries
+Gamma
+Matrix
+Range
+N
+Alternate
+Strict
+
+% Name indicating if a halftone dictionary has been mapped
+Mapped
+
+% PDF FileSpecification names
+Type
+FS
+F
+Mac
+DOS
+Unix
+ID
+V
+EF
+
+%% PDF OPI Support
+
+%% OPI 1.3 Dictionary
+
+1.3 NAME(OPI1point3)
+
+Type
+Version
+F
+CropRect
+Color
+ColorType
+Comments
+CropFixed
+GrayMap
+ID
+ImageType
+Overprint
+Position
+Resolution
+Tags
+Tint
+Transparency
+Size
+
+%% Just for completeness, we are going to define the 2.0 dictionary
+
+2.0 NAME(OPI2point0)
+
+Type
+Version
+F
+CropRect
+IncludedImageDimensions
+IncludedImageQuality
+Inks
+MainImage
+Overprint
+Tags
+
+% Vignette stuff for PDF+
+ColorSpace
+NSteps
+NS
+NColors
+NC
+BitsPerComponent
+Gamma
+Interpolate
+Matrix
+Shape
+S
+Filter
+R
+Scale
+SL
+Stroke
+SK
+Blend
+B
+
+% PDF Font Common Keys
+Type
+Name
+FirstChar
+LastChar
+Widths
+Encoding
+
+% PDF Font Types
+Type0
+Type1
+Type3
+MMType1
+TrueType
+Type1C
+CIDFontType0
+CIDFontType0C
+CIDFontType2
+OpenType
+
+% PDF Font Encodings
+MacRomanEncoding
+MacExpertEncoding
+StandardEncoding
+WinAnsiEncoding
+
+% PDF Type 1 Font Keys
+Subtype
+BaseFont
+FontDescriptor
+
+% PDF MM Type Font Keys
+Subtype
+BaseFont
+FontDescriptor
+
+% PDF Type 3 Font Keys
+Subtype
+CharProcs
+FontBBox
+FontMatrix
+Resources
+
+% PDF TrueType Font Keys
+Subtype
+BaseFont
+FontDescriptor
+
+% PDF Type 0 Font Keys
+Subtype
+BaseFont
+DescendantFonts
+Encoding
+
+% PDF CID Font Common Keys
+CIDSystemInfo
+FontDescriptor
+W
+W2
+DW
+DW2
+
+% PDF CID Type 0 Keys
+Subtype
+BaseFont
+
+% PDF CID Type 2 Keys
+Subtype
+BaseFont
+CIDToGIDMap
+
+% PDF Font Encoding Keys
+Type
+BaseEncoding
+Differences
+
+% PDF CMAP Keys
+Type
+CMap
+CMapName
+CIDSystemInfo
+WMode
+UseCMap
+UseMatrix
+
+% PDF Font Descriptor Keys
+Type
+Ascent
+CapHeight
+Descent
+Flags
+FontBBox
+FontName
+ItalicAngle
+StemV
+AvgWidth
+FontFile
+FontFile2
+FontFile3
+Leading
+MaxWidth
+MissingWidth
+StemH
+XHeight
+CharSet
+Length1
+Length2
+Length3
+Subtype
+
+% For running a font program
+stopped
+
+% New operator for returning current PDF execution context params
+currentpdfcontext OPERATOR
+ContextID
+PageIndex
+
+% Operators for setting/reading PDF parameters
+currentpdfparams OPERATOR
+setpdfparams OPERATOR
+
+% Callback interface between PDF and PS, initially for JTF processing
+pdfopen OPERATOR
+pdfexecid OPERATOR
+pdfclose OPERATOR
+getPDFtrailer OPERATOR DICT(1183615869 internaldict)
+getPDFobject OPERATOR DICT(1183615869 internaldict)
+getPDFstreamdict OPERATOR DICT(1183615869 internaldict)
+getPDFinfo OPERATOR DICT(1183615869 internaldict)
+getPDFcontext OPERATOR DICT(1183615869 internaldict)
+
+% Switches passed in optional params dict to getPDFobject
+StreamDictOnly
+
+% PS operator for PDF implementation
+pdfexec OPERATOR
+
+% PS operator for obtaining information about a PDF/X file.
+pdfxstatus OPERATOR
+PDFXVersionClaimed
+PDFXVersionTreated
+PDFXVersionValid
+PDFXOutputCondition
+
+% Name for HDLT Text target operator
+BT
+
+% Uncategorised names
+.notdef NAME(notdef)
+AESKey
+BaseEncoding
+BuildGlyph
+CIDFont
+CIDFontName
+DataDict
+Default
+Encapsulated
+FID
+FontType
+Function
+HalftoneName
+HalftoneType
+HonorPrintPermissionFlag
+Identity
+ImageMatrix
+InterleaveType
+M
+MaskColor
+MaskDict
+MissingFonts
+Orientation
+OwnerPasswords
+PageRange
+PaintProc
+PaintType
+PatternType
+RC4Key
+Shading
+ShadingType
+SpotFunction
+Strict
+Thresholds
+TilingType
+TransferFunction
+XStep
+YStep
+filename
+null
+showpage
+HqEmbeddedStream
+
+% Soft mask dictionary names
+S
+G
+BC
+TR
+
+% Soft mask subtypes
+Alpha
+Luminosity
+
+% Transparency blend modes
+Compatible
+Screen
+Saturation
+Normal
+Color
+Luminosity
+
+K
+None
+
+% PJTF (job ticket) names
+E
+JT
+T
+TP
+TSS
+This
+Fi
+FD
+CD
+Cn
+CT
+TO
+TT
+CN
+ND
+BCL
+BDL
+BW
+CZD
+HN
+IR
+IT
+IIT
+ITO
+ITP
+STL
+TCS
+TW
+TZ
+ADB_ImageToImageTrapping
+ADB_TrapJoinStyle
+ADB_TrapEndStyle
+ADB_MinimumBlackWidth
+ImageToImageTrapping
+TrapJoinStyle
+TrapEndStyle
+MinimumBlackWidth
+BlackColorLimit
+BlackDensityLimit
+BlackWidth
+ColorantDetails
+ColorantName
+ColorantType
+ColorantZoneDetails
+Colorants
+Enabled
+ImageInternalTrapping
+ImageResolution
+ImageToObjectTrapping
+ImageTrapPlacement
+NeutralDensity
+SlidingTrapLimit
+StepLimit
+TrapColorScaling
+TrapWidth
+Trapping
+TrappingDetails
+TrappingOrder
+Metadata
+
+% PDF/X names
+URL
+URLs
+CheckSum
+ProfileName
+ProfileCS
+ICCVersion
+DestOutputProfileRef
+ColorantTable
+
+% Controls verification (and therefore generation) of external profile
+% checksums in PDF/X files.
+PDFXVerifyExternalProfileCheckSums
+
+% Report all deviations to PDF/X conformance.
+PDFXReportAllDeviations
+
+% Namespaces found in metadata XML
+http:\057/www.npes.org/pdfx/ns/id/ NAME(ns_pdfx_id)
+http:\057/ns.adobe.com/pdf/1.3/ NAME(ns_pdf)
+http:\057/ns.adobe.com/xap/1.0/mm/ NAME(ns_xmp_mm)
+http:\057/ns.adobe.com/xap/1.0/sType/ResourceRef# NAME(ns_st_ref)
+
+% Metadata keys
+pdfxid:GTS_PDFXVersion NAME(pdfxid_GTS_PDFXVersion)
+pdf:Trapped NAME(pdf_Trapped)
+
+/* Prefix was wrong in PDF/X-5:2008 final. */
+xmpMM:DocumentID NAME(xmpMM_DocumentID)
+xmpMM:VersionID NAME(xmpMM_VersionID)
+xmpMM:RenditionClass NAME(xmpMM_RenditionClass)
+
+/* Intended correct versions as per XMP spec. */
+stRef:documentID NAME(stRef_documentID)
+stRef:versionID NAME(stRef_versionID)
+stRef:renditionClass NAME(stRef_renditionClass)
+
+/* PDF/X-5:2010 final mis-spellings. */
+stRef:DocumentID NAME(stRef_DocumentID)
+stRef:VersionID NAME(stRef_VersionID)
+stRef:RenditionClass NAME(stRef_RenditionClass)
+
+% Metadata keys with namespace prefix removed.
+DocumentID
+VersionID
+RenditionClass
+documentID
+versionID
+renditionClass
+
+Perms
+ViewerPreferences
+UR
+UR3
+ViewArea
+ViewClip
+PrintArea
+PrintClip
+AlternatePresentations
+Names
+PresSteps
+Crypt
+XFA
+
+AbsoluteColorimetric
+RelativeColorimetric
+Perceptual
+
+DefaultFalse
+
+GG_TargetHeight
+GG_TargetWidth
+PreMult
+
+debug_pdf
+debug_rr % Debug retained raster (logging)
+tweak_rr % Tweak retained raster behaviour
+debug_irrc % Debug internal retained raster cache
+tweak_irrc % Tweak internal retained raster cache behaviour
+
+% Log stripped

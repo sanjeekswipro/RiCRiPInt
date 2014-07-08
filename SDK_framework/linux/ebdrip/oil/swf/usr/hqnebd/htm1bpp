@@ -1,0 +1,159 @@
+%!PS
+%%Title: Htm1bpp
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2007 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWebd_OIL_example_gg!swf:usr:hqnebd:htm1bpp(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Initialization file to install the halftone dictionaries for the example
+% screening module(s), ready for use with the /OverrideSpotFunctionName
+% systemparam.
+
+currentglobal true setglobal
+
+
+/EBDGraphic_Line
+<<
+  /HalftoneType 5
+  /HalftoneName /EBDGraphic_Line
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Gfx_C) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+   >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Gfx_M) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Gfx_Y) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Gfx_K) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Default 1 index
+>> def
+
+/EBDGraphic_Line //EBDGraphic_Line /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+/EBDPhoto_Line
+<<
+  /HalftoneType 5
+  /HalftoneName /EBDPhoto_Line
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Image_C) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Image_M) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Image_Y) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Image_K) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Default 1 index
+>> def
+
+/EBDPhoto_Line //EBDPhoto_Line /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+/EBDText_Line
+<<
+  /HalftoneType 5
+  /HalftoneName /EBDText_Line
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Text_C) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Text_M) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Text_Y) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      (%embedded%) << /ActiveScreenName (Screen_1bpp_Text_K) >> setdevparams
+      (%embedded%) currentdevparams
+      /Width 1 index /ScreenWidth  get
+      /Height 3 index /ScreenHeight get
+      /Thresholds 6 -1 roll /ScreenPSFileName get (r) file
+    >>
+  /Default 1 index
+>> def
+/EBDText_Line //EBDText_Line /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+%% The following halftone dict uses the new HqnRIP Halftone type 195 to provide a 
+%% more efficient object based screening implementation. This screen can
+%% be selected when auto object based screening mode is selected.
+/irsCMYK1bppAuto <<
+  /HalftoneType 195
+  /Default << /HalftoneType 199 /Halftone /EBDGraphic_Line >>
+  /Text << /HalftoneType 199 /Halftone /EBDText_Line >>
+  /Linework << /HalftoneType 199 /Halftone /EBDGraphic_Line >>
+  /Picture << /HalftoneType 199 /Halftone /EBDPhoto_Line >>
+  /Vignette << /HalftoneType 199 /Halftone /EBDPhoto_Line >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+setglobal % restore

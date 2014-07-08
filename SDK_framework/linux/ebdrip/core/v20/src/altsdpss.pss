@@ -1,0 +1,692 @@
+% /* $HopeName: SWv20!src:altsdpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+%% Tabstops seems to work best at "4" for this file.
+
+#define EE_PORTRAIT        102
+#define EE_PAPER_X         104
+#define EE_PAPER_Y         108
+#define EE_MIRROR_PRINT    116
+#define EE_PAGE_MARGIN     117
+#define EE_PROCESS_COLORS  224
+#define EE_BLACK_OVERPRINT 225
+
+% definitions to replace former statusdict procedures and operators now
+% written in terms of setpagedevice et al
+
+% ----------------------------------------------------------------------
+statusdict begin
+
+  %  loadsetpagedevice - setpagedevice for Level 1 or Level 2
+  %      If setpagedevice is known (Level 2 implementation) just
+  %      load it and go.  If it is not known, use the bound version.
+  /loadsetpagedevice {
+    /setpagedevice where {
+      /setpagedevice get exec	%  it is known, so use it
+    } {
+      setpagedevice             %  not known, so use bound version
+    } ifelse
+  } bd
+
+  %  loadcurrentpagedevice - currentpagedevice for Level 1 or Level 2
+  %      If currentpagedevice is known (Level 2 implementation) just
+  %      load it and go.  If it is not known, use the bound version.
+  /loadcurrentpagedevice {
+    /currentpagedevice where {
+      /currentpagedevice get exec %  it is known, so use it
+    } {
+      currentpagedevice           %  not known, so use bound version
+    } ifelse
+  } bd
+
+
+  /seteescratch {
+    % |- index value
+    save
+      % |- index value save
+      (%eerom%) { currentdevparams } stopped {
+        % |- index value save eeromname
+        UVS(%%[ Warning: eerom not available ]%%) = flush
+      }{
+        % |- index value save eeromparams
+        3 index type /integertype ne 3 index type /integertype ne or
+          { pop restore /seteescratch //errordict /typecheck get exec } if
+        3 index dup 0 lt exch 511 gt or 3 index dup 0 lt exch 511 gt or or
+          { pop restore /seteescratch //errordict /rangecheck get exec } if
+        % |- index value save eeromparams
+        512 string
+        (%eerom%) (r) /file load stopped {
+          pop pop
+          % |- index value save eeromparams str
+        }{
+          exch
+          % |- index value save eeromparams readeefile str
+          2 copy readstring pop pop
+          % |- index value save eeromparams readeefile str
+          exch closefile
+        } ifelse
+        % |- index value save eeromparams str
+        dup 5 index 5 index put        
+        % |- index value save eeromparams str
+        (%eerom%) (w) file exch
+        % |- index value save eeromparams writeeefile str
+        2 copy writestring
+        pop closefile
+        % |- index value save eeromparams
+      } ifelse
+      pop
+    restore
+    pop pop
+  } bd
+
+  /eescratch {
+    % |- index
+    save
+      % |- index save
+      (%eerom%) { currentdevparams } stopped {
+        % |- index save eeromname
+        UVS(%%[ Warning: eerom not available ]%%) = flush
+        0 4 1 roll
+      }{
+        % |- index save eeromparams
+        2 index type /integertype ne
+          { pop restore /eescratch //errordict /typecheck get exec } if
+        2 index dup 0 lt exch 511 gt or
+          { pop restore /seteescratch //errordict /rangecheck get exec } if
+        % |- index save eeromparams
+        512 string
+        (%eerom%) (r) /file load stopped {
+          0 0 //statusdict /seteescratch get exec
+          file
+        } if
+        exch
+        % |- index save eeromparams readeefile str
+        2 copy readstring pop pop
+        % |- index save eeromparams readeefile str
+        4 index get
+        % |- index save eeromparams readeefile value
+        5 1 roll
+        % |- value index save eeromparams readeefile
+        closefile
+        % |- value index save eeromparams
+      } ifelse
+      pop
+    restore
+    pop
+  } bd
+
+  currentglobal true setglobal
+  /setpageseen { 
+    false
+%   vmstatus pop pop 2 lt { 
+%     pop false
+%   }{
+%     statusdict /setpageseen get 0 true put
+%   } ifelse
+  } def % no bind - self modifying procedure
+  setglobal
+
+  /setpage { % w h orientation
+    statusdict /setpageseen get exec {
+      pop pop pop
+    }{
+      dup 0 eq {
+        3 1 roll exch 3 -1 roll
+      } if
+      3 dict begin
+        /Orientation exch 1 exch sub def
+        /PageSize [ 4 -2 roll ] def
+	/ImagingBBox null def
+        currentdict
+      end setpagedevice  %%% leave this BOUND for compatibility with Impostrip!
+    } ifelse
+  } bd
+
+  /setpageparams { % w h margin orientation
+    statusdict /setpageseen get exec {
+      pop pop pop pop
+    }{
+      dup 0 eq {
+        4 2 roll exch 4 -2 roll
+      } if
+      4 dict begin
+        /Orientation exch 1 exch sub def
+        % convert margin in points to device co-ords
+        /HWResolution //getknown exec { 0 get } { 300 } ifelse
+        mul 72 div 0.5 add cvi
+        /Margins //getknown exec not { [ 0 0 ] } if
+	dup length array copy dup dup 0 get 4 -1 roll add 0 exch put
+        /Margins exch def
+        /PageSize [ 4 -2 roll ] def
+	/ImagingBBox null def
+        currentdict
+      end setpagedevice  %%% leave this BOUND for compatibility with Impostrip!
+    } ifelse
+  } bd
+
+  /pageparams {
+    /PageSize //getknown exec { aload pop } { 8 8 } ifelse
+    /Margins //getknown exec {
+      0 get 72 mul
+      /HWResolution //getknown exec { 0 get } { 300 } ifelse div
+    }
+    {
+      0
+    } ifelse
+    /Orientation //getknown exec { 1 and 1 exch sub } { 1 } ifelse
+  } bd
+
+  /setdefaultpageparams {
+    % w h o p
+    //statusdict begin
+      EE_PORTRAIT          1 index              255 and seteescratch
+
+      EE_PAGE_MARGIN       2 index -24 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 1 add 2 index -16 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 2 add 2 index  -8 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 3 add 2 index              255 and seteescratch
+
+      EE_PAPER_Y           3 index -24 bitshift 255 and seteescratch
+      EE_PAPER_Y     1 add 3 index -16 bitshift 255 and seteescratch
+      EE_PAPER_Y     2 add 3 index  -8 bitshift 255 and seteescratch
+      EE_PAPER_Y     3 add 3 index              255 and seteescratch
+
+      EE_PAPER_X           4 index -24 bitshift 255 and seteescratch
+      EE_PAPER_X     1 add 4 index -16 bitshift 255 and seteescratch
+      EE_PAPER_X     2 add 4 index  -8 bitshift 255 and seteescratch
+      EE_PAPER_X     3 add 4 index              255 and seteescratch
+    end
+    pop pop pop pop
+  } bd
+
+  /defaultpageparams {
+    statusdict begin
+      EE_PAPER_X 3 add eescratch
+      EE_PAPER_X 2 add eescratch
+      EE_PAPER_X 1 add eescratch
+      EE_PAPER_X       eescratch
+      3 { 8 bitshift or } repeat
+
+      EE_PAPER_Y 3 add eescratch
+      EE_PAPER_Y 2 add eescratch
+      EE_PAPER_Y 1 add eescratch
+      EE_PAPER_Y       eescratch
+      3 { 8 bitshift or } repeat
+
+      EE_PAGE_MARGIN 3 add eescratch
+      EE_PAGE_MARGIN 2 add eescratch
+      EE_PAGE_MARGIN 1 add eescratch
+      EE_PAGE_MARGIN       eescratch
+      3 { 8 bitshift or } repeat
+
+      EE_PORTRAIT eescratch
+    end
+  } bd
+
+  /pagemargin {
+    /Margins //getknown exec {
+      0 get 72 mul
+      /HWResolution //getknown exec { 0 get } { 300 } ifelse div
+    } {
+      0
+    } ifelse
+  } bd
+
+  /setpagemargin {
+   /HWResolution //getknown exec { 0 get } { 300 } ifelse
+   mul 72 div 0.5 add cvi
+   /Margins //getknown exec not { [ 0 0 ] } if dup 0 4 -1 roll put
+   << exch /Margins exch >> //loadsetpagedevice exec
+  } bd
+
+  /setdefaultpagemargin {
+    //statusdict begin
+      EE_PAGE_MARGIN       1 index -24 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 1 add 1 index -16 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 2 add 1 index  -8 bitshift 255 and seteescratch
+      EE_PAGE_MARGIN 3 add 1 index              255 and seteescratch
+    end
+    pop
+  } bd
+
+  /defaultpagemargin {
+    //statusdict begin
+      EE_PAGE_MARGIN 3 add eescratch
+      EE_PAGE_MARGIN 2 add eescratch
+      EE_PAGE_MARGIN 1 add eescratch
+      EE_PAGE_MARGIN       eescratch
+      3 { 8 bitshift or } repeat
+    end
+  } bd
+
+  /setmargins {
+    /HWResolution //getknown exec { aload pop } { 300 300 } ifelse
+    % mx my rx ry
+    3 -1 roll mul 72 div 0.5 add cvi
+    3  1 roll mul 72 div 0.5 add cvi
+    % mmy mmx
+    /Margins //getknown exec not { [ 0 0 ] } if % get ALL existing margins
+    exch 1 index 0 3 -1 roll put % stash mmx
+    exch 1 index 1 3 -1 roll put % stash mmy
+    << exch /Margins exch >> //loadsetpagedevice exec
+  } bd
+
+  /margins {
+    /Margins //getknown exec { dup 0 get exch 1 get } { 0 0 } ifelse
+    % Margins in pixels, wanted in points
+    /HWResolution //getknown exec { aload pop } { 300 300 } ifelse
+    3 -1 roll exch div 72 mul
+    3  1 roll      div 72 mul
+    exch
+  } bd
+
+  /printerstatus {
+    (%pagebuffer%) currentdevparams /PrinterStatus 2 copy known { 
+      get
+    }{
+      pop pop 0
+    } ifelse
+    % currentpagedevice may be empty if null device etc
+    //loadcurrentpagedevice exec /Private 2 copy known {
+      get /InputAttributes get
+    }{ 
+      pop pop 0
+    } ifelse
+    or
+  } bd
+
+  /printermessage {
+    (%pagebuffer%) currentdevparams /PrinterMessage 2 copy known { 
+      get
+    }{
+      pop pop ()
+    } ifelse
+  } bd
+
+  /printerupset { % tries
+    save exch % exchange save object with tries
+    //printerstatus exec exch 
+    statusdict /printererror get exec
+    restore
+  } bd
+
+  /setpagetype {
+    << /Orientation 3 -1 roll 1 exch sub >> //loadsetpagedevice exec
+  } bd
+
+  /pagetype {
+    /Orientation //getknown exec { 1 and 1 exch sub } { 1 } ifelse
+  } bd
+
+  /setnegativeprint {
+    << /NegativePrint 3 -1 roll >> //loadsetpagedevice exec
+  } bd
+
+  /negativeprint {
+    /NegativePrint //getknown exec not { false } if
+  } bd
+
+  /setexposure {
+    << /Exposure 3 -1 roll >> //loadsetpagedevice exec
+  } bd
+
+  /exposure {
+    /Exposure //getknown exec not { false } if
+  } bd
+
+  /setmirrorprint {
+    << /MirrorPrint 3 -1 roll >> //loadsetpagedevice exec
+  } bd
+
+  /mirrorprint {
+    /MirrorPrint //getknown exec not { false } if
+  } bd
+
+  /setdefaultmirrorprint {
+    //statusdict begin
+      EE_PAGE_MARGIN 1 index { 1 } { 0 } ifelse seteescratch
+    end
+    pop
+  } bd
+
+  /defaultmirrorprint {
+    //statusdict begin
+      EE_PAGE_MARGIN eescratch 0 ne
+    end
+  } bd
+
+  /setblackoverprint {
+    << /OverprintBlack 3 -1 roll >> setuserparams
+  } bd
+
+  /blackoverprint {
+    currentuserparams /OverprintBlack get
+  } bd
+
+  /setdefaultblackoverprint {
+    //statusdict begin
+      EE_BLACK_OVERPRINT 1 index { 1 } { 0 } ifelse seteescratch
+    end
+    pop
+  } bd
+
+  /defaultblackoverprint {
+    //statusdict begin
+      EE_BLACK_OVERPRINT eescratch 0 ne
+    end
+  } bd
+
+  /setprocesscolors <<
+    1 /DeviceGray
+    3 /DeviceRGB
+    4 /DeviceCMYK
+  >> def
+
+  /setprocesscolors { % number: 1, 3 or 4
+    << /ProcessColorModel //setprocesscolors 4 -1 roll get >> 
+	//loadsetpagedevice exec
+  } bd
+
+  /processcolors <<
+    /DeviceCMYK 4
+    /DeviceN 4 % sic
+    /DeviceRGBK 4
+    /DeviceRGB 3
+    /DeviceCMY 3
+    /DeviceGray 1
+  >> def
+
+  /processcolors { % yields number 1, 3 or 4
+    /Preseparation //getknown exec dup {
+      pop pop
+      currentsystemparams /SeparationMethod get
+      dup  /Separation    eq
+      exch /setcmykcolor  eq
+      or
+    } if
+    {
+      1
+    } {
+      //processcolors currentpagedevice /ProcessColorModel get get
+    } ifelse
+  } bd
+
+  /setdefaultprocesscolors { % number: 1, 3 or 4
+    dup 1 ne 1 index 3 ne 2 index 4 ne and and {
+      /rangecheck //systemdict /.error get exec      
+    } if
+    //statusdict begin
+      EE_PROCESS_COLORS exch seteescratch
+    end
+  } bd
+
+  /defaultprocesscolors { % yields number: 1, 3 or 4
+    //statusdict begin
+      EE_PROCESS_COLORS eescratch
+    end
+    dup 1 ne 1 index 3 ne 2 index 4 ne and and { pop 1 } if
+  } bd
+
+  /deviceinfo {
+    <<
+      /Colors //processcolors exec
+    >>
+  } bd
+
+  /setresolution {
+	currentuserparams /ResolutionFactor get dup null ne { div } { pop } ifelse
+    << /HWResolution [ 4 -1 roll dup ] >> //loadsetpagedevice exec
+  } bd
+
+  /resolution {
+    /HWResolution //getknown exec { 0 get } { 300 } ifelse
+	currentuserparams /ResolutionFactor get dup null ne { mul } { pop } ifelse
+    % not an ideal default, but then it should never be necessary to use it
+  } bd
+
+
+  /mediawidth {
+    //loadcurrentpagedevice exec
+    % currentpagedevice may be empty if null device etc
+    dup /InputAttributes known 1 index /Private known and
+    {
+      0 exch 1183615869 internaldict /mediadimension get exec
+    }{
+      pop
+      0
+    } ifelse
+  } bd
+
+  /medialength {
+    //loadcurrentpagedevice exec
+    % currentpagedevice may be empty if null device etc
+    dup /InputAttributes known 1 index /Private known and
+    {
+      1 exch 1183615869 internaldict /mediadimension get exec
+    }{
+      pop
+      0
+    } ifelse
+  } bd
+
+  /mediasize {
+    //mediawidth exec //medialength exec
+  } bd
+
+  /setpagestackorder {
+    << /OutputFaceUp 3 -1 roll >> //loadsetpagedevice exec
+  } bd
+
+  /pagestackorder {
+    /OutputFaceUp //getknown exec not { false } if
+  } bd
+
+  /ismanualfeed {
+    /ManualFeed //getknown exec not { 
+      { //statusdict /manualfeed get } stopped { false } if
+    } if
+  } bd
+
+  currentglobal true setglobal
+  /hqn-pnlen 11 def
+  /appletalktype (LaserWriter) def
+  /hqn-pname 31 string dup 0 (LaserWriter) putinterval def
+  /setprintername [ 
+    32 string 
+    << /Password 0 /appletalktype () >> 
+    << /Password 0 /printername () >>
+  ] def
+  setglobal
+
+
+  /setprintername {
+    % two separate calls so we can guarantee the order of delivery
+    (%config%) dup
+    //setprintername 1 get dup /appletalktype 
+      //setprintername 0 get 0 //statusdict /appletalktype get length 
+        getinterval
+      dup 0 //statusdict /appletalktype get putinterval
+      put { setdevparams } stopped { pop pop } if
+    //setprintername 2 get dup /printername 
+      //setprintername 0 get 0 6 index length getinterval
+      dup 0 7 index putinterval 
+      put { setdevparams } stopped { pop pop } if
+    //statusdict begin
+      /hqn-pnlen 1 index length def
+      //hqn-pname 0 3 -1 roll putinterval
+    end
+  } bd
+
+  /printername {
+    dup 0
+    //statusdict begin
+      //hqn-pname 0 hqn-pnlen getinterval
+      putinterval
+      0 hqn-pnlen getinterval
+    end
+  } bd
+
+  currentglobal false setglobal
+  /sendprinterstate << /Password 0 /jobstate () /jobname () >> def
+  /sendprinterstate {
+    //statusdict begin
+      (%config%)
+      //sendprinterstate 
+      dup /jobstate jobstate type /stringtype eq { jobstate }{ () } ifelse put
+      dup /jobname  jobname  type /stringtype eq { 
+        jobname
+      }{
+        jobname type /nulltype eq { 
+          ()
+        }{
+          /JobName //getknown exec not { () } if
+        } ifelse
+      } ifelse
+      put
+      { setdevparams } stopped { pop pop } if
+    end
+  } bind def
+  setglobal
+
+  /checkscreen { % frequency angle
+    save 10 dict begin
+      /checkscreen exch def
+      gsave
+        /HalftoneType 1 def
+        /Angle exch def
+        /Frequency exch def
+        /SpotFunction 
+          currentscreen dup type /dicttype eq 
+          { /SpotFunction get } { 3 1 roll pop pop } ifelse def
+        /ActualAngle 0.0 def
+        /ActualFrequency 0.0 def
+        currentdict sethalftone
+        currenthalftone begin
+          ActualFrequency ActualAngle 0.0 % MoireLength?
+        end
+      grestore
+      checkscreen
+    end restore
+  } bd
+
+  /setaccuratescreens { % bool
+     pop
+%    << /AccurateScreens 3 -1 roll /Password 0 >> setsystemparams
+  } bd
+
+% ----------------------------------------------------------------------
+
+  /genericpaper { % [ w h ] portrait? policyreportproc
+    statusdict /setpageseen get exec {
+      pop pop pop
+    }{
+      4 dict begin
+        2 dict begin
+          /PageSize 7 def
+          /PolicyReport exch 
+		  	dup null eq { 
+		  		pop //loadcurrentpagedevice  exec /Policies 2 copy known {
+					get /PolicyReport 2 copy known {
+						get
+					}	{
+						pop pop { pop }
+					} ifelse
+				  }	{
+					pop pop { pop }
+				  } ifelse
+		  	} if 
+			def
+          currentdict
+        end
+        /Policies exch def
+        /Orientation exch 1 exch sub def
+        /PageSize exch def
+        currentdict
+      end
+      //loadsetpagedevice exec
+      {} settransfer
+    } ifelse
+  } readonly def        %%% NOTE - do NOT bind this!!
+
+  userdict begin
+
+    % these are in userdict
+    /letter   { [ 612  792 ] 1 null //genericpaper exec } readonly def
+    /Letter   { [ 612  792 ] 0 null //genericpaper exec } readonly def
+    /note     /letter load def
+
+    /legal    { [ 612 1008 ] 1 null //genericpaper exec } readonly def
+    /Legal    { [ 612 1008 ] 0 null //genericpaper exec } readonly def
+
+    /11x17    { [ 792 1224 ] 1 null //genericpaper exec } readonly def  
+    % 11x17 size is tabloid, see below
+    /17x11    { [ 792 1224 ] 0 null //genericpaper exec } readonly def
+    /ledger   { [ 792 1224 ] 0 null //genericpaper exec } readonly def
+    /Ledger   { [ 792 1224 ] 1 null //genericpaper exec } readonly def
+
+    /a2       { [1190.55 1683.78 ] 1 null //genericpaper exec } readonly def
+    /A2       { [1190.55 1683.78 ] 0 null //genericpaper exec } readonly def
+    /a3       { [ 841.89 1190.55 ] 1 null //genericpaper exec } readonly def
+    /A3       { [ 841.89 1190.55 ] 0 null //genericpaper exec } readonly def
+    /a4       { [ 595.28  841.89 ] 1 null //genericpaper exec } readonly def
+    /A4       { [ 595.28  841.89 ] 0 null //genericpaper exec } readonly def
+    /a5       { [ 419.53  595.28 ] 1 null //genericpaper exec } readonly def
+    /A5       { [ 419.53  595.28 ] 0 null //genericpaper exec } readonly def
+    /b5       { [ 498.90  708.66 ] 1 null //genericpaper exec } readonly def
+    /B5       { [ 498.90  708.66 ] 0 null //genericpaper exec } readonly def
+
+    /broadsheet { [1296 1728 ] 1 null //genericpaper exec } readonly def
+    /Broadsheet { [1296 1728 ] 0 null //genericpaper exec } readonly def
+    /tabloid  { [ 792 1224 ] 1 null //genericpaper exec } readonly def
+    /Tabloid  { [ 792 1224 ] 0 null //genericpaper exec } readonly def
+    /12x24    { [ 864 1728 ] 1 null //genericpaper exec } readonly def
+    /15x24    { [1080 1728 ] 1 null //genericpaper exec } readonly def
+
+    /lettersmall /letter load def
+    /Lettersmall /Letter load def
+    /a4small     /a4     load def
+    /A4small     /A4     load def
+
+  end % userdict
+
+  % in Adobe implementations ...tray does a rangecheck if not present as in the
+  % following example. However, we treat is simply as the same as the 
+  % paper size operator in userdict
+
+  % /lettertray {
+  %  [ 612    792    ] 1 
+  %   { 
+  %    pop
+  %      //statusdict /mediasize get exec 0 gt exch 0 gt and {
+  %       /lettertray //errordict /rangecheck get exec
+  %     } if
+  %   }
+  %   //genericpaper exec
+  % } readonly def
+
+  /lettertray /letter load def
+  /legaltray /legal load def
+  /11x17tray /11x17 load def
+  /ledgertray /ledger load def
+  /a2tray /a2 load def
+  /a3tray /a3 load def
+  /a4tray /a4 load def
+  /a5tray /a5 load def
+  /b5tray /b5 load def
+  /broadsheettray /broadsheet load def
+  /tabloidtray /tabloid load def
+  /12x24tray /12x24 load def
+  /15x24tray /15x24 load def
+
+  % note, the 0, ... in $printerdict have gone. Should we keep them for upward
+  % compatibility? Probably not: printerstatus is the main reason for having
+  % them and this need has really gone away
+
+end % statusdict
+
+% end of altsdpss.pss
+

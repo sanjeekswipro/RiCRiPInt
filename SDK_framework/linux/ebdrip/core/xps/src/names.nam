@@ -1,0 +1,415 @@
+/* -*- Mode: PostScript -*-
+ * $HopeName: COREedoc!src:names.nam(EBDSDK_P.1) $
+ * Copyright (C) 2004-2014 Global Graphics Software Ltd. All rights reserved.
+ * Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREedoc. See SWv20!src/names.nam for documentation on the
+ * file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ *
+ * The namespace entries have a lot of indentation, but believe me, this makes
+ * you far less blind when trying to edit these things --johnk
+ *
+ * The names for ALL xps files should be put in this file.
+ *
+ * Don't use the ; character in PS style comments.
+ */
+
+debug_xps % debug var for xps (Metro)
+
+% Use \057/ for double-slash so cpp does not treat it as C++ comment.
+
+% Introduced in XPS 0.80 for core properties
+% As defined in schemaLocation="http://dublincore.org/schemas/xmls/qdc/2003/04/02/dc.xsd"
+% As defined in schemaLocation="http://dublincore.org/schemas/xmls/qdc/2003/04/02/dcterms.xsd"
+
+http:\057/purl.org/dc/elements/1.1/          NAME(ns_purl_org_dc_elements_1_1)
+http:\057/purl.org/dc/terms/                 NAME(ns_purl_org_dc_terms)
+
+% As specified in XPS 1.0
+
+http:\057/schemas.openxmlformats.org/package/2006/content-types                NAME(ns_package_2006_content_types)
+http:\057/schemas.openxmlformats.org/package/2006/relationships                NAME(ns_package_2006_relationships)
+http:\057/schemas.openxmlformats.org/package/2006/metadata/core-properties     NAME(ns_package_2006_metadata_core_properties)
+http:\057/schemas.openxmlformats.org/markup-compatibility/2006                 NAME(ns_markup_compatibility_2006)
+http:\057/schemas.microsoft.com/xps/2005/06                                    NAME(ns_xps_2005_06)
+http:\057/schemas.microsoft.com/xps/2005/06/discard-control                    NAME(ns_xps_2005_06_discard_control)
+http:\057/schemas.microsoft.com/xps/2005/06/document-structure                 NAME(ns_xps_2005_06_document_structure)
+http:\057/schemas.microsoft.com/xps/2005/06/resourcedictionary-key             NAME(ns_xps_2005_06_resourcedictionary_key)
+http:\057/schemas.microsoft.com/xps/2005/06/signature-definitions              NAME(ns_xps_2005_06_signature_definitions)
+http:\057/schemas.microsoft.com/xps/2005/06/story-fragments                    NAME(ns_xps_2005_06_story_fragments)
+
+% W3 standard namespaces
+http:\057/www.w3.org/XML/1998/namespace          NAME(ns_w3_xml_namespace) % XML namespace
+http:\057/www.w3.org/2001/XMLSchema-instance     NAME(ns_w3_xml_xsi)
+
+% GGS XPS extensions
+http:\057/schemas.globalgraphics.com/xps/2007/06                               NAME(ns_ggs_xps_2007_06)
+
+% Generic package relationship types
+http:\057/schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties      NAME(rel_package_2006_metadata_core_properties)
+http:\057/schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail            NAME(rel_package_2006_metadata_thumbnail)
+http:\057/schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin      NAME(rel_package_2006_dsig_origin)
+http:\057/schemas.openxmlformats.org/package/2006/relationships/digital-signature/signature   NAME(rel_package_2006_dsig_signature)
+http:\057/schemas.openxmlformats.org/package/2006/relationships/digital-signature/certificate NAME(rel_package_2006_dsig_certificate)
+
+% XPS package relationship types
+http:\057/schemas.microsoft.com/xps/2005/06/fixedrepresentation        NAME(rel_xps_2005_06_fixedrepresentation)
+http:\057/schemas.microsoft.com/xps/2005/06/printticket                NAME(rel_xps_2005_06_printticket)
+http:\057/schemas.microsoft.com/xps/2005/06/required-resource          NAME(rel_xps_2005_06_required_resource)
+http:\057/schemas.microsoft.com/xps/2005/06/restricted-font            NAME(rel_xps_2005_06_restricted_font)
+http:\057/schemas.microsoft.com/xps/2005/06/annotations                NAME(rel_xps_2005_06_annotations)
+% discard-control shares a namespace with its relationship type
+
+% Interned mime types. These MUST be lowercase.
+
+% XPS package mime types
+application/vnd.ms-package.xps-fixeddocumentsequence+xml NAME(mimetype_xps_fixeddocumentsequence)
+application/vnd.ms-package.xps-fixeddocument+xml         NAME(mimetype_xps_fixeddocument)
+application/vnd.ms-package.xps-fixedpage+xml             NAME(mimetype_xps_fixedpage)
+application/vnd.ms-package.xps-discard-control+xml       NAME(mimetype_xps_discard_control)
+application/vnd.ms-package.xps-documentstructure+xml     NAME(mimetype_xps_documentstructure)
+application/vnd.ms-package.xps-resourcedictionary+xml    NAME(mimetype_xps_resourcedictionary)
+application/vnd.ms-package.xps-storyfragments+xml        NAME(mimetype_xps_storyfragments)
+
+% Generic package mime types
+application/vnd.openxmlformats-package.core-properties+xml                NAME(mimetype_package_core_properties)
+application/vnd.openxmlformats-package.relationships+xml                  NAME(mimetype_package_relationships)
+application/vnd.openxmlformats-package.digital-signature-origin           NAME(mimetype_package_signature_origin)
+application/vnd.openxmlformats-package.digital-signature-xmlsignature+xml NAME(mimetype_package_signature_xmlsignature)
+application/vnd.openxmlformats-package.digital-signature-certificate      NAME(mimetype_package_signature_certificate)
+
+% Printing mime types
+application/vnd.ms-printing.printticket+xml NAME(mimetype_printing_printticket)
+
+% Font mime types
+application/vnd.ms-opentype                    NAME(mimetype_ms_opentype)
+application/vnd.ms-package.obfuscated-opentype NAME(mimetype_package_obfuscated_opentype)
+
+% Image mime types
+image/jpeg         NAME(mimetype_jpeg)
+image/gif          NAME(mimetype_gif)
+image/png          NAME(mimetype_png)
+image/tiff         NAME(mimetype_tiff)
+image/vnd.ms-photo NAME(mimetype_ms_photo)
+
+% ICC profile
+application/vnd.ms-color.iccprofile NAME(mimetype_iccprofile)
+
+% XPS params entry in xmlparams dict
+XPSParams
+
+% Default icc profiles for XPS images
+ImageGrayProfile
+ImageRGBProfile
+ImageScRGBProfile
+ImageCMYKProfile
+Image3ChannelProfile
+Image4ChannelProfile
+Image5to8ChannelProfile
+
+% ICCBased colorspace and rendering intent for GradientBrush
+GradientBrushBlendSpace
+GradientBrushRI
+
+% xmlexec params for XPS
+Strict
+
+errorinfo
+$error NAME(DollarError)
+ErrorParams
+
+Color
+Opacity
+OpacityMask
+
+% transforms
+RenderTransform
+Transform
+MatrixTransform
+Matrix
+
+% w3c standard attributes
+lang
+
+% enum values. We allow case-insensitive versions under non-strict mode - the
+% case mapping uses titlecase (first letter upper, others lower), so that
+% most of the enum values are the same as the real value.
+
+% SpreadMethod values
+Pad
+Reflect
+Repeat
+
+% ColorInterpolationMode values
+ScRgbLinearInterpolation
+SRgbLinearInterpolation
+
+% Stretch values
+Fill
+
+% ViewportUnits, ViewboxUnits, MappingMode values
+Absolute
+
+% TileMode values
+Tile
+FlipY
+Flipy
+FlipX
+Flipx
+FlipXY
+Flipxy
+
+% FillRule values
+NonZero
+EvenOdd
+
+% Dash cap values
+Flat
+Triangle
+Square
+Round
+
+% Relationship TargetMode values
+Internal
+External
+
+% Glyphs StyleSimulations values
+None
+BoldSimulation
+ItalicSimulation
+BoldItalicSimulation
+
+% Content type stream elements
+Types
+Default
+Override
+ContentType
+Extension
+PartName
+
+% Relationships elements
+Relationships
+Relationship
+Id
+Target
+TargetMode
+Type
+
+% Document structure
+FixedDocumentSequence
+DocumentReference
+FixedDocument
+Source
+PageContent
+PageContent.LinkTargets NAME(PageContent_LinkTargets)
+LinkTarget
+FixedPage
+FixedPage.Resources NAME(FixedPage_Resources)
+FixedPage.NavigateUri NAME(FixedPage_NavigateUri)
+
+BleedBox
+ContentBox
+Height
+Width
+
+% Versioning
+AlternateContent
+Choice
+Fallback
+Ignorable
+MustUnderstand
+PreserveElements
+PreserveAttributes
+ProcessContent
+Requires
+
+% Hyperlink name targets
+Name
+
+% Canvas and properties
+Canvas
+Canvas.Resources NAME(Canvas_Resources) % Obsolete?
+Canvas.Clip NAME(Canvas_Clip)
+Canvas.OpacityMask NAME(Canvas_OpacityMask)
+Canvas.RenderTransform NAME(Canvas_RenderTransform)
+RenderOptions.EdgeMode NAME(RenderOptions_EdgeMode)
+Aliased
+
+% Glyphs and properties
+Glyphs
+Glyphs.Clip NAME(Glyphs_Clip)
+Glyphs.Fill NAME(Glyphs_Fill)
+Glyphs.OpacityMask NAME(Glyphs_OpacityMask)
+Glyphs.RenderTransform NAME(Glyphs_RenderTransform)
+BidiLevel
+CaretStops
+DeviceFontName
+FontRenderingEmSize
+FontUri
+Indices
+IsSideways
+OriginX
+OriginY
+UnicodeString
+
+XPSFont
+CIDFont
+CIDSystemInfo
+Registry
+Ordering
+Supplement
+SubFont
+WMode
+UniqueID
+
+% Path and properties
+Path
+Path.Clip NAME(Path_Clip)
+Path.Data NAME(Path_Data)
+Path.Fill NAME(Path_Fill)
+Path.Stroke NAME(Path_Stroke)
+Path.OpacityMask NAME(Path_OpacityMask)
+Path.RenderTransform NAME(Path_RenderTransform)
+SnapsToDevicePixels
+Stroke
+StrokeDashArray
+StrokeDashCap
+StrokeDashOffset
+StrokeEndLineCap
+StrokeLineJoin
+StrokeMiterLimit
+StrokeStartLineCap
+StrokeThickness
+StyleSimulations
+
+% Path geometry
+PathGeometry
+PathGeometry.Transform NAME(PathGeometry_Transform)
+Figures
+PathFigure
+ArcSegment
+PolyLineSegment
+PolyBezierSegment
+PolyQuadraticBezierSegment
+% attributes
+FillRule
+IsClosed
+IsFilled
+IsStroked
+IsLargeArc
+Point
+Points
+Size
+StartPoint
+Clip
+Data
+
+Miter
+Bevel
+
+% Brushes
+SolidColorBrush
+Pattern
+
+ImageBrush
+ImageBrush.Transform NAME(ImageBrush_Transform)
+
+% Two internal Visual elements
+Visual
+Visual.Visual NAME(Visual_Visual)
+
+VisualBrush
+VisualBrush.Transform NAME(VisualBrush_Transform)
+VisualBrush.Visual NAME(VisualBrush_Visual)
+% attributes
+ImageSource
+TileMode
+Viewbox
+ViewboxUnits
+Viewport
+ViewportUnits
+
+LinearGradientBrush
+LinearGradientBrush.Transform NAME(LinearGradientBrush_Transform)
+LinearGradientBrush.GradientStops NAME(LinearGradientBrush_GradientStops)
+RadialGradientBrush
+RadialGradientBrush.Transform NAME(RadialGradientBrush_Transform)
+RadialGradientBrush.GradientStops NAME(RadialGradientBrush_GradientStops)
+GradientStop
+% attributes
+Center
+ColorInterpolationMode
+EndPoint
+GradientOrigin
+MappingMode
+Offset
+RadiusX
+RadiusY
+SpreadMethod
+StartPoint
+SweepDirection
+RotationAngle
+Clockwise
+Counterclockwise
+
+% Metadata element names
+coreProperties
+creator
+created
+identifier
+contentType
+title
+subject
+description
+keywords
+language
+category
+version
+revision
+lastModifiedBy
+modified
+lastPrinted
+contentStatus
+
+value
+type
+
+% Resource definitions
+ResourceDictionary
+Key
+
+% GGS defined attributes
+UserLabel
+
+% Automation
+AutomationProperties.Name NAME(AutomationProperties_Name)
+AutomationProperties.HelpText NAME(AutomationProperties_HelpText)
+
+% Interned localname for all elements in a ProcessContent
+* NAME(ProcessContent_AllElements)
+
+% Operator to get back into XML world from PostScript pattern PaintProc
+xpsbrush OPERATOR DICT(1183615869 internaldict)
+
+% Operator to convert an XPS part reference into a PS filename
+xpsurifilename OPERATOR DICT(1183615869 internaldict)
+
+% Discard control
+DiscardControl
+Discard
+SentinelPage
+
+% GG FixedPage extensions
+ImmediateDiscard
+
+% other
+BlendRGB
+ICCBased
+N
+RelativeColorimetric
+XRef
+
+/* ============================================================================
+* Log stripped */

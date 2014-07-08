@@ -1,0 +1,787 @@
+%!PS-Adobe
+%%Title: HqnParseComments
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mar 7, 1992
+%%VMusage: -1 -1
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+% $Revision: 1.58.4.1.1.1 $
+%%EndComments
+%%BeginProcSet: (HqnParseComments) 3 1
+
+% $HopeName: SWv20!swf:procsets:parsecom(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+userdict begin
+
+  /CPSdict 8 dict def
+  CPSdict begin
+    (%%mdversion) -1 def
+    (%%adversion) -1 def
+    /g exch def
+
+    % num a b TestRange num true   % if num an int in [a,b]
+    %                   num false  % otherwise
+    /TestRange {
+      2 index dup type /integertype eq {
+
+        exch le {
+
+          1 index
+          exch ge {
+            true
+          } {
+            false
+          } ifelse
+
+        } {
+          pop false
+        } ifelse
+
+      } {
+        pop pop false
+      } ifelse
+    } bind def
+
+    % (abc...) GetOctal octal-number (abc...) false   if abc not an int in [0,255]
+    %                                (abc...) octal-number true
+    /GetOctal {
+      dup length 3 ge {
+
+        dup 0 get 48 51 //TestRange exec {
+          exch
+          dup 1 get 48 55 //TestRange exec {
+            exch
+            dup 2 get 48 55 //TestRange exec {
+
+              % calculate the octal number
+              exch pop
+              48 sub exch
+              48 sub 8 mul exch add exch
+              48 sub 64 mul exch add
+
+              % it's no good if it's 0
+              dup 1 ge {
+                true
+              } {
+                pop false
+              } ifelse
+
+            } {
+             pop pop pop pop false
+            } ifelse
+          } {
+           pop pop pop false
+          } ifelse
+        } {
+         pop pop false
+        } ifelse
+      } {
+       pop false
+      } ifelse
+    } bind def
+
+    % (12345..n) k RightString (k...n)
+    /RightString {
+      exch dup length 2 index  sub  2 index  exch getinterval exch pop
+    } bind def
+
+
+    % (string) ParseBackslashes (parsed string)
+    /ParseBackslashes {
+      dup length 0 gt {
+
+        mark exch {              % start of loop
+
+          % quit if string is all used up
+          dup length 0 eq {exit} if
+
+          dup 0 get              % get first char from string
+
+          dup 92 eq {            % is backslash?
+            pop                  % pop off the \
+            1 //RightString exec
+
+            dup 0 get 92 eq {    % is escaped backslash
+              92
+              counttomark 1 roll
+            } {
+
+              dup //GetOctal exec {     % is octal character
+                counttomark 1 roll
+                2 //RightString exec
+
+              } {                % is none of these
+                dup 0 get
+                counttomark 1 roll
+              } ifelse
+
+            } ifelse
+          } {                    % is not backslash
+            counttomark 1 roll
+          } ifelse
+
+          % throw away leftmost char
+          1 //RightString exec
+
+        } loop
+
+        % the old string is still on the stack
+        pop
+
+        % copy what's on the stack to a string
+        counttomark dup string
+        exch 1 sub 0 1  3 -1 roll {
+          3 -1 roll
+          3 copy put
+          pop pop
+        } for
+
+        % pop off the mark
+        exch pop
+
+      } if  % string is of > 0 length
+
+    } bind def
+
+    /stripper <<
+    	16#30 1 16#39 { dup } for	% 0-9
+    	16#41 1 16#46 { dup } for	% A-F
+    	16#61 1 16#66 { dup } for	% a-f
+    	16#20 dup					% space
+    >> def
+    /stripper {
+      % skip colon (16#3a), whitespace (16#20), and matching parentheses (16#28 and 29)
+      dup length 0 gt {
+        dup 0 get 16#3a eq {
+          1 1 index length 1 sub getinterval
+        } if
+      } if
+      {
+        dup length 0 gt {
+          dup 0 get 16#20 eq {
+            1 1 index length 1 sub getinterval
+          }{
+            exit
+          } ifelse
+        } {
+           exit
+        } ifelse
+      } loop
+
+      dup length 1 gt {
+        dup 0 get 16#28 eq 1 index dup length 1 sub get 16#29 eq and {
+          1 1 index length 2 sub getinterval
+          //ParseBackslashes exec
+        } if
+      } if
+
+      % If it starts with '<' (16#3C) and ends with '>' (16#3E), extract hex string
+      % This model is sometimes used in titles in Japanese jobs.
+      dup length 1 gt {
+      	dup 0 get
+      	16#3C eq
+      	1 index dup length 1 sub get
+      	16#3E eq and {
+      		% Check it really is hex inside before executing
+      		true
+      		1 index 1 1 index length 2 sub getinterval {
+      			% s true c
+      			//stripper exch known and
+      		} forall
+      			{
+      			cvx exec
+      		} if
+      	} if
+      } if
+    } bind def
+  end
+
+  (%%dict) load begin
+    (%%actions) load begin
+
+      % Partial input to scan is on top of stack.
+
+      userdict /tmpcolordict <<
+        /cyan (Cyan) /magenta (Magenta) /yellow (Yellow) /black (Black)
+      >> put
+
+      /PlateColor: << /Password 0 /Separation 0 >> def
+      /PlateColor: {
+        % accept variations in case, the word Process, and
+        % enclosing parentheses
+
+        % skip leading spaces
+        {
+          dup length 1 lt { exit } if
+          dup 0 get 16#20 ne { exit } if
+          1 1 index length 1 sub getinterval
+        } loop
+        % |- (COLOR)
+
+        % ignore trailing spaces
+        {
+          dup length 1 lt { exit } if
+          dup dup length 1 sub get 16#20 ne { exit } if
+          0 1 index length 1 sub getinterval
+        } loop
+        % |- (COLOR)
+
+        % skip any enclosing parentheses - 16#28 = (, 16#29 = )
+        dup length 2 gt {
+          dup 0 get 16#28 eq
+          1 index dup length 1 sub get 16#29 eq and {
+            1 1 index length 2 sub getinterval
+          } if
+        } if
+        % |- COLOR
+
+        % copy the string so we can go back to the original if we need to
+        dup dup length string copy
+        % |- COLOR COLOR
+
+        % lower case it - 16#41 = A, 16#5a = Z, 16#97 = a
+        0 1 2 index length 1 sub {
+          2 copy get dup 16#41 ge 1 index 16#5a le and {
+            16#41 sub 16#61 add
+          } if
+          3 copy put
+          pop pop
+        } for
+        % |- COLOR color
+
+        (process) anchorsearch {
+          pop
+          % skip spaces between process and color
+          {
+            dup length 1 lt { exit } if
+            dup 0 get 16#20 ne { exit } if
+            1 1 index length 1 sub getinterval
+          } loop
+        } if
+        % |- COLOR color
+
+        //tmpcolordict 1 index known {
+          exch pop
+          //tmpcolordict exch get % The string "Cyan" etc as appropriate
+        }{
+          pop % go back to the original, less parentheses and leading and trailing spaces
+        } ifelse
+
+        % (Detected separation: ) print dup print (\n) print
+        //PlateColor: /Separation 3 -1 roll put
+        //PlateColor: setsystemparams
+      } bind def
+      userdict /tmpcolordict undef
+
+      /BeginSeparation: /PlateColor: load def
+
+      /?BeginProcSetQuery {
+        /AutoPrepLoad 1183615869 internaldict /currentsystemparam get exec {
+          //CPSdict begin
+            (:) anchorsearch {
+              pop
+              ("(AppleDict md)") search {
+                pop pop
+                token {
+                  exch pop dup
+                  (%%mdversion) load ne {
+                    dup 68 eq {
+                      userdict begin
+% Set up dummy entry for md68
+                        /md 5 dict def
+                        md begin
+                          /md 10 string def
+                          /av 68 def
+                        end
+                      end
+                    } if
+                    dup 70 eq {
+                      userdict begin
+% Set up dummy entry for md70
+                        /md 5 dict def
+                        md begin
+                         /md 10 string def
+                         /av 70 def
+                        end
+                      end
+                    } if
+                    dup 71 eq {
+                      userdict begin
+% Set up dummy entry for md71
+                        /PV 1 def						% this is for Sys 7.0
+                        /md 5 dict def
+                        md begin
+                          /md 10 string def
+                          /av 71 def
+                        end
+                      end
+                    } if
+                    pop
+                  } { pop } ifelse % Close section checking if already have correct one loaded
+                } if
+              }  % Close appledict section
+              {
+                (AldusDict2) search {
+                  pop pop
+                  token {
+                    209 ne { pop (-1) } if
+                  } { (-1) } ifelse
+                  token {
+                    exch pop dup
+                    (%%adversion) load ne {
+                      dup 55 gt {
+                        pop 0 % Make sure doesn't load anything
+                      } if
+                      dup 25 gt {
+                        userdict begin
+% Set up dummy entry for Aldus 4.0 driver
+                          /AldusDict2 5 dict def
+                          AldusDict2 begin
+                            /AldusVersion 209  def
+                            /AldusDone 209  def
+                            /AldusRev 55  def
+                          end
+                        end
+                        pop 0 % Make sure doesn't load both up
+                      } if
+                      dup 1 ge {
+                        userdict begin
+% Set up dummy entry for Aldus 3.02
+                          /AldusDict2 5 dict def
+                          AldusDict2 begin
+                            /AldusVersion 209  def
+                            /AldusDone 209  def
+                            /AldusRev 25  def
+                          end
+                        end
+                      } if
+                      pop
+                    } { pop } ifelse % Close section checking if already have correct one loaded
+                  } if
+                } { pop } ifelse % Close Aldusdict2 section
+              } ifelse  % Close NOT appledict section
+            } % Close anchorsearch on :
+            { pop } ifelse
+          end
+        } {
+          pop
+        } ifelse
+      } bind def
+
+      /DocumentNeededProcSets {
+        /AutoPrepLoad 1183615869 internaldict /currentsystemparam get exec {
+          //CPSdict begin
+            (:) anchorsearch {
+              pop
+              ("(AppleDict md)") search {
+                pop pop
+                token {
+                  exch pop dup
+                  (%%mdversion) load ne {
+                    dup 68 eq {
+                      (%%mdversion) 68 def
+                      userdict begin
+% (Loading Apple LaserPrep 5.2...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep5.2) run cleartomark
+                      end
+                    } if
+                    dup 70 eq {
+                      (%%mdversion) 70 def
+                      userdict begin
+% (Loading Apple LaserPrep 6.0...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep6.0) run cleartomark
+                      end
+                    } if
+                    dup 71 eq {
+                      (%%mdversion) 71 def
+                      userdict begin
+% (Loading Apple LaserPrep 7.0...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep7.0) run cleartomark
+                      end
+                    } if
+                    pop
+                  } { pop } ifelse % Close section checking if already have correct one loaded
+                } if
+              }  % Close appledict section
+              {
+                (AldusDict2) search {
+                  pop pop
+                  token {
+                    209 ne { pop (-1) } if
+                  } { (-1) } ifelse
+                  token {
+                    exch pop dup
+                    (%%adversion) load gt {
+                      dup 55 gt {
+                        pop 0 % Make sure doesn't load anything
+                      } if
+                      dup 25 gt {
+                        (%%adversion) 55 def
+                        userdict begin
+%           (Loading Aldus 4.0 Prep...\n) = flush
+                          mark (PrepFiles/Aldus4.0prep) run cleartomark
+                        end
+                        pop 0 % Make sure doesn't load both up
+                      } if
+                      dup 1 ge {
+                        (%%adversion) 25 def
+                        userdict begin
+%            (Loading Aldus 3.02 Prep...\n) = flush
+                          mark (PrepFiles/Aldus3.02prep) run cleartomark
+                        end
+                      } if
+                      pop
+                    } { pop } ifelse % Close section checking if already have correct one loaded
+                  } if
+                } { pop } ifelse % Close Aldusdict2 section
+              } ifelse  % Close NOT appledict section
+            } % Close anchorsearch on :
+            { pop } ifelse
+          end
+        } {
+          pop
+        }ifelse
+      } bind def
+
+      /IncludeProcSet {
+        /AutoPrepLoad 1183615869 internaldict /currentsystemparam get exec {
+          //CPSdict begin
+            (:) anchorsearch {
+              pop
+              ("(AppleDict md)") search {
+                pop pop
+                token {
+                  exch pop dup
+                  (%%mdversion) load ne {
+                    dup 68 eq {
+                      (%%mdversion) 68 def
+                      userdict begin
+% (Loading Apple LaserPrep 5.2...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep5.2) run cleartomark
+                      end
+                    } if
+                    dup 70 eq {
+                      (%%mdversion) 70 def
+                      userdict begin
+% (Loading Apple LaserPrep 6.0...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep6.0) run cleartomark
+                      end
+                    } if
+                    dup 71 eq {
+                      (%%mdversion) 71 def
+                      userdict begin
+% (Loading Apple LaserPrep 7.0...\n) = flush
+                        mark (PrepFiles/AppleLaserPrep7.0) run cleartomark
+                      end
+                    } if
+                    pop
+                  } { pop } ifelse % Close section checking if already have correct one loaded
+                } if
+              }  % Close appledict section
+              {
+                (AldusDict2) search {
+                  pop pop
+                  token {
+                    209 ne { pop (-1) } if
+                  } { (-1) } ifelse
+                  token {
+                    exch pop dup
+                    (%%adversion) load gt {
+                      dup 55 gt {
+                        pop 0 % Make sure doesn't load anything
+                      } if
+                      dup 25 gt {
+                        (%%adversion) 55 def
+                        userdict begin
+%           (Loading Aldus 4.0 Prep...\n) = flush
+                          mark (PrepFiles/Aldus4.0prep) run cleartomark
+                        end
+                        pop 0 % Make sure doesn't load both up
+                      } if
+                      dup 1 ge {
+                        (%%adversion) 25 def
+                        userdict begin
+%            (Loading Aldus 3.02 Prep...\n) = flush
+                          mark (PrepFiles/Aldus 3.02prep) run cleartomark
+                        end
+                      } if
+                      pop
+                    } { pop } ifelse % Close section checking if already have correct one loaded
+                  } if
+                } { pop } ifelse % Close Aldusdict2 section
+              } ifelse  % Close NOT appledict section
+            } % Close anchorsearch on :
+            { pop } ifelse
+          end
+        } {
+          pop
+        }ifelse
+      } bind def
+
+      /BeginProcSet {
+        /AutoPrepLoad 1183615869 internaldict /currentsystemparam get exec {
+          //CPSdict begin
+            (:) anchorsearch {
+              pop
+              ("(AppleDict md)") search {
+                pop pop
+                token {
+                  exch pop
+                  (%%mdversion) exch def
+                  false
+                } if
+              } {
+                (AldusDict2) search {
+                  pop pop
+                  token {
+                    209 ne { pop (-1) } if
+                  } { (-1) } ifelse
+                  token {
+                    exch pop
+                    (%%adversion) exch def
+                    false
+                  } if
+                } { true } ifelse
+              } ifelse
+            } { true } ifelse
+          end
+        } { true } ifelse
+        {
+          % Not a prep start, or prep-loading turned off.
+          //statusdict /HqnBeginProcsetDict known {
+            //statusdict /HqnBeginProcsetDict get {
+              exch
+              dup /HqnAddProcSet eq {
+                pop pop
+              } {
+                =string cvs
+                2 index exch
+                search {
+                  % The dictionary key is in the BeginProcSet text
+                  pop pop   % leaves post
+                  exch exec % run the procedure
+                  pop   % pop post (procedures should not consume it to allow concatenating) ***
+                }{
+                  pop pop
+                } ifelse
+              } ifelse
+            } forall  % HqnBeginProcsetDict
+          } if  % HqnBeginProcsetDict known
+        pop   % the ': procsetdetails' line
+        } if
+      } bind def
+
+      /VMusage {
+        (:) anchorsearch
+        {
+          pop token
+          {
+            dup type /integertype eq
+            {
+              userdict /VMusageMax 3 -1 roll put
+              token
+              { dup type /integertype eq
+                { userdict /VMusageMin 3 -1 roll put pop }
+                { pop }
+                ifelse
+              } if
+            }
+            { pop pop } ifelse
+          }
+          if
+        }
+        { pop }
+        ifelse
+      } bind def
+
+/ResourceImplementationDicts <<
+	(*) {
+		dup
+		/Category findresource
+		exch	% key is dict, value is category
+	} =string /Category resourceforall
+>> def
+
+      /Title: {
+		% Don't react to this comment if it's encountered whilst loading a resource
+		//ResourceImplementationDicts currentdict known not {
+	        vmstatus pop pop
+	        statusdict /TitleSave known { statusdict /TitleSave get }{ 2 } ifelse
+	        eq statusdict /TitleDSC known not and {
+	          dup
+	
+	          //CPSdict /stripper get exec
+	          statusdict /TitleDSC 3 -1 roll dup length string copy put
+	
+	          % Required for Creator based fixes when using SuperLaserSpool.
+	          (¥) search {
+	            % only save the relevant bit.  (SLS makes title: <Creator>¥<title>¥<pagecount(?)>)
+	            dup length string copy
+	            //userdict /TitleString 3 -1 roll put
+	            pop
+	          } if
+	
+	          % Copy the TitleDSC to jobname in statusdict if the ChannelClass of the
+	          % current device is listed in UseTitleForJobName in statusdict.
+	
+	          currentsystemparams /CurInputDevice get
+	          mark 1 index devstatus counttomark 1 add 1 roll cleartomark {
+	            currentdevparams
+	
+	            dup /ChannelClass known {
+	              /ChannelClass get cvn % The channel class is a string.
+	              statusdict /UseTitleForJobName get exch known {
+	                % The ChannelClass is present - copy TitleDSC to jobname in statusdict.
+	                statusdict begin /jobname TitleDSC def /jobnameisfilename false def end
+	              } if
+	            } {
+	              % Pop the devparams dictionary.
+	              pop
+	            } ifelse
+	          } {
+	            % Pop the value for /CurInputDevice.
+	            pop
+	          } ifelse
+	
+	        } if
+		} if
+        pop
+      } bind def
+
+      /For: {
+		//ResourceImplementationDicts currentdict known not {
+			vmstatus pop pop
+			statusdict /TitleSave known { statusdict /TitleSave get }{ 2 } ifelse
+			eq statusdict /ForDSC known not and {
+	          //CPSdict /stripper get exec
+	          statusdict /ForDSC 3 -1 roll dup length string copy put
+	        } { pop } ifelse
+		}	{ pop } ifelse
+      } bind def
+
+      /CreationDate: {
+		//ResourceImplementationDicts currentdict known not {
+			vmstatus pop pop
+			statusdict /TitleSave known { statusdict /TitleSave get }{ 2 } ifelse
+			eq statusdict /DateDSC known not and {
+	          //CPSdict /stripper get exec
+	          statusdict /DateDSC 3 -1 roll dup length string copy put
+	        } { pop } ifelse
+		} { pop } ifelse
+      } bind def
+      /Date: //CreationDate: def
+
+      /Creator {
+		//ResourceImplementationDicts currentdict known not {
+	        % 'Standard' invocations of this routine now live in HqnCreator
+	        //userdict /HqnCreatorDict known {
+	          //CPSdict /stripper get exec
+	          //userdict /HqnCreatorDict get {
+	            exch =string cvs
+	            2 index exch
+	            search {
+	              % The dictionary key is in the Creator text
+	              pop pop   % leaves post
+	              exch exec % run the procedure
+	              pop   % pop post (procedures should not consume it to allow concatenating) ***
+	            }{
+	              pop pop
+	            } ifelse
+	          } forall  % HqnCreatordict
+	        } if  % HqnCreatorDict known
+	
+		} if
+        % the ': creatorname' line
+        pop
+     } bind def
+
+currentdict /ResourceImplementationDicts undef
+
+      % Make sure that any title, date, etc that accidentally got set by procsets etc is cleaned out
+      % at the start of the real job.
+      <<
+        /StartJob <<
+          /Z_CleanComments {
+            statusdict /ForDSC undef
+            statusdict /TitleDSC undef
+            statusdict /DateDSC undef
+			statusdict /AppleDSCEncoding undef
+          } bind
+        >>
+      >> setpagedevice
+
+      %stubs
+      /Author: { pop } bind def
+      /Subject: { pop } bind def
+
+    end       % (%%actions)
+  end         % (%%dict)
+
+
+
+  (%dict) load begin
+    (%actions) load begin
+
+	  /APL_DSC_Encoding: {
+		statusdict /AppleDSCEncoding 3 -1 roll
+		//CPSdict /stripper get exec
+		cvn put
+	  } bind def
+
+      /ImpostripJobName: {
+        dup null exec
+
+        currentglobal true setglobal
+        //globaldict /ImpoStripJob true put
+        setglobal
+
+        statusdict /jobname 3 -1 roll
+        % skip leading whitespace
+        {
+          dup length 0 gt {
+            dup 0 get dup 16#20 eq exch 16#09 eq or {
+              1 1 index length 1 sub getinterval
+            } {
+              exit
+            } ifelse
+          } {
+            exit
+          } ifelse
+        } loop
+        % skip trailing whitespace
+        {
+          dup length 0 gt {
+            dup dup length 1 sub get dup 16#20 eq exch 16#09 eq or {
+              0 1 index length 1 sub getinterval
+            } {
+              exit
+            } ifelse
+          } {
+            exit
+          } ifelse
+        } loop
+        dup length string copy put
+      }
+      dup 1 currentdict /ImpostripJobName: 2 copy known {
+        get
+      }  {
+        pop pop
+        { pop }
+      } ifelse put
+      bind def
+
+      //globaldict /ImpoStripJob false put
+
+    end       (%actions)
+  end         (%dict)
+
+
+  CPSdict /g get currentdict /CPSdict undef
+  /HqnParseComments <<>> /ProcSet defineresource pop
+end
+setglobal % to g, what it was originally
+
+%%EndProcSet

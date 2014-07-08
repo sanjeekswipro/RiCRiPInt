@@ -1,0 +1,90 @@
+%!PS-Adobe
+%%Title: "HqnBeginProcset"
+%%Creator: Global Graphics Software Limited
+%%CreationDate: October 15 1997
+%%VMusage: -1 -1
+% Copyright (C) 1997-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnBeginProcset)" 1 0
+
+% $HopeName: SWv20!swf:procsets:begproc(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This file adds routines to be called on the %%BeginProcSet line in a file.
+% If the BeginProcSet comment is not one which will be acted on by the auto 
+% prep loading code then the text of the comment is searched for each 
+% of the keys for procedures in HqnBeginProcsetDict in turn. When a matching key is 
+% found the procedure is executed.
+
+% Standard procedures are provided here to correct a known problems with FreeHand.
+% An additional patch for XPress 3.3 spot colour vignettes is added by the Level 1
+% separator procset.
+
+% To add new patches use the routine HqnAddProcSet (in statusdict):
+%	{ procedure } (text to match in BeginProcSet line) HqnAddProcSet
+% The text used should be sufficiently unique to be sure that the procedure will not be
+% called needlessly, but need not be the whole creator line.
+
+% Please be careful when selecting names - adding a routine called /Aldus may well disable
+% patches for FreeHand, or may itself be disabled by the FreeHand patch etc.
+
+% Procedures should expect the text of the BeginProcSet line to be passed to them from the end of the 
+% key name, e.g. if the key name is /Aldus and the  line reads:
+%	%%BeginProcSet: Aldus Application
+% then the string ( Application) will be passed through.
+
+% In order for multiple procedures to be stacked this string must *NOT* be popped - 
+% HqnAddProcSet will concatenate procedures as necessary and the string must still be available.
+
+
+
+currentglobal false setglobal
+
+statusdict /HqnBeginProcsetDict 4 dict dup begin put
+
+/HqnAddProcSet {
+	% Expects { procedure } (name) on stack.
+	cvn
+	//statusdict /HqnBeginProcsetDict get dup begin
+	1 index known {
+		% name is already known - concatenate
+		[ 1 index load /exec load 5 -1 roll /exec load ] cvx
+	} {
+		% New BeginProcSet reference
+		exch
+	} ifelse
+	bind def
+	end			% HqnBeginProcsetDict
+} bind def
+
+
+% ************************************************************
+% If we detect FreeHand input then do a double check that we catch
+% old Level 1 setcolor constructs correctly.
+
+	{
+	% PrintMonitor breaks %%Creator line, so re-add FreeHand patch here.
+	% Call the same routine to make maintaining it easier.
+
+	% paranoia in case HqnCreator has not been loaded ...
+	//userdict /HqnCreatorDict 2 copy known {
+		get dup begin
+		/FreeHand known {
+			(xx) FreeHand
+			pop
+		} if
+		end
+	}	{
+		pop pop
+	} ifelse
+} bind (FreeHand_header) HqnAddProcSet
+
+end		% HqnBeginProcsetDict
+
+/HqnBeginProcset <<>> /ProcSet defineresource pop
+
+setglobal % to what it was originally
+
+%%EndProcSet

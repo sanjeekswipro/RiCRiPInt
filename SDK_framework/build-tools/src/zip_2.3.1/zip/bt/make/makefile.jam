@@ -1,0 +1,21 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNbuildtools!make:makefile.jam(trunk.3) $
+#
+# Makefile for build tools. This can be used to build any tools suitable
+# for availability (but not necessarily use) in all products. It should NOT
+# be used to build tools specific to one product (e.g. RIP).
+
+local BuildTools = unifdef ;
+local i ;
+for i in $(BuildTools)
+{
+  # The target for the prebuilt executable is global symbols,
+  # so other targets can depend on it to find the executable.
+  MakeLeafTarget Build-Tools-$(i) : $(i)$(PrebuiltExecSuffix) : $(CurrentPath) $(PrebuiltPathPrefix) ;
+
+  PrebuiltExecutable $(Build-Tools-$(i)) : $(i).c : $(CurrentPath)$/src ;
+}
+
+# Log stripped

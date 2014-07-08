@@ -1,0 +1,404 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for homebrew compilation tools
+#
+# $HopeName: SWtools!make:makefile.jam(EBDSDK_P.1) $
+#
+# Some rules that use the above executables
+
+# Variant details come before compilation rules
+
+    RequiresVariant warning_level : medium ;
+
+    IncludeExportDirectories Local : core fwos standard zlib : .. ;
+
+if $(MACOSX) {
+    # Tools, rule and actions to create a bundle from a Mac OS X Mach-O application
+    ImplementsVariant customised ;
+
+    DependsOn all : echoplist ;
+
+    IncludeExportDirectories Inherited Local : customer : .. ;
+
+    AddToVar Local : C-Defines : CREATOR=\\\"$(FILECREATOR)\\\" ;
+
+    if $(ICNSFILE) {
+      AddToVar Local : C-Defines : ICONFILE=\\\"$(ICNSFILE)\\\" ;
+    } else {
+      AddToVar Local : C-Defines : ICONFILE=\\\"128\\\" ;
+    }
+
+    AddToVar Local : C-Defines : MACOSX_BUNDLE_EXECUTABLE_NAME=\\\"$(EXECUTABLENAME)\\\" ;
+
+    Executable echoplist : echoplist.c ;
+    MakePath echoplist : $(CurrentPath:R=$(BUILDROOT)) $(C-Exec-Directory) echoplist$(C-Exec-Suffix) ;
+
+    #* Create a bundle on MacOS X.
+    #*
+    #* $(1) Target
+    #* $(2) Source
+    #* $(3) frameworks
+    #* $(4) resources
+    #*
+    #*eg  CreateBundle bundle : application : omni-stuff : pitstop bundle ;
+    rule CreateBundle {
+      local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+      local Source ; MakeGristed Source : $(2) : $(CurrentPath) ;
+
+      # Generate the plist file
+      DependsOn Info.plist : echoplist : tools ;
+      GenerateFile Info.plist : $(echoplist) ">" ;
+
+      # Locate any .icns file
+      local IcnsFile ;
+      if $(ICNSFILE) {
+        IcnsFile = $(CurrentPath)$/customer$/mac$/$(ICNSFILE) ;
+      }
+
+      # Invoke generic bundling rule
+      ConvertToBundle $(1) : $(2) : Info.plist : $(IcnsFile) : $(4) : $(3) : English Japanese ;
+    }
+}
+
+    # Build or check the prebuilt executables
+    local psspp_extra = cparse.c ;
+
+    local SWtools = bootify comppss gendate nametool psspp scan4pfi stripcpp unname ;
+    local i ; for i in $(SWtools) {
+        # The target for the prebuilt executable is global symbols,
+        # so other targets can depend on it to find the executable.
+        MakeLeafTarget SW-Tools-$(i) : $(i)$(PrebuiltExecSuffix) : $(CurrentPath) $(PrebuiltPathPrefix) ;
+
+        PrebuiltExecutable $(SW-Tools-$(i)) : $(i).c $($(i)_extra) : $(CurrentPath)$/src ;
+    }
+
+    # Build tools requiring special link options
+    if $(C-Compiler-Family) = msvc {
+        local Com = C C++ mixedC ;
+        AddToVar Local : $(Com)-Exec-Linker_Arguments :
+            -entry:mainCRTStartup
+            /subsystem:console
+        ;
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+            advapi32.lib
+            mpr.lib
+            snmpapi.lib
+            shell32.lib
+            user32.lib
+            netapi32.lib
+        ;
+    }
+
+    # Build machinetype tool
+    if $(C-Compiler-Family) = msvc {
+      local pc_only_tools = machinetype ;
+      for i in $(pc_only_tools) {
+        MakeLeafTarget SW-Tools-$(i) : $(i)$(PrebuiltExecSuffix) : $(CurrentPath) $(PrebuiltPathPrefix) ;
+        PrebuiltExecutable $(SW-Tools-$(i)) : $(i).c : $(CurrentPath)$/pc$/src ;
+
+        if $(INSTALL_PREBUILT) {
+            local Tool = $(SW-Tools-$(i):BG=$(CurrentPath)-Tool) ;
+            C-LinkWithLibraries $(Tool) : standard : .. standard ;
+            C++-LinkWithLibraries $(Tool) : fwos : .. fwos ;
+        }
+      }
+    }
+
+    MakeLeafTarget SW-Tools-imptool : imptool$(PrebuiltExecSuffix) : $(CurrentPath) $(PrebuiltPathPrefix) ;
+    PrebuiltExecutable $(SW-Tools-imptool) : imptool.c : $(CurrentPath)$/src ;
+    if $(INSTALL_PREBUILT) {
+        local Tool = $(SW-Tools-imptool:BG=$(CurrentPath)-Tool) ;
+        C-LinkWithLibraries $(Tool) : standard : .. standard ;
+        C++-LinkWithLibraries $(Tool) : fwos : .. fwos ;
+        C-LinkWithLibraries $(Tool) : zlib : .. zlib ;
+    }
+
+#* Add names to the hash table name definitions files.
+#*
+#* $(1) namedef-header name-table systemdict-pss otherdict-pss
+#* $(2) names.nam files...
+#* $(3) reserved names.nam files...
+#*
+#* The result files $(1) are generated using the names tool by combining
+#* name definition files $(2). The names files $(3) are for variants which are
+#* not being compiled into the executable. Name table slots will be reserved
+#* for names which are not necessary in the selected variants, so non-variant
+#* source compounds can rely on the name indices being the same.
+actions quietly _NameTool bind nametool {
+    $(nametool) -R$(reserve) $(>) $(<)
+}
+
+rule NameTool {
+    local Target ; MakeGristed Target : $(1)     : $(CurrentPath) ;
+    local Source ; MakeGristed Source : $(2)     : $(CurrentPath) ;
+
+    local i ; for i in $(Source) {
+      ExportSource $(i) : Text ;
+    }
+
+    DirectoryFor $(Target:[1]) : $(CurrentPath)$/$(GeneratedC-NV-Directory) ;
+    DirectoryFor $(Target:[2-]) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+    SEARCH on $(Source) += $(CurrentPath)$/$(C-SourceDirectories) ;
+
+    ExportSource $(CurrentPath)$/$(GeneratedC-NV-Directory)$/$(1:[1]) : Text ;
+    ExportSource $(CurrentPath)$/$(GeneratedC-Directory)$/$(1:[2]) : Text ;
+    ExportSource $(CurrentPath)$/$(GeneratedC-Directory)$/$(1:[3]) : Text ;
+    ExportSource $(CurrentPath)$/$(GeneratedC-Directory)$/$(1:[4]) : Text ;
+
+    DEPENDS $(Target) : $(SW-Tools-nametool) ;
+    FloatingDepends $(Target) ;
+
+    reserve on $(Target) = $(3) ;
+    nametool on $(Target) = $(SW-Tools-nametool) ;
+    _NameTool $(Target) : $(Source) ;
+    GeneratedIncludable $(Target) ;
+    DeclareExport C-ExportDirectories :
+      $(CurrentPath)$/$(GeneratedC-Directory)
+      $(CurrentPath)$/$(GeneratedC-NV-Directory) ;
+
+    # The following has to be NI, since otherwise, Target will
+    # depend on itself if Source #includes it.
+    NIDEPENDS $(Target) : $(Source) ;
+}
+
+#* Process PSS files into bootable form.
+#*
+#* $(1) Gristed Target
+#* $(2) Gristed Source
+#*
+#* The source $(2) is run through the PS preprocessor psspp to include files
+#* and handle ifdefs, then through stripcpp to remove PostScript comments and
+#* compact the tokenised output, then comppss to convert to binary PostScript
+#* form, and then through bootify to create a C or Resource file.
+#*
+#*seerule Pss2C Pss2R
+actions quietly _PssProcess bind psspp stripcpp comppss bootify {
+    $(psspp) -D$(C-Defines) -I$($(Meta-IncludedExportDirectories)-C-ExportDirectories) -I$(C-IncludeDirectories) < $(>) > $(<:S=.ps1)
+    $(stripcpp) $(<:D)$/$(<:BS=.ps1) > $(<:D)$/$(<:BS=.psb) && $(EraseFile) $(<:D)$/$(<:BS=.ps1) && $(comppss) $(<:D)$/$(<:BS=.psb) > $(<:D)$/$(<:BS=.co) && $(EraseFile) $(<:D)$/$(<:BS=.psb) && $(bootify) -n $(BootifyFormat) $(<:D)$/$(<:BS=.co) > $(<:D)$/$(<:BS) && $(EraseFile) $(<:D)$/$(<:BS=.co)
+}
+rule _PssProcess {
+    SEARCH on $(2) += $(CurrentPath)$/$(C-SourceDirectories) ;
+    DEPENDS $(1) : $(2) $(SW-Tools-psspp) $(SW-Tools-stripcpp) $(SW-Tools-comppss) $(SW-Tools-bootify) ;
+    FloatingDepends $(1) ;
+
+    ExportSource $(2) : Text ;
+
+    psspp on $(1) = $(SW-Tools-psspp) ;
+    stripcpp on $(1) = $(SW-Tools-stripcpp) ;
+    comppss on $(1) = $(SW-Tools-comppss) ;
+    bootify on $(1) = $(SW-Tools-bootify) ;
+    C-Defines on $(1)            = $(C-Defines) PREPROCESS_PSS=1 ;
+    C-IncludeDirectories on $(1) = $(C-IncludeDirectories) ;
+    Meta-IncludedExportDirectories on $(1) = $(Meta-IncludedExportDirectories) ;
+}
+
+#* Process PSS files into C files.
+#*
+#* $(1) basename...
+#*
+#* Process PSS files into C files, which can be compiled into a library. The
+#* PSS files are specified by just their basename.
+#*
+#*seerule _PssProcess Pss2R
+rule Pss2C {
+    local i ; for i in $(<) {
+        local Source ; MakeGristed Source : $(i).pss : $(CurrentPath) ;
+        local Target ; LocateGeneric Target : $(i) : : GeneratedC : LOCATE ;
+
+        _PssProcess $(Target) : $(Source) ;
+    }
+    C-Dependencies <$(CurrentPath)>$(1).pss ;
+}
+
+#* Process PSS files into resource compiler files.
+#*
+#* $(1) basename...
+#*
+#* Process PSS files into resource files, which can be compiled into a
+#* library. The PSS files are specified by just their basename.
+#*
+#*seerule _PssProcess Pss2C
+rule Pss2R {
+    local i ; for i in $(<) {
+        local Source ; MakeGristed Source : $(i).pss                          : $(CurrentPath) ;
+        local Target ; MakeGristed Target : $(i)$(ResourceDescription-Suffix) : $(CurrentPath) ;
+        DirectoryFor $(Target) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+        BootifyFormat on $(Target) += -r ;
+
+        _PssProcess $(Target) : $(Source) ;
+    }
+}
+
+
+#* Scan for PFI (Plugin Foreign Interface) calls used in a source file.
+#*
+#* $(1) Target
+#* $(2) Source
+#* $(3) source directory relative to current path
+#*
+#*seerule Anonymise
+#*section plugins
+actions quietly _Scan4PFI bind scan4pfi {
+    $(scan4pfi) < $(>) > $(<)
+}
+rule Scan4PFI {
+    local Target ; MakeGristed Target : $(1)     : $(CurrentPath) ;
+    local Source ; MakeGristed Source : $(2)     : $(CurrentPath) $(3) ;
+
+    DirectoryFor $(Target) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+    SEARCH on $(Source) += $(CurrentPath)$/$(C-SourceDirectories) ;
+
+    scan4pfi on $(Target) = $(SW-Tools-scan4pfi) ;
+    _Scan4PFI $(Target) : $(Source) ;
+    GeneratedIncludable $(Target) ;
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+    # The following has to be NI, since otherwise, Target will
+    # depend on itself if Source #includes it.
+    NIDEPENDS $(Target) : $(Source) ;
+    DEPENDS $(Target) : $(SW-Tools-scan4pfi) ;
+    FloatingDepends $(Target) ;
+}
+
+#* Anonymise authors of changes by modifying Hope revision logs.
+#*
+#* $(1) target file
+#* $(2) source file
+#* $(3) source directory
+#*
+#* Files $(1) and $(2) are absolute paths.
+#*
+#*seerule Scan4PFI
+#*section plugins
+actions quietly together _Anonymise bind unname {
+    echo ...ANONYMISING $(>)...
+    $(unname) $(>) $(<)
+}
+rule Anonymise {
+  local Target ;
+  MakeLeafTarget Target : $(1) : : DirectoryFor ;
+  local Source ;
+  MakeLeafTarget Source : $(2) : $(3) : Search ;
+
+  unname on $(Target) = $(SW-Tools-unname) ;
+  _Anonymise $(Target) : $(Source) ;
+
+  DEPENDS $(Target) : $(Source) $(SW-Tools-unname) ;
+  FloatingDepends $(Target) ;
+}
+
+#* Import a (SW) directory/file into a C file for linking into a library.
+#*
+#* $(1) C file name
+#* $(2) Source directory
+#* $(3) Variable name in the C file
+#*
+#* The source directory target $(2) is compiled into the C file target $(1).
+#* The root symbol for the compiled tree is $(3).
+#*
+#*seerule SW-Combine SW-Folder
+#*section sw
+actions quietly _Import bind imptool {
+    echo ...Importing dir $(>) into $(<)...
+    $(imptool) $(args) -root $(>) -output $(<)
+}
+
+rule Import {
+    CheckGristed $(1) $(2) ;
+    local Dest = $(1) ;
+    local Source = $(2) ;
+
+    CleanFile $(Dest) ;
+
+    imptool on $(Dest) = $(SW-Tools-imptool) ;
+    args on $(Dest) = -var $(3) ;
+    _Import $(Dest) : $(Source) ;
+
+    DEPENDS $(Dest) : $(Source) $(SW-Tools-imptool) ;
+    FloatingDepends $(Dest) ;
+}
+
+
+#* $(1) type
+#* $(2) destination path ...
+#* $(3) sources ...
+#* $(4) source path ...
+#* [$(5)] optional dependency target
+#* Add $(3) to the list of things to be copied to the
+#* <code>copyto</code> directory.  If $(1) is <code>File</code>, then $(3)
+#* may be target names or files.  Otherwise, or if $(1) is
+#* <code>Tree</code>, $(4) should be the full path to the directory
+#* containing the file or tree to copy.  $(4) will be joined with file
+#* separator characters to produce the full path.
+#*
+#* The trees or files will be copied to a destination named in $(2).
+#* This is joined with file separator characters also.  If more than
+#* one $(3) is specified, the last element of $(2) should be <code>*</code>,
+#* meaning <em>copy with the same name as the source</em>.  (You may
+#* specify <code>*</code> with only one source, of course.)
+#*
+#* The copying depends on $(5), or "all" is $(5) is omitted.
+#*
+#*eg CopyTo File : foo bar * : myexec mydll : subdir ;
+rule CopyTo {
+    if $(Variant_copyto) {
+        local RelativeToDest ; MakePath RelativeToDest : $(2) ;
+        local FromParent     ; MakePath FromParent : $(4) ;
+        local Sources ;
+        local DependsTarget = $(5) ;
+        if $(1) = File {
+            MakeGristed Sources : $(3) : $(FromParent) ;
+        }
+        else {
+            Sources = $(FromParent)$/$(3) ;
+        }
+
+        # Check for multiple files destined for the same place
+        if $(Sources[2-]) && $(RelativeToDest:B) != * {
+            Error Cannot copy all of $(3) to $(RelativeToDest) ;
+        }
+
+        local FromTarget ; for FromTarget in $(Sources) {
+        # If there is an alternative target for the file represented by
+        # the source, then use that instead.
+            if $(TargetFile-$(FromTarget)) {
+                FromTarget = $(TargetFile-$(FromTarget)) ;
+            }
+
+        # Make the destination directory
+            local ToDest ;
+            MakePath ToDest : $(Variant_copyto) $(RelativeToDest) ;
+
+        # Replace a final * with the base and suffix of the source
+            if $(ToDest:BS) = * { ToDest = $(ToDest:D)$/$(FromTarget:BS) ; }
+
+        # Set up ToTarget to be the target where we shall copy it to (ToDest)
+            local ToTarget = $(ToDest:BS) ;
+            MakeGristed ToTarget : $(ToTarget) : CopyTo-$(ToDest:D) ;
+            DirectoryFor $(ToTarget) : $(ToDest:D) ;
+
+        # For files,
+            if $(1) = File {
+            # Make a guess at the location in case it isn't a real jam
+            # target:
+                SEARCH on $(FromTarget) += $(FromParent) ;
+            # Do the copy
+                CopyFile $(ToTarget) : $(FromTarget) ;
+            }
+        # For trees,
+            else {
+                # Use ToTarget as a pseudo target for a directory copy
+                  CopyTree $(ToTarget) : $(FromTarget) : $(ToDest) ;
+            }
+
+        # Now the remaining dependencies...
+            DependsTarget ?= all ;
+            DEPENDS $(DependsTarget) : $(ToTarget) ;
+        }
+    }
+}
+
+
+# Log stripped

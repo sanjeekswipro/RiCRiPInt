@@ -1,0 +1,173 @@
+% -*-ps-*-
+% (C) Copyright (C) 2011-2013 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+
+%% This is an example Page Feature for configuring Harlequin VariData
+%% for internal GG testing. Not all of these parameters are publically
+%% documented, so please don't share this outside of Global Graphics.
+%% Also, some of them only take effect when running debug builds.
+
+<<
+  %% Obviously this isn't an RR parameter per se, but I use it so
+  %% often in debugging RR test jobs that I've included it here.
+%  /PageRange [ [ 1 50 ] ]
+
+  %% The fundamental switch which turns RR on and off.
+  /EnableOptimizedPDFScan true
+
+  %% The number of pages in the scan window: once a page goes out of
+  %% scope, its scan results are finalized
+  /OptimizedPDFScanWindow 100
+
+  %% This is a percentage threshold: when we see a number of unique
+  %% pages (ones which have no marks which also appear on any other
+  %% page) which represents this percentage of the total number of
+  %% pages in the requested page range, we abort the scan and process
+  %% the PDF as if RR was never turned on in the first place. The idea
+  %% is to avoid expending effort scanning files which aren't going to
+  %% benefit from the optimisation.
+  /OptimizedPDFScanLimitPercent 100
+
+  %% The identifier for the cache implementation we want to connect
+  %% to. This might be a plugin, an HHR back end (GG_HHR_PDF_ERR2),
+  %% internal retained raster (GGIRR) or a couple of special case
+  %% internal values: (GGDUMB1) outputs each raster element exactly
+  %% once and (GGDUMB0) exactly zero times, i.e. it just does the scan
+  %% for ERR. For the pdfraster2 plugin it's (GG_PDFR2_ERR2). Newer
+  %% RIPs also support two further debug modes: (GGCACHEONLY) just
+  %% outputs the cached elements and (GGVARONLY) is the inverse - it
+  %% just outputs the variable data elements.
+  /OptimizedPDFCacheID (GGDUMB1)
+
+  %% This identifies the page setup to the retained raster code. It
+  %% should be empty if there's not going to be cache elements which
+  %% have a lifetime longer than a single job. When inter-job caching
+  %% is active, this ID is how the RIP differentiates an identical
+  %% mark made under two different setups.
+  /OptimizedPDFSetupID ()
+
+  %% Controls whether we use external or internal retained raster. It
+  %% can be useful for testing purposes to use external RR along with
+  %% /OptimizedPDFCacheID (GGDUMB1), (GGCACHEONLY) or (GGVARONLY) and
+  %% an output destination which doesn't attempt to reassemble raster
+  %% elements into pages such as a None plugin or HHR TIFF output.
+  /OptimizedPDFExternal true
+
+  %% This is UNDOCUMENTED. When we're deciding whether or not to
+  %% coalesce nodes into supernodes in the scanner, we use this mask
+  %% to figure out whether a node is "significant" or not. When we're
+  %% building a variable data supernode, i.e. a raster element which
+  %% is used exactly once, we will include any marks deemed to be
+  %% "insignificant" as part of the supernode regardless of whether
+  %% that insignificant mark has a hit count greater than 1. The
+  %% default value has us viewing everything except char, rect, quad
+  %% and fill as significant. It's just about possible that we'll have
+  %% a field fix in the future by modifying this value, which is why I
+  %% plumbed it in as a parameter. Having said that, we don't want
+  %% anyone idly playing with it without reason - so please don't
+  %% discuss this with customers without asking me.
+  %  /OptimizedPDFSignificanceMask
+  %  16383
+  %  1    sub % char
+  %  2    sub % rect
+  %  4    sub % quad
+  %  8    sub % fill
+  %  16   sub % mask
+  %  32   sub % image
+  %  64   sub % vignette
+  %  128  sub % gouraud
+  %  256  sub % shfill
+  %  512  sub % shfill_patch
+  %  1024 sub % hdl
+  %  2048 sub % group
+  %  4096 sub % backdrop
+  %  8192 sub % cell
+
+  %% If the significance mask is set (as it is with its default value
+  %% of 0x3FF0) to mark images as significant, this threshold allows
+  %% us selectively to treat small images as insignificant. If the
+  %% size of the image XOjbect stream in KiB is below this value, the
+  %% image - or imagemask - is regarded as insignificant. A value of 0
+  %% here would mean treat all images and imagemasks as significant,
+  %% just like we used to do before this parameter existed.
+  %  /OptimizedPDFImageThreshold 0
+>> setpdfparams
+
+%% Change this "false" to "true" to include a mid-grey checkerboard
+%% background. This makes it easy to spot white marks on what would
+%% otherwise be a white background :-> NOTE that there may be a bug
+%% related to this where the job doesn't set its own color and we end
+%% up drawing job marks in one of the grey tones left around by this
+%% snippet.
+false {
+  <<
+    /BeginPage {
+      pop
+      userdict begin
+  
+      /CheckerSize 10 def
+  
+      currentpagedevice /PageSize get aload pop
+  
+      /PageHeight exch CheckerSize div 1 add CheckerSize mul def
+      /PageWidth exch CheckerSize div 1 add CheckerSize mul def
+  
+      0 CheckerSize PageWidth {
+        /X exch def
+        0 CheckerSize PageHeight {
+          /Y exch def
+          X Y add CheckerSize div cvi 2 mod 1 eq
+          { 0.1 dup dup dup setcmykcolor }
+          { 0.2 dup dup dup setcmykcolor }
+          ifelse
+          X Y CheckerSize CheckerSize rectfill
+        } for
+      } for
+  
+      end
+    }
+  >>
+  setpagedevice
+} if
+
+%% This controls the multifarious debug logging in HVD. All output is
+%% written to discrete log files in SW/RR_logs. It's not easy to know
+%% which combinations and permutations of these switches might cause
+%% problems, since I try to split the logging into manageable chunks
+%% in files named for the current page. It may be that some
+%% combinations of values will lead to us trying to write logging
+%% output to a non-existent file. As to how to read the resulting
+%% logs, well, you need to read the sources. Note that since the
+%% loggging is done with PS file objects, we can't cope with logging
+%% on any thread but the interpreter's. That means that currently the
+%% EVENTS logging will be disabled by the RIP if we are using a config
+%% with more than one thread. I recommend that you turn off all debug
+%% logging unless you intend to read the resulting logs since apart
+%% from anything else they can slow things down quite a bit.
+/debug_rr 0
+  1  0 bitshift add % HASHES
+% 1  1 bitshift add % INTERMEDIATE_HASHES
+  1  2 bitshift add % OPERATORS
+  1  3 bitshift add % OPERANDS
+  1  4 bitshift add % Z_ORDER
+  1  5 bitshift add % SUPERNODES
+  1  6 bitshift add % SEQUENCE_POINTS
+% 1  7 bitshift add % IMPLICIT_GSTACK
+% 1  8 bitshift add % STATE_CHANGES
+  1  9 bitshift add % ACTIVE_NODES
+% 1 10 bitshift add % HASH_INNARDS
+  1 11 bitshift add % RESOURCES
+% 1 12 bitshift add % NODE_STATS
+  1 13 bitshift add % UNIQUE_PAGES
+  1 14 bitshift add % SCAN_WINDOW
+  1 15 bitshift add % PAGES_TREE
+  1 16 bitshift add % MARKS_TREE
+  1 17 bitshift add % PAGE_ELEMENTS
+  1 18 bitshift add % EVENTS
+1183615869 internaldict /setripvar 2 copy known
+{ get exec } { pop pop pop pop } ifelse
+
+% Chain-load a sensible HHR TestConfig if it's there (does nothing in
+% a GUI RIP)
+(%os%/TestConfig/CMYKComposite300dpi) dup status
+{ pop pop pop pop run } { pop } ifelse

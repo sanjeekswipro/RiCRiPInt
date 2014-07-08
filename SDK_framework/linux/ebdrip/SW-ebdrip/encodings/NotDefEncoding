@@ -1,0 +1,12 @@
+
+%!PS-Adobe-2.0 AdobeEncoding
+%%Title: NotDefEncoding
+
+
+/NotDefEncoding
+256 array
+0 1 255 { 1 index exch /.notdef put } for
+readonly
+/Encoding defineresource pop
+
+%%EndAdobeEncoding

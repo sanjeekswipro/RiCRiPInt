@@ -1,0 +1,25 @@
+%!PS
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% This file is used to augment or override the Font Emulation database.
+
+statusdict /FontEmulation <<
+
+  % To disable emulation of a font that is in the database, such as an important
+  % corporate font, so that the job will fail if the font is omitted:
+  %
+  % /TheFontName false
+
+  % To use an existing font definition in the database to cover an identical
+  % font with a different name, alias it like this:
+  %
+  % /MyFontName /DatabaseFontName
+
+  % To override a database font with an updated definition, or add new fonts to
+  % the emulation system (you will need a correctly formatted data string, the
+  % format is not defined):
+  %
+  % /FontName <2211111111110077777711...776688664103a700aa4d4000fc6d0002>
+
+>> put
+
+%%EOF

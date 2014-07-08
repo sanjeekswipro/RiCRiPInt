@@ -1,0 +1,72 @@
+%!PS-Adobe
+%%Title: HqnKodakPrecision
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mar 7, 1992
+%%VMusage: -1 -1
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnKodakPrecision)" 1 1
+
+% $HopeName: SWv20!swf:procsets:kodakpre(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Fix for Kodak Precision 1.15 calibration software
+statusdict /statuscommand known not
+{
+  statusdict begin
+  /statuscommand {
+    /status exch def
+    /action exch def
+    statusdict begin exposure end
+    true
+  } bind def
+  end
+} if
+
+% Fix for Kodak Precision 1.24 and later (hopefully) calibration software
+% Please put this into a Usr/kodakprec.ps file
+
+userdict begin
+  /swsmachinedict 10 dict def
+  swsmachinedict begin
+    /swsfrontendnegative {
+      false statusdict /negativeprint known { % get RIP negative sense
+        pop statusdict begin negativeprint end
+      } if
+    } def
+
+    /swsbackendnegative {
+      false statusdict /donegativeprint known {   
+        pop statusdict begin donegativeprint end
+      } if
+    } def
+
+    /swsgetdpi {
+      currentpagedevice /HWResolution get 0 get
+    } def
+
+    /swsgetexposure {
+      0 statusdict /exposure known {
+        pop statusdict begin exposure end cvi
+      } if
+    } def
+
+    /swssetexposure {
+      statusdict /setexposure known {
+        exch pop % dont need slot number
+        cvi statusdict begin setexposure end
+      }{ 
+        pop pop
+      } ifelse
+    } def                               
+
+    /swscansetexposure true def
+    currentdict
+  end
+end
+
+/HqnKodakPrecision exch /ProcSet defineresource pop
+
+%%EndProcSet

@@ -1,0 +1,49 @@
+# Copyright (C) 2007-2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Memory Management System
+#
+# $HopeName: SWmm_common!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant metrics valgrind ;
+
+
+AddToVar Inherited Local : SplintOptions :
+  -castfcnptr # Allow casts between alloc_fn and similar fn types
+;
+
+# Compilation rules
+
+    DependsOn all : mm ;
+
+    IncludeExportDirectories Inherited Local :
+        objects
+        multi
+    : .. ;
+
+    Library mm :
+        apportioner.c
+        cache_handler.c
+        deferred.c
+        memutil.c
+        mm_swmemapi.c
+        mmcompat.c
+        mmfence.c
+        mmlog.c
+        mmps.c
+        mmreserve.c
+        mmtag.c
+        mmtotal.c
+        mmwatch.c
+        mpslibep.c
+        track_swmemapi.c
+        vm.c
+    ;
+
+# Log stripped

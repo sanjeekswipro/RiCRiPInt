@@ -1,0 +1,3683 @@
+% /* PLEASE DO NOT REMOVE THIS LINE - C-STLYE COMMENT REQD. FOR SOLARIS etc...
+% $HopeName: SWv20!src:resource.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2014 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% */
+
+%----------------------------------------------------------------------------
+% First the systemdict font things that used to be in pseudpss.pss
+
+systemdict begin
+
+/$ldict {
+  currentglobal {
+    false setglobal dict true setglobal
+  } {
+    dict
+  }ifelse
+} bd
+/$larray {
+  currentglobal {
+    false setglobal array true setglobal
+  } {
+    array
+  } ifelse
+} bd
+/$lstring {
+  currentglobal {
+    false setglobal string true setglobal
+  } {
+    string
+  } ifelse
+} bd
+/$gdict {
+  currentglobal {
+    dict
+  } {
+    true setglobal dict false setglobal
+  } ifelse
+} bd
+/$garray {
+  currentglobal {
+    array
+  } {
+    true setglobal array false setglobal
+  } ifelse
+} bd
+/=scratch 200 string def
+
+
+% Font, encoding and charstring resource pseudo operators
+
+/FontDirectory 512 $ldict readonly def
+/GlobalFontDirectory 256 dict readonly def
+/SharedFontDirectory GlobalFontDirectory def
+
+/findfont {
+  //FontDirectory exch 2 copy known {
+    get
+  } {
+    exch pop /Font { findresource } stopped {
+      pop $error /command /findfont put stop
+    } if
+  } ifelse
+} bd
+
+/findencoding {
+  /Encoding { findresource } stopped {
+    pop $error /command /findencoding put stop
+  } if
+} bd
+
+/findcharstrings {
+  //CharStringsDirectory exch 2 copy known {
+    get
+  } {
+    exch pop /CharStrings { findresource } stopped {
+      pop $error /command /findcharstrings put stop
+    } if
+  } ifelse
+} bd
+
+/findpgfont {
+  /PGFont findresource
+} bd
+
+
+%----------------------------------------------------------------------------
+% Now internaldict
+
+1183615869 internaldict begin
+
+% Dictionary for tracking font derivation
+/FontInfo 512 $ldict readonly def
+
+/definefont {
+  /Font { defineresource } stopped {
+    pop $error /command /definefont put stop
+  } if
+} bd
+
+
+%----------------------------------------------------------------------------
+% dictionaries:       Resource Directories   author:             Luke Tunmer
+% Create the Resource Directories
+%----------------------------------------------------------------------------
+/LocalResourceDirectory 25 $ldict def
+/GlobalResourceDirectory 25 $gdict def
+/ImplementationDirectory 25 $gdict def
+
+
+% ----------------------------------------------------------------------------
+%   procedures:          utilities             author:             Luke Tunmer
+% ----------------------------------------------------------------------------
+
+%  categoryname  getimplementationdict  -->  -
+% Pushes the implementation dictionary onto the dict stack for the catagory.
+% If the category does not exist, it tries to load it with findresource.
+%
+/getimplementationdict {
+  //ImplementationDirectory 2 copy exch known {
+    exch get begin
+  } {
+    pop /Category { findresource } stopped {
+      pop stop
+    } {
+      begin
+    } ifelse
+  } ifelse
+} executeonly bd
+
+
+
+%----------------------------------------------------------------------------
+%   function:            defineresource    author:              Luke Tunmer
+%   description:
+%       internaldict implementation of the systemdict operator
+%----------------------------------------------------------------------------
+/defineresource {
+  count 3 lt {
+    /defineresource /stackunderflow //systemdict /.error get exec
+  } if
+  //getimplementationdict stopped {
+    /defineresource /undefined //systemdict /.error get exec
+  } if
+  { DefineResource } stopped {
+    Category end stop
+  } if
+  end
+} bd
+
+%----------------------------------------------------------------------------
+%   function:            findresource      author:              Luke Tunmer
+%   description:
+%       internaldict implementation of the systemdict operator
+%----------------------------------------------------------------------------
+/findresource {
+  count 2 lt {
+    /findresource /stackunderflow //systemdict /.error get exec
+  } if
+  //getimplementationdict stopped {
+    /findresource /undefined //systemdict /.error get exec
+  } if
+  { FindResource } stopped {
+    Category end stop
+  } if
+  end
+} bd
+
+%----------------------------------------------------------------------------
+%   function:            undefineresource  author:              Luke Tunmer
+%   description:
+%       internaldict implementation of the systemdict operator
+%----------------------------------------------------------------------------
+/undefineresource {
+  count 2 lt {
+    /undefineresource /stackunderflow //systemdict /.error get exec
+  } if
+  //getimplementationdict stopped {
+    /undefineresource /undefined //systemdict /.error get exec
+  } if
+  { UndefineResource } stopped {
+    Category end stop
+  } if
+  end
+} bd
+
+
+%----------------------------------------------------------------------------
+%   Function:   resourceforall                 Author:  Luke Tunmer
+%   Description:
+%     Internaldict implementation of the systemdict operator.
+%     Note that the category's implementation dictionary is placed on the
+%     dictionary stack while the specific ResourceForAll routine (for the
+%     given category) is invoked.  This means the implementation dictionary
+%     must (and is) temporarily popped off the dict stack as and when the
+%     user's call-back routine is invoked (for each resource found).
+%----------------------------------------------------------------------------
+%
+/resourceforall {
+  count 4 lt {
+    /resourceforall /stackunderflow //systemdict /.error get exec
+  } if
+  //getimplementationdict stopped {
+    /resourceforall /undefined //systemdict /.error get exec
+  } if
+  { ResourceForAll } stopped {
+    % Probably not appropriate to push back the category name here
+    end stop
+  } if
+  end
+} bd
+
+%----------------------------------------------------------------------------
+%   function:            resourcestatus    author:              Luke Tunmer
+%   description:
+%       internaldict implementation of the systemdict operator
+%----------------------------------------------------------------------------
+/resourcestatus {
+  count 2 lt {
+    /resourcestatus /stackunderflow //systemdict /.error get exec
+  } if
+  //getimplementationdict stopped {
+    /resourcestatus /undefined //systemdict /.error get exec
+  } if
+  { ResourceStatus } stopped {
+    Category end stop
+  } if
+  end
+} bd
+
+
+%----------------------------------------------------------------------------
+%   procedures:          Utilities         author:              Luke Tunmer
+%   description:
+%
+% Utility procedures for the specific category routines. A number of them are
+% made executeonly because they have the Resource Directories inserted into
+% them.
+%----------------------------------------------------------------------------
+
+%  getlanguagelevel --> languagelevel (integer)
+%  Puts the PostScript language level on the stack
+/getlanguagelevel {
+    systemdict /languagelevel known {
+       systemdict /languagelevel get
+    } {
+       1
+    } ifelse
+} bd
+
+
+
+%  n   makelocalinstancesdict  --> instancesdict
+%  Creates an instance dictionary and inserts it into the
+%  LocalResourceDirectory
+%
+/makelocalinstancesdict {
+  //LocalResourceDirectory Category
+  3 -1 roll //$ldict exec dup 4 1 roll put
+} executeonly bd
+
+%   instancesdict resourcename    getglobalinstancearray  -->
+%                             instancesdict resourcename instancearray
+% If the instance array for resourcename does not exist in the instancesdict,
+% create a global/local instance array, with status of 0 and size of -1.
+%
+/getglobalinstancearray {
+  2 copy known {
+    2 copy get
+  } {
+    3 //$garray exec
+  } ifelse
+  dup 0 0 put dup 1 -1 put
+} bd
+
+/getlocalinstancearray {
+  2 copy known {
+    2 copy get
+  } {
+    3 //$larray exec
+  } ifelse
+  dup 0 0 put dup 1 -1 put
+} bd
+
+%
+% level1temps - a dictionary of operators and/or procedures
+%               which need to be defined in systemdict temporarily
+%               for getresourcefromdisk to work properly.
+
+/level1temps <<
+  /defineresource //defineresource
+>> def
+
+
+%    resourcename   getresourcefromdisk  --> resourcename
+% It should not fail, and should clean up the stack after running
+% the resource
+%
+
+% Use defined name temporarily to hold this definition
+1183615869 internaldict /_hqxrun get
+/getresourcefromdisk exch def
+
+/getresourcefromdisk {
+  currentglobal mark
+  2 index //=scratch ResourceFileName
+  userdict /VMusageMax -1 put
+  true setglobal
+  {
+    % if we are doing level 1, we need to define several operators
+    % or procedures in systemdict temporarily.
+    //getlanguagelevel exec    % find out which level we are running
+    1 eq {
+      % ok, we are running at level 1.
+      % get dictionary containing the temporary items.  For each entry
+      % in the dictionary, put the item into systemdict using superexec.
+      //level1temps {
+        systemdict 3 1 roll {
+          put
+        } superexec
+      } forall
+    } if   % languagelevel == 1
+
+    % This was the simple predecessor: { run } stopped pop
+    % Now we need to decrypt on the detection of a stop
+
+    dup { run } stopped
+    {
+        % false setglobal
+        { //getresourcefromdisk } stopped { stop } if
+    }
+    {
+        pop
+    }
+    ifelse
+
+    % now if we are doing level 1, we need to undef all the temporary items.
+    //getlanguagelevel exec    % find out which level we are running
+    1 eq {
+      % ok, we are running at level 1.
+      % get dictionary containing the temporary items.  For each entry
+      % in the dictionary, undef the item from systemdict using superexec.
+      //level1temps {
+        pop systemdict exch {
+          undef
+        } superexec
+      } forall
+    } if   % languagelevel == 1
+  } stopped pop
+  cleartomark
+  setglobal
+} bd
+
+% Use defined name temporarily to hold this definition
+/getbadresourcefromdisk 1183615869 internaldict /_hqxrun get def
+
+% getbadresourcefromdisk - identical to getresourcefromdisk except it adds a
+% writable dict on top of the dict stack so that old resources that used to
+% define temporary entries in the implementation dict still work.
+/getbadresourcefromdisk {
+  currentglobal mark
+  2 index //=scratch ResourceFileName
+  userdict /VMusageMax -1 put
+  true setglobal
+  {
+    % if we are doing level 1, we need to define several operators
+    % or procedures in systemdict temporarily.
+    //getlanguagelevel exec    % find out which level we are running
+    1 eq {
+      % ok, we are running at level 1.
+      % get dictionary containing the temporary items.  For each entry
+      % in the dictionary, put the item into systemdict using superexec.
+      //level1temps {
+        systemdict 3 1 roll {
+          put
+        } superexec
+      } forall
+    } if   % languagelevel == 1
+
+    % This was the simple predecessor: { run } stopped pop
+    % Now we need to decrypt on the detection of a stop
+
+    % Add writable dict as old installed ICC CRDs try to write to the
+    % implementation dict which is now a no-no - can't ask them to reinstall and
+    % migrate wont handle them so patch the dict stack just for them.
+    dup
+    10 dict begin
+      { run } stopped
+    end
+    {
+        % false setglobal
+        { //getbadresourcefromdisk } stopped { stop } if
+    }
+    {
+        pop
+    }
+    ifelse
+
+    % now if we are doing level 1, we need to undef all the temporary items.
+    //getlanguagelevel exec    % find out which level we are running
+    1 eq {
+      % ok, we are running at level 1.
+      % get dictionary containing the temporary items.  For each entry
+      % in the dictionary, undef the item from systemdict using superexec.
+      //level1temps {
+        pop systemdict exch {
+          undef
+        } superexec
+      } forall
+    } if   % languagelevel == 1
+  } stopped pop
+  cleartomark
+  setglobal
+} bd
+
+
+%   instancesdict resourcename   updateinstancearray   --> instance
+% Gets the instance array from the instances dictionary, and then
+% changes the status number in the instance array to 1 (demand loaded), and
+% sets the VMusage.
+/updateinstancearray {
+  get
+  dup 0 1 put
+  dup 1 userdict /VMusageMax get put
+  2 get
+} bd
+
+
+%   -  getglobalinstancesdict  --> globalinstancesdict
+% Extracts the instances dictionary for the current category from the
+% Global Resource Directory. This should always succeed.
+%
+/getglobalinstancesdict {
+  //GlobalResourceDirectory Category get
+} executeonly bd
+
+
+%    -   getlocalinstancesdict  --> localinstancesdict true
+%                               --> false
+% Extracts the instances dictionary for the current category from the Local
+% Resource Directory. Returns false if it isn~t there.
+%
+/getlocalinstancesdict {
+  //LocalResourceDirectory Category 2 copy known {
+    get true
+  } {
+    pop pop false
+  } ifelse
+} executeonly bd
+
+
+%    resourcename  checklocalexists  --> instancesdict resourcename true
+%                                    --> resourcename false
+% if there is no local category entry, or if there is no instance entry,
+% then this procedure returns false.
+%
+/checklocalexists {
+  //LocalResourceDirectory Category 2 copy known {
+    get exch
+    2 copy known {
+      true
+    } {
+      exch pop false
+    } ifelse
+  } {
+    pop pop false
+  } ifelse
+} executeonly bd
+
+
+%   resourcename   checkglobalexists  --> instancesdict resourcename true
+%                                     --> resourcename false
+% if there is no instance entry, then this procedure returns false.
+%
+/checkglobalexists {
+  //GlobalResourceDirectory Category get exch
+  2 copy known {
+    true
+  } {
+    exch pop false
+  } ifelse
+} executeonly bd
+
+% resourcename   checklocalstatus --> status size true
+%                                 --> resourcename false
+% if there is no local instances dictionary, or no instance entry, or if
+% there is no loaded instance, then this procedure returns false.
+%
+/checklocalstatus {
+  //checklocalexists exec {
+    get dup 0 get exch 1 get true
+  } {
+    false
+  } ifelse
+} bd
+
+% resourcename checkglobalstatus --> status size true
+%                                --> resourcename false
+/checkglobalstatus {
+  //checkglobalexists exec {
+    get dup 0 get exch 1 get true
+  } {
+    false
+  } ifelse
+} bd
+
+
+% resourcename  defaultlookup  --> instance  true
+%                              --> resourcename false
+% Uses the DefaultLookup entry in the category~s implementation
+% dictionary. A hack to get past Level 1 incompatibility
+/defaultlookup {
+  currentdict /DefaultLookup known {
+    DefaultLookup dup type /dicttype eq {
+      2 copy exch known {
+        exch get true
+      } {
+        pop pop false
+      } ifelse
+    } {
+      pop false
+    } ifelse
+  } {
+    false
+  } ifelse
+} bd
+
+
+
+% template proc scratch instancesdict statusnum   instancesdictforall  -->
+%                                     template proc scratch true
+%                                     template proc scratch false
+% loop through the instance dictionary, calling proc if the status
+% number of the instance equals statusnum, and the resource name matches
+% the template. Return false if proc executes an exit (invalidexit is trapped).
+%
+/instancesdictforall {
+  exch {
+    0 get 2 index eq {
+      dup
+      5 index //systemdict /matchtemplate get exec {
+        2 index cvs mark exch 4 index    % got the user~s procedure
+        stopped {                        % execute it in stopped context
+          cleartomark
+          $error /errorname get /invalidexit eq { % user proc did an exit
+            pop false exit
+          } {
+            stop
+          } ifelse
+        } {
+          cleartomark
+        } ifelse
+      } {
+        pop
+      } ifelse
+    } {
+      pop
+    } ifelse
+  } forall
+  type /integertype eq
+} bd
+
+
+% categoryname  findcategory  -->  implementationdict true
+%                             -->  categoryname false
+/findcategory {
+  //ImplementationDirectory 2 copy exch known {
+    exch get true
+  } {
+    pop false
+  } ifelse
+} executeonly bd
+
+
+%   categoryname implementationdict   addtoimplementationdirectory -->
+%                                            categoryname  implementationdict
+% Adds the category and its implementation dictionary to the resource
+% ImplementationDirectory.
+%
+/addtoimplementationdirectory {
+  2 copy //ImplementationDirectory 3 1 roll put
+  dup /Category 3 index put
+  readonly
+} executeonly bd
+
+
+%    categoryname implementationdict   addtoglobaldirectory  -->
+%                                             categoryname  implementationdict
+% Adds the category name and a new instances dictionary to the
+% GlobalResourceDirectory
+%
+/addtoglobaldirectory {
+  //GlobalResourceDirectory 2 index 10 //$gdict exec put
+} executeonly bd
+
+
+%   categoryname  categorystatus  --> 0 -1 true
+%                                 --> false
+% Return false if the category does not exist, 0 -1 true it does
+%
+/categorystatus {
+  //ImplementationDirectory exch known {
+    0 -1 true
+  } {
+    false
+  } ifelse
+} executeonly bd
+
+%    template proc scratch   categoryforall  --> -
+% Executes proc for every entry in ImplementationDirectory whose key
+% matches the template
+%
+/categoryforall {
+  //ImplementationDirectory {
+    pop dup 4 index //systemdict /matchtemplate get exec {
+      1 index cvs 2 index exec
+    } {
+      pop
+    } ifelse
+  } forall
+  pop pop pop
+} bd
+
+%   instancesdict resourcename  removeresource  --> -
+% Removes the instance from the instances dictionary
+%
+/removeresource {
+  2 copy known {
+    undef
+  } {
+   pop pop
+  } ifelse
+} bd
+
+%    categoryname  removecategory  --> -
+% Removes the implementation dictionary for the category from the
+% ImplementationDirectory.
+%
+/removecategory {
+  //ImplementationDirectory exch 2 copy known {
+    undef
+  } {
+   pop pop
+  } ifelse
+} executeonly bd
+
+
+%   filename   getVMusage   -->  2 size true
+%                           -->  false
+% Gets the VMusage number from a file (status = 2).
+%
+/getVMusage {                   %|- fname
+  currentglobal exch (r&) {     %|- global fname (r&)
+    1 index status {            % File exists?
+      pop pop pop pop           % Remove status info
+      file                      % Safe to open it
+    } {                         % File does not exist!
+      stop
+    } ifelse
+  } stopped {                   % File open failed or does not exist.
+    pop pop false               %|- global false
+  } {                           % File open succeeded. |- global file
+    dup
+    0 (%%VMusage:) /SubFileDecode filter    %|- global file
+    { flushfile } stopped {
+      pop pop 2 -1 true         % did not find VMusage comment
+    } {
+      dup token {
+        dup type /integertype eq {
+          exch closefile 2 exch true
+        } {
+          pop closefile 2 -1 true
+        } ifelse
+      } {
+        closefile 2 -1 true
+      } ifelse
+    } ifelse
+  } ifelse
+
+  %|- EITHER: global false  OR global 2 size true
+  dup {
+    4 -1 roll
+  } {
+    exch
+  }
+  ifelse
+  setglobal
+
+} bd
+
+
+%   false  proc    iff   --> false      procedure not executed
+%   true   proc    iff   -->            procedure is executed
+%
+/iff {
+  exch {
+    exec
+  } {
+    false
+  } ifelse
+} bd
+
+
+
+%----------------------------------------------------------------------------
+%   operators:           Generic Operators   author:             Luke Tunmer
+%   description:
+%
+%   These operators have the implementation dictionary for the requested
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+/GenericFindResource {
+  currentglobal { % only look for global instance
+    //checkglobalexists exec {
+      get 2 get
+    } {
+      //getresourcefromdisk exec
+      //checkglobalexists exec {
+        //updateinstancearray exec
+      } {
+        //defaultlookup exec not {
+          % temporarily switch to local mode in this error handling because ErrorParams
+          % should always be local and cannot be put into a global array.
+          false setglobal
+          $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+          dup         % ErrorParams dict
+          /errorinfo [ null null ] dup 1 6 -1 roll put put
+          /findresource /undefinedresource //systemdict /.error get exec
+          true setglobal
+        } if
+      } ifelse
+    } ifelse
+  } {   % local: look in local then global
+    //checklocalexists exec {
+      get 2 get
+    } {
+      //checkglobalexists exec {
+        get 2 get
+      } {
+        //getresourcefromdisk exec
+        //checklocalexists exec {
+          //updateinstancearray exec
+        } {
+          //checkglobalexists exec {
+            //updateinstancearray exec
+          } {
+            //defaultlookup exec not {
+              $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+              dup         % ErrorParams dict
+              /errorinfo [ null null ] dup 1 6 -1 roll put put
+              /findresource /undefinedresource //systemdict /.error get exec
+            } if
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } ifelse
+} bd
+
+% GenericBadFindResource - identical to GenericFindResource except it calls
+% getbadresourcefromdisk to cope with resources wanting to write into the
+% implementation dict (to date, old imported ICC input/output profiles).
+/GenericBadFindResource {
+  currentglobal { % only look for global instance
+    //checkglobalexists exec {
+      get 2 get
+    } {
+      //getbadresourcefromdisk exec
+      //checkglobalexists exec {
+        //updateinstancearray exec
+      } {
+        //defaultlookup exec not {
+          % temporarily switch to local mode in this error handling because ErrorParams
+          % should always be local and cannot be put into a global array.
+          false setglobal
+          $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+          dup         % ErrorParams dict
+          /errorinfo [ null null ] dup 1 6 -1 roll put put
+          /findresource /undefinedresource //systemdict /.error get exec
+          true setglobal
+        } if
+      } ifelse
+    } ifelse
+  } {   % local: look in local then global
+    //checklocalexists exec {
+      get 2 get
+    } {
+      //checkglobalexists exec {
+        get 2 get
+      } {
+        //getbadresourcefromdisk exec
+        //checklocalexists exec {
+          //updateinstancearray exec
+        } {
+          //checkglobalexists exec {
+            //updateinstancearray exec
+          } {
+            //defaultlookup exec not {
+              $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+              dup         % ErrorParams dict
+              /errorinfo [ null null ] dup 1 6 -1 roll put put
+              /findresource /undefinedresource //systemdict /.error get exec
+            } if
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } ifelse
+} bd
+
+
+/GenericUndefineResource {
+  currentglobal { % remove both local and global definitions
+    dup //checklocalexists exec {
+      //removeresource exec
+    } {
+      pop
+    } ifelse
+    //checkglobalexists exec {
+      //removeresource exec
+    } {
+      pop
+    } ifelse
+  } { % local : remove just a local instance
+    //checklocalexists exec {
+      //removeresource exec
+    } {
+      pop
+    } ifelse
+  } ifelse
+} bd
+
+
+/GenericDefineResource {
+  { readonly } stopped pop % convert instance to read only
+  currentdict /InstanceType known { % check instance type
+    dup type InstanceType ne {
+      /defineresource /typecheck //systemdict /.error get exec
+    } if
+  } if
+  dup gcheck {  % instance is global
+    1 index
+    //checklocalexists exec {
+      //removeresource exec
+    } {
+      pop
+    } ifelse
+    1 index //getglobalinstancesdict exec
+    exch //getglobalinstancearray exec
+  } { % local : replace existing local definition
+    currentglobal {
+      /defineresource /invalidaccess //systemdict /.error get exec
+    } if
+    1 index //getlocalinstancesdict exec not {
+      10 //makelocalinstancesdict exec
+    } if
+    exch //getlocalinstancearray exec
+  } ifelse
+  dup 2 5 index put put
+  exch pop
+} bd
+
+
+
+
+/GenericResourceStatus {
+  currentglobal { % global : check only global instances
+    //checkglobalstatus exec
+  } { % local: check both local and global
+    //checklocalstatus exec {
+      true
+    } {
+      //checkglobalstatus exec
+    } ifelse
+  } ifelse
+  {
+    true
+  } { % look for resource on disk
+    //=scratch ResourceFileName
+    //getVMusage exec
+  } ifelse
+} bd
+
+
+
+% The instances of a particular resource are examined in the order:
+%   global resources of status = 0
+%   local resources of status = 0 (only if the mode is local)
+%   global resource of status = 1
+%   local resources of status = 1 (only if the mode is local)
+%   resources on disk
+% The procedure iff (defined above) is used to execute the next part of
+% the iteration only if the previous one didn~t execute the exit operator
+% from within the supplied procedure.
+% All this hassle just to get proper behaviour on exit!
+%
+/GenericResourceForAll {
+  2 //GenericResourceforall
+} bd
+
+
+% put a filename together from parts, which are on the stack with
+% a mark under them; under the mark is the string to put them in.
+
+/concattomark {                         % ... scratch mark ... item item Item
+  counttomark 1 add index length        % ... scratch mark ... item item Item ScratchLength
+  0                                     % ... scratch mark ... item item item ScratchLength TotalLength
+  {                                     % ... scratch mark ... item item item ScratchLength TotalLength
+    3 -1 roll                           % ... scratch mark ... item item ScratchLength TotalLength Item
+    dup                                 % ... scratch mark ... item item ScratchLength TotalLength Item Item
+    mark eq { exit } if                 % ... scratch mark ... item item ScratchLength TotalLength Item
+    counttomark 1 add index             % ... scratch mark ... item item ScratchLength TotalLength Item scratch
+    2 index                             % ... scratch mark ... item item ScratchLength TotalLength Item scratch TotalLength
+    4 index                             % ... scratch mark ... item item ScratchLength TotalLength Item scratch TotalLength ScratchLength
+    getinterval                         % ... scratch mark ... item item ScratchLength TotalLength Item subscratch
+    cvs                                 % ... scratch mark ... item item ScratchLength TotalLength subsubscratch
+    length dup                          % ... scratch mark ... item item ScratchLength TotalLength LengthUsedThisTime LengthUsedThisTime
+    3 1 roll                            % ... scratch mark ... item item ScratchLength LengthUsedThisTime TotalLength LengthUsedThisTime
+    add                                 % ... scratch mark ... item item ScratchLength LengthUsedThisTime newTotalLength
+    3 1 roll                            % ... scratch mark ... item item newTotalLength ScratchLength LengthUsedThisTime
+    sub                                 % ... scratch mark ... item item newTotalLength newScratchLength
+    exch                                % ... scratch mark ... item item newScratchLength newTotalLength
+  } loop                                % ... scratch ScratchLength TotalLength item=mark
+  pop                                   % ... scratch ScratchLength TotalLength
+  exch pop                              % ... scratch TotalLength
+  0 exch                                % ... scratch 0 TotalLength
+  getinterval                           % ... result
+} bd
+
+%  resourcename scratch prefixstring   GenericResourceFileName --> filename
+% The prefix string is added onto the stack by the category~s ResourceFileName
+% procedure
+%
+
+/currentsystemparam 1183615869 internaldict /currentsystemparam get def
+
+/GenericResourceFileName {
+                                        % resname scratch prefix
+  exch mark                             % resname prefix scratch mark
+  4 2 roll                              % scratch mark resname prefix
+  /GenericResourcePathSep currentsystemparam % scratch mark resname prefix sep
+  exch
+  /GenericResourceDir currentsystemparam % scratch mark resname sep prefix grd
+  //concattomark exec                   % string
+} bd
+
+%----------------------------------------------------------------------------
+%   operators:           Font Operators   author:             Luke Tunmer
+%   description:
+%
+%   These operators have the implementation dictionary for the requested
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+
+%  file --fontfiletype-- name true
+%  file --fontfiletype-- false
+% This is a utility procedure that uses peekreadstring to guess the type of
+% font in a file by looking at the start of the data. It returns a name to
+% indicate the type of the font, /unknown if not recognised. Names currently
+% recognised are /CFF, /TTF (TrueType), /OTTO (OpenType CFF), /TTCF (TrueType
+% collection), /Type1 and /DLD1. This procedure is EXPORTED (no undef at end
+% of file)
+/fontfiletype 19 $lstring def
+/fontfiledict <<
+ % TrueType types.
+  <00010000> /TTF
+  (true)     /TTF
+  (ttcf)     /TTCF
+ % CFF types. These have major, minor version and header size hard-wired.
+  <01000401> /CFF
+  <01000402> /CFF
+  <01000403> /CFF
+  <01000404> /CFF
+  (OTTO)     /OTTO
+ % PS/DLD types
+%  (%!PS-AdobeFont-1.0:) /Type1 % Not always Type 1
+  (%!PS-HqnFont-1.0)    /DLD1
+>> def
+
+/fontfiletype { % file --fontfiletype-- name
+  //fontfiletype peekreadstring /unknown 3 1 roll {
+    { % look for magic number from longest header to shortest
+      dup length 0 eq { exit } if
+      //fontfiledict 1 index known { % /unknown (header)
+        //fontfiledict exch get exch exit % /name /unknown
+      } if
+      0 1 index length 1 sub getinterval % shorten header string
+    } loop
+  } if
+  pop
+} bd
+
+% getfontfromdisk, FontDefineResource and CIDFontDefineResource use this
+% dictionary to store information about the font being defined. This
+% information is used to determine font derivations, and to ensure that PDF
+% can find embedded fonts after definition. FontInfo is already used for font
+% derivation information already, so use FontDescriptor.
+/FontDescriptor 3 $ldict def
+
+
+%----------------------------------------------------------------------------
+% Spot the standard fonts being redefined to avoid Form problems [12248]
+
+/StandardFontsChanged 14 $ldict def
+
+/StandardFonts [ % only used for early binding in checkstandardfonts below
+  /Courier/Courier-Bold/Courier-Oblique/Courier-BoldOblique
+  /Helvetica/Helvetica-Bold/Helvetica-Oblique/Helvetica-BoldOblique
+  /Times-Roman/Times-Bold/Times-Italic/Times-BoldItalic
+  /Symbol/ZapfDingbats
+] bd
+
+% called from (CID)FontDefineResource, note if a standard font is redefined
+% (and store the definition)
+/checkstandardfonts{ % /fontname <<dict>>
+  //StandardFonts {
+    2 index eq{//StandardFontsChanged 3 copy pop put}if
+  }forall
+} bd
+
+/StandardFonts 14 $ldict def
+
+% called after rip boot, copy the contents of StandardFontsChanged into
+% StandardFonts, and clear the former
+/storestandardfonts{
+  //StandardFonts begin
+    //StandardFontsChanged{
+      //StandardFontsChanged 2 index undef def
+    }forall
+  end
+} bd
+
+% called at the start of a Font-Resource-equipped Form, return the standard
+% fonts to the default if they've been changed
+/resetstandardfonts{
+  //StandardFontsChanged {
+    pop dup //StandardFonts 1 index get /Font defineresource pop
+    //StandardFontsChanged exch undef
+  }forall
+} bd
+
+%[/StandardFontsChanged/StandardFonts]{currentdict exch undef}forall
+%----------------------------------------------------------------------------
+
+/UniqueIDs 32 $gdict def
+/purgedict 4 $gdict dup /checkuniqueidcount 0 put def
+
+/purgeuniqueid 1183615869 internaldict /currentfontcacheuids get def
+/purgeuniqueid {
+  //purgedict begin
+    /checkuniqueidcount dup load 1 add
+    dup 500 ge {
+      pop
+      % Create dict of fontcache uids in local VM so can be GCd
+      % dict also handles any duplicate uids returned by currentfontcacheuids
+      currentglobal false setglobal
+      //purgeuniqueid exec
+      % if the length exceeds ~32k then do invidudal defs/puts
+      << exch { null } forall >>
+      exch setglobal
+      dup length 0 gt {
+        //UniqueIDs exch 1 index {  % uids fcache uid any
+          pop 2 copy known not { 2 index exch undef }{ pop } ifelse
+        } forall
+        pop pop
+      }{ % Nothing in font cache so blow away anything in UID cache
+        pop
+        //UniqueIDs dup { pop 1 index exch undef } forall pop
+      } ifelse
+      0
+    } if
+    def % updates checkuniqueidcount
+  end
+} bd
+
+/checkuniqueid { % /fontname <<dict>>
+  2 copy % get working copy of name and dict.
+  exch % fontname on top
+  dup type /stringtype eq { cvn } if
+  dup type /nametype eq
+  {
+    exch
+    dup /UniqueID 2 copy known {
+      % force UID replacement if font's UID is blacklisted.
+      2 copy get % get UID
+      statusdict /FontUIDBlackList 2 copy known 
+      {
+        % get the blacklist and check its type.
+        get dup type
+        /dicttype eq
+        { % if blacklist is dictionary, see if the UID is known.
+          exch 2 copy known
+
+          % if the value of the black list entry is a bool,
+          % that indicates its blacklisted status.
+          % otherwise, presence of UID alone indicates it is
+          % blacklisted.
+          {get dup type /booleantype ne {pop true} if} {pop pop false} ifelse
+        }
+        { % blacklist not correct type - cannot check UID in this object.
+          pop pop false
+        } ifelse
+      }
+      { % no blacklist.
+        pop pop pop false
+      } ifelse
+
+      { true }
+      {
+        3 index dup length string cvs
+        (+) search  % subset naming convention
+        { 3 1 roll pop pop length 6 eq
+          { 1 index /FontType 2 copy known {get 1 ne} {pop pop true} ifelse}
+          { true } ifelse % replace uid if font not type 1.
+        }
+        { pop false } ifelse
+      } ifelse
+
+      % Bool on top of stack indicates if unique ID replace is to be forced, or
+      % if we need to check uniqueID usage first.
+      % After checking usage, leave bool on top of stack indicating if new
+      % UniqueID required.
+
+      { % forced replacement of UniqueID.
+        pop pop true
+      }
+      {
+        get //UniqueIDs exch 2 copy known  % check previous usage of UniqueID
+
+        {
+          % UID used in another font.
+
+          % compare font names sharing UID.
+          2 copy get 4 index ne
+          {
+            % different names. Allow uniqueID to be shared if fonts share
+            % charstrings.
+            2 copy
+            get % name of font that previously used this UniqueID.
+            3 index % new font dictionary.
+            dup /FontType known
+            {
+              /FontType get  1 eq
+              {
+                % check status of previous font with this UniqueID.
+                dup
+                /Font resourcestatus
+                {
+                  pop  % size
+                  0 eq
+                  {
+                    //findfont exec % get old resource, avoiding any customer
+                                    % redefinition of findfont [12832]
+                    /CharStrings 2 copy known
+                    {
+                      get
+                      3 index % new font resource
+                      /CharStrings 2 copy known
+                      {
+                        get
+                        eq  % reuse UniqueID if the charStrings are shared.
+                        { false false } % dont replace uniqueID
+                        { pop pop true } ifelse
+                      }
+                      {
+                        % malformed font.
+                        pop pop pop pop pop true
+                      } ifelse
+                    }
+                    {
+                      % malformed font.
+                      pop pop pop pop true
+                    } ifelse
+                  }
+                  {
+                    pop pop pop
+                    true % can't share UniqueID if resource not in global VM.
+                  } ifelse
+                }
+                {
+                  pop % resource name
+                  pop pop
+                  true  % cant get resource so replace uniqueID.
+                } ifelse
+              }
+              {
+                pop pop pop true
+              } ifelse
+            }
+            {
+              % malformed font dict
+              pop pop pop pop true
+            } ifelse
+          }
+          {
+            % same font name as previous use of UniqueID.
+            % It might be necessary to apply a stricter test for subset fonts
+            % i.e. even if two subsets have same name, require proof by
+            % equality of charstrings in order to reuse UniqueID. (nb we
+            % are guaranteed any subsets here are type 1 fonts ).
+
+            false false
+          } ifelse
+        }
+        { % UID not seen before.
+          true false  % dont replace, do record.
+        } ifelse
+      } ifelse
+
+      % value on top of stack indicates if repalcement of uniqueID is required
+      % if not replacing, next bool on stack indicates if uid is to be recorded.
+
+      {
+        //purgeuniqueid exec
+        dup wcheck not {
+          currentglobal 1 index
+          dup gcheck setglobal
+          length dict begin setglobal
+          {def} forall
+          currentdict end
+        }if
+        dup /UniqueID getnewuniqueid
+        //UniqueIDs 1 index 6 index put
+        put
+      }
+      {
+        {
+          //purgeuniqueid exec
+          3 index put
+        }
+        {
+          pop pop
+        } ifelse
+      } ifelse
+    }
+    { pop pop } ifelse
+  }
+  if
+
+  pop pop % dispose of working copies, leaving original fontname and dict.
+
+} bd
+
+currentdict /UniqueIDs undef
+%----------------------------------------------------------------------------
+
+% getfontfromdisk does the same thing as getresourcefromdisk, but it checks
+% the type of the font first to determine whether or not to put it
+% into global VM. If the file cannot be found, no error is generated.
+
+
+%    string   getfontlocation -->  bool
+% Return true if the comment "%%VMlocation: global" exists, false otherwise.
+% Could fail with some garbage on the stack
+%
+/getfontlocation {
+  (r&) file
+  dup 0 (%%VMlocation:) /SubFileDecode filter
+  { flushfile } stopped {
+    pop closefile false
+  } {
+    dup token not {
+      closefile false
+    } {
+      /global eq
+      exch closefile
+    } ifelse
+  } ifelse
+} bd
+
+
+%    fontname   usedefaultfont   --> fontdict
+% Should not fail
+%
+/usedefaultfont {
+  FontDirectory 1 index known {
+    FontDirectory exch get
+  } {
+    % The /SubstituteFont key should be defined as a procedure,
+    % e.g.  { pop /Helvetica }  to override the default font.
+    $error /SubstituteFont known
+      { dup $error /SubstituteFont get exec }
+      { /Courier }
+    ifelse
+
+    % Report font default only if required.  (NB: put bool value of
+    % /SilentFontFault on stack for repeated use.)
+    currentuserparams /SilentFontFault get not 3 1 roll 2 index {
+      % |- silent? fontname substfont
+      % UVM(Warning: Did not find font %s, using %s.)
+      % UVM(Warning: Did not find font %s, using InvalidFont.)
+      errordict /errorbeep get exec
+      execdict begin
+        (Warning: Did not find font ) /print load exec
+        1 index
+        dup type /stringtype ne { =string cvs } if /print load exec
+      end
+    } if
+
+    % |- silent? fontname substfont
+    2 copy ne {
+      exch pop
+      exch {     % check /SilentFontFault again
+        execdict begin
+          (, using ) /print load exec
+          dup
+          dup type /stringtype ne { =string cvs } if /print load exec
+          (.\n) /print load exec
+        end
+      } if
+      //findfont exec % avoid customer redefinition of findfont [12832]
+      % [62380] Now make a new font, identified as a fake. UniqueID can stay.
+      dup length 1 add dict begin {def} forall /HqnSubstituteFont true def
+      /InvalidFont dup currentdict end definefont exch undefinefont
+    } {
+      pop pop
+      % |- silent?
+      {
+        execdict begin
+          (, using InvalidFont.\n) /print load exec
+        end
+      } if
+
+      % Invalidate and undo any current font setting
+      /InvalidFont <<
+        /FontName /InvalidFont
+        /FontType -1                 % Adobe does this !
+        /FontMatrix [ 1 0 0 1 0 0 ]
+        /Encoding StandardEncoding
+        /HqnSubstituteFont true      % [62380]
+      >> definefont % put the FID entry into the dictionary
+      /InvalidFont undefinefont
+    } ifelse
+  } ifelse
+} bd
+
+
+
+%    fontname   usedefaultcidfont   --> fontdict
+% Should not fail
+%
+/usedefaultcidfont {
+
+  % The /SubstituteCIDFont key should be defined as a procedure,
+  % e.g.  { pop /MyCIDFont }  to override the default font.
+  $error /SubstituteCIDFont known {
+    dup $error /SubstituteCIDFont get exec
+  } {
+    /CID-Bullet
+  } ifelse
+
+  % Report font default only if required.  (NB: put bool value of
+  % /SilentFontFault on stack for repeated use.)
+  currentuserparams /SilentFontFault get not 3 1 roll 2 index {
+    % |- silent? oldfont newfont
+    % UVM(Warning: Did not find font %s, using %s.)
+    % UVM(Warning: Did not find font %s, using InvalidFont.)
+    errordict /errorbeep get exec
+    execdict begin
+      (Warning: Did not find font ) /print load exec
+      1 index
+      dup type /stringtype ne { =string cvs } if /print load exec
+    end
+  } if
+
+  % |- silent? oldfont newfont
+  2 copy ne {
+    exch pop
+    exch {      % check /SilentFontFault again
+      execdict begin
+        (, using ) /print load exec
+        dup
+        dup type /stringtype ne { =string cvs } if /print load exec
+        (.\n) /print load exec
+      end
+    } if
+    /CIDFont findresource
+  } {
+    pop pop
+    % |- silent?
+    {
+      execdict begin
+        (, using InvalidFont.\n) /print load exec
+      end
+    } if
+
+
+    % Invalidate and undo any current font setting
+    /InvalidFont <<
+      /FontName /InvalidFont
+      /FontType -1           % Adobe does this !
+      /FontMatrix [ 1 0 0 1 0 0 ]
+      /Encoding StandardEncoding
+    >> definefont % put the FID entry into the dictionary
+    /InvalidFont undefinefont
+  } ifelse
+} bd
+
+
+
+% Helper functions for getfontfromdisk, so that findfont/findresource can
+% automatically generate stubs for TrueType/OpenType/CFF fonts.
+% Peekreadstring is used to lookup a dictionary of magic number to definefont
+% procedures. The procs are called with the file and fontname on the stack.
+% The TT proc sets CIDFont if called through /CIDFont defineresource. Both
+% the TT and CFF procs set /FontName to the name of the font, and set
+% /SubFont to [ fontname 0 ], which will search the CFF, TTF or TTC for the
+% named font, or select the first font in the set otherwise. This allows the
+% same TTC/CFF to be installed under different names, but yield the named
+% font from the font set.
+
+% font order args for define*font:
+% [ fontname 0 ] searches for fontname or index 0
+/fontdefargs 2 $larray dup 1 0 put def
+/fontdefargs 4 $ldict begin
+  /SubFont //fontdefargs def
+  currentdict
+end def     % dict for define*font args
+
+/fontdefargs { % fontname --fontdefargs-- dict
+  //fontdefargs begin
+    SubFont 0 2 index put
+    /FontName exch def
+    currentdict dup /FontOffset undef
+  end
+} bd
+
+/fontdefprocs <<
+  /TTF { % file fontname --TTF--
+    //fontdefargs exec
+    dup /CIDFont Category 1 index eq put
+    definettfont pop
+  } bind
+  /TTCF 1 index
+
+ % CFF fonts.
+  /CFF { % file fontname --CFF--
+    //fontdefargs exec definecfffont pop
+  } bind
+
+ % OpenType CFF fonts.
+  /OTTO { % file fontname --OTTO--
+    //fontdefargs exec defineotffont pop
+  } bind
+>> def
+
+%   instancesdict fontname    getfontfromdisk    --> instancesdict fontname
+% Should not fail. Call of fontfiletype from internaldict is deliberately
+% not immediately evaluated, so it can be field-patched for unrecognised font
+% types.
+%
+/getfontfromdisk 1183615869 internaldict /_hqxrun get def
+/getfontfromdisk {
+  currentglobal mark
+  2 index //=scratch ResourceFileName dup
+  userdict begin
+  {
+    % //getfontlocation exec % taken out to make font loading go quickly
+    pop
+    userdict /VMusageMax -1 put
+    % Don't bother looking for PCL fonts on disc, they really aren't there.
+    % The error for every new font is inefficient, and a pain when debugging.
+    dup length 10 gt{ dup 0 10 getinterval (fonts/PCL:) eq{stop}if }if
+    dup
+    (r@) file % may fail and stop correctly
+  % instancedict fontname global mark filename file
+    //FontDescriptor /FontFile 2 index put
+    mark { % check the font's magic number
+      1 index 1183615869 internaldict /fontfiletype get exec
+      //fontdefprocs exch 2 copy known not { stop } if
+  % instancedict fontname global mark filename file mark procdict procname
+      get 2 index exch 7 index exch exec
+    } stopped
+  % instancedict fontname global mark filename file mark (??? true | false)
+    { % If that didn't work, try just executing the file
+      cleartomark
+      3 index setglobal
+      mark { 1 index cvx exec } stopped
+    } {
+      false % through a curious inverted logic, false means OK
+    } ifelse
+  % instancedict fontname global mark filename file mark (??? true | false)
+    {
+      cleartomark closefile
+      % may fail because it is encrypted, or because of a genuine failure
+      2 index setglobal
+      { //getfontfromdisk } stopped { stop } if
+    } {
+      cleartomark closefile pop
+    } ifelse
+  % instancedict fontname global mark
+    //FontDescriptor /FontFile undef
+  } stopped pop
+  end
+  cleartomark
+  setglobal
+} bd
+
+% ---------------------------------------------------------------------------
+%
+% Routines to support CID-Keyed font extensions to findfont.
+% Top level entry point if called findcidkeyedfont, called from
+% FontFindResource.
+%
+
+% Compare the CIDSytemInfo dictionaries of the cmap and the font.
+% For the two to be compatible, the /Registry and /Ordering keys must match.
+% IN : CIDFontDict CMapDict/Name
+% OUT: bool
+
+/CMapInfo 33 array def
+/core-compare-systeminfo-dicts {
+  % FontRegistry FontOrdering
+  mark 3 1 roll
+  //CMapInfo {
+    %      mark FR FO MR
+    % or:  mark FR FO MR MO
+    counttomark 3 eq {
+      dup null eq { pop false exit } if
+    } {
+      % mark FR FO MR MO
+      2 index eq exch 3 index eq and {
+        true exit
+      } if
+    } ifelse
+  } forall
+  4 1 roll pop pop pop
+} bd
+/compare-systeminfo-dicts {
+{ % stopped
+  save 3 1 roll
+
+  dup type
+  dup /dicttype ne 1 index /arraytype ne and exch /packedarraytype ne and {
+    /CMap findresource
+  } if
+
+  % save fdict cmapdict
+
+  /CIDSystemInfo get
+  dup type /dicttype eq {
+    [ exch ]
+  } if
+  % save fdict [cmapinfo]
+  [ exch {
+    % save fdict bool [ cmapinfo
+    dup null eq { pop }{
+      begin
+      { /Registry /Ordering } {
+        load dup type /nametype ne { cvn } if
+      } forall
+      end
+      % save fdict [ R O ...
+      dup /Identity eq {
+        cleartomark mark
+        exit
+      } if
+    } ifelse
+  } forall
+  null
+  counttomark //CMapInfo 0 3 -1 roll getinterval astore
+  pop pop
+
+  % save fdict
+  //CMapInfo 0 get type /nulltype ne {
+    true exch
+    /FDepVector 2 copy known {
+      get {
+        % true Font or CIDFont dictionary
+        dup /CIDSystemInfo known {
+          % true cidfontdict
+          exch pop
+          % cidfontdict
+          dup /CIDSystemInfo get
+          dup type /dicttype eq {
+            % cidfontdict cidsysinfo
+            dup /Registry get dup type /nametype ne { cvn } if
+            exch /Ordering get dup type /nametype ne { cvn } if
+            //core-compare-systeminfo-dicts exec
+            % cidfontdict bool
+          } {
+            % must be an array of dicts and nulls
+            % (see Adobe tech note 5213 - a null indicates that a descendent font is not a CIDFont).
+            true exch
+              {
+              dup type /nulltype eq { pop }{
+                dup /Registry get dup type /nametype ne { cvn } if
+                exch /Ordering get dup type /nametype ne { cvn } if
+                //core-compare-systeminfo-dicts not {
+                  pop false
+                  exit
+                } if
+              } ifelse
+            } forall
+          } ifelse
+          exch pop    % cidfontdict
+          % bool
+          dup not { exit } if
+        } {
+          pop % the fdict, leaving true on the stack
+        } ifelse
+      } forall
+    } {
+      pop pop
+    } ifelse
+  } {
+    % An Identity CMap - assume its a match
+    % Could also be empty systeminfo in CMap ...
+    pop
+    true
+  } ifelse
+  exch restore
+} stopped { defaulthandleerror } if
+} bd
+
+
+% This routine is passed successive matches from search.  It appends the next
+% fragment of the font name to the font name string we have accumulated so far,
+% and uses this as the CIDFont name to try.  The post part of the match is used
+% as the CMap name to try.
+% If a match is found, the MatchedPair entry is updated with the font and cmap
+% dictionary.
+%  IN: cmapname sepstring Next-fontname-fragment
+% OUT: -
+
+/check-pair {
+  % Append new fragment to accumulated font name string
+  /FontString FontString dup length 0 eq {
+    pop exch def pop
+  } {
+    4 2 roll
+    % Concatenate strings, with a - between them
+    3 copy
+    length exch length add exch length add string
+    % Stack: s1 s2 s3 sN
+    dup 4 index length 4 index length add 4 -1 roll putinterval
+    % Stack: s1 s2 sN
+    dup 3 index length 4 -1 roll putinterval
+    % Stack: s1 sN
+    dup 0 4 -1 roll putinterval
+    def
+  } ifelse
+
+  % Now see if they might be valid:
+  dup /CMap resourcestatus {
+    pop pop
+    FontString /CIDFont resourcestatus not {
+      % No matching font resource, clear cmap
+      pop
+    } { % Looks like we have got the Font and the CMap
+      pop pop
+      { FontString /CIDFont findresource } stopped {
+        % failed, clear cmap FontString /CIDFont
+        pop pop pop
+      } {
+        % Okay, Really got the font, now get the cmap.
+        %Stack: CmapName CIDFontresource
+        % Get hold of the CMap Instance now:
+        { 3 -1 roll /CMap findresource } stopped {
+          % findresource failed.  Clean up the font, cmap name and key
+          pop pop pop
+        } {
+          2 copy //compare-systeminfo-dicts exec {
+            % Update array of matched pairs.  We only need to keep the last
+            % match since the docs say that if more than one match, use the one
+            % with the shortest CMap name
+            /MatchedPair [ 4 -2 roll ] def
+          } {
+            pop pop
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } { % No matching cmap, pop cmap name
+    pop
+  } ifelse
+} bd
+
+
+% Given: sep-string fontstring,
+% Split the string about sepstring, and pass parts into check-pair.
+% Used to split strings at -- and - breaks for finding a CID-Keyed font.
+% Inputs are consumed.
+
+/split-out-parts {
+  {
+    1 index
+    search {
+      2 index 3 1 roll //check-pair exec
+    } {
+      pop pop exit
+    } ifelse
+  } loop
+} bd
+
+
+% Expects a font name on the stack, which we are going to try and split into
+% a cidfont name and a cmap name.
+% EG: given HeiseiMin-W3-Identity-H, try and find a valid pairing from the
+% following:
+% CIDFont: HeiseiMin             CMap: W3-Identity-H
+% CIDFont: HeiseiMin-W3          CMap: Identity-H
+% CIDFont: HeiseiMin-W3-Identity CMap: H
+%
+% Also tries splitting at -- signs.
+
+/findcidkeyedfont {
+  % Dictionary for state required by these routines.
+  3 dict begin
+    /FontString 0 string def
+    /MatchedPair 0 array def
+    dup 200 string cvs
+
+    [ (--) (-) ] {
+      1 index //split-out-parts exec
+      MatchedPair dup length 0 ne {
+        2 index exch  % Get the font name object
+        % We have got a pair of dictionaries, feed them to composefont
+        % Pull the cmap dictionary and CIDFont dict from MatchedPair array
+        dup 1 get [ 3 -1 roll 0 get ] { composefont } stopped {
+          pop pop pop   % Got to clear 3 args to composefont
+        } {
+          pop exit      % Get rid of new font dict, quit loop
+        } ifelse
+      } {
+        pop             % Clear MatchedPair
+      } ifelse
+    } forall
+    pop                 % Remove FontNameString
+  end
+} bd
+
+%
+% End of CID-Keyed extensions for findfont.
+%
+
+% call-back procedure name on the stack
+/FontCallBack {
+  % /n
+  statusdict /Resource known {
+    statusdict /Resource get
+    exch
+    % dict /n
+    2 copy known {
+      get exec
+    } {
+      pop pop
+      true
+    } ifelse
+  } {
+    pop
+    true
+  } ifelse
+} bd
+
+/Star (*)0 get def
+
+
+%------------------------------------------------------------------------------
+% doublehash - The fontname hash used for anonymous font substitution
+%
+% Input is a fontname, output is a concatenation of two perfect hashes (the
+% first of which is the Font Emulation hash) resulting in a 16 character name
+% with very little chance of collision.
+
+/doublehash { % /fontname doublehash -> /hashedfontname
+  dup length string cvs
+  0 0 3 2 roll {
+    dup
+    3 1 roll xor
+    dup 23 bitshift xor
+    dup -9 bitshift xor
+    dup 0 lt{-8388608 xor}if
+    3 1 roll xor
+    dup 19 bitshift xor
+    dup -13 bitshift xor
+    dup 0 lt{-1769848153 xor}if
+    exch
+  }forall
+  (0000000000000000) 
+  0 1 15 { 1 index exch 48 put } for % force string to all zeros.
+  3 1 roll
+  2 index exch 16 (00000000) cvrs dup length 8 exch sub exch putinterval
+  1 index exch 16 (00000000) cvrs dup length 16 exch sub exch putinterval
+  cvn
+} bd
+
+%------------------------------------------------------------------------------
+% tryConditionalFontSub
+% ------------------
+%
+% oldname subs-dict-name -> TryConditionalFontSub ->  array true
+%                                                 OR  false
+% Looks up the conditional font substitution dictionary (named by the
+% "subs-dict-name" operand) for a given font name ("oldname") and if
+% found returns the key's value which should be an array of substitute font
+% names, and the boolean 'true'.  If not found, returns just 'false'.
+%
+/tryConditionalFontSub 1 $larray def   % static array
+
+/tryConditionalFontSub {          %|- old-font-name  subs-dict-name
+ 
+  statusdict exch 2 copy          %|- oldname sdict subs-name sdict subs-name
+  known {
+    get                           %|- oldname subsdict
+    exch 2 copy known {           %|- subsdict oldname
+      get                         %|- equiv-array
+
+      % If given a single name instead of an array of names, translate
+      % it into an array
+      dup type /arraytype ne {
+       //tryConditionalFontSub astore
+      } if
+
+      true                        %|- equiv-array true
+
+    } {    % fontname not known in ConditionalFontSubstitution
+      pop pop false               %|- false
+    } ifelse
+
+  } {   % ConditionalFontSubstitution not known in statusdict
+    pop pop pop false                 %|- false
+  } ifelse
+} bd
+
+
+% tryFontSub
+%
+% Looks up a fontname in a font substitution dictionary and returns the value
+% and true, or just false if it is not found.
+
+/tryFontSub { % /oldname /DictName tryFontSub -> false | /newname true
+  statusdict exch 2 copy known{
+    get % /fontname <<dict>>
+    exch 2 copy known{
+      get true
+    }{
+      pop pop false
+    }ifelse
+  }{
+    pop pop pop false
+  }ifelse
+} bd
+
+
+%------------------------------------------------------------------------------
+% lookupfont
+% ----------
+%   fontname ->  lookupfont  ->  [ dict | name ] bool
+% where 'dict' is returned iff the font is found, and
+% name (i.e. the initial fontname) is return if not found.
+%
+/lookupfont {     %|- fontname (possibly the substituted name).
+
+  % put 'true' on the stack as our default return condition.
+  true exch       %|- true fontname
+
+  currentglobal { % only look for global instance
+    //checkglobalexists exec {
+      get 2 get
+    } {
+      //getfontfromdisk exec
+      //checkglobalexists exec {
+        //updateinstancearray exec
+      } {
+        //findcidkeyedfont exec
+        //checkglobalexists exec {
+          //updateinstancearray exec
+        } {
+          dup //pfinhook{//checkglobalexists exec}{false}ifelse {
+            //updateinstancearray exec
+          } {
+            exch pop false exch   %|- false fontname
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } {   % local: look in local then global
+    //checklocalexists exec {
+      get 2 get
+    } {
+      //checkglobalexists exec {
+        get 2 get
+      } {
+        //getfontfromdisk exec
+        //checklocalexists exec {
+          //updateinstancearray exec
+        } {
+          //checkglobalexists exec {
+            //updateinstancearray exec
+          } {
+            //findcidkeyedfont exec
+            //checklocalexists exec {
+              //updateinstancearray exec
+            } {
+              //checkglobalexists exec {
+                //updateinstancearray exec
+              } {
+                dup //pfinhook {
+                  //checklocalexists exec {true} {
+                    //checkglobalexists exec
+                  } ifelse
+                } {false} ifelse
+                {
+                  //updateinstancearray exec
+                } {
+                  exch pop false exch   %|- false fontname
+                } ifelse
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } ifelse
+
+  % Return the boolean (success/failure) on top of the stack
+  exch  %|- [ fontname | dict ] bool
+} bd
+
+
+/CIDlookupfont {
+
+  % put 'true' on the stack as our default return condition.
+  true exch       %|- true fontname
+
+  currentglobal { % only look for global instance
+    //checkglobalexists exec {
+      get 2 get
+    } {
+      //getfontfromdisk exec
+      //checkglobalexists exec {
+        //updateinstancearray exec
+      } {
+        exch pop false exch   %|- false fontname
+      } ifelse
+    } ifelse
+  } {   % local: look in local then global
+    //checklocalexists exec {
+      get 2 get
+    } {
+      //checkglobalexists exec {
+        get 2 get
+      } {
+        //getfontfromdisk exec
+        //checklocalexists exec {
+          //updateinstancearray exec
+        } {
+          //checkglobalexists exec {
+            //updateinstancearray exec
+          } {
+            exch pop false exch   %|- false fontname
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  } ifelse
+
+  % Return the boolean (success/failure) on top of the stack
+  exch  %|- [ fontname | dict ] bool
+} bd
+
+% -----------------------------------------------------------------------------
+% Called when a condition font substitution has occurred, in FontFindResource or
+% CIDFontFindResource.
+
+/conditionalSubstitution { % /original /new <<font>> (font|CID font) -> <<font>>
+  % Output monitor message unless silenced.
+  statusdict /SilentConditionalFontSubstitution known {
+    statusdict /SilentConditionalFontSubstitution get
+  } {
+    false
+  } ifelse
+
+  not {
+    % UVM (Warning: font %s not found. Using %s.\n)
+    % or
+    % UVM (Warning: CID font %s not found. Using %s.\n)
+    (%stderr%)(w) file
+    dup (Warning: ) writestring
+    dup 2 index writestring
+    dup ( ) writestring
+    dup 5 index //=string cvs writestring
+    dup ( not found. Using ) writestring
+    dup 4 index //=string cvs writestring
+    (\n) writestring
+  } if
+
+  pop %|- origname newname fontdict
+  exch pop              %|- origname fontdict
+  statusdict /FontSubstituted
+  4 -1 roll put
+}bd
+
+% If the font has been substituted, copy the substitute and replace its name
+% with the requested fontname
+
+/postSubstitution { % <<font>> /[CID]FontName /[CID]Font -> <<newfont>>
+  statusdict /FontSubstituted get null eq {
+    pop pop
+  }{
+    % Take a copy of the font returned and poke the replacement name into it
+    3 2 roll dup length dict begin
+    {
+      1 index /FID ne { def } { pop pop } ifelse
+    } forall
+    % /[CID]FontName /[CID]Font
+    statusdict /FontSubstituted get //=string cvs dup length string copy
+    3 -1 roll 1 index def % /[CID]Font (name)
+    currentdict end 3 -1 roll defineresource
+  }ifelse
+} bd
+
+% -----------------------------------------------------------------------------
+% Effectively does 'findfont'. First checks for unconditional font substitution
+% (through the SW/Config/FontSubstitution dicts), then looks for the font in
+% known caches, then the disk, then (if still not found) checks for conditional
+% substitution (and if a substitute given, retries), and finally goes for the
+% default font (if still none found).  The end result is that some font or
+% other is always returned.
+
+statusdict/FontFindResourceThreaded 0 put % [12573] See below
+
+/FontFindResource {       %|- fontname
+  /FontFindResource //FontCallBack exec {
+    % Check Font substitution
+    statusdict/FontFindResourceThreaded 2 copy get 1 add dup 1 eq{
+      % [12573] Only reset /FontSubstituted on initial entry, not recursion!
+      statusdict/FontSubstituted null put
+    }if put
+    % /fontname
+    dup /FontSubstitution //tryFontSub exec {
+      true % /fontname /newname true
+    }{ % Else try database
+      dup //doublehash exec
+      /FontSubstitutionDB //tryFontSub exec
+    }ifelse { % /fontname /newname
+      statusdict /SilentFontSubstitution 2 copy known{get}{pop pop true}ifelse
+      not{
+        % UVM (Warning: font %s substituted by %s\n)
+        (%stderr%)(w) file % /oldname /newname file
+        dup (Warning: font ) writestring
+        dup 3 index //=string cvs writestring
+        dup ( substituted by ) writestring
+        dup 2 index //=string cvs writestring
+        (\n) writestring
+      }if
+      % oldname newname
+      % (FONTFINDRESOURCE: )print 1 index =print (   )print dup ==
+      statusdict /FontSubstituted 4 -1 roll put % /newname
+    }if
+
+    //lookupfont exec
+
+    % lookupfont returns 'false' if the font hasn't been found.
+    not {
+      % So now try for conditional font substitution and database.
+      % Failing that, use the default font.
+      dup /ConditionalFontSubstitution //tryConditionalFontSub exec {
+        true
+      }{
+        dup //doublehash exec
+        /ConditionalFontSubstitutionDB //tryConditionalFontSub exec
+      }ifelse {
+        % /origname [possible-substitute-names]
+        {
+          dup //lookupfont exec % /orig /new <result> bool
+          { % Substitute font found
+            (font) //conditionalSubstitution exec
+            exit % Break the forall  |- <<fontdict>>
+          }{ % new name not found.   |- /origname /newname /newname
+            pop pop
+          }ifelse
+        }forall
+      }if
+      dup type /dicttype ne {
+        //usedefaultfont exec
+      }if
+    }if
+
+    statusdict/FontFindResourceThreaded 2 copy get 1 sub put % [12573] See above
+
+    /FontName /Font //postSubstitution exec
+  }if
+} bd
+
+ 
+/FontResourceStatus {
+  /FontResourceStatus //FontCallBack exec {
+    % Check Font substitution
+    dup /FontSubstitution //tryFontSub exec {
+      true % /fontname /newname true
+    }{ % Else try database
+      dup //doublehash exec /FontSubstitutionDB //tryFontSub exec
+    }ifelse { % Substituted
+      % (FONTRESOURCESTATUS: )print 1 index =print (   )print dup ==
+      exch pop
+    } if
+
+    //GenericResourceStatus exec
+  } if
+} bd
+
+/FontDefineResource {
+  % Spot standard fonts being redefined on the page, so they can be undefined
+  % at the start of a form [12448]
+  //checkstandardfonts exec
+
+  % Spot clashing UniqueIDs [61091]
+  //checkuniqueid exec
+
+  /FontDefineResource //FontCallBack exec {
+    2 copy { //systemdict /validatefont get exec } stopped {
+      pop pop stop
+    } if
+    pop
+
+      % Validate CMap/CIDFont Registries match.
+    dup /FMapType known {
+      dup /FMapType get 9 eq {
+        % fname fdict
+        dup dup /CMap get
+        //compare-systeminfo-dicts exec
+        % fname fdict bool
+        not {
+          % UVM (Warning: Registry/Ordering mismatch constructing CID-keyed font: %s\n)
+          (%stderr%)(w) file
+          dup (Warning: Registry/Ordering mismatch constructing CID-keyed font: ) writestring
+          % fname fdict stderr
+          dup 3 index dup type /stringtype ne { //=string cvs } if writestring
+          (\n) writestring
+        } if
+      } if
+    } if
+
+    dup gcheck { % font is global : remove local, add to global
+      1 index
+      //checklocalexists exec {
+        //removeresource exec
+      } {
+        pop
+      } ifelse
+      1 index //getglobalinstancesdict exec
+      exch //getglobalinstancearray exec
+    } { % local : replace local
+      currentglobal {
+        /defineresource /invalidaccess //systemdict /.error get exec
+      } if
+      1 index //getlocalinstancesdict exec not {
+        512 //makelocalinstancesdict exec
+      } if
+      exch //getlocalinstancearray exec
+    } ifelse
+    dup 2 5 index put put
+    //FontDescriptor /FontDict 2 index put
+    //FontDescriptor /FontName 3 index put
+    exch pop
+  } if
+} bd
+
+/FontResourceForall {
+  /FontResourceForall //FontCallBack exec {
+    % pattern proc string
+    statusdict /FontSubstitutedProc null put
+
+    % Inform PFIN we're about to do a resourceforall
+    null //pfinhook
+
+    % If we are substituting fonts and the pattern is (*) then record the proc.
+    2 index length 1 eq statusdict /FontSubstitution known and {
+      2 index 0 get //Star eq {
+        % Take a copy for later
+        statusdict begin
+        /FontSubstitutedString 1 index def
+        /FontSubstitutedProc 2 index def
+        end   % statusdict
+      } if
+    } if
+
+    2 //GenericResourceforall
+
+    statusdict /FontSubstitutedProc get null ne {
+      % Now run through the fonts substituted from - after all, we are
+      % pretending they are available.
+      % The 'resourceforall' operator has put the implementation
+      % dict on the dict stack. We have to ensure the user's proc
+      % is invoked without it.
+      statusdict /FontSubImplDict currentdict put end
+      statusdict /FontSubstitution get {
+        %|- substitue-for  substitute-with
+        % The "substitute-with" resource must exist
+        /Font resourcestatus {
+          pop pop      % pop size & status info.
+          statusdict /FontSubstitutedString get
+          1 index type /stringtype eq { copy }{ cvs } ifelse
+          statusdict /FontSubstitutedProc get exec
+        } {
+          pop
+        } ifelse
+      } forall
+      statusdict /FontSubImplDict get begin % Put back on.
+      statusdict /FontSubImplDict undef
+    } if
+  } if
+} bd
+
+%----------------------------------------------------------------------------
+%   operators:           CIDFont Operators   author: Simon Green
+%   description: Based on the corresponding Font routines, written by Luke.
+%
+%   These operators have the implementation dictionary for the requested
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+
+/CIDFontFindResource {
+  /CIDFontFindResource //FontCallBack exec {
+    % Check Font substitution
+    statusdict /FontSubstituted null put
+    % /cidfontname
+    dup /CIDFontSubstitution //tryFontSub exec {
+      true % /cidfontname /newname true
+    }{ % Else try database
+      dup //doublehash exec /CIDFontSubstitutionDB //tryFontSub exec
+    }ifelse { % /cidfontname /newname
+      % (CIDFONTFINDRESOURCE: )print 1 index =print (   )print dup ==
+      statusdict /FontSubstituted 4 -1 roll put % /newname
+    }if
+
+    //CIDlookupfont exec
+
+    % CIDlookupfont returns 'false' if the font hasn't been found.
+    not {
+      % So now try for conditional font substitution and database.
+      % Failing that, use the default CID font.
+      dup /ConditionalCIDFontSubstitution //tryConditionalFontSub exec {
+        true
+      }{
+        dup //doublehash exec
+        /ConditionalCIDFontSubstitutionDB //tryConditionalFontSub exec
+      }ifelse {
+        % /origname [possible-substitute-names]
+        {
+          dup //CIDlookupfont exec % /orig /new <result> bool
+          { % Substitute font found
+            (CID font) //conditionalSubstitution exec
+            exit % Break the forall  |- <<fontdict>>
+          }{ % new name not found.   |- /origname /newname /newname
+            pop pop
+          }ifelse
+        }forall
+      }if
+      dup type /dicttype ne {
+        //usedefaultcidfont exec
+      }if
+    }if
+
+    /CIDFontName /CIDFont //postSubstitution exec
+  }if
+} bd
+
+/CIDFontResourceStatus {
+  /CIDFontResourceStatus //FontCallBack exec {
+    % Check Font substitution
+    dup /CIDFontSubstitution //tryFontSub exec {
+      true % /cidfontname /newname true
+    }{ % Else try database
+      dup //doublehash exec /CIDFontSubstitutionDB //tryFontSub exec
+    }ifelse { % Substituted
+      exch pop
+    } if
+
+    //GenericResourceStatus exec
+  } if
+} bd
+
+
+/CIDFontDefineResource {
+  % Spot standard fonts being redefined on the page, so they can be undefined
+  % at the start of a form [12448]
+  //checkstandardfonts exec
+
+  % Spot clashing UniqueIDs [61091]
+  //checkuniqueid exec
+
+  /CIDFontDefineResource //FontCallBack exec {
+    % Adobe appear to define a standard CDevProc if there is not one
+    % there already, for all CID font types.
+    dup /CDevProc known not {
+      dup wcheck not { % copy dictionary if not writable
+        dup length dict copy
+        dup /FontType known { % work around CID Type 2 FontType
+          dup /FontType get 11 eq {
+            dup /FontType 42 put
+          } if
+        } if
+      } if
+      dup /CDevProc 1183615869 internaldict /stdCDevProc get put
+    } if
+    2 copy { //systemdict /validateCIDfont get exec } stopped {
+      pop pop stop
+    } if
+    pop
+    dup gcheck { % font is global : remove local, add to global
+      1 index
+      //checklocalexists exec {
+        //removeresource exec
+      } {
+        pop
+      } ifelse
+      1 index //getglobalinstancesdict exec
+      exch //getglobalinstancearray exec
+    } { % local : replace local
+      currentglobal {
+        /defineresource /invalidaccess //systemdict /.error get exec
+      } if
+      1 index //getlocalinstancesdict exec not {
+        512 //makelocalinstancesdict exec
+      } if
+      exch //getlocalinstancearray exec
+    } ifelse
+    dup 2 5 index put put
+    //FontDescriptor /FontDict 2 index put
+    //FontDescriptor /FontName 3 index put
+    exch pop
+  } if
+} bd
+
+/CIDFontResourceForall {
+  /CIDFontResourceForall //FontCallBack exec {
+    %|- pattern proc string-buff
+    statusdict /FontSubstitutedProc null put
+
+    % Inform PFIN we're about to do a resourceforall
+    null //pfinhook
+
+    % If we are substituting CIDFonts and the pattern is (*) then record the proc.
+    2 index length 1 eq statusdict /CIDFontSubstitution known and {
+      2 index 0 get //Star eq {
+        % Take a copy for later
+        statusdict begin
+        /FontSubstitutedString 1 index def
+        /FontSubstitutedProc 2 index def
+        end   % statusdict
+      } if
+    } if
+
+     2 //GenericResourceforall
+
+     statusdict /FontSubstitutedProc get null ne {
+       % Now run through the CIDFonts substituted from - after all, we are
+       % pretending they are available.
+       % The 'resourceforall' operator has put the implementation
+       % dict on the dict stack. We have to ensure the user's proc
+       % is invoked without it.
+       statusdict /FontSubImplDict currentdict put end
+       statusdict /CIDFontSubstitution get {
+         %|- substitue-for  substitute-with
+         % The "substitute-with" resource must exist
+         /CIDFont resourcestatus {
+           pop pop      % pop size & status info.
+           statusdict /FontSubstitutedString get
+           1 index type /stringtype eq { copy }{ cvs } ifelse
+           statusdict /FontSubstitutedProc get exec
+         } {
+           pop
+         } ifelse
+       } forall
+       statusdict /FontSubImplDict get begin % Put back on.
+       statusdict /FontSubImplDict undef
+    } if
+  } if
+} bd
+
+
+%----------------------------------------------------------------------------
+%   operators:           IdiomSet Operators   author: Jon Wilson
+%   description: Extra behaviour for IdiomSets: hash table maintennance etc.
+%
+%   These operators have the implementation dictionary for the requested
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+
+% Use defined name temporarily to hold this definition
+1183615869 internaldict /defineidiom get
+/IdiomSetDefineResource exch def
+/IdiomSetDefineResource {
+  dup { //IdiomSetDefineResource } forall
+
+  //GenericDefineResource exec
+} bd
+
+
+
+
+1183615869 internaldict /undefineidiom get
+/IdiomSetUndefineResource exch def
+/IdiomSetUndefineResource {
+  currentglobal { % remove both local and global definitions
+    dup //checklocalexists exec {
+      2 copy get 2 get 3 1 roll
+      //removeresource exec
+      { //IdiomSetUndefineResource } forall
+    } {
+      pop
+    } ifelse
+    //checkglobalexists exec {
+      2 copy get 2 get 3 1 roll
+      //removeresource exec
+      { //IdiomSetUndefineResource } forall
+    } {
+      pop
+    } ifelse
+  } { % local : remove just a local instance
+    //checklocalexists exec {
+      2 copy get 2 get 3 1 roll
+      //removeresource exec
+      { //IdiomSetUndefineResource } forall
+    } {
+      pop
+    } ifelse
+  } ifelse
+} bd
+
+% idiomRecogInit
+% This procedure is the recommended method for loading all IdiomSets which should
+% be loaded as standard. Initially, that means all of them.
+% The name and dictionary are taken from the Adobe implementation in a LaserWriter 8500.
+% The Adobe implementation also turns on idiom recognition, but I~ve chosen not to do
+% that here, at least initially.
+% Martin Bailey, Feb 1998.
+
+1183615869 internaldict /idiomRecogInit {
+  serverdict /altout 2 copy known {
+    get dup type /filetype eq {
+      dup status not dup { exch pop } if
+    } { pop true } ifelse
+  } { pop pop true } ifelse
+  {
+    (%stderr)(w)file
+  } if
+  (*) {
+    cvn mark 1 index
+    /IdiomSet { findresource } stopped
+    counttomark 1 add 1 roll
+    cleartomark
+    {
+      % stopped.  file setname
+      % UVM (Failed to load IdiomSet: "%s")
+      1 index (Failed to load IdiomSet: ") writestring
+      % file setname
+      2 copy
+      % cannot just leave as string based on =scratch all the way through -
+      % it gets corrupted
+      //=scratch cvs writestring
+      1 index ("\n) writestring
+      errordict /errorbeep get exec
+    } if
+    pop % instance name
+  } //=scratch /IdiomSet resourceforall
+  pop   % error report file
+} bind put
+
+%----------------------------------------------------------------------------
+%   operators:           Category Operators   author:            Luke Tunmer
+%   description:
+%
+%   These operators have the implementation dictionary for the Category
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+/CategoryFindResource {
+  //findcategory exec not { % look for category on disk
+    UVS(looking for category on disk\n) /print load exec
+    //getresourcefromdisk exec
+    //findcategory exec not {
+      UVS(failed to find category on disk\n) /print load exec
+      errordict /errorbeep get exec
+      /findresource /undefinedresource //systemdict /.error get exec
+    } if
+  } if
+} bd
+
+/CategoryUndefineResource {
+  currentglobal {
+    dup /Category eq {
+      pop
+    } {
+      //removecategory exec
+    } ifelse
+  } {
+    pop
+  } ifelse
+} bd
+
+
+
+/CategoryDefineResource {
+  dup type /dicttype ne {
+    /defineresource /typecheck //systemdict /.error get exec
+  } if
+  dup gcheck not currentglobal not or {
+    /defineresource /invalidaccess //systemdict /.error get exec
+  } if
+  dup
+  dup /DefineResource known  exch    % check that dictionary contains fields
+  dup /UndefineResource known exch
+  dup /FindResource known exch
+  dup /ResourceStatus known exch
+  dup /ResourceForAll known exch pop
+  and and and and not {
+    /defineresource /typecheck //systemdict /.error get exec
+  } if
+  //addtoimplementationdirectory exec
+  //addtoglobaldirectory exec
+  exch pop
+} bd
+
+
+/CategoryResourceStatus {
+  //categorystatus exec
+} bd
+
+
+
+
+
+
+%----------------------------------------------------------------------------
+%   operators:           Implicit Operators   author:            Luke Tunmer
+%   description:
+%
+%   These operators have the implementation dictionary for the Category
+%   category on the dict stack, and one less argument on the operand stack
+%   than the equivalent systemdict operators (defined above).
+%----------------------------------------------------------------------------
+/ImplicitFindResource {
+  //getglobalinstancesdict exec
+  2 copy exch known {
+    exch get
+  } {
+    pop /findresource /undefinedresource //systemdict /.error get exec
+  } ifelse
+} bd
+
+
+/ImplicitUndefineResource {
+  /undefineresource /invalidaccess //systemdict /.error get exec
+} bd
+
+
+/ImplicitDefineResource {
+  /defineresource /invalidaccess //systemdict /.error get exec
+} bd
+
+
+/ImplicitResourceStatus {
+  //getglobalinstancesdict exec
+  exch known {
+    0 0 true
+  } {
+    false
+  } ifelse
+} bd
+
+
+%----------------------------------------------------------------------------
+%   dictionaries:        Resource Directories  author:            Luke Tunmer
+%----------------------------------------------------------------------------
+
+%   resourcename implementationdict globalinstancedict  --> -
+% Used to construct the predefined resources
+%
+/packresource {
+  //GlobalResourceDirectory 3 index 2 index put pop
+  //ImplementationDirectory 3 1 roll readonly put
+} executeonly bd
+
+
+
+% Adding Category
+/Category
+  9 dict begin
+    /DefineResource   //CategoryDefineResource def
+    /UndefineResource //CategoryUndefineResource def
+    /FindResource     //CategoryFindResource def
+    /ResourceStatus   //CategoryResourceStatus def
+    /ResourceForAll   { 0 //GenericResourceforall } def
+    /ResourceFileName { (categories) //GenericResourceFileName exec } bd
+    /Category         /Category def
+    /InstanceType     /dicttype def
+  currentdict end
+% instances - itself
+  //GlobalResourceDirectory
+packresource
+  //LocalResourceDirectory /Category //LocalResourceDirectory put
+
+
+% Adding Generic
+/Generic
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+
+    % This ResourceFileName procedure looks on the dictionary
+    % stack for the category name: RB2 says that the category
+    % must have been pushed onto dictstack. To be really thorough,
+    % perhaps we should look for the highest binding of /Category
+    % that is in a dictionary that "looks like" a category dictionary,
+    % but we can keep that for if there are any jobs that show up
+    % problems with the way we have done it here.
+    % We leave the procedure GenericResourceFileName intact because
+    % it is already used by several predefined categories whose directory
+    % names are not the same as their category names.
+
+    /ResourceFileName {                 % resourcename scratch
+                         exch           % scratch resourcename
+                         mark exch      % scratch mark resourcename
+                         /GenericResourcePathSep currentsystemparam
+                                        % scratch mark resourcename sep
+                         Category       % scratch mark resourcename sep cat
+                         /GenericResourceDir currentsystemparam
+                                        % scratch mark resourcename sep cat dir
+                         //concattomark exec
+                                        % scratch
+                      } bd
+
+    /Category         /Generic def
+  currentdict end
+  1 dict
+packresource
+
+
+% Adding Font
+/Font
+  9 dict begin
+    /DefineResource   //FontDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //FontFindResource def
+    /ResourceStatus   //FontResourceStatus def
+    /ResourceForAll   //FontResourceForall def
+        % It is specified in PSLRM2-Sup-2013 that the default name for
+        % the font directory is "fonts/" -- because some downloaders
+        % may assume that. Yes, the separator is built into the name.
+    /ResourceFileName {                 % name scratch
+        exch                            % scratch name
+        mark                            % scratch name mark
+        exch                            % scratch mark name
+        /FontResourceDir currentsystemparam % scratch mark name fonts
+        //concattomark exec             % string
+       } bd
+    /InstanceType     /dicttype def
+    /Category         /Font def
+  currentdict end
+  512 dict
+packresource
+
+
+% Adding CIDFont
+/CIDFont
+  9 dict begin
+    /DefineResource   //CIDFontDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //CIDFontFindResource def
+    /ResourceStatus   //CIDFontResourceStatus def
+
+    /ResourceForAll   //CIDFontResourceForall def
+    /ResourceFileName { (CIDFont) //GenericResourceFileName exec } bd
+
+    /InstanceType     /dicttype def
+    /Category         /CIDFont def
+  currentdict end
+  128 dict
+packresource
+
+
+% Adding CMap
+
+/CMap
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (CMap) //GenericResourceFileName exec } bd
+
+    /InstanceType     /dicttype def
+    /Category         /CMap def
+  currentdict end
+  128 dict
+packresource
+
+
+% Adding Encoding
+
+/Encoding
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     { //EncodingDirectory exch dup
+                        //GenericFindResource exec
+                        dup 4 1 roll put
+                      } bd
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+%   /ResourceFileName { (encoding) //GenericResourceFileName exec } bd
+    /ResourceFileName {
+      true
+      % \052 is an asterisk, done this way because it confuses the
+      % C preprocessor otherwise
+      (encoding/\052) { pop pop false exit } //=string filenameforall
+      { (encodings) } { (encoding) } ifelse
+      //GenericResourceFileName exec
+    } bd
+    /InstanceType     /arraytype def
+    /Category         /Encoding def
+    /DefaultLookup    //EncodingDirectory def
+  currentdict end
+  4 dict begin
+    /StandardEncoding 3 $garray dup 0 0 put dup 1 -1 put
+       dup 2 StandardEncoding put def
+    /ISOLatin1Encoding 3 $garray dup 0 0 put dup 1 -1 put
+       dup 2 ISOLatin1Encoding put def
+  currentdict end
+packresource
+
+
+% Adding CharStrings
+
+/CharStrings
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     { //CharStringsDirectory exch dup
+                        //GenericFindResource exec
+                        dup 4 1 roll put
+                      } bd
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (charstrings) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /CharStrings def
+    /DefaultLookup    //CharStringsDirectory def
+  currentdict end
+  4 dict
+packresource
+
+% Adding Form
+
+/Form
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (forms) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /Form def
+  currentdict end
+  4 dict
+packresource
+
+
+% Adding Pattern
+
+/Pattern
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (patterns) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /Pattern def
+  currentdict end
+  4 dict
+packresource
+
+
+% Adding ProcSet
+
+/ProcSet
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (procsets) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /ProcSet def
+  currentdict end
+  4 dict
+packresource
+
+
+% Adding ColorSpace
+
+/ColorSpace
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericBadFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (colorspaces) //GenericResourceFileName exec } bd
+    /InstanceType     /arraytype def
+    /Category         /ColorSpace def
+  currentdict end
+  3 dict
+packresource
+
+% Adding Halftone
+
+/Halftone
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (halftones) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /Halftone def
+  currentdict end
+  3 dict
+packresource
+
+
+% Adding ColorRendering
+
+/ColorRendering
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericBadFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (colorrenderings) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /ColorRendering def
+  currentdict end
+  3 dict
+packresource
+
+
+% Adding PGFont
+
+/PGFont
+  9 dict begin
+    /tmpstr 100 string def
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource {
+      userdict /PGFontDirectory known not {
+        userdict /PGFontDirectory 32 dict put
+      } if
+      countdictstack exch
+      dup //tmpstr ResourceFileName run
+      dup type /dicttype ne {
+        userdict /PGFontDirectory get 1 index get
+      } if
+      exch pop
+      exch countdictstack exch sub { end } repeat
+    } bd
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (pgfonts) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /PGFont def
+    currentdict /tmpstr undef
+  currentdict end
+  3 dict
+packresource
+
+
+% Adding Filter
+
+/Filter
+  9 dict begin
+    /InstanceType
+        [ /ReusableStreamDecode ] def   % types not available below languagelevel 3
+    /InstanceType {                     % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /Filter get begin
+
+      //InstanceType
+      //getlanguagelevel exec           % find out which level we are running
+      3 lt {
+        { currentdict exch undef }
+      } {
+        { dup def }
+      } ifelse
+      forall
+
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   { exch -2  //externalfilter exec   % true/false
+                        {
+                           /defineresource /invalidaccess //systemdict
+                                           /.error get exec
+                        } {
+                             exch //externalfilter exec pop
+                        } ifelse
+                      } bd
+    /UndefineResource { dup -2 //externalfilter exec    % true/false
+                        {
+                          -1 //externalfilter exec pop
+                        } { pop
+                            //ImplicitUndefineResource exec
+                        } ifelse
+                      } bd
+    /FindResource     { -2  //externalfilter exec   % true/false
+                        not {
+                             //InstanceType exec //ImplicitFindResource exec
+                        } if
+                      } bd
+    /ResourceStatus   { -2 //externalfilter exec    % true/false
+                         { pop
+                           1 0 true
+                         } {
+                              //InstanceType exec //ImplicitResourceStatus exec
+                         } ifelse
+                      } bd
+    /ResourceForAll 25 $gdict def
+    /ResourceForAll   { //ResourceForAll {
+                          pop //ResourceForAll exch undef
+                        } forall
+                        //GlobalResourceDirectory /Filter get dup begin
+                          //ResourceForAll copy pop
+                          mark -3 //externalfilter exec ]
+                          {
+                            dup def
+                          } forall
+                        end
+                        //InstanceType exec 1 //GenericResourceforall
+                        //ResourceForAll //GlobalResourceDirectory /Filter get dup {
+                          pop 1 index exch undef
+                        } forall
+                        copy pop
+                      } bd
+    /InstanceType     /nametype def
+    /Category         /Filter def
+  currentdict end
+  25 dict begin
+    /ASCIIHexEncode dup def
+    /ASCIIHexDecode dup def
+    /ASCII85Encode dup def
+    /ASCII85Decode dup def
+    /LZWEncode dup def
+    /LZWDecode dup def
+    /RunLengthEncode dup def
+    /RunLengthDecode dup def
+    /CCITTFaxEncode dup def
+    /CCITTFaxDecode dup def
+    /DCTEncode dup def
+    /DCTDecode dup def
+    /NullEncode dup def
+    /ReusableStreamDecode dup def
+    /SubFileDecode dup def
+    /FlateDecode dup def
+    /FlateEncode dup def
+    /JPXDecode dup def
+    /PNGDecode dup def
+    /UnicodeEncode dup def
+  currentdict end
+packresource
+
+
+% Adding ColorSpaceFamily
+
+/ColorSpaceFamily
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /nametype def
+    /Category         /ColorSpaceFamily def
+  currentdict end
+  14 dict begin
+    /DeviceGray dup def
+    /DeviceRGB dup def
+    /DeviceCMYK dup def
+    /CIEBasedABC dup def
+    /Lab dup def
+    /CIEBasedA dup def
+    /Pattern dup def
+    /Indexed dup def
+    /Separation dup def
+    /DeviceN dup def
+    /CIEBasedDEF dup def
+    /CIEBasedDEFG dup def
+    /CIETableA dup def
+    /CIETableABC dup def
+    /CIETableABCD dup def
+  currentdict end
+packresource
+
+
+% Adding Emulator
+
+/Emulator
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /nametype def
+    /Category         /Emulator def
+  currentdict end
+  1 dict begin
+    /HPGL /HPGLDecode def
+    /PCL /PCLDecode def
+    /Epson /EPSONDecode def
+  currentdict end
+packresource
+
+
+% Adding IODevice
+
+/IODevice
+  9 dict begin
+
+    % Update the GlobalResourceDirectory!IODevice dict with a devforall
+    % whenever we are asked about it.  Avoid wasting space via static
+    % strings and the usual namespace terseness tricks.  [#10014]
+    % Genoa CET 27-03,08 need this to test devparams operators.
+
+    /InstanceType 20 dict def                   % /InstanceType gets redefined below...
+                                                % for keeping disappeared device strings safe
+    /Category <<                                % /Category gets redefined below...
+      (%config%)        null                    % list of devicenames to keep quiet about
+      (%os%)            null
+      (%pagebuffer%)    null
+      (%progress%)      null
+    >> def
+
+    /InstanceType {                             % /InstanceType gets re-redefined below...
+      currentglobal true setglobal              % glob
+      //GlobalResourceDirectory /IODevice get begin
+
+      currentdict {                             % (empty the contents dict)
+        pop currentdict exch undef
+      } forall                                  % (we have safe copies in work dict)
+
+      {                                         % glob devicename
+        //Category 1 index known not {          % (hide config device &c)
+          //InstanceType 1 index known {        % glob devicename (dict devname -> bool)
+            //InstanceType 1 index get          % glob devicename devname-copy
+            dup def                             % glob devicename (copy into contents dict)
+          } {
+            dup dup length string copy          % glob devicename devname-copy
+            dup dup def                         % (copy into contents dict)
+            //InstanceType exch dup put         % glob devicename (copy into safe dict)
+          } ifelse
+        } if                                    % (not a hidden one)
+        pop                                     % glob
+      }
+      (*)                                       % match all devices regardless of /Type
+                                                % (LONGESTDEVICENAME is 50, plus %..%)
+      (123456789.123456789.123456789.123456789.123456789.12345)
+      devforall
+
+      end                                       % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /stringtype def
+    /Category         /IODevice def
+  currentdict end
+
+  20 dict begin
+  currentdict end
+packresource
+
+
+% Adding ColorRenderingType
+
+/ColorRenderingType
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /integertype def
+    /Category         /ColorRenderingType def
+  currentdict end
+  1 dict begin
+    1 dup def
+  currentdict end
+packresource
+
+
+% Adding FMapType
+
+/FMapType
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /integertype def
+    /Category         /FMapType def
+  currentdict end
+  8 dict begin
+    2 dup def
+    3 dup def
+    4 dup def
+    5 dup def
+    6 dup def
+    7 dup def
+    8 dup def
+    9 dup def
+  currentdict end
+packresource
+
+
+
+% Adding FontType
+
+/FontType
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /integertype def
+    /Category         /FontType def
+  currentdict end
+    14 dict begin
+    0 dup def
+    1 dup def
+    2 dup def
+    3 dup def
+    4 dup def
+    5 dup def
+    9 dup def
+    10 dup def
+    11 dup def
+    32 dup def
+    42 dup def
+    16#6f dup def
+    16#fe dup def
+    16#ff dup def
+  currentdict end
+packresource
+
+
+% Adding FormType
+
+/FormType
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /integertype def
+    /Category         /FormType def
+  currentdict end
+  1 dict begin
+    1 dup def
+  currentdict end
+packresource
+
+
+% Adding HalftoneType
+
+/HalftoneType
+  9 dict begin
+    /InstanceType [ 16 ] def    % types not available below languagelevel 3
+    /InstanceType {             % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /HalftoneType get begin
+
+      //InstanceType
+      //getlanguagelevel exec           % find out which level we are running
+      3 lt {
+        { currentdict exch undef }
+      } {
+        { dup def }
+      } ifelse
+      forall
+
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /integertype def
+    /Category         /HalftoneType def
+  currentdict end
+  8 dict begin
+    1 dup def
+    2 dup def
+    3 dup def
+    4 dup def
+    5 dup def
+    6 dup def
+    10 dup def
+    16 dup def
+  currentdict end
+packresource
+
+
+% Adding ImageType
+
+/ImageType
+  9 dict begin
+    /InstanceType [ 3 4 ] def           % types not available below languagelevel 3
+    /InstanceType {                     % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /ImageType get begin
+
+      //InstanceType
+      //getlanguagelevel exec           % find out which level we are running
+      3 lt {
+        { currentdict exch undef }
+      } {
+        { dup def }
+      } ifelse
+      forall
+
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /integertype def
+    /Category         /ImageType def
+  currentdict end
+  3 dict begin
+    1 dup def
+    3 dup def
+    4 dup def
+  currentdict end
+packresource
+
+
+% Adding PatternType
+
+/PatternType
+  9 dict begin
+    /InstanceType [ 2 ] def             % types not available below languagelevel 3
+    /InstanceType {                     % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /PatternType get begin
+        //InstanceType
+        //getlanguagelevel exec         % find out which level we are running
+        3 lt {
+          { currentdict exch undef }
+        } {
+          { dup def }
+        } ifelse
+        forall
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /integertype def
+    /Category         /PatternType def
+  currentdict end
+  2 dict begin
+    1 dup def
+    2 dup def
+  currentdict end
+packresource
+
+
+% Adding ShadingType
+
+/ShadingType
+  9 dict begin
+    /InstanceType [ 1 2 3 4 5 6 7 ] def         % types not available below languagelevel 3
+    /InstanceType {                     % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /ShadingType get begin
+        //InstanceType
+        //getlanguagelevel exec         % find out which level we are running
+        3 lt {
+          { currentdict exch undef }
+        } {
+          { dup def }
+        } ifelse
+        forall
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /integertype def
+    /Category         /ShadingType def
+  currentdict end
+  7 dict begin
+    1 dup def
+    2 dup def
+    3 dup def
+    4 dup def
+    5 dup def
+    6 dup def
+    7 dup def
+  currentdict end
+packresource
+
+
+% Adding IdiomSet
+
+/IdiomSet
+  9 dict begin
+    /DefineResource   //IdiomSetDefineResource def
+    /UndefineResource //IdiomSetUndefineResource def
+    /FindResource {
+      //getlanguagelevel exec 3 ge {
+        //GenericFindResource exec
+      } {
+        /findresource /undefined //systemdict /.error get exec
+      }
+      ifelse
+    } def
+    /ResourceStatus {
+      //getlanguagelevel exec 3 ge {
+        //GenericResourceStatus exec
+      } {
+        pop false
+      }
+      ifelse
+    } def
+    /ResourceForAll {
+      //getlanguagelevel exec 3 ge {
+        2 //GenericResourceforall
+      } {
+        pop pop pop
+      }
+      ifelse
+    } def
+    /ResourceFileName { (IdiomSet) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /IdiomSet def
+  currentdict end
+  4 dict
+packresource
+
+
+% Adding FunctionType
+
+/FunctionType
+  9 dict begin
+    /InstanceType [ 0 2 3 ] def         % types not available below languagelevel 3
+    /InstanceType {                     % /InstanceType gets re-redefined below...
+      currentglobal true setglobal      % glob
+      //GlobalResourceDirectory /FunctionType get begin
+
+      //InstanceType
+      //getlanguagelevel exec           % find out which level we are running
+      3 lt {
+        { currentdict exch undef }
+      } {
+        { dup def }
+      } ifelse
+      forall
+
+      end                               % (our contents dict)
+      setglobal
+    } bd
+
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     { //InstanceType exec //ImplicitFindResource exec } bd
+    /ResourceStatus   { //InstanceType exec //ImplicitResourceStatus exec } bd
+    /ResourceForAll   { //InstanceType exec 1 //GenericResourceforall } bd
+    /InstanceType     /integertype def
+    /Category         /FunctionType def
+  currentdict end
+  3 dict begin
+    0 dup def
+    2 dup def
+    3 dup def
+  currentdict end
+packresource
+
+% Adding FontSet
+
+/FontSet
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (FontSet) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /FontSet def
+  currentdict end
+  4 dict
+packresource
+
+% Adding PDL
+
+/PDL
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /InstanceType     /dicttype def
+    /Category         /PDL def
+  currentdict end
+  1 dict begin
+    /PostScript 3 $garray dup 0 0 put dup 1 -1 put
+       dup 2 3 $gdict
+       dup /LanguageLevel (3) put
+       dup /LanguageFamily (PostScript) put
+       dup /Selector /PostScript put
+       readonly put def
+    currentdict
+  end
+packresource
+
+% Adding OutputDevice
+
+/OutputDevice
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /InstanceType     /dicttype def
+    /Category         /OutputDevice def
+  currentdict end
+  1 dict begin
+    /OutputDevice 3 $garray dup 0 0 put dup 1 -1 put
+       dup 2 2 $gdict
+       dup /PageSize [ [ 0 0 9999 72 mul dup ] ] 4 $garray copy put
+       dup /TrappingDetailsType 1 $garray dup 0 1001 put put
+       readonly put def
+    currentdict
+  end
+packresource
+
+
+% Adding ControlLanguage
+
+/ControlLanguage
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /InstanceType     /dicttype def
+    /Category         /ControlLanguage def
+  currentdict end
+  1 dict begin
+    /ControlLanguage 3 $garray dup 0 0 put dup 1 -1 put
+       dup 2 3 $gdict
+       dup /LanguageLevel (3) put
+       dup /LanguageFamily (PostScript) put
+       dup /Selector /PostScript put
+       readonly put def
+    currentdict
+  end
+packresource
+
+% Adding NamedColorOrder
+
+/NamedColorOrder
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (NamedColorOrder) //GenericResourceFileName exec } bd
+    /InstanceType     /arraytype def
+    /Category         /NamedColorOrder def
+  currentdict end
+  2 dict
+packresource
+
+% Adding TrappingType
+
+/TrappingType
+  9 dict begin
+    /DefineResource   //ImplicitDefineResource def
+    /UndefineResource //ImplicitUndefineResource def
+    /FindResource     //ImplicitFindResource def
+    /ResourceStatus   //ImplicitResourceStatus def
+    /ResourceForAll   { 1 //GenericResourceforall } def
+    /InstanceType     /integertype def
+    /Category         /TrappingType def
+  currentdict end
+  1 dict begin
+    1001 dup def
+  currentdict end
+packresource
+
+% Adding TrapParams
+
+/TrapParams
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (TrapParams) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /TrapParams def
+  currentdict end
+  1 dict
+packresource
+
+% Adding InkParams
+
+/InkParams
+  9 dict begin
+    /DefineResource   //GenericDefineResource def
+    /UndefineResource //GenericUndefineResource def
+    /FindResource     //GenericFindResource def
+    /ResourceStatus   //GenericResourceStatus def
+    /ResourceForAll   { 2 //GenericResourceforall } def
+    /ResourceFileName { (InkParams) //GenericResourceFileName exec } bd
+    /InstanceType     /dicttype def
+    /Category         /InkParams def
+  currentdict end
+  1 dict
+packresource
+
+% Hide the Resource Directories and some of the messy procedures
+% used by the resource operators
+mark
+/fontfiledict
+/fontdefprocs
+/fontdefargs
+/getlocalinstancearray
+/categoryforall
+/addtoimplementationdirectory
+/checklocalexists
+/removecategory
+/removeresource
+/defaultlookup
+/makelocalinstancesdict
+/getresourcefromdisk
+/getbadresourcefromdisk
+/checkglobalexists
+/getglobalinstancesdict
+/addtoglobaldirectory
+/categorystatus
+/findcategory
+/getglobalinstancearray
+/checklocalstatus
+/getimplementationdict
+/getlocalinstancesdict
+/getVMusage
+/instancesdictforall
+/updateinstancearray
+/checkglobalstatus
+/iff
+/usedefaultfont
+/getfontfromdisk
+/packresource
+/getfontlocation
+/getlanguagelevel
+/level1temps
+/compare-systeminfo-dicts
+/core-compare-systeminfo-dicts
+/check-pair
+/split-out-parts
+/findcidkeyedfont
+/usedefaultcidfont
+/Star
+/FontCallBack
+/tryConditionalFontSub
+/tryFontSub
+/lookupfont
+/CIDlookupfont
+/CMapInfo
+/conditionalSubstitution
+/postSubstitution
+/doublehash
+/checkuniqueid
+/purgeuniqueid
+/purgedict
+{
+  counttomark {
+    currentdict exch undef
+  } repeat
+} stopped pop
+cleartomark
+
+end  % internaldict
+end % systemdict
+
+
+% Notes:
+%
+% Resources are stored in the three resource directories:
+%
+% ImplementationDirectory:
+%     If a category exists, there will be an entry in this dictionary under
+%     the category name. The value for each category is the implementation
+%     dictionary for that category as defined in the Category defineresource.
+%     These dictionaries must contain the entries FindResouce, DefineResource,
+%     UndefineResource, ResourceStatus and ResourceForAll. The Generic
+%     implementations of these procedures can also use entries InstanceType,
+%     ResourceFileName and DefaultLookup.
+%
+%
+% GlobalResourceDirectory:
+%     If the category exists, there will be an entry in this dictionary under
+%     the category name. The value for each category entry is an instances
+%     dictionary which contains the global resource instances for the category.
+%     Instances dictionaries are described below.
+%
+%
+%
+% LocalResourceDirectory:
+%     If the category exists, there _may_ be an entry in this dictionary under
+%     the category name. The value for a category entry is an instances
+%     dictionary which contains the local resource instances for the category.
+%     Instances dictionaries are described below.
+%
+%
+%
+% Instances Dictionaries:
+%     These dictionaries contain entries for each instance of a resource in
+%     the corresponding VM mode. The value is an instance array.
+%
+%
+% Instance Arrays:
+%     Instance arrays are values in instances dictionaries. They are of
+%     length 3. The first object in the array is the status number for that
+%     resource in the appropriate VM mode:
+%        0 - defined directly by defineresource
+%        1 - loaded automatically from disk by findresource
+%     The second number is the VM usage for the resource. The third is the
+%     resource itself.
+%
+% /* ===========================================================================
+% Log stripped

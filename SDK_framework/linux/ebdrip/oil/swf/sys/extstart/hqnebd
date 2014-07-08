@@ -1,0 +1,34 @@
+%!PS
+%%Title: HqnEmbedded_ExtraStart
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2007-2012 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWebd_OIL_example_gg!swf:sys:extstart:hqnebd(EBDSDK_P.1) $
+% Log stripped
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% ExtraStart file to mount embedded skin extra devices and for other initialization
+% like installing the halftone dictionaries for the example screening module(s), etc
+%
+
+(%os%/Usr/HqnEmbedded/EbdProcedures) run
+(%os%/Usr/HqnEmbedded/ExtraDevices) run
+#ifdef SDK_1BPP_EXAMPLE
+(%os%/Usr/HqnEmbedded/Htm1bpp) run
+(%os%/Usr/HqnEmbedded/IrsDefault) run
+#endif
+#ifdef SDK_2BPP_EXAMPLE
+(%os%/Usr/HqnEmbedded/Htm2bpp) run
+(%os%/Usr/HqnEmbedded/Irs2bpp) run
+#endif
+#ifdef SDK_4BPP_EXAMPLE
+(%os%/Usr/HqnEmbedded/Htm4bpp) run
+(%os%/Usr/HqnEmbedded/Irs4bpp) run
+#endif
+
+

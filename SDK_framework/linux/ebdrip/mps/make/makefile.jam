@@ -1,0 +1,430 @@
+# Copyright (C) 2001-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for MPS as a subsystem of the RIP
+#
+# $HopeName: SWmps!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant Javatools ;
+ImplementsVariant wintel_cpp_compiler ; # to get the correct pthreads lib
+ImplementsVariant sixtyfour ;
+ImplementsVariant valgrind ;
+ImplementsVariant coretrace ;
+
+# generic_MPS turns off SW-specific configuration; Non_generic_MPS
+# means SW.  We do it this way round so that SW is the default.  You
+# never want to build a generic_MPS variant of SW, only of MPS tests.
+ImplementsVariant generic_MPS ;
+
+# test is used to build test executables.  It exists mainly to avoid
+# building the browse files for the test executables when they
+# themselves are not built.
+ImplementsVariant test;
+
+
+# Determine which MPS platform code matches this target.
+local MPSOS ; local MPSPF ;
+switch $(TargetOS) {
+    case win_32 :
+        MPSOS = w3 ;
+        switch $(TargetArch) {
+            case pentium :
+                switch $(CompilerVersion-C) {
+                    case gcc*  : MPSPF = w3i3gc ;
+                    case msvc* : MPSPF = w3i3mv ;
+                    case icc*  : MPSPF = w3i3mv ;
+                }
+            case alpha       : MPSPF = w3almv ;
+            case ppc         : MPSPF = w3ppmv ;
+        }
+    case win_64 :
+        MPSOS = w6 ;
+        switch $(TargetArch) {
+            case amd64 : # amd64
+                switch $(CompilerVersion-C) {
+                    case msvc* : MPSPF = w6i3mv ;
+                }
+            case pentium : case amd :
+                switch $(CompilerVersion-C) {
+                    case msvc* : MPSPF = w6i3mv ;
+                }
+        }
+    case irix_5 :              MPSOS = i5 ; MPSPF = i5m2cc ;
+    case irix_6 :              MPSOS = ia ; MPSPF = iam4cc ;
+
+    case linux :
+        MPSOS = li ;
+        # to differentiate bet'n ppc and pentium linux
+        switch $(TargetArch) {
+            case pentium : MPSPF = lii4gc ;
+            case 603     : MPSPF = lippgc ;
+            case e500    : MPSPF = lippgc ;
+            case arm     : MPSPF = liargc ; # arm gcc
+            case arm9    : MPSPF = liargc ; # arm gcc
+            case armv6l  : MPSPF = liargc ; # ARM v6 architecture gcc
+            case amd64   : MPSPF = lia6gc ;
+        }
+    # Cross-compiling Linux X montavista-x86, use same settings as linux
+    case montavista :          MPSOS = li ; MPSPF = lii4gc ;
+
+    case solaris :             MPSOS = so ; MPSPF = sos8gc ;
+
+    case macos_8 :             MPSOS = s7 ; MPSPF = s7ppac ;
+    case macos_x :
+        MPSOS = xc ;
+        switch $(CompilerVersion-C) {
+            case gcc_2        : MPSPF = xcppgc ;
+            case gcc_3_3      : MPSPF = xcppgc ;
+            case gcc_4_0      : MPSPF = xcubgc ;
+            case gcc_4_2      : MPSPF = xcubgc ;
+            case llvm_gcc_4_2 : MPSPF = xcubgc ;
+            case clang_3_1    : MPSPF = xcubgc ;
+            case *            : Error Unsupported GCC version in SWmps!make:makefile.jam ;
+        }
+    case vxworks :             MPSOS = vx ; MPSPF = vxppgc ;
+    case threadx :             MPSOS = tx ; MPSPF = txargh ;   # threadx arm9 green hills
+    case netbsd :
+    	MPSOS = nb ;
+        switch $(TargetArch) {
+	    case 386 : MPSPF = nbi3gc ;
+        }
+}
+if ! $(MPSPF) {
+    Error Cannot determine MPS platform for target $(TargetOS)-$(TargetArch) ;
+}
+
+
+# Set MPS configuration
+
+AddToVar Inherited Local : C-Defines : CONFIG_PF CONFIG_PF_$(MPSPF:U) ;
+
+AddToVar Inherited Local : C-Defines : CONFIG_PROD_EPCORE
+         : Variant Non_generic_MPS ;
+AddToVar Inherited Local : C-Defines : CONFIG_PROD_MPS
+         : Variant generic_MPS ;
+AddToVar Inherited Local : Suffix    : mps : Variant generic_MPS ;
+
+AddToVar Inherited Local : Suffix : vgnd : Variant valgrind ;
+
+AddToVar Inherited Local : C-Defines : CONFIG_LOG : Variant coretrace~all ;
+AddToVar Inherited Local : C-Defines : CONFIG_LOG : Variant coretrace~mps ;
+
+AddToVar Inherited Local : C-Defines : CONFIG_ASSERT : Build ASSERT ;
+AddToVar Inherited Local : C-Defines : CONFIG_DEBUG CONFIG_LOG : Build DEBUG ;
+
+
+# Compilation rules
+
+
+    DependsOn all : mps ;
+
+
+    AddToVar Local : VariantMPSsources
+         : prmcan.c protsw.c ssan.c than.c
+           poolepdl.c poolepvm.c poolepfn.c
+         : Variant Non_generic_MPS ;
+
+switch $(MPSPF) {
+case w3i3mv :
+    AddToVar Local : VariantMPSsources
+             : prmci3w3.c proti3.c protw3.c ssw3i3.c thw3i3.c
+               mpsiw3.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmw3.c sharedw3.c lockw3.c ;
+case w3i3gc :
+    AddToVar Local : VariantMPSsources
+             : prmci3w3.c proti3.c protan.c ssan.c thw3i3.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmw3.c sharedw3.c lockw3.c ;
+case w3ppmv :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protw3.c ssan.c than.c
+               mpsiw3.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmw3.c sharedw3.c lockw3.c ;
+case w3almv :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protw3.c ssan.c than.c
+               mpsiw3.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmw3.c sharedw3.c lockw3.c ;
+case w6i3mv :
+    AddToVar Local : VariantMPSsources
+             : prmci3w3.c proti3.c protw3.c ssw3i3.c thw3i3.c
+               mpsiw3.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmw3.c sharedan.c lockw3.c ;
+case sos8gc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protso.c sssus8.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmso.c sharedux.c lockpt.c ;
+case iam4cc :
+    AddToVar Local : VariantMPSsources
+             : lockan.c prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmi5.c sharedux.c ;
+case lii4gc :
+    AddToVar Local : VariantMPSsources
+             : prmci3li.c protli.c protlii3.c proti3.c pthrdext.c
+               sslii3.c thlii4.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmli.c sharedli.c lockli.c ;
+    AddToVar Local Inherited : C-Defines : _REENTRANT ;
+case lia6gc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmli.c sharedli.c lockli.c ;
+    AddToVar Local Inherited : C-Defines : _REENTRANT ;
+case s7ppac :
+    AddToVar Local : VariantMPSsources
+             : lockan.c prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vman.c sharedan.c ;
+case xcppgc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmxc.c sharedan.c lockpt.c ;
+case xcubgc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmxc.c sharedan.c lockpt.c ;
+case vxppgc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vman.c sharedan.c lockan.c ;
+case lippgc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmli.c sharedli.c lockli.c ;
+    AddToVar Local Inherited : C-Defines : _REENTRANT ;
+        # arm9/threadx
+case txargh :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vman.c sharedan.c lockan.c ;   
+     # arm gcc linux need to relook
+case liargc :
+    AddToVar Local : VariantMPSsources
+             : prmcan.c protan.c ssan.c than.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmli.c sharedli.c lockli.c ;
+    AddToVar Local Inherited : C-Defines : _REENTRANT ;
+    # Cut'n'paste from lii4gc for now
+case nbi3gc :
+    AddToVar Local : VariantMPSsources
+             : prmci3li.c protli.c protlii3.c proti3.c pthrdext.c
+               sslii3.c thlii4.c
+             : Variant generic_MPS ;
+    AddToVar Local : VariantMPSsources : vmnb.c sharednb.c locknb.c ;
+    AddToVar Local Inherited : C-Defines : _REENTRANT ;
+
+case * :
+    Error Undefined MPS platform ;
+}
+
+    Library mps :
+        $(VariantMPSsources)
+        arena.c
+        arenacl.c
+        arenash.c
+        arenavm.c
+        boot.c
+        bt.c
+        buffer.c
+        cbs.c
+        dbgpool.c
+        dbgpooli.c
+        event.c
+        format.c
+        global.c
+        ld.c
+        locus.c
+        message.c
+        meter.c
+        mpm.c
+        mpsi.c
+        pool.c
+        poolabs.c
+        poolamc.c
+        poolams.c
+        poolamsi.c
+        poollo.c
+        poolmfs.c
+        poolmrg.c
+        poolmv.c
+        poolmvff.c
+        poolsnc.c
+        protocol.c
+        ref.c
+        reserv.c
+        ring.c
+        root.c
+        sac.c
+        seg.c
+        shield.c
+        splay.c
+        trace.c
+        tract.c
+        version.c
+        walk.c
+    ;
+
+
+# Regenerate eventgen.h
+
+    Locate eventgen.h : $(CurrentPath)$(FS)src ;
+    Search eventgen.pl : $(CurrentPath)$(FS)src ;
+    Search eventdef.h : $(CurrentPath)$(FS)src ;
+    local EventGen ; MakeGristed EventGen : eventgen.h : $(CurrentPath) ;
+    GeneratedIncludable $(EventGen) ;
+    DependsOn eventgen.h : eventgen.pl ;
+    GenericTarget eventgen.h : eventdef.h :
+        $(Perl) $(CurrentPath)$(FS)src$(FS)eventgen.pl $> $< ;
+    CleanFile eventgen.h ;
+    ExportSource $(CurrentPath)$/src$/eventdef.h : C ;
+    ExportSource $(CurrentPath)$/src$/eventgen.pl : Perl ;
+    if wdkbuild in $(JAM_ARGUMENTS)
+    {
+      ExportSource $(CurrentPath)$/src$/eventgen.h : C ;
+    }
+    else
+    {
+      DontExportSource $(CurrentPath)$/src$/eventgen.h ;
+    }
+
+
+# Auxiliary tools
+
+
+    # All executables in this makefile are console applications.
+switch $(CompilerVersion-C) {
+    # C-Exec-Linker_Arguments on $(Exe) would be better, but doesn't work,
+    # because the variable is used during the parsing phase.
+    case gcc*  : AddToVar Local : C-Exec-Linker_Arguments : -mconsole ;
+    case msvc* : AddToVar Local : C-Exec-Linker_Arguments : /subsystem:console ;
+}
+
+    local pthread-lib = <.>$(Pthread-Dynamic-Lib:B)$(Pthread-Dynamic-Lib:S) ;
+
+    AddToVar Local : VariantPlinthSources : mpsioan.c : Variant generic_MPS ;
+    Library plinth :
+        $(VariantPlinthSources)
+        mpsliban.c
+    ;
+
+    Executable eventcnv : eventcnv.c eventpro.c mpm.c mpsliban.c splay.c table.c ;
+
+    Executable replay
+        : replay.c eventrep.c eventpro.c table.c mpsliban.c fmtpstst.c ;
+    C-LinkWithLibraries replay : mps testlib ;
+    DependsOn replay : $(pthread-lib) ;
+
+
+    Jar logbrowser.jar
+        : Browser.java Event.java Model.java LogView.java Reader.java
+          AddressMap.java ArenaClass.java PoolClass.java
+        : com$(FS)globalgraphics$(FS)mps$(FS)logbrowser ;
+
+    local JAVA = $(Jre-Java) $(vm) $(Java-Mem) ;
+    local JAVA_JDB = $(Java-Jdb) ;
+    local TOOL_CLASSPATH ;
+    Join TOOL_CLASSPATH : $(Jre-ClassPathSeparator)
+        : $(JarOutput-Directory)$(FS)logbrowser.jar
+          $(CommonsCollectionsJars) $(JFreeChartJars) ;
+    local TOOL_CLASS = com.globalgraphics.mps.logbrowser.Browser ;
+    DependsOn logbrowse logbrowse-dbg : logbrowser.jar ;
+    GeneralScriptFromTemplate logbrowse logbrowse-dbg
+        : : JAVA JAVA_JDB TOOL_CLASSPATH TOOL_CLASS
+        : ..$(FS).. # hack: knows where BUILDROOT is
+        : CHECKENV ;
+
+
+# Test files
+
+    # testrun is the target for building and running all tests.
+    Force testrun ;
+    NOTFILE testrun ;
+
+rule MPSTestExecutable {
+    # MPSTestExecutable executable : additional_sources : variants ;
+    # Add required variants to test_$(1); if all are added, allow test.
+    for variant in $(3) {
+        AddToVar Local : test_$(1) : $(variant) : Variant $(variant) ;
+    }
+    if $(Variant_test) && $(3) in $(test_$(1)) {
+        Executable $(1) : $(1).c $(2).c ;
+        C-LinkWithLibraries $(1) :
+            mps
+            plinth
+            testlib
+        ;
+        DependsOn $(1) : $(pthread-lib) ;
+        if ! interactive_test in $(3) {
+            NOTFILE run_$(1) ;
+            DependsOn testrun : run_$(1) ;
+            DependsOn run_$(1) : $(1) ; # to get dependencies of $(1)
+            GenericTarget run_$(1) : $(1:S=$(C-Exec-Suffix)) :
+                $> ;
+        }
+    }
+}
+
+# It would be better if MPSTestExecutable could do
+#   C-Exec-Linker_Libraries on $(1) += -lm ;
+# but that doesn't work, because it's a parsing-phase variable.
+if $(MPSPF) in sos8gc {
+    AddToVar Local : C-Exec-Linker_Libraries : -lm ;
+}
+
+    Library testlib :
+        testlib.c
+    ;
+
+    MPSTestExecutable abqtest : : mv2_broken ;
+    MPSTestExecutable amcss : fmtdy fmtdytst : generic_MPS ;
+    MPSTestExecutable amcsshe : fmthe : generic_MPS ;
+if ! $(MPSPF) in xcppgc xcubgc sos8gc {
+    MPSTestExecutable amcssth : fmtdy fmtdytst : generic_MPS ;
+}
+    MPSTestExecutable amsss : fmtdy fmtdytst : generic_MPS ;
+    MPSTestExecutable apss ;
+    MPSTestExecutable arenacv ;
+    MPSTestExecutable btcv ;
+    MPSTestExecutable bttest : : interactive_test ;
+    MPSTestExecutable cbstest ;
+    MPSTestExecutable epdss : : Non_generic_MPS ;
+    MPSTestExecutable epfnss : fmtpstst : Non_generic_MPS ;
+    MPSTestExecutable epvmss : fmtpstst : Non_generic_MPS ;
+    MPSTestExecutable finalcv : fmtdy fmtdytst ;
+    MPSTestExecutable largena : : interactive_test ;
+    MPSTestExecutable locbwcss ;
+    MPSTestExecutable lockcov ;
+    MPSTestExecutable lockut ;
+    MPSTestExecutable locusss ;
+    MPSTestExecutable locv ;
+    MPSTestExecutable messtest ;
+    MPSTestExecutable mpmss ;
+    MPSTestExecutable mpsicv : fmtdy fmtdytst ;
+    MPSTestExecutable mv2test : poolmv2 abq : mv2_broken ;
+    MPSTestExecutable poolncv : pooln ;
+    MPSTestExecutable qs : : generic_MPS ;
+    MPSTestExecutable sacss ;
+    MPSTestExecutable segsmss : fmtdy fmtdytst : generic_MPS ;
+    MPSTestExecutable teletest : : interactive_test ;
+    MPSTestExecutable weakut : fmtdy fmtdytst : generic_MPS ;
+
+
+# Log stripped

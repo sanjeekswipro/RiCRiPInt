@@ -1,0 +1,20 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: SWpdfparse!make:makefile.jam(EBDSDK_P.1) $
+#
+
+  DependsOn all : pdfparse ;
+
+  RequiresVariant warning_level : high ;
+  RequiresVariant 64bit_warnings ;
+
+  IncludeExportDirectories Local :
+      standard
+    : .. ;
+
+  Library pdfparse :
+      pdfparse.c
+  ;
+#
+# Log stripped

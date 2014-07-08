@@ -1,0 +1,59 @@
+%!PS
+% $HopeName: COREgstate!color:src:colcomnt.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% colcomnt.pss -- central handling for color comments
+%
+% Log stripped
+
+% e.g.  %%CMYKCustomColor: 0 0.06 0.69 0 (PANTONE 113 CVC)
+
+currentglobal true setglobal
+statusdict /CMYKCustomColors 4 dict put
+setglobal
+
+(%%dict) load (%%actions) get /CMYKCustomColor: {
+	[ exch cvx stopped {
+		% something odd in comment - ignore it
+		cleartomark
+	}	{
+		1	{
+			counttomark 5 eq {
+				dup type /stringtype ne {
+					cleartomark exit
+				} if
+				false
+				2 1 5 {
+					index
+					type dup /integertype ne exch /realtype ne and {
+						pop true exit
+					} if
+			        } for
+					{
+					% something wasnt a number
+					cleartomark
+					exit
+				} if
+			        currentglobal true setglobal % ensure array created globally
+				7 2 roll
+				] exch setglobal statusdict /CMYKCustomColors get 
+				
+				2 index 2 index   % add copy of color and then copy of [cmyk] array to stack
+		        
+				put               % make the entry in the CMYKCustomColors dictionary
+								
+				pop pop           % clear name and [cmyk] array from stack
+
+			}	{
+				% not 5 items on stack - ignore comment
+				cleartomark
+				exit
+			} ifelse
+		} repeat		% just to allow for the use of exit.
+	} ifelse
+
+} bind put
+
+% end of colcomnt.pss

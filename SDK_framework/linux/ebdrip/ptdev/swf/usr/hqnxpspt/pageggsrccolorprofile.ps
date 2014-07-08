@@ -1,0 +1,125 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pageggsrccolorprofile.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for PageGGSourceColorProfile.
+% Example:
+%   <psf:Feature name="ns0000:PageGGSourceColorProfile">
+%     <psf:Option name="ns0000:RGB">
+%       <psf:ScoredProperty name="ns0000:SourceColorProfileURI">
+%         <psf:Value xsi:type="xs:string">profiles/sRGB_IEC61966-2-1_withBPC.icc</psf:Value>
+%       </psf:ScoredProperty>
+%     </psf:Option>
+%   </psf:Feature>
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+% Get information about the specified ICC profile.
+% 'iccarray' will be of the form [/ICCBased file].
+%
+% icc_filename GetICCProfileInfo iccarray colorspace
+/GetICCProfileInfo {
+  dup status {
+    % File exists
+    pop pop pop pop
+    [/ICCBased 3 -1 roll (r) file]
+    dup geticcbasedinfo exch pop
+  }{
+    % File not found
+    pop /Invalid null
+  }ifelse
+
+} bind def
+
+%  icc_filename DoConfigureSourceProfileFromICC -
+/DoConfigureSourceProfileFromICC {
+  //GetICCProfileInfo exec
+
+  % Check ICC profile's colorspace
+  dup [/DeviceRGB /DeviceCMYK] IsOneOf not {
+    (%%[ Warning: PageGGSourceColorProfile uses an unsupported/missing profile. ]%%) =
+    pop pop
+  }{
+    RequiresOverprintPreview
+
+    % Stack is: iccarray colorspace
+
+    % Configure the source color space
+    <<
+      /DeviceRGB   /BlendRGB
+      /DeviceCMYK  /BlendCMYK
+    >>
+    exch get
+    1 dict begin
+      exch def
+      currentdict setinterceptcolorspace
+    end
+  }ifelse
+} bind def
+
+/DoPageGGSourceColorProfile {
+  begin
+    (->DoPageGGSourceColorProfile) PTDebug
+
+    RIPPrintTicket /PageBlendColorSpace known {
+      % Warn if current incompatibility occurs with PageBlendColorSpace.
+      (%%[ Warning: Ignoring PageGGSourceColorProfile - Should not be used with PageBlendColorSpace. ]) =
+    }{
+      % Get the PageGGSourceColorProfile value
+      pt_value [/Value] /None GetPTValueWithDefault exch pop
+
+      /None ne {
+        % Get ICC profile filename (null on error)
+        pt_value /SourceColorProfileURI << /Value null >> GetDictValueWithDefault
+        /Value get
+        dup null ne {
+          % Convert URI to PostScript filename
+          1183615869 internaldict /xpsurifilename get exec
+
+          % Apply setting
+          //DoConfigureSourceProfileFromICC exec
+        }{
+          pop
+          (%%[ Warning: No PageGGSourceColorProfile profile specified. ]%%) =
+        }ifelse
+      }{
+        % 'None' - Use the RIP default.
+      }ifelse
+    }ifelse
+
+    (<-DoPageGGSourceColorProfile) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageGGSourceColorProfile << /Action //DoPageGGSourceColorProfile >>
+>>
+
+end

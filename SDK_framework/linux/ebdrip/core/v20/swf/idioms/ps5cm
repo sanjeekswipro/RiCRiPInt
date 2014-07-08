@@ -1,0 +1,69 @@
+%!PS-Adobe-3.0
+%%Title: Photoshop5CM
+%%Creator: Global Graphics Software Limited
+%%CreationDate: October, 1998
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:idioms:ps5cm(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This IdiomSet is used to optimise EPS files created in Adobe PhotoShop 
+% version 5 when 'Honor PostScript Color Management' is selected in 
+% Page Setup->Options->Extras.
+% (Adobe PhotoShop is a trademark of Adobe Systems, Inc.)
+%
+% The technique used here relies on a Harlequin extension to idiom 
+% recognition, namely that idiom templates can have wildcards, and a 
+% callback is called to construct the substitution.
+
+%%BeginResource: IdiomSet Photoshop5CM
+
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+currentglobal false setglobal
+
+/Photoshop5CM <<
+
+  /Photoshop5CM [
+		{
+		/arraytype			% To be replaced <<<<<<<<
+		dup 3 -1 roll 0.0000 1.0000 3 copy 3 -1 roll exch 
+		ge {
+			pop pop pop pop pop 
+			/integertype	% To be replaced <<<<<<<<
+			get
+		}	{
+			pop 3 copy pop 
+			le {
+				pop pop pop pop 0 get
+			}	{
+				exch dup 4 -1 roll exch sub 3 1 roll sub div 
+				/integertype	% To be replaced <<<<<<<< 
+				mul dup floor dup 3 1 roll sub exch cvi 
+				dup 1 add 4 -1 roll exch get 4 -1 roll 3 -1 
+				roll get dup 4 1 roll sub mul add
+			} ifelse
+		}ifelse
+	} bind	
+
+		{ }		% Ignored - new proc is built from scratch
+
+		{
+		% original array 255 255 3 template subst -> new-subst
+		pop pop pop pop pop exch pop
+		[ exch 1183615869 internaldict /interpop get ] cvx bind
+    } bind
+  ]
+
+>> /IdiomSet defineresource pop
+
+setglobal
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+
+%%EndResource
+
+%%EOF

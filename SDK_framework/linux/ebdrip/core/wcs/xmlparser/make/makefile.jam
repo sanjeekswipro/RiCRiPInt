@@ -1,0 +1,32 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for WCS (Windows Color System) XML Parser
+#
+# $HopeName: COREwcs!xmlparser:make:makefile.jam(EBDSDK_P.1) $
+# $Id: xmlparser:make:makefile.jam,v 1.1.10.1.1.1 2013/12/19 11:25:08 anon Exp $
+#
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    DependsOn all : xmlparser ;
+
+    LIBFILES =
+        cmykprinter.c
+        colorappearance.c
+        colordevice.c
+        commontypes.c
+        display.c
+        gamutmap.c
+        rgbcapture.c
+        rgbprinter.c
+        rgbprojector.c
+        rgbsamples.c
+        rgbvirtual.c
+        wcsxml.c
+    ;
+
+    Library xmlparser : $(LIBFILES) ;
+
+# Log stripped

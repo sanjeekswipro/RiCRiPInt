@@ -1,0 +1,9 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:linux-all:all.jam(trunk.6) $
+#
+
+  DefaultVar  C-Defines : linux __NO_STRING_INLINES ;
+
+# Log stripped

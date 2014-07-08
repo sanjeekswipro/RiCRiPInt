@@ -1,0 +1,475 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for SWebd_OIL
+#
+# $HopeName: SWprod_hqnrip!ebdrip:make:sdkrules.jam(EBDSDK_P.1) $
+#
+
+  ImplementsVariant ebd_ufst ebd_ufst_fontset ebd1bpp ebd2bpp ebd4bpp ebd_api ebd_ff ebd_ff_fontset ebd_pdfout ebd_pms_min ;
+
+  # Remember where swfolderlib is put before we change the suffix  
+  # This is only uses in a "sw in ram" build... but it always set
+  SWFolderLibPath = $(Objdir) ;
+
+  # ufst5 can be included, excluded, or included but optional
+  AddToVar Local : Suffix : eufst5y : Variant ebd_ufst=eufst5y ; 
+  AddToVar Local : Suffix : eufst5o : Variant ebd_ufst=eufst5o ; 
+  # ufst7 can be included, excluded, or included but optional
+  AddToVar Local : Suffix : eufst7y : Variant ebd_ufst=eufst7y ; 
+  AddToVar Local : Suffix : eufst7o : Variant ebd_ufst=eufst7o ; 
+  
+  # FontFusion can be included, excluded, or included but optional
+  AddToVar Local : Suffix : effy : Variant ebd_ff=effy ;
+  AddToVar Local : Suffix : effo : Variant ebd_ff=effo ;
+  
+  # pdfout can be included, excluded, or included but optional
+  AddToVar Local : Suffix : epdfouty : Variant ebd_pdfout=epdfouty ; 
+  AddToVar Local : Suffix : epdfouto : Variant ebd_pdfout=epdfouto ; 
+  
+  # Minimise the PMS footprint size by removing features such as screen tables, tiff output etc.
+  AddToVar Local : Suffix : epmin : Variant ebd_pms_min=epmin ;
+
+  # added no1bpp to the suffix so that builds without 1bpp the example screen tables example can co-exist
+  AddToVar Local : Suffix : eno1bpp : Variant ebd1bpp=no ;
+
+  # added no2bpp to the suffix so that builds without 1bpp the example screen tables example can co-exist
+  AddToVar Local : Suffix : eno2bpp : Variant ebd2bpp=no ;
+
+  # added no4bpp to the suffix so that builds without 1bpp the example screen tables example can co-exist
+  AddToVar Local : Suffix : eno4bpp : Variant ebd4bpp=no ;
+
+  AddToVar Local : Unifdef-Needs : WINDOWS LINUX MONTAVISTA SOLARIS MACOSX THREADX NETBSD ;
+
+  if $(C-Compiler-Family) = msvc
+  {
+    make = nmake ;
+    template = ebdrip$/makefile.pc.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : WINDOWS ;
+  }
+  else if vxworks in $(TargetOS)
+  {
+    make = nmake ;
+    template = ebdrip$/makefile.pc_tornado.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : WINDOWS ;
+  }
+  else if threadx in $(TargetOS)
+  {
+    make = nmake ;
+    template = ebdrip$/makefile.threadx.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : THREADX ;
+  }
+  else if linux in $(TargetOS)
+  {
+    make = gmake ;
+    template = ebdrip$/makefile.unx.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : LINUX ;
+  }
+  else if montavista in $(TargetOS)
+  {
+    make = gmake ;
+    template = ebdrip$/makefile.unx.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : LINUX ;
+    AddToVar Local : Unifdef-Defines   : MONTAVISTA ;
+  }
+  else if macos_x in $(TargetOS)
+  {
+    make = make ;
+    template = ebdrip$/makefile.macosx.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : MACOSX ;
+  }
+  else if netbsd in $(TargetOS)
+  {
+    make = gmake ;
+    template = ebdrip$/makefile.unx.ebd.template ;
+    AddToVar Local : Unifdef-Defines   : LINUX ;
+    AddToVar Local : Unifdef-Defines   : NETBSD ;
+  }
+
+  # The following selection allows a direct pcl output and direct  pdf/tiff view  when on a suitable windows/linux target/OS
+  # that supports a printer driver and pdf/tiff viewer
+  AddToVar Local : Unifdef-Needs : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+
+  if $(C-Compiler-Family) = msvc
+  {
+    AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+  }
+  else if linux_2 in $(TargetOS)
+  {
+    if $(TargetArch) = pentium
+    {
+      AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+    }
+    else if $(TargetArch) = atom
+    {
+      AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+    }
+    else if $(Variant_j9) = yes
+    {
+      AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+    }
+  }
+  else if montavista in $(TargetOS)
+  {
+    AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+  }
+  else if macos_x in $(TargetOS)
+  {
+    AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+  }
+  else if netbsd in $(TargetOS)
+  {
+    AddToVar Local : Unifdef-Defines : SDK_DIRECT_OUT SDK_DIRECT_VIEW ;
+  }
+
+  # ebdsdk does not include the following features
+  AddToVar Local : Unifdef-UnDefines : WINPRINTSKIN ;
+  AddToVar Local : Unifdef-UnDefines : FLTEG CMMEG HTMEG TIFFSKIN RLESKIN LIBLITTLECMS REFIMP ;
+  
+  # ebdsdk can include the following features
+  if netbsd in $(TargetOS) || linux in $(TargetOS)
+  {
+    AddToVar Local : Unifdef-Needs :
+      ASSERT_BUILD
+      DYLIB
+      FF_PFR_PCL45
+      FF_PFR_PCLPS2
+      FF_PFR_PCLPS3
+      FF_PFR_PS3
+      LINUX_2_603
+      LINUX_2_atom
+      LINUX_2_conexant
+      LINUX_2_e500
+      LINUX_2_marvell
+      LINUX_2_marvell_dreamplug
+      LINUX_2_marvell_gemstone_b0
+      LINUX_2_marvell_gemstone_z3
+      LINUX_PANDA_GRANITE
+      LINUX_PANDA_GRANITE_4_6_4
+      LINUX_PANDA_GRANITE2_4_7_3
+      LINUX_PANDA_GRANITE2SOFT_4_7_3
+      LINUX_X86_GCC_4_6_3
+      MONTAVISTA
+      NETBSD
+      RIFT_ATOM
+      SDK_DIRECT_OUT
+      SDK_DIRECT_VIEW
+      SDK_OPT_FF
+      SDK_OPT_LESEC
+      SDK_OPT_OFFICE_DOCS_IN
+      SDK_OPT_PDF_OUT
+      SDK_OPT_UFST5
+      SDK_OPT_XPS_IN
+      SDK_PANDA_EBDWRAPPER
+      THREADX_marvell_gemstone_b0
+      UFST_FCO_PCL45
+      UFST_FCO_PCLPS2
+      UFST_FCO_PCLPS3
+      UFST_FCO_PS2
+      UFST_FCO_PS3
+    ;
+  } else {
+  AddToVar Local : Unifdef-Needs :
+    SDK_OPT_CMMEG
+    SDK_OPT_FF
+    SDK_OPT_FLTEG
+    SDK_OPT_HTMEG
+    SDK_OPT_LIBLITTLECMS
+    SDK_OPT_LESEC
+    SDK_OPT_PDF_IN
+    SDK_OPT_PDF_OUT
+    SDK_OPT_PJL
+    SDK_OPT_TIFF_OUT
+    SDK_OPT_UFST5
+    SDK_OPT_UFST7
+    SDK_OPT_XPS_IN
+  ;
+  }
+  # SDK_OPT_PDF_OUT - PDF output method include, excluded or optional (controlled by makefile)
+  if $(Variant_ebd_pdfout) = epdfouty
+  {
+    # Include pdf out source code always
+    AddToVar Local : Unifdef-Defines : PMS_SUPPORT_PDF_OUT ;
+    AddToVar Local : Unifdef-Defines : SDK_OPT_PDF_OUT ;
+  }
+  else if $(Variant_ebd_pdfout) = epdfouto
+  {
+    # Include pdf out source code and #ifdef to make it optional in the sdk (PMS_SUPPORT_PDF_OUT)
+    AddToVar Local : Unifdef-Defines : SDK_OPT_PDF_OUT ;
+  }
+  else # not set or =epdfoutn
+  {
+    # Exclude pdf out source code always
+    AddToVar Local : Unifdef-UnDefines : PMS_SUPPORT_PDF_OUT ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_PDF_OUT ;
+  }
+  
+  # UFST5 included, excluded, or optional (controlled by makefile)
+  if $(Variant_ebd_ufst) = eufst5y
+  {
+    # Include ufst5 source code always
+    AddToVar Local : Unifdef-Defines : OIL_USE_UFST5 PMS_USE_UFST5 USE_UFST5 ;
+    AddToVar Local : Unifdef-Defines : SDK_OPT_UFST5 ;
+    # Exclude ufst7 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST7 PMS_USE_UFST7 USE_UFST7 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST7 ;
+  }
+  else if $(Variant_ebd_ufst) = eufst5o
+  {
+    # Include ufst5 source code and #ifdef to make it optional in the sdk
+    AddToVar Local : Unifdef-Defines : SDK_OPT_UFST5 ;
+    # Exclude ufst7 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST7 PMS_USE_UFST7 USE_UFST7 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST7 ;
+  }
+  # UFST7 included, excluded, or optional (controlled by makefile)
+  else if $(Variant_ebd_ufst) = eufst7y
+  {
+    # Include ufst7 source code always
+    AddToVar Local : Unifdef-Defines : OIL_USE_UFST7 PMS_USE_UFST7 USE_UFST7 ;
+    AddToVar Local : Unifdef-Defines : SDK_OPT_UFST7 ;
+    # Exclude ufst5 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST5 PMS_USE_UFST5 USE_UFST5 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST5 ;
+  }
+  else if $(Variant_ebd_ufst) = eufst7o
+  {
+    # Include ufst7 source code and #ifdef to make it optional in the sdk
+    AddToVar Local : Unifdef-Defines : SDK_OPT_UFST7 ;
+    # Exclude ufst5 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST5 PMS_USE_UFST5 USE_UFST5 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST5 ;
+  }
+  else # not set or =eufstn
+  {
+    # Exclude ufst5 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST5 PMS_USE_UFST5 USE_UFST5 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST5 ;
+    # Exclude ufst7 source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_UFST7 PMS_USE_UFST7 USE_UFST7 ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_UFST7 ;
+  }
+
+  AddToVar Local : Suffix : epanda : Variant ebd_api=epanda ; 
+
+  if $(Variant_ebd_api) = epandawrapper
+  {
+    AddToVar Local : Suffix : epandawpr ; 
+    AddToVar Local : Unifdef-Defines : SDK_PANDA_EBDWRAPPER ;
+  }
+  else
+  {
+    AddToVar Local : Unifdef-UnDefines : SDK_PANDA_EBDWRAPPER ;
+  }
+
+  # FontFusion included, excluded or optional (controlled by makefile)
+  if $(Variant_ebd_ff) = effy
+  {
+    # Include tdis source code always
+    AddToVar Local : Unifdef-Defines : OIL_USE_FF PMS_USE_FF USE_FF ;
+    AddToVar Local : Unifdef-Defines : SDK_OPT_FF ;
+  }
+  else if $(Variant_ebd_ff) = effo
+  {
+    # Include ufst5 source code and #ifdef to make it optional in the sdk
+    AddToVar Local : Unifdef-Defines : SDK_OPT_FF ;
+  }
+  else # not set or =effn
+  {
+    # Exclude tdis source code always
+    AddToVar Local : Unifdef-UnDefines : OIL_USE_FF PMS_USE_FF USE_FF ;
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_FF ;
+  }
+
+  if $(Variant_ebd_ufst) = eufst5y || $(Variant_ebd_ufst) = eufst5o ||
+     $(Variant_ebd_ufst) = eufst7y || $(Variant_ebd_ufst) = eufst7o || exportsrc in $(JAM_ARGUMENTS)
+  {
+    # Select required fontset
+    if ! $(Variant_ebd_ufst_fontset)
+    {
+      if $(Variant_pcl) = no {
+        RequiresVariant ebd_ufst_fontset : ps3 ;
+      } else {
+        RequiresVariant ebd_ufst_fontset : pclps3 ;
+      }
+    }
+  }
+
+  if ! $(Variant_ebd_ufst_fontset) {
+    RequiresVariant ebd_ufst_fontset : none ;
+  }
+
+  # UFST sub-features
+  AddToVar Local : Unifdef-Needs :
+    UFST_FCO_PCL45
+    UFST_FCO_PCLPS2
+    UFST_FCO_PCLPS3
+    UFST_FCO_PS2
+    UFST_FCO_PS3
+  ;
+
+  AddToVar Local : Suffix : pcl45 : Variant ebd_ufst_fontset=pcl45 ; 
+  AddToVar Local : Unifdef-Defines : UFST_FCO_PCL45 : Variant ebd_ufst_fontset=pcl45 ; 
+  AddToVar Local : Suffix : pclps2 : Variant ebd_ufst_fontset=pclps2 ; 
+  AddToVar Local : Unifdef-Defines : UFST_FCO_PCLPS2 : Variant ebd_ufst_fontset=pclps2 ; 
+  AddToVar Local : Suffix : pclps3 : Variant ebd_ufst_fontset=pclps3 ; 
+  AddToVar Local : Unifdef-Defines : UFST_FCO_PCLPS3 : Variant ebd_ufst_fontset=pclps3 ; 
+  AddToVar Local : Suffix : ps2 : Variant ebd_ufst_fontset=ps2 ; 
+  AddToVar Local : Unifdef-Defines : UFST_FCO_PS2 : Variant ebd_ufst_fontset=ps2 ; 
+  AddToVar Local : Suffix : ps3 : Variant ebd_ufst_fontset=ps3 ; 
+  AddToVar Local : Unifdef-Defines : UFST_FCO_PS3 : Variant ebd_ufst_fontset=ps3 ; 
+
+  if ! $(Variant_ebd_ufst_fontset) in none pcl45 pclps2 pclps3 ps2 ps3 {
+    Error Unknown value for ebd_ufst_fontset variant in sdkrules.jam ($(Variant_ebd_ufst_fontset)) ;
+  }
+
+  if $(Variant_ebd_ff) = effy || $(Variant_ebd_ff) = effo
+  {
+    # Select required fontset
+    if ! $(Variant_ebd_ff_fontset)
+    {
+      if $(Variant_pcl) = no {
+        RequiresVariant ebd_ff_fontset : ps3 ;
+      } else {
+        RequiresVariant ebd_ff_fontset : pclps3 ;
+      }
+    }
+  }
+
+  if ! $(Variant_ebd_ff_fontset) {
+    RequiresVariant ebd_ff_fontset : none ;
+  }
+
+  # FontFusion features  
+  AddToVar Local : Unifdef-Needs :
+    FF_PFR_PCL45
+    FF_PFR_PCLPS2
+    FF_PFR_PCLPS3
+    FF_PFR_PS3
+  ;
+
+  AddToVar Local : Suffix : pcl45 : Variant ebd_ff_fontset=pcl45 ;
+  AddToVar Local : Unifdef-Defines : FF_PFR_PCL45 : Variant ebd_ff_fontset=pcl45 ;
+  AddToVar Local : Suffix : pclps2 : Variant ebd_ff_fontset=pclps2 ;
+  AddToVar Local : Unifdef-Defines : FF_PFR_PCLPS2 : Variant ebd_ff_fontset=pclps2 ;
+  AddToVar Local : Suffix : pclps3 : Variant ebd_ff_fontset=pclps3 ;
+  AddToVar Local : Unifdef-Defines : FF_PFR_PCLPS3 : Variant ebd_ff_fontset=pclps3 ;
+  AddToVar Local : Suffix : ps3 : Variant ebd_ff_fontset=ps3 ;
+  AddToVar Local : Unifdef-Defines : FF_PFR_PS3 : Variant ebd_ff_fontset=ps3 ;
+
+  if ! $(Variant_ebd_ff_fontset) in none pcl45 pclps2 pclps3 ps3 {
+    Error Unknown value for ebd_ff_fontset variant in sdkrules.jam ($(Variant_ebd_ff_fontset)) ;
+  }
+
+  # Security 
+  if $(Variant_security) = le
+  {
+    # always le
+    AddToVar Local : Unifdef-Defines : SDK_OPT_LESEC ;
+  }
+  else if $(Variant_security) = ns
+  {
+    # always ns
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_LESEC ;
+  }
+  else if $(Variant_security) = dng
+  {
+    # using dongle
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_LESEC ;
+  }
+  else # something else
+  {
+    Error Unsupported security variant $(Variant_security) ;
+  }
+  
+  # XPS enabled
+  if $(Variant_xps) = yes
+  {
+    AddToVar Local : Unifdef-Defines : SDK_OPT_XPS_IN ;
+     
+  }
+  else
+  {
+    AddToVar Local : Unifdef-UnDefines : SDK_OPT_XPS_IN ;
+  }
+  
+  # The following options have no embedded implementation behind them
+  AddToVar Local : Unifdef-UnDefines : 
+        SDK_OPT_CMMEG
+        SDK_OPT_FLTEG
+        SDK_OPT_HTMEG
+        SDK_OPT_LIBLITTLECMS
+     ;
+     
+  # The following options are always included but maybe switch off using one of the SUPPORT_* flags in the makefile.
+  AddToVar Local : Unifdef-Defines : 
+        SDK_OPT_PDF_IN
+        SDK_OPT_PJL
+        SDK_OPT_TIFF_OUT
+     ;
+
+  AddToVar Local : Unifdef-Needs : SDK_PANDA_GRANITE ;
+  AddToVar Local : Unifdef-Defines : SDK_PANDA_GRANITE : Variant gcc_compiler=gcc_x_marvell_granite ;
+
+  # Doxygen rules
+  AddToVar Local : docresources :
+    $(CurrentPath)$/clrip$/doc$/images$/gg_logo.gif
+    $(CurrentPath)$/clrip$/doc$/images$/spacer.gif
+    ;
+    
+  local fw-src ;
+  local fw-dest ;
+  local i ;
+  for i in $(docresources) {
+    MakeLeafTarget fw-src : $(i) : : Search ;
+    
+    MakeLeafTarget fw-dest : $(i:D=) : $(CurrentPath)$/obj$/dox-ggetiff-$(Suffix)$/html : Locate ;
+    DependsOn distrib : $(fw-dest) ;
+    CopyFile $(fw-dest) : $(fw-src) ;
+    
+    MakeLeafTarget fw-dest : $(i:D=) : $(CurrentPath)$/obj$/dox-ggoil-$(Suffix)$/html : Locate ;
+    DependsOn distrib : $(fw-dest) ;
+    CopyFile $(fw-dest) : $(fw-src) ;
+    
+    MakeLeafTarget fw-dest : $(i:D=) : $(CurrentPath)$/obj$/dox-ggpms-$(Suffix)$/html : Locate ;
+    DependsOn distrib : $(fw-dest) ;
+    CopyFile $(fw-dest) : $(fw-src) ;
+  }
+
+  Doxygen ebdrip$/make$/ggoil.dox : distrib : : obj$/dox-ggoil-$(Suffix) : $(CurrentPath)$/obj$/skinsrc-$(Suffix)$/oil : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines) ;
+  Doxygen ebdrip$/make$/ggpms.dox : distrib : : obj$/dox-ggpms-$(Suffix) : $(CurrentPath)$/obj$/skinsrc-$(Suffix)$/pms : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines) ;
+  Doxygen ebdrip$/make$/ggetiff.dox : distrib : : obj$/dox-ggetiff-$(Suffix) : $(CurrentPath)$/obj$/skinsrc-$(Suffix)$/ggetiff : -D$(Unifdef-Defines) -U$(Unifdef-UnDefines) ;
+
+  ExportSource .$/ebdrip$/make$/ggoil.dox : C ;    # type = C so that it is unifdef-ed by doexport.pl
+  ExportSource .$/ebdrip$/make$/ggpms.dox : C ;    # type = C so that it is unifdef-ed by doexport.pl
+  ExportSource .$/ebdrip$/make$/ggetiff.dox : C ;  # type = C so that it is unifdef-ed by doexport.pl
+  ExportSource .$/clrip$/branding$/source-distrib-header.html : Text ;
+  ExportSource .$/ebdrip$/branding$/ebd-source-distrib-header.html : Text ;
+
+  # If on Windows, we only need distribute the compiled HTML Help file
+  if $(C-Compiler-Family) = msvc
+  {
+    if $(CV_HTMLHELP_1_3) {
+      
+      DirectoryFor obj$/dox-ggoil-$(Suffix)$/html$/HqnRIP_OIL_SDK_InterfaceRef.chm : $(CurrentPath) ;
+      DirectoryFor obj$/dox-ggpms-$(Suffix)$/html$/HqnRIP_PMS_SDK_InterfaceRef.chm : $(CurrentPath) ;
+      DirectoryFor obj$/dox-ggetiff-$(Suffix)$/html$/HqnRIP_GGETIFF_SDK_InterfaceRef.chm : $(CurrentPath) ;
+  
+      Distribute File : doc * : obj$/dox-ggoil-$(Suffix)$/html$/HqnRIP_OIL_SDK_InterfaceRef.chm : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+      Distribute File : doc * : obj$/dox-ggpms-$(Suffix)$/html$/HqnRIP_PMS_SDK_InterfaceRef.chm : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+      Distribute File : doc * : obj$/dox-ggetiff-$(Suffix)$/html$/HqnRIP_GGETIFF_SDK_InterfaceRef.chm : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+      
+    } else {
+      Warning "Unable to generate .chm files, CV_HTMLHELP_1_3 is not set" ;
+    }
+    
+  } else {
+    Distribute Tree : doc oil * : obj$/dox-ggoil-$(Suffix)$/html : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+    Distribute Tree : doc pms * : obj$/dox-ggpms-$(Suffix)$/html : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+    Distribute Tree : doc ggetiff * : obj$/dox-ggetiff-$(Suffix)$/html : $(CurrentPath) : : $(SupraPlat) : all : PlatformThenSuffix ;
+  }
+  
+
+     
+#
+# Log stripped

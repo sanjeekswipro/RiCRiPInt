@@ -1,0 +1,28 @@
+%!PS-Adobe-3.0
+%%Title: KnownColors
+%%Creator: Global Graphics Software Limited
+%%CreationDate: February 1999
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:namedcol:knowncol(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This header will create a dictionary containing all the named colours in this file,
+% along with their CMYK values.
+% Done this way to minimise VM use.
+
+	<<
+	/Globalness currentglobal false setglobal		% Will be reverted by initialize
+	/ResName /KnownColors		% The name of this resource
+	/BaseSpace /DeviceCMYK		% Underlying color space for the values below
+	/Divisor 1					% Take values as-is, without dividing
+>> /HqnColorDatabase /ProcSet findresource /initialize get exec
+RED
+0.0 1.0 1.0 0.0
+GREEN
+1.0 0.0 1.0 0.0
+BLUE
+1.0 1.0 0.0 0.0

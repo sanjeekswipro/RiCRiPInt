@@ -1,0 +1,151 @@
+% /* $HopeName: SWv20!src:execupss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2002-2011 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+% start, prompt and executive, in systemdict
+
+systemdict begin
+  /start {
+    vmstatus pop pop 0 gt {
+      systemdict /quit get exec
+    } if
+    disableinterrupt
+    serverdict begin
+      /InvalidFont <<
+        /FontName /InvalidFont
+        /FontType -1           % Adobe does this !
+        /FontMatrix [ 1 0 0 1 0 0 ]
+        /Encoding StandardEncoding
+      >> definefont setfont
+      /InvalidFont undefinefont
+      harlequininit
+      productinit
+      //statusdict /dostartpage get exec {
+        userdict begin
+        save /svlv exchdef
+        statusdict begin
+          /jobstate (printing test page) def
+          sendprinterstate
+        end
+          { printstartpage }
+        stopped {
+          userdict begin
+            (0) xw copy pop
+          end
+        } if
+        clear cleardictstack
+        svlv restore
+        userdict begin
+        (1) xv copy pop
+      end
+    } if
+    cleardictstack
+    % For the files ( Sys/HqnStart && ( Sys/Bootlist || Sys/Start )) we
+    % execute them outside the main server loop context
+    //serverdict begin
+      setnulldevice
+      /startupfiles load
+    end
+    exec
+    $error /initializing false put
+    % once bootstrap has run, RIP is no longer busy, so reset the state
+    false 1183615869 internaldict /endjobinternal get exec
+    //serverdict /server get exec % Server loop never returns.
+  } bd % in systemdict for level2
+
+  /prompt { (PS>) print flush } bd
+
+  /executive {
+    //userdict /prompt {
+      (Input>) print
+      { execdepth } stopped { 1 } if 1 sub { (>) print } repeat
+      flush
+    } put
+
+    //execdict begin
+      /execdepth execdepth 1 add def
+
+      save
+      userdict /y true put
+
+      (%os%Copyright/\052) {
+        {
+          (r) file
+          {
+            dup =string readline exch print (\n) print not { exit } if
+          } loop
+          closefile
+        } stopped {
+          { dup type /savetype ne { pop } { exit } ifelse } loop
+        } { userdict /y false put } ifelse
+      } =string filenameforall
+
+      userdict /y get {
+        UVS(Harlequin RIP Copyright 1989-2013 Global Graphics Software Limited, All Rights Reserved.\n) print
+        UVS(Harlequin is a registered trademark of Global Graphics Software Limited.\n) print
+      } if
+
+      { dup type /savetype ne { pop } { exit } ifelse } loop
+
+      restore
+
+      {
+        /quitflag false def
+        $error /newerror false put
+        /prompt load stopped {
+          //$error /default get
+            { /defaulthandleerror where { /defaulthandleerror get exec } if }
+            {        /handleerror where {        /handleerror get exec } if }
+          ifelse
+          UVS(Error during prompt execution.\n) print
+          exit
+        } if
+        {
+          mark
+          /stmtfile (%statementedit) (r) file def
+        } stopped {
+          cleartomark $error /newerror get
+          {
+            $error /errorname get
+            /undefinedfilename ne
+              {
+                //$error /default get
+                  { /defaulthandleerror where { /defaulthandleerror get exec } if }
+                  {        /handleerror where {        /handleerror get exec } if }
+                ifelse
+              } if
+            $error /newerror false put
+            exit
+          } if
+        } {
+          pop stmtfile
+          end
+          clearinterrupt enableinterrupt
+          { cvx exec } superstopped
+          % disableinterrupt % done by superstopped itself
+          execdict begin
+            {
+              //$error /default get
+                { /defaulthandleerror where { /defaulthandleerror get exec } if }
+                {        /handleerror where {        /handleerror get exec } if }
+              ifelse
+              stmtfile closefile
+            } if
+          % check state of stdin as used by the RIP, not what serverdict thinks it is
+          1183615869 internaldict /stdiostatus get exec pop not { exit } if
+        } ifelse
+        quitflag { exit } if
+      } loop
+      /quitflag false def
+      /execdepth execdepth 1 sub def
+    end
+    % $error /doclose false put
+    stop
+  } bd
+end % systemdict
+
+% end of execupss

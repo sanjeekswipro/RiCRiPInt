@@ -1,0 +1,31 @@
+#include <winver.h>
+
+#include "patchlevel.h"
+#include "harlequin.h"
+
+VS_VERSION_INFO VERSIONINFO
+	FILEVERSION	0,0,0,0
+	PRODUCTVERSION	0,0,0,0
+	FILEFLAGSMASK	VS_FFI_FILEFLAGSMASK
+	FILEFLAGS	VS_FF_PATCHED | VS_FF_PRERELEASE
+	FILEOS		VOS_NT_WINDOWS32
+	FILETYPE	VFT_APP
+	FILESUBTYPE	VFT2_UNKNOWN
+
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "04090000"
+		BEGIN
+			VALUE "CompanyName",		"Global Graphics.\0"
+			VALUE "FileDescription",	"Jam/MR executable\0"
+			VALUE "FileVersion",		VERSION "." PATCHLEVEL "." SWIGPATCH "\0"
+			VALUE "LegalCopyright",		"Copyright \251 1999-2004 Global Graphics\0"
+			VALUE "OriginalFilename",	"jam.exe\0"
+			VALUE "ProductName",		"Jam Doughnut\0"
+			VALUE "ProductVersion",		"trunk\0"
+		END
+	END
+END
+
+JamIcon	ICON	DISCARDABLE	"jam.ico"

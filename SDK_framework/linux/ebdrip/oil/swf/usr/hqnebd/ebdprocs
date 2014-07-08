@@ -1,0 +1,212 @@
+% Copyright (C) 2008 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWebd_OIL_example_gg!swf:usr:hqnebd:ebdprocs(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+% This file contains ps procedures
+% loaded via sw\sys\extrastart\hqnembedded
+
+%!PS-Adobe
+%%Title: Usr/HqnEmbedded/EbdProcedures
+%%Creator: Global Graphics Software Limited
+%%EndComments
+
+userdict begin
+
+%----------------------------------
+% COMMON PROCEDURES
+%----------------------------------
+% PS to Install some useful procedures.
+
+% procedure to control Force mono if no cmy data
+ /GG_ForceMonoIfNoCMY
+  {
+   (%embedded%) << /GGForceMonoIfNoCMY 4 -1 roll >> setdevparams
+  }def
+
+
+% procedure to toggle suppress blank page
+ /GG_SuppressBlankPage
+  {
+   (%embedded%) << /GGSuppressBlank 4 -1 roll >> setdevparams
+  }def
+
+% procedure to install CMM
+ /GG_CMMInstall
+  {
+ << /AlternateCMM (CMM_OILExample) >> setpagedevice
+ <<
+    % Each colorspace supports the following object types
+    % /Default, /Picture, /Text, /Vignette, /Other
+    /DeviceCMYK
+    <<
+      /Text 	[ /CMM (TextColorMapFeaturesCMYK) /DeviceCMYK /DeviceCMYK ]
+      /Other 	[ /CMM (OtherColorMapFeaturesCMYK) /DeviceCMYK /DeviceCMYK ]
+    >>
+    /DeviceRGB
+    <<
+      /Default 	[ /CMM (DefaultColorMapFeaturesRGB) /DeviceRGB /DeviceCMYK ]
+    >>
+ >> setinterceptcolorspace
+  }def
+
+% procedure to control pure black text
+ /GG_PureBlackText
+  {
+   (%embedded%) << /GGPureBlackText 4 -1 roll >> setdevparams
+  }def
+
+% procedure to control all text black
+ /GG_AllTextBlack
+  {
+   (%embedded%) << /GGAllTextBlack 4 -1 roll >> setdevparams
+  }def
+
+% procedure to control black substitute
+ /GG_BlackSubstitute
+  {
+   (%embedded%) << /GGBlackSubstitute 4 -1 roll >> setdevparams
+  }def
+
+% procedure to control color management
+ /GG_SetColorManagement
+  {
+   /HqnEmbedded /ProcSet findresource /HqnEbd_ColorManagement get exec
+  }def
+
+% procedure to setup test configuration
+ /GG_SetTestConfiguration
+  {
+   (%embedded%) << /GGTestConfig 4 -1 roll >> setdevparams
+  }def
+
+%----------------------------------
+% N-UP PROCEDURES
+%----------------------------------
+% PS to install procedures required by Nup.
+% usage: [across] [down] [layout] GG_ConfigureNup -
+% layout 0 = Z          (left to right, top to bottom)
+% layout 1 = Reverse N  (top to bottom, left to right)
+% layout 2 = Reverse Z  (right to left, top to bottom)
+% layout 3 = N          (bottom to top, left to right)
+%
+
+currentglobal true setglobal
+/HqnImposePageSizePrefix {
+  currentpagedevice /Private get /InputAttributes get /MyTray exch def
+  currentpagedevice /InputAttributes  get MyTray get /PageSize get aload pop 2 copy
+  MaxHeight eq exch
+  MaxWidth eq and not
+  {
+   /MaxHeight exch def
+   /MaxWidth exch def
+   /MinWidth MaxWidth def
+   /MinHeight MaxHeight def
+  }{
+   pop pop
+  }ifelse
+} def
+setglobal
+
+% procedure to configure nup
+ /GG_ConfigureNup
+  {
+  /NupLayoutIndex exch def /NupDown exch def /NupAcross exch def
+% swap across and down for LEF page
+  currentpagedevice /Private get /InputAttributes get /MyTray exch def
+  currentpagedevice /InputAttributes  get MyTray get dup
+  /LeadingEdge known
+  { /LeadingEdge get 1 eq } { pop false } ifelse
+  NupDown NupAcross eq not
+  xor
+  {
+    NupDown NupAcross /NupDown exch def /NupAcross exch def
+    [ /B2TL2R /L2RB2T /T2BL2R /L2RT2B ] NupLayoutIndex get /NupLayout exch def
+  }
+  {
+    [ /L2RT2B /T2BL2R /R2LT2B /T2BR2L ] NupLayoutIndex get /NupLayout exch def
+  } ifelse
+  <<
+     /Prefix //HqnImposePageSizePrefix
+     /DeviceType /deviceTypeSheet
+     /Aspect /BestFit
+     /Objective /NxN
+     /PagesAcross NupAcross
+     /PagesUp NupDown
+     /Suffix /FixedSizeSheet
+     /OversizeStrategy /ScaleToFit
+     /Tactic NupLayout
+  >> /HqnImpose2 /ProcSet findresource /HqnInitImpose get exec
+  }def
+
+% GG_CallHqnEbdProcset
+% Success: value(s) procedure GG_CallHqnEbdProcset |- true
+% Failure: value(s) procedure GG_CallHqnEbdProcset |- value(s) proc false 
+/GG_CallHqnEbdProcset 
+{
+  /HqnEmbedded /ProcSet resourcestatus { 
+    pop pop
+    { /HqnEmbedded /ProcSet findresource } stopped {
+      (%%[ ERROR: findresource failed to find HqnEmbedded procset) == flush
+      pop pop % throw away procedure and value
+    }{
+      exch 2 copy known {
+         get { exec } stopped % get procedure and give value to it
+         { (%%[ ERROR: HqnEmbedded procedure caused interpreter to stop) == flush false 
+         }{
+           true % return success
+         } ifelse
+      } {
+        (%%[ ERROR: procedure not known in HqnEmbedded procset) == flush
+        pop % throw away duplicate dictionary
+        false 
+      } ifelse
+    } ifelse
+  }{ 
+    (%%[ ERROR: HqnEmbedded procset not found) ==  flush
+    false
+  } ifelse
+  
+} bind def
+
+% GG_SearchStack
+% Search stack back to /markmarkmark looking for searh item specified
+% Success: item GG_SearchStack |- true item
+% Failure: item GG_SearchStack |- false
+% Search stack for item, return previous stack item if found
+/GG_SearchStack {
+
+% Set the found result to false to assume we do not find the item
+false
+
+%% Start at 1 to skip the loop counter
+3 1 count {
+  dup % two counters on stack
+  index % item, counter, false, search
+  dup /markmarkmark eq {
+    pop % pop item
+    pop % pop counter
+    exit % terminate loop
+  } {
+    3 index % search, item, counter, false, search key
+    eq { 
+      2 sub % sub 2 to result, and search
+      index % leave the page size array on stack
+      exch pop % throw away the pesimistic found result
+      exch % swap search and item
+      true % success result
+      exit % terminate the loop
+    } { 
+      pop % throw away the duplicate loop count
+    } ifelse
+  } ifelse
+} for
+exch pop % throw away search, leaving "true, item" or just "false"
+
+} bind def
+
+end

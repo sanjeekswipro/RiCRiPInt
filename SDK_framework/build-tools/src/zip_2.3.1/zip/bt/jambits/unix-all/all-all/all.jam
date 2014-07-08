@@ -1,0 +1,24 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!unix-all:all-all:all.jam(trunk.15) $
+#
+
+  # Some "standard" tools
+
+    ChDir         ?= cd ;
+    SetEnv        ?= "" ;
+    Touch         ?= touch ;
+
+  # Other "constants"
+
+    DiscardStdErr ?= 2>/dev/null ;
+    DiscardStdOut ?= >/dev/null ;
+
+    SupraPlat = unix-all ;
+
+    # Quoting for the command shell uses single quotes
+    ShellQuote = "'" ;
+
+
+# Log stripped

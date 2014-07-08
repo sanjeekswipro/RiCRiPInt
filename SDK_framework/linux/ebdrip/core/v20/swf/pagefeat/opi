@@ -1,0 +1,44 @@
+%!PS-Adobe
+%%Title: Image replacement
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 1997-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% 
+% This page feature will load both OPI and DCS image replacement code. 
+%
+
+% $HopeName: SWv20!swf:pagefeat:opi(EBDSDK_P.1) $
+
+userdict /ImageDirectories [ 
+	/CommentPath	% Look where the OPI comment says the file should be
+		% Stem mapping can be performed on comment names by adjusting
+		% OPIcommentMapping in a file with a name starting with SW/Usr/CustomOPI
+	/JobPath		% Look in the same directory as the job is being read from
+	(OPI//) (DCS//) % Look in the default directories within the SW directory
+] put
+
+% Install code to support PC format EPS files.
+/HqnPCEPS /ProcSet findresource /initParsing get exec
+
+% Install and initialise DCS comment parsing
+	<<
+	/DCSdirectories //ImageDirectories
+	/DCStranslator /OPIlikeTranslator
+>> /DCSCommentParser /ProcSet findresource /DCSstandardSetup get exec
+
+% Install and initialise OPI comment parsing
+	<<
+	/OPIbaseConfig /OPIconfigSW
+	/OPIdirectories //ImageDirectories
+	/OPI_DCSmatch true
+	/OPIdoImageReplacement true		% enables OPI call-outs from PDF
+>> /HqnOPI /ProcSet findresource /HqnOPIparse get exec
+
+%% NOTE: If The HqnImpose procset is used in addition to this code and
+%	ParseBoundingBox is set to true then the HqnImpose procset call
+%	MUST be made before HqnOPI and DCSCommentParse calls above.
+
+userdict /ImageDirectories undef
+
+%%END
+

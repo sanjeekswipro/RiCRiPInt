@@ -1,0 +1,840 @@
+# Copyright (C) 1999-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam rules for binding flavours to give compilation flags, etc
+#
+# $HopeName: HQNjambits!flavours.jam(EBDSDK_P.1) $
+#
+#
+# Defaults for build flavours
+#
+    BuildFlavours = ASSERT DEBUG COVERAGE OPTIMISE GLOBAL_OPTIMISE PROFILE_BUILD GLOBAL_INLINE_OFF ;
+
+    # Release and Timing are special build flavours and mutally-exclusive
+    BuildFlavours += RELEASE ;
+    BuildFlavours += TIMING ;
+    if $(TIMING) = 1 && $(RELEASE) = 1 {
+      Error Release and Timing build flavours are mutually-exclusive ;
+    }
+
+    switch $(NOOPT) { # Set OPTIMISE from NOOPT
+        case 0 : OPTIMISE ?= 1 ; NOOPT = ;
+        case 1 : OPTIMISE ?= 0 ; NOOPT = ;
+    }
+
+    switch $(GLOBAL) { # Set GLOBAL_OPTIMISE from GLOBAL
+        case 0 : GLOBAL_OPTIMISE ?= 0 ; GLOBAL = ;
+        case 1 : GLOBAL_OPTIMISE ?= 1 ; GLOBAL = ;
+    }
+
+    switch $(PROFILE) { # Set PROFILE_BUILD from PROFILE
+        case 0 : PROFILE_BUILD ?= 0 ; PROFILE = ;
+        case 1 : PROFILE_BUILD ?= 1 ; PROFILE = ;
+    }
+
+    switch $(INLINE) { # Set GLOBAL_INLINE_OFF from INLINE
+        case 0 : GLOBAL_INLINE_OFF ?= 1 ; INLINE = ;
+        case 1 : GLOBAL_INLINE_OFF ?= 0 ; INLINE = ;
+    }
+
+    if $(TIMING) = 1 { # Timing specified on...
+        if $(ASSERT) = 1 {
+            Warning assertions turned on in a timing build: check that this is what you really want ;
+        }
+        else {
+            ASSERT = 0 ;
+        }
+
+        if $(DEBUG) = 1 {
+            Warning debugging turned on in a timing build: check that this is what you really want ;
+        }
+        else {
+            DEBUG = 0 ;
+        }
+
+        if $(COVERAGE) = 1 {
+            Warning coverage turned on in a timing build: check that this is what you really want ;
+        }
+        else {
+            COVERAGE = 0 ;
+        }
+
+        if $(OPTIMISE) = 0 {
+            Warning optimisation turned off in a timing build: check that this is what you really want ;
+        }
+        else {
+            OPTIMISE = 1 ;
+        }
+
+        GLOBAL_OPTIMISE ?= $(OPTIMISE) ;
+        GLOBAL_INLINE_OFF ?= 0 ;
+    }
+    else {
+        TIMING = 0 ;
+    }
+
+    if $(RELEASE) = 1 { # Release specified on...
+        if $(ASSERT) = 1 || $(DEBUG) = 1 || $(COVERAGE) = 1 || $(OPTIMISE) = 0 || $(GLOBAL_INLINE_OFF) = 1 || $(PROFILE_BUILD) = 1 {
+            Error cannot perform a release build with development build flavours ;
+        }
+        else { # We haven't specified development on, so switch them all off
+            ASSERT = 0 ;
+            DEBUG = 0 ;
+            COVERAGE = 0 ;
+            TIMING = 0 ;
+            OPTIMISE = 1 ;
+            GLOBAL_OPTIMISE ?= 1 ;
+            GLOBAL_INLINE_OFF ?= 0 ;
+            PROFILE_BUILD = 0 ;
+        }
+    }
+    else { # Release not specified, or specified off...
+        RELEASE   = 0 ;
+        ASSERT   ?= 1 ;
+        DEBUG    ?= 1 ;
+        COVERAGE ?= 0 ;
+        OPTIMISE ?= 0 ;
+        GLOBAL_OPTIMISE ?= 0 ;
+        GLOBAL_INLINE_OFF ?= 0 ;
+        PROFILE_BUILD ?= 0 ;
+    }
+
+    # Report flavours active and inactive. (PeterC's obfuscated Jam contest entry - enjoy).
+    {
+      local V = 1          0 ;
+      local W = "active  " "inactive" ;
+      local X, i ;
+      for X in 1 2 {
+        local FlavMsg = "# INFO : flavours "$(W[$(X)])":" ;
+        for i in $(BuildFlavours) {
+          if $($(i)) = $(V[$(X)]) { FlavMsg = $(FlavMsg)" "$(i) ; }
+        }
+        Echo $(FlavMsg) ;
+      }
+    }
+
+###############################################################################
+
+#* $(1) subdirs ...
+#* Include further <code>makefile.jam</code> files from the $(1)
+#* listed.  The makefiles are expected to be in the usual
+#* <code>make</code> subdirectory.
+    rule Makefile {
+        local i j ;
+
+        local _Parents_Variants_changed    = $(_Variants_changed:*) ;
+        local _Parents_Variant_val_changed = $(_Variant_val_changed:*) ;
+        local _Variants_changed            = $(_Parents_Variants_changed:*) ;
+        local _Variant_val_changed         = $(_Parents_Variant_val_changed:*) ;
+
+        for i in $(1) {
+            # "Change" to the new directory
+            local CurrentPath = $(CurrentPath)$/$(i) ;
+
+            # Automatically clean out obj directory for makefile
+            CleanDir $(CurrentPath)$/obj ;
+
+            # Create "local" copies of the parent's inherited variables.  The
+            # parent's local variables are not interesting, and can be masked.
+            # Once that is done, we can localise the "Inherited" versions, and
+            # copy them as well.
+
+            local $(LocalInherited_Variables) _hack_EraseVariables ;
+            for j in $(LocalInherited_Variables) { $(j) = $(Inherited-$(j):*) ; }
+            local Inherited-$(LocalInherited_Variables) ;
+            for j in $(LocalInherited_Variables) { Inherited-$(j) = $($(j):*) ; }
+
+            # Look for delayed AddToVars
+            for j in $(_DelayedAddToVar-$(CurrentPath)) {
+                $(j)           +=           $($(CurrentPath)-$(j):*) ;
+                Inherited-$(j) += $(Inherited-$(CurrentPath)-$(j):*) ;
+            }
+
+            # Sort the variants, to get a consistent ordering
+            Variants = $(Variants:Q) ;
+
+            # For the first makefile in the list, we need to fix up the
+            # variants that reflect local changes in the parent's variant
+            # settings.  For subsequent makefiles, we need to account for
+            # the changes by the previous subcompound makefile.  In either
+            # case, the changes required are stored in _Variants_changed and
+            # _Variant_val_changed.  We then set them to empty lists.
+
+            if $(_Variants_changed)    { _Variants_changed 1 ; }
+            if $(_Variant_val_changed) { _Variant_val_changed $(_Variant_val_changed:*) ; }
+            _Variants_changed = ; _Variant_val_changed = ;
+
+
+
+            # Add the current source and include directories to the local
+            # include path to make it easy to override them.
+
+            AddToVar Local : Meta-IncludedExportDirectories : $(CurrentPath) ;
+            local Dirs = $(CurrentPath)$/$(C-SourceDirectories) ;
+            AddToVar Local : C-IncludeDirectories : $(Dirs:E) ;
+            Dirs = $(CurrentPath)$/$(C-ExportDirectories) ;
+            AddUnique $(CurrentPath)-C-ExportDirectories : $(Dirs:E) ;
+            Dirs = $(CurrentPath)$/$(Idl-ExportDirectories) ;
+            AddUnique $(CurrentPath)-Idl-ExportDirectories : $(Dirs:E) ;
+            Dirs = $(CurrentPath)$/$(Resource-ExportDirectories) ;
+            AddUnique $(CurrentPath)-Resource-ExportDirectories : $(Dirs:E) ;
+
+            # Don't try to process a makefile if there is no directory for it
+            # (this is needed for exported source builds which exclude unwanted components)
+            # Note: we check the folder rather than the file so we still get an error for a missing makefile
+            local makedir = $(CurrentPath)$/make ;
+
+            # If this is our first makefile, include any product-level bits first (once!)
+            local ProductBits ;
+            if ! $(GotProductBits) { ProductBits = $(BUILDROOT)$/make$/product.jam ; GotProductBits = 1 ; }
+            if $(ProductBits:E) { 
+                Include $(ProductBits) ; 
+                Makefile "" ;
+            } else if $(makedir:E) {
+                # Warn if a normal makefile is included twice
+                if ! $(Makefile_$(CurrentPath)_Loaded) {
+                    Makefile_$(CurrentPath)_Loaded = 1 ;
+                } else {
+                    Warning "Makefile $(CurrentPath)$/make$/makefile.jam loaded twice" ;
+                }
+
+                # People often use the makefile as a target, without providing
+                # a location for it. The mac cannot handle units of the type
+                # a:b, since it always expects this to lie on a disk called
+                # "a", even if we LOCATE it elsewhere.  Boo!
+
+                DEPENDS <$(CurrentPath)>make$/makefile.jam : <$(CurrentPath)>makefile.jam ;
+                NOTFILE <$(CurrentPath)>make$/makefile.jam ;
+                LOCATE on <$(CurrentPath)>makefile.jam = $(CurrentPath)$/make ;
+
+                # Read in the makefile
+                Include $(CurrentPath)$/make$/makefile.jam ;
+            }
+
+
+
+            # We may have introduced some extra "LocalInherited" variables
+            # during this makefile.  If they are new then they are not being
+            # used by the parent makefile, so blanking them won't hurt.  If they
+            # are not new, then we have our own local copies anyway, so blanking
+            # them won't hurt.  Hence we will blank them (it won't hurt!).
+
+            Inherited-$(_hack_EraseVariables) = ; $(_hack_EraseVariables) = ;
+        }
+
+
+
+        # Now revert the changes made in the most recent subcompound back to the
+        # Inherited versions, and now the parent's Local variables have been
+        # restored, restore the local variant changes as well.
+
+        AddUnique _Variants_changed    : $(_Parents_Variants_changed:*) ;
+        AddUnique _Variant_val_changed : $(_Parents_Variant_val_changed:*) ;
+        if $(_Variants_changed)    { _Variants_changed 1 ; }
+        if $(_Variant_val_changed) { _Variant_val_changed $(_Variant_val_changed:*) ; }
+    }
+
+#* $(1) sub-makefiles ...
+#* Include further Jam makefiles files from the $(1)
+#* listed.  The makefiles are expected to be in the usual
+#* same make subdirectory as the current makefile.
+#* This rule is used to get around a limitation of Jam, that it tokenises the
+#* entire file at once, and can overflow the token buffer limit if there are
+#* too many tokens in the file. The same variants as the current Makefile apply.
+    rule SubMakefile {
+        local i ;
+        for i in $(1) {
+            INCLUDES $(CurrentMakefile) : <$(CurrentPath)>$(i:S=.jam) ;
+            LOCATE on <$(CurrentPath)>$(i:S=.jam) = $(CurrentPath)$/make ;
+            Include $(CurrentPath)$/make$/$(i:S=.jam) ;
+        }
+    }
+
+###############################################################################
+
+#*obsolete
+#*section internal
+    rule Flavoured_Variable      { Error Flavoured_Variable called ; }
+#*obsolete
+#*section internal
+    rule CombineLevels           { Error CombineLevels called ; }
+#*obsolete
+#*section internal
+    rule RecalculateFlavouredVar { Error RecalculateFlavouredVar called ; }
+
+#* $(1) variablename
+#* $(2) value ...
+#* [$(3)] conditions ...
+#* [$(4)] </em><code>Unique</code><em>
+#* This rule is simply a wrapper for
+#* <code>AddToVar Inherited Local :</code> ..., and is used
+#* <em>only</em> in platform-specific <code>all.jam</code> jambits
+#* files.  You probably want to use the @AddToVar rule instead.
+#*seerule AddToVar CompilerVar
+    rule DefaultVar  { AddToVar Inherited Local : $(1:*) : $(2:*) : $(3:*) : $(4:*) ; }
+
+#* $(1) variablename
+#* $(2) value ...
+#* [$(3)] conditions ...
+#* [$(4)] </em><code>Unique</code><em>
+#* This rule is used in compiler jambits.  It has the same syntax as
+#* @DefaultVar, but the variable settings only take effect when the
+#* appropriate compiler is being used.  See @AddToVar for the meanings
+#* of the different arguments.
+#*eg CompilerVar C-Defines : MYDEBUG=1 : Build DEBUG ;
+#*seerule AddToVar DefaultVar
+    rule CompilerVar { AddToVar Inherited Local : $(1:*) : $(2:*) : $(3:*) Compiler $(_CompilerVersion) : $(4:*) ; }
+
+###############################################################################
+
+    rule _AddToVar {
+        local Selector ;
+        local Build Variant Compiler ;
+
+        local i ; for i in $(4) {
+            if $(Selector) {
+                if $($(Selector)) { Error $(Selector) selector specified twice (first as $($(Selector)), second as $(i)) ; }
+                $(Selector) = $(i) ;
+                Selector = ;
+            }
+            else {
+                if ! $(i) in Build Compiler Variant { Error unknown selector '$(i)' ; }
+                Selector = $(i:*) ;
+            }
+        }
+
+        if $(Build) {
+            local OK ;
+            switch $(Build) {
+                case *ASSERT              : OK = $(ASSERT) ;
+                case *DEBUG               : OK = $(DEBUG) ;
+                case *GLOBAL_OPTIMISE     : OK = $(GLOBAL_OPTIMISE) ;
+                case *GLOBAL_INLINE_OFF   : OK = $(GLOBAL_INLINE_OFF) ;
+                case *OPTIMISE            : OK = $(OPTIMISE) ;
+                case *TIMING              : OK = $(TIMING) ;
+                case *COVERAGE            : OK = $(COVERAGE) ;
+                case *RELEASE             : OK = $(RELEASE) ;
+                case *PROFILE_BUILD       : OK = $(PROFILE_BUILD) ;
+                case * : Error Unknown 'Build' type '$(Build)' ;
+            }
+            switch $(OK)$(Build) {
+                case 1Non_* : OK = 0 ;
+                case 0Non_* : OK = 1 ;
+            }
+            Build = $(OK:*) ;
+        }
+
+        if $(Build) != 0 {
+            local Var = $(2:*) ; _Flavoured_Variable $(Var:*) ;
+
+            if $(Compiler) {
+                _Compiler_Variable $(Var:*) ;
+                Var = _Compiler_$(Compiler)-$(Var) ; _Flavoured_Variable $(Var:*) ;
+            }
+
+            if $(Variant) {
+                _Variant_Variable $(Var:*) ;
+                Var = _IfVariant_$(Variant)-$(Var) ;
+            }
+            else {
+                Var = _Fixed-$(Var) ;
+            }
+
+            LocalInherited_Variable $(Var:*) ;
+
+            if $(6) {
+                local P = $(CurrentPath)$/$(6) ;
+                AddUnique _DelayedAddToVar-$(P) : $(Var:*) ;
+                Var = $(P)-$(Var) ;
+            }
+
+            if $(7) = Set && $(5) { Error The fifth argument to ReplaceVar is reserved ; }
+
+            for i in $(1) {
+                switch $(i) {
+                    case Local :
+                        switch $(7) {
+                            case Add :
+                                if $(5) = Unique { _Add_L_U $(Var:*) : $(3:*) ; }
+                                else             { _Add_L   $(Var:*) : $(3:*) ; }
+                            case Set :
+                                _Set_L $(Var:*) : $(3:*) ;
+                            case * : Error Never call _AddToVar directly ;
+                        }
+
+                        # Hackity hack hack hack
+                        MakeSuffix Suffix : Variant Fixed Compiler ;
+                        MakeSuffix NV-Suffix : Fixed Compiler ;
+
+                    case Inherited :
+                        switch $(7) {
+                            case Add :
+                                if $(5) = Unique { _Add_I_U $(Var:*) : $(3:*) ; }
+                                else             { _Add_I   $(Var:*) : $(3:*) ; }
+                            case Set :
+                                _Set_I $(Var:*) : $(3:*) ;
+                            case * : Error Never call _AddToVar directly ;
+                        }
+                }
+            }
+        }
+    }
+# Rules to add some elements to a variable's value
+#
+#   AddToVar   <inheritance> : <variable> : <value> [ : <conditions> [ : "Unique" [ : <subdir> ... ] ] ] ;
+#   ReplaceVar <inheritance> : <variable> : <value> [ : <conditions> [ :          [ : <subdir> ... ] ] ] ;
+#
+
+#* $(1) inheritance
+#* $(2) variablename
+#* $(3) value ...
+#* [$(4)] conditions ...
+#* [$(5)] </em><code>Unique</code><em>
+#* [$(6)] subdirs ...
+#* Add the $(3) to $(2)'s value list.
+#*
+#* The $(1) can be one or both of
+#* <code>Inherited</code> and <code>Local</code>.
+#* <code>Inherited</code> means that the variable change takes place in
+#* all sub-makefiles of the current one.  <code>Local</code> means that
+#* the variable change takes place in the current makefile.  Typically,
+#* <code>Inherited</code> is of little use on its own.
+#*
+#* $(4), which is optional, specifies under what conditions the
+#* variable change should take place.  It is a list of
+#* <em>selector</em>, <em>value</em> pairs.  <em>selector</em> may be
+#* one of <code>Build</code>, <code>Compiler</code> and
+#* <code>Variant</code>.  The value for <code>Build</code> can be
+#* <code>ASSERT</code>, <code>DEBUG</code>, <code>OPTIMISE</code>,
+#* <code>GLOBAL_OPTIMISE</code>, <code>GLOBAL_INLINE_OFF</code>
+#* <code>PROFILE_BUILD</code>,
+#* <code>RELEASE</code>, <code>COVERAGE</code> or <code>TIMING</code>,
+#* optionally prefixed with <code>Non_</code>.
+#*
+#* The value for <code>Variant</code> can be any variant name, in which
+#* case the variable change takes place when that variant is both
+#* <em>implemented</em> and <em>required</em>.  The variant name can be
+#* prefixed with <code>Non_</code>, in which case the change takes place
+#* when the variant is implemented but <em>not</em> required, or is
+#* required with the value <code>0</code>.
+#* Otherwise, it may be suffixed with either
+#* <code>=</code><em>value</em> or <code>~</code><em>value</em>.  The
+#* first tests that the variant has that value (a comma-separated list),
+#* whilst the second tests that the variant <em>contains</em> that value
+#* (is a member of the value list).
+#*
+#* <code>Compiler</code> should be followed by a compiler name (such as
+#* those supplied to the @CompilerVersion rule).
+#*
+#* If <code>Unique</code> is specified, the rule will test <em>at the
+#* current</em> time to see if the $(3) is already in the value of
+#* $(2), and add it only if it's not already there.  Because it is not
+#* possible to say what the value of the variable will be in other
+#* compounds, which may implement other variants, etc., it is not
+#* possible to guarantee the behaviour when using this option.
+#* Consequently, its use is discouraged.
+#*
+#* If $(6) are specified, then the variable change will be delayed until
+#* makefiles for those $(6) are parsed.  The change will then be
+#* implemented immediately before the makefiles concerned are parsed.
+#*eg AddToVar Inherited Local : C-Defines : MYFLAG=1 : Build DEBUG Variant customised=HARLQN ;
+#*seerule DefaultVar CompilerVar CompilerVersion ReplaceVar
+    rule AddToVar   { _AddToVar $(1:*) : $(2:*) : $(3:*) : $(4:*) : $(5:*) : $(6:*) : Add ; }
+
+#* $(1) inheritance
+#* $(2) variablename
+#* $(3) value ...
+#* [$(4)] conditions ...
+#* [$(5)] reserved
+#* [$(6)] subdirs ...
+#* Other than the fifth argument, which is $(5), the function is
+#* identical in use to @AddToVar.  However, instead of adding the $(3)
+#* to $(2), it replaces those value parts of $(2) that are specified by
+#* the $(4).  Because it can only change the value for one set of $(4)
+#* at a time, it is of limited use.
+#*seerule AddToVar
+    rule ReplaceVar { _AddToVar $(1:*) : $(2:*) : $(3:*) : $(4:*) :        : $(6:*) : Set ; }
+
+###############################################################################
+
+# Some things just cannot be done, so we allow ourselves a couple of hacks :-)
+    rule MakeSuffix {
+        if $(RELEASE) = 1 {
+            Join $(1) : - : rel $(_$(2)-Suffix:*) ;
+        }
+        else if $(TIMING) = 1 {
+            Join $(1) : - : tm $(_$(2)-Suffix:*) ;
+        }
+        else if $(COVERAGE) = 1 {
+            Join $(1) : - : c $(_$(2)-Suffix:*) ;
+        }
+        else if $(ASSERT) = 1 {
+            Join $(1) : - : a   $(_$(2)-Suffix:*) ;
+        }
+        else {
+            Join $(1) : - : na  $(_$(2)-Suffix:*) ;
+        }
+    }
+
+
+#* $(1) variablename
+#* Lazily set each $(1) in the list to be combination of
+#* <code>_Variant-$(1)</code>, <code>_Fixed-$(1)</code> and
+#* <code>_Compiler-$(1)</code>.  This is done using lazy evaluation
+#* syntax, and so only needs to be done once (the first time the $(1) is
+#* encountered by the system).
+    rule _Flavoured_Variable {
+        local i ; for i in $(1) {
+            $(i) = $(_Variant-$(i):&) $(_Fixed-$(i):&) $(_Compiler-$(i):&) ;
+        }
+    }
+
+#* $(1) variablename ...
+#* Add each $(1) to the list of variables to be made local to a makefile.
+#*section internal
+    rule LocalInherited_Variable {
+        AddUnique LocalInherited_Variables : $(1:*) ;
+        _hack_EraseVariables += $(1:*) ;
+    }
+
+
+# _Add_L <variable> ... : <value> ... ;
+    rule _Add_L { $(1) += $(2:*) ; }
+# _Add_I <variable> ... : <value> ... ;
+    rule _Add_I { Inherited-$(1) += $(2:*) ; }
+# _Add_L_U <variable> ... : <value> ... ;
+    rule _Add_L_U { local i j ; for i in $(1) { for j in $(2) { if ! $(j) in $($(i)) { _Add_L $(i:*) : $(j:*) ; } } } }
+# _Add_I_U <variable> ... : <value> ... ;
+    rule _Add_I_U { local i j ; for i in Inherited-$(1) { for j in $(2) { if ! $(j) in $($(i)) { $(i) += $(j:*) ; } } } }
+# _Set_L <variable> ... : <value> ... ;
+    rule _Set_L { $(1) = $(2:*) ; }
+# _Set_I <variable> ... : <value> ... ;
+    rule _Set_I { Inherited-$(1) = $(2:*) ; }
+# _Add_LI <inheritance> : <variable> ... : <value> ... ;
+    rule _Add_LI {
+        local i ; for i in $(1) { switch $(i) {
+            case Local     : _Add_L $(2:*) : $(3:*) ;
+            case Inherited : _Add_I $(2:*) : $(3:*) ;
+        } }
+    }
+# _Set_LI <inheritance> : <variable> ... : <value> ... ;
+    rule _Set_LI {
+        local i ; for i in $(1) { switch $(i) {
+            case Local     : _Set_L $(2:*) : $(3:*) ;
+            case Inherited : _Set_I $(2:*) : $(3:*) ;
+        } }
+    }
+# _Add_LI_U <inheritance> : <variable> ... : <value> ... ;
+    rule _Add_LI_U {
+        local i ; for i in $(1) { switch $(i) {
+            case Local     : _Add_L_U $(2:*) : $(3:*) ;
+            case Inherited : _Add_I_U $(2:*) : $(3:*) ;
+        } }
+    }
+
+
+# A rule to indicate a compound requires a variant
+#
+#   RequiresVariant <variantname> ... [ : <value> ] ;
+#
+#   The job of this rule is to stitch together the _IfVariant_*Z*_Var variables
+#   to produce a _Variant_Z_Var variable for every Var in $(_VariantVariables),
+#   where the Zs are given by the arguments to this function, and the
+#   appropriate *Z*s are given by Variant_Z.
+#
+#   either a) Set _Variant_Var = $=$(_Variant_$(Variants)-Var) for every Var
+#             when first encountered and just update $(Variants)
+#   or     b) Set _Variant_Var = $(_Variant_$(Variants)-Var:&) every time
+#             $(Variants) changes.
+#
+#   (a) is better for (lookups/compound) << $(_VariantVariables)
+#   (b) is better for small $(_VariantVariables).
+#
+    RequiresVariantMethod = b ; # Try changing this to compare performance
+
+#* $(1) variants ...
+#* [$(2)] value ...
+#* Enable the $(1).  If $(2) is specified, let each of the $(1) have
+#* $(2).  See the commentary on @AddToVar for details on what effect
+#* this has.  You may use @ImplementsVariant to mark a compound as being
+#* affected by the variant.
+#*seerule AddToVar ImplementsVariant
+#*seevar Variants
+    rule RequiresVariant {
+        local State = $(2) ; State ?= 1 ;
+        AddUnique _VariantsEncountered : $(1:*) ;
+        AddUnique _AllVariantsRequired : $(1)=$(State) ;
+        AddUnique _Variant_val_changed : $(1:*) ;
+        LocalInherited_Variable Variant_$(1) ;
+        _Set_LI Local Inherited : Variant_$(1) : $(State) ;
+        _Variant_val_changed $(1:*) ;
+    }
+    rule _Variant_val_changed {
+        local i ; for i in $(1) {
+            local V = $(Variant_$(i):*) ;
+            if $(V) in 0 { _VariantSpec_$(i) = Non_$(i) ; }
+            else { local J ; Join J : , : $(V:*) ; _VariantSpec_$(i) = $(i:*) $(i)~$(V) $(i)=$(J) ; }
+            _Variant_spec_changed $(i:*) ;
+        }
+        MakeSuffix Suffix : Variant Fixed Compiler ;
+    }
+if $(RequiresVariantMethod) = a {
+    rule _Variant_Variable_Req {
+        local i ; for i in $(_VariantsEncountered) {
+            _Variant_$(i)-$(1) = $=$(_IfVariant_$(_VariantSpec_$(i))-$(1)) ;    # SLOW access!
+        }
+    }
+    rule _Variant_spec_changed {                                                # FAST setup!
+        if $(_Variant-_CompilerNames) != $(_Old_Variant-_CompilerNames) {
+            _Variant_compilers_changed dummy ;
+            _Old_Variant-_CompilerNames = $(_Variant-_CompilerNames) ; # NOT LAZY
+        }
+    }
+}
+else {
+    rule _Variant_Variable_Req {
+        local i ; for i in $(_VariantsEncountered) {
+            _Variant_$(i)-$(1) = $(_IfVariant_$(_VariantSpec_$(i))-$(1):&) ;    # FAST access!
+        }
+    }
+    rule _Variant_spec_changed {
+        local i ; for i in $(_Variant_Variables) {
+            _Variant_$(1)-$(i) = $(_IfVariant_$(_VariantSpec_$(1))-$(i):&) ;    # SLOW setup!
+        }
+        if $(_Variant-_CompilerNames) != $(_Old_Variant-_CompilerNames) {
+            _Variant_compilers_changed dummy ;
+            _Old_Variant-_CompilerNames = $(_Variant-_CompilerNames) ; # NOT LAZY
+        }
+    }
+}
+
+    rule _Variant_Variable {
+        local i ; for i in $(1) {
+            if ! $(i) in $(_Variant_Variables) {
+                _Variant_Variables += $(i:*) ;
+                _Variant_Variable_Impl $(i:*) ;
+                _Variant_Variable_Req $(i:*) ;
+            }
+        }
+    }
+
+
+# A rule to indicate a compound implements a variant
+#
+#   ImplementsVariant <variantname> ... [ : <inheritance> ] ;
+#
+#   The job of this rule is to stitch together the _Variant_Z_Var variables to
+#   produce a _Variant_Var variable for every Var in $(_VariantVariables), where
+#   the Zs are given by the arguments to this function, and stored in
+#   $(Variants).
+#
+#   either a) Set _Variant_Var = $=$(_Variant_$(Variants)-Var) for every Var
+#             when first encountered and just update $(Variants)
+#   or     b) Set _Variant_Var = $(_Variant_$(Variants)-Var:&) every time
+#             $(Variants) changes.
+#
+#   (a) is better for (lookups/compound) << $(_VariantVariables)
+#   (b) is better for small $(_VariantVariables).
+#
+    ImplementsVariantMethod = b ; # Try changing this to compare performance
+
+    LocalInherited_Variable Variants ;
+#* $(1) variants ...
+#* [$(2)] inheritance
+#* Make the current makefile's contents (or those specified by $(2)
+#* (which defaults to <code>Local</code>); see @AddToVar for details)
+#* build in alternative ways depending on the value of $(1).
+#* @RequiresVariant may be used to choose which <em>variant</em> is
+#* required.  See @AddToVar to find out how to change the behaviour of
+#* building based on the value of a variant.
+#*seerule AddToVar RequiresVariant
+#*seevar Variants
+    rule ImplementsVariant {
+        local LI = $(2:*) ; LI ?= Local ;
+        AddUnique _VariantsEncountered : $(1:*) ;
+        _Add_LI_U $(LI:*) : Variants : $(1:*) ;
+
+        # Sort the variants, to get a consistent ordering.
+        if Local in $(LI) { Variants = $(Variants:Q) ; }
+
+        _Variants_changed $(1:*) ;
+        _Variant_val_changed $(1:*) ;
+            # (If the variant hasn't been encountered, we still need to make
+            # sure the "requires" bit is set up for Non_variant)
+        _Variants_changed = 1 ;
+    }
+if $(ImplementsVariantMethod) = a {
+    rule _Variant_Variable_Impl {
+        _Variant-$(1) = $=$(_Variant_$(Variants)-$(1)) ;                        # SLOW access!
+    }
+    rule _Variants_changed {                                                    # FAST setup!
+        if $(_Variant-_CompilerNames) != $(_Old_Variant-_CompilerNames) {
+            _Variant_compilers_changed dummy ;
+            _Old_Variant-_CompilerNames = $(_Variant-_CompilerNames) ; # NOT LAZY
+        }
+        MakeSuffix Suffix : Variant Fixed Compiler ;
+    }
+}
+else {
+    rule _Variant_Variable_Impl {
+        _Variant-$(1) = $(_Variant_$(Variants)-$(1):&) ;                        # FAST access!
+    }
+    rule _Variants_changed {
+        local i ; for i in $(_Variant_Variables) {
+            _Variant_Variable_Impl $(i:*) ;                                     # SLOW setup!
+        }
+
+        if $(_Variant-_CompilerNames) != $(_Old_Variant-_CompilerNames) {
+            _Variant_compilers_changed dummy ;
+            _Old_Variant-_CompilerNames = $(_Variant-_CompilerNames) ; # NOT LAZY
+        }
+        MakeSuffix Suffix : Variant Fixed Compiler ;
+    }
+}
+
+
+# Rule for a makefile to specify that it requires a particular compiler on a
+# particular platform
+#
+#   CompilerVersion <inheritance> : <compiler> : <version> : <host> : <target> : <conditions> ;
+#
+    LocalInherited_Variable ConfiguredCompilers ;
+#* $(1) inheritance
+#* $(2) compilertype
+#* $(3) version
+#* [$(4)] host
+#* [$(5)] target
+#* [$(6)] conditions ...
+#* For those makefiles specified by $(1) (see @AddToVar for discussion
+#* on $(1)), use compiler $(3) for building $(2) source.  See
+#* documentation on the individual compilers for which values of $(2)
+#* you can use.  $(4) and $(5) are both two-element lists.  The first
+#* element is the operating system, the second is the architecture.  If
+#* you don't specify the architecture or either, then <code>all</code>
+#* is assumed (so the default is to use the compiler when compiling on
+#* platforms <code>all-all</code> for platforms <code>all-all</code>.
+#* The $(6) argument is identical in use to the argument of the same name for
+#* @AddToVar.
+#*eg CompilerVersion Inherited Local : C : msvcnt_5_0 : win_32 : : Variant msvc=5_0 ;
+#*seerule AddToVar
+#*seevar EnabledCompilers
+    rule CompilerVersion {
+        local HostOS = $(4[1]) ; local HostArch = $(4[2]) ;
+        local TargOS = $(5[1]) ; local TargArch = $(5[2]) ;
+        HostOS ?= all          ; HostArch ?= all ;
+        TargOS ?= all          ; TargArch ?= all ;
+        if $(HostOS)-$(HostArch) in $(JamHostPlat)
+        && $(TargOS)-$(TargArch) in $(JamTargetPlat) {
+            AddToVar $(1:*) : _CompilerNames       : $(3:*) : $(6:*) : Unique ;
+            if $(_CompilerNames) != $(_Old_CompilerNames) {
+                _Variant_compilers_changed dummy ;
+                _Old_CompilerNames = $(_CompilerNames) ;
+            }
+
+            if ! $(3) in $(ConfiguredCompilers) {
+                CompilerBits $(3:*) ;
+                _Add_LI $(1:*) : ConfiguredCompilers : $(3:*) ;
+            }
+
+            AddToVar $(1:*) : CompilerVersion-$(2) : $(3:*) : $(6:*) : Unique ;
+            AddToVar $(1:*) : EnabledCompilers     : $(2:*) : $(6:*) : Unique ;
+        }
+    }
+
+    rule _Compiler_Variable {
+        local i ; for i in $(1) {
+            if ! $(i) in $(_Compiler_Variables) {
+                _Compiler_Variables += $(i:*) ;
+                _Compiler_Variable_set $(i:*) ;
+            }
+        }
+    }
+
+    rule _Compiler_Variable_set {
+        _Compiler-$(1) = $(_Compiler_$(_CompilerNames)-$(1):&) ;                # FAST access!
+    }
+
+    rule _Variant_compilers_changed {
+        local i ; for i in $(_Compiler_Variables) {
+            _Compiler_Variable_set $(i:*) ;
+        }
+        MakeSuffix Suffix : Variant Fixed Compiler ;
+        MakeSuffix NV-Suffix : Fixed Compiler ;
+    }
+
+
+#* Avoid duplicating condition logic by setting a value using AddToVar
+#* Optimise conditions by saving result (must implement all relevant
+#* variants in the calling Makefile for this to work).
+#* 
+#* $(1) Variablename
+#* $(2) Conditions ...
+#*
+#* Variable name $(1) is set to <code>yes</code> or <code>no</code>, depending
+#* on whether build
+#* regime conditions $(2) are true or not, according to currently implemented
+#* variants, builds, compilers, etc. Conditions $(2) have the same syntax the
+#* conditions on @AddToVar and @ReplaceVar.
+#*seerule AddToVar ReplaceVar
+#*section rulecons
+    rule TestConditions {
+        local _Conditions_ ; Join _Conditions_ : - : __Conditions $(2) ;
+        if ! $($(_Conditions_)) {
+            ReplaceVar Local : $(_Conditions_) : yes : $(2) ;
+            if ! $($(_Conditions_)) {
+              ReplaceVar Local : $(_Conditions_) : no ;
+            }
+        }
+        $(1) = $($(_Conditions_)) ;
+    }
+
+# Random variables that just don't fit
+    Objdir = $=obj$(FS)$(TargetOS)-$(TargetArch)$(FS)$(Suffix)$(FS) ;
+    local i ; for i in Dll DllStub Dylib Exec Lib Object RCOutput {
+        C-$(i)-Directory      = $=$(Objdir)$(CompilerVersion-C) ;
+        C++-$(i)-Directory    = $=$(Objdir)$(CompilerVersion-C++) ;
+        mixedC-$(i)-Directory = $=$(Objdir)$(CompilerVersion-mixedC) ;
+    }
+    GeneratedC-Directory     = $=obj$(FS)c_src$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)misc ;
+    GeneratedC-NV-Directory  = $=obj$(FS)c_src$(FS)$(NV-Suffix)$(FS)$(CompilerVersion-C)$(FS)misc ;
+    Idl2CppOutput-Directory  = $=obj$(FS)c_src$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)$(CompilerVersion-Idl2Cpp) ;
+    Idl2HhOutput-Directory   = $=obj$(FS)c_src$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)$(CompilerVersion-Idl2Cpp) ;
+    Idl2JavaOutput-Directory = $=obj$(FS)java_src$(FS)$(Suffix) ;
+    JarOutput-Directory      = $=obj$(FS)$(JavaVirtualMachine)$(FS)$(Suffix)$(FS)$(CompilerVersion-Java) ;
+    JavacOutput-Directory    = $=obj$(FS)$(JavaVirtualMachine)$(FS)$(Suffix)$(FS)$(CompilerVersion-Java) ;
+
+    CompilerVar MidlOutput-Suffix       : .c ;
+    CompilerVar MidlHhOutput-Suffix       : .h ;
+    MidlOutput-Directory     = $=obj$(FS)c_src$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)$(CompilerVersion-Midl) ;
+    MidlHhOutput-Directory     = $=obj$(FS)c_src$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)$(CompilerVersion-Midl) ;
+
+    Libdir = $=lib$(FS)$(TargetOS)-$(TargetArch)$(FS)$(Suffix)$(FS) ;
+    
+    # Force "simple" subfolder names for third-party binary libraries included in exported source drops
+    # Only 'release' and 'debug, not asserted' variants should be built as routine, since these cover
+    # the likely user build configs  ( need both to handle release/debug variants of our mm library ).
+    CommonLibdir = $=lib$(FS)$(TargetOS)-$(TargetArch)$(FS) ;
+    if $(RELEASE) = 1 {
+        C-TPB-Directory      = $=$(CommonLibdir)rel$(FS)$(CompilerVersion-C) ;
+    } else {
+        C-TPB-Directory      = $=$(CommonLibdir)not-rel$(FS)$(CompilerVersion-C) ;
+    }
+    
+    TargetPlat = $=$(TargetOS)-$(TargetArch) ;
+    
+# Rule to create C file for all required variants.
+  actions quietly _VariantsC bind Target {
+     echo ...GENERATING variants C file $(<) ...
+     $(Perl) -e $(ShellQuote)print qq(/* Machine-generated file. Do not edit. */\nchar *GG_build_variants[] = {\n);print map { chr(34).$_.chr(34).qq(,\n) } sort @ARGV;print qq(0};\n);$(ShellQuote) $(AllVariants:*) > $(Target)
+  }
+  rule VariantsC {
+      MakeGristed Target : $(1) : $(CurrentPath) ;
+      DirectoryFor $(Target) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+      CleanFile $(Target) ;
+      FloatingDepends $(Target) ;
+      AllVariants on $(Target) = $(_AllVariantsRequired) ;
+      _VariantsC $(Target) ;
+  }
+
+
+# Log stripped

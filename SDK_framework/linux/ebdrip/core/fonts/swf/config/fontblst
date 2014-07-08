@@ -1,0 +1,27 @@
+%!PS
+% Copyright (C) 2011 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: COREfonts!swf:config:fontblst(EBDSDK_P.1) $
+%
+
+% This file is used to define a UID black list. The dictionary
+% /FontUIDBlackList is defined in status dictionary. The keys of the
+% dictionary entries are UID numbers. When a font is defined, if the font
+% uses any such UID, the rip replaces that UID with a new unique value. Thus
+% an entry in the black list prevents a particular UID being used for any
+% font.
+%
+% Where font caching problems are due to the incorrect use of a UniqueID
+% values in fonts, create an entry into the /FontUIDBlackList dictionary
+% defined below.
+%
+% It does not matter what value is associated to the UID key. The values are
+% not currently used.
+%
+% The dictionary keys must be integers - not names with digit characters.
+%
+
+statusdict /FontUIDBlackList <<
+  264293 true
+>> put
+
+%%EOF

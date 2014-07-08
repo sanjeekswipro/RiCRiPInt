@@ -1,0 +1,11 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:linux-pentium:all.jam(trunk.4) $
+#
+
+  TargetOS   ?= linux ;
+  TargetArch ?= pentium ;
+
+
+# Log stripped

@@ -1,0 +1,103 @@
+Perl -Sx "{0}" {"Parameters"}; Exit 
+
+#!/usr/local/bin/perl
+#######################################################################
+#	Project	:	GUSI				-	Grand Unified Socket Interface
+#	File		:	Internalize.pl	-	Delete internal names
+#	Author	:	Matthias Neeracher
+#	Language	:	Perl
+# 
+#  $Log: Internalize,v $
+#  Revision 1.2  1999/04/23  08:46:12  peterg
+#  Automatic checkin:
+#  changed attribute _comment to '#  '
+#
+#  Revision 1.2  1994/12/30  20:20:56  neeri
+#  Add PPC support.
+#
+#  Revision 1.1  1994/02/25  01:24:25  neeri
+#  Initial revision
+#
+#	Revision 0.5  1993/08/09  00:00:00  neeri
+#	Report missing externals
+#	
+#	Revision 0.4  1993/06/01  00:00:00  neeri
+#	Allow Socket:: SocketDomain:: and DeviceSocketDomain:: to stay
+#	
+#	Revision 0.3  1993/02/07  00:00:00  neeri
+#	Allow GUSIwithÉ 
+#	
+#	Revision 0.2  1992/11/15  00:00:00  neeri
+#	Allow FSp and FSSpec
+#	
+#	Revision 0.1  1992/10/18  00:00:00  neeri
+#	Separate strict variant
+#	
+#######################################################################
+
+($dir,$generate) = splice(@ARGV, 0, 2);
+
+open(EXT, "GUSI.ext") 	|| die "Can't open file \"GUSI.ext\"";
+
+if ($generate eq "68K") {
+	open(DN,	 ">:$dir:GUSI.dn")	|| die "Can't open file \":$dir:GUSI.dn\"";
+	open(DNC, ">:$dir:GUSI_C.dn")	|| die "Can't open file \":$dir:GUSI_C.dn\"";
+} else {
+	open(EXPORT,">:$dir:GUSI.export") || die "Can't open file \":$dir:GUSI.export\"";
+}
+
+while (<EXT>)	{
+	($Target,$Symbol) = split;
+	next if ($Target !~ $generate);
+	$Extern{$Symbol} = 1;
+}
+
+while (<>)	{
+	if ($generate eq "68K") {
+		@F = split;
+		
+		next 	unless	$F[4] eq "ext";
+	}Êelse {
+		chop;
+		@F = ($_);
+	}
+	
+	if ($Extern{$F[0]}) {
+		$Extern{$F[0]} = -1;
+		
+		goto do_export;
+	}
+
+	if ($F[0] =~ /GUSI/) {
+		goto do_export;
+	}
+	
+	if (($F[0] =~ /__9TFileSpec/) 
+	 || ($F[0] =~ /__7Feature/) 
+	 || ($F[0] =~ /__6Socket/) 
+	 || ($F[0] =~ /__12SocketDomain/) 
+	 || ($F[0] =~ /__16FileSocketDomain/) 
+	 ||Ê($F[0] =~ /PPCSocket/)
+	 ||Ê($F[0] =~ /TCPSocket/)
+	 ||Ê($F[0] =~ /UDPSocket/)
+	 ||Ê($F[0] =~ /INETSocket/)
+	 || ($F[0] =~ /FSp/) 
+	 || ($F[0] =~ /2FSSpec/)
+	) {
+		print DNC "-dn $F[0]\n" if ($generate eq "68K");
+	} else {
+		print DN "-dn $F[0]\n" if ($generate eq "68K");
+		next;
+	}
+do_export:
+	$exports .= ",$F[0]" if ($generate eq "PPC");
+}
+
+foreach $i (sort keys Extern) {
+	print STDERR "Function \"$i\" apparently not implemented!\n" unless ($Extern{$i} == -1);
+}
+
+if ($generate eq "PPC") {
+	$exports =~ /^.(.*)/;
+	print EXPORT $1;
+}

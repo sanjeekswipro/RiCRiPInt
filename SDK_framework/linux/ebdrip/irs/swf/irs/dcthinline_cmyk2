@@ -1,0 +1,69 @@
+%!PS
+%%Title: DCThinLine_CMYK2
+% Copyright (c) 2013 Global Graphics Software Ltd. All Rights Reserved
+
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+currentglobal true setglobal
+
+%% DCLineThin_CMYK2
+%%			 size			gradient 		frequency	
+%%           cell x	cell y	line x	line y	space x	space y		angle	lpi		max 	actual screen levels
+%% black     16		8		8		8		8		8			45		106.07	384		256
+%% yellow    16		12		4		12		4		12			71.57	158.11	576		256
+%% cyan      16		8		4		1		16		4			14.04	154.62	384		256
+%% magenta   16		6		0		4		0		6			90		100		288		256
+%%
+/DCThinLine_CMYK2
+<<
+  /HalftoneType 5
+  /HalftoneName /DCThinLine_CMYK2
+
+  /Cyan
+  <<
+    /HalftoneType 6
+    /Width 16
+    /Height 12
+    /Depth 2
+    /Thresholds (%os%/Irs/DCThinLine_2bit_Cyan.bin) (r) file
+  >>
+
+  /Magenta
+  <<
+    /HalftoneType 6
+    /Width 16
+    /Height 8
+    /Depth 2
+    /Thresholds (%os%/Irs/DCThinLine_2bit_Magenta.bin) (r) file
+  >>
+
+  /Yellow
+  <<
+    /HalftoneType 6
+    /Width 16
+    /Height 6
+    /Depth 2
+    /Thresholds (%os%/Irs/DCThinLine_2bit_Yellow.bin) (r) file
+  >>
+
+  /Black
+  <<
+    /HalftoneType 6
+    /Width 16
+    /Height 8
+    /Depth 2
+    /Thresholds (%os%/Irs/DCThinLine_2bit_Black.bin) (r) file
+  >>
+
+  /Default
+  << /HalftoneType 199 /Halftone /DCThinLine_CMYK2 /HalftoneColor /Black >>
+
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+
+setglobal % restore

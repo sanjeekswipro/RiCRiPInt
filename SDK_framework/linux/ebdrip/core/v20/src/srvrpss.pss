@@ -1,0 +1,29 @@
+% /* $HopeName: SWv20!src:srvrpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+
+statusdict begin
+  serverdict begin
+
+    /protect {} def  % in serverdict
+    /commhash 0 def  % in serverdict
+
+    /printerstatus {
+      printerstatus dup -1 eq {
+%       pop usertime 6000 add { dup usertime le { pop exit } if } loop
+        2 { resetprinter { exit } if } repeat
+        printerstatus dup -1 eq {
+          UVS(%%[ PrinterError: controller not responding ]%%) = flush
+        } if
+      } if
+    } bd % in serverdict
+
+  end % serverdict
+end % statusdict
+
+% end of srvrpss.pss

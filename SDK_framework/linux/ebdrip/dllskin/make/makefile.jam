@@ -1,0 +1,77 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for dllskin interface
+#
+# $HopeName: SWdllskin!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+ImplementsVariant C++_ORB dll jpeg parallel security has_fwos ;
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+DependsOn all : dllskin ;
+
+if $(C-Compiler-Family) = msvc
+{
+  AddToVar Local : C-Defines : _WINNT _WIN32_WINNT=0x400 ;
+}
+
+C-IncludeExportDirectories
+  calibration
+  checksum
+  core
+  dllfuncs
+  dlliface
+  fwos
+  HQN_CPP_CORBA
+  licence
+  libjpeg
+  libjpeg-turbo
+  mps
+  omg_idl
+  $(PluginInterface)
+  security
+  sign
+  standard
+  timer
+  unicode
+: .. ;
+
+Library dllskin :
+  dllskin.c
+  pdllskin.c
+  ptickle.c
+;
+
+if $(Variant_dll) = d
+{
+  Library dllskin :
+    psigndev.c
+    signdev.c
+  ;
+}
+
+if $(Variant_security) = ldklic || $(Variant_security) = lic
+{
+  Library dllskin :
+    lsfns.cpp
+  ;
+}
+
+if $(MACOSX)
+{
+  Library dllskin :
+    dllskin.r
+  ;
+  Search dllskin.r : $(CurrentPath)$/macos$/mac ;
+}
+
+
+
+# Log stripped

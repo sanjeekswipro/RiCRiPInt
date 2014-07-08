@@ -1,0 +1,79 @@
+# =============================================================================
+# $HopeName: HQNgenericxml!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.29.11.1.1.1 2013/12/19 11:24:21 anon Exp $
+# 
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+    ImplementsVariant xml ;
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+# Need to figure out a few additional things before turning this on
+#
+#    AddToVar Local : SplintOptions :
+#        +checks                 # The highest useful level of checking, probably
+#        +partial                # Only part of the source code - i.e. just 1 file
+#        -no-effect              # Don't complain about EMPTY_STATEMENT etc.
+#        +bool-int               # SW uses various int types as bool type
+#    ;
+
+    DependsOn all : libgenxml ;
+
+    # Generic routines
+    LIBFILES =
+        # Our generic code, parser independant
+        xmlg.c
+        xmlgnsblock.c
+        xmlgattrs.c
+        xmlgfunctable.c
+        xmlgintern.c
+        xmlgfilterchain.c
+        xmlgfilter.c
+    ;
+
+    ######################################
+    # NOTE: The *ONLY* reason we add standard is so that we can load in
+    # std.h and hqtypes.h. This is so we can get to HQASSERT,
+    # uint8, Bool, TRUE, FALSE and uint32.
+    # See xmlgassert.h and xmlgtype.h for details.
+    #
+    CompilerVar C-Defines : XMLG_SW_COMPAT ;
+
+    IncludeExportDirectories Local :
+      standard
+      unicode
+      uri
+      mps
+    : .. ;
+
+    ######################################
+    # Only build the expat backend if we are specifying expat as the XML
+    # parser for the core.
+
+    if libexpat in $(Variant_xml)
+    {
+        LIBFILES +=
+            gexpat.c
+        ;
+
+      IncludeExportDirectories Local :
+        libexpat
+      ;
+
+      # You only need this because the default is to assume a DLL - which
+      # I have over ridden
+      CompilerVar C-Defines : XML_STATIC ;
+      Library libgenxml : $(LIBFILES) ;
+      Makefile
+        libexpat
+      ;
+      C-LinkWithLibraries libgenxml : libexpat : libexpat ;
+    }
+
+# =============================================================================
+# Log stripped

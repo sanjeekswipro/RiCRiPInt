@@ -1,0 +1,26 @@
+% /* $HopeName: SWv20!src:comntpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% THIS IS A PSS FILE.
+% DO NOT USE APOSTROPHES IN COMMENTS
+% DO NOT USE \( OR \) IN STRINGS
+%
+% Log stripped
+
+
+(%%dict) 8 $ldict def
+(%%dict) load begin
+  (%%actions) 64 $ldict def
+end
+
+(%dict) 8 $ldict def
+(%dict) load begin
+  (%actions) 64 $ldict def
+end
+
+% turn it on:
+<< /ParseComments true /Password 0 >> setsystemparams
+
+% end of comntpss

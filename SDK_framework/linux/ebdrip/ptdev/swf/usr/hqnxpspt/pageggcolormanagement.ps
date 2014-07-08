@@ -1,0 +1,156 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pageggcolormanagement.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for custom color management.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+
+/GGCMMStateDict <<
+  /ActiveCMM null
+>> def
+
+% Dictionary of CMM options
+%
+% The keys define valid PT options, and their content refer to the CMM name
+% (set using '<</AlternateCMM ...>> setpagedevice') and the file containing
+% any additional device setup.
+/GGCMMOptionsDict <<
+  /GGCMMNone {        % No color management setup
+    null
+    (OEMConfig/GGNoneCMM.ps)
+  } bind
+
+  /GGCMMInternal {    % ColorPro setup
+    null
+    (OEMConfig/GGInternalCMM.ps)
+  } bind
+
+  /GGCMMExternal1 {   % LittleCMS setup
+    (CMM_LittleCMS)
+    (OEMConfig/GGExternalCMM1.ps)
+  } bind
+
+  /GGCMMExternal2 {   % ICM2 setup
+    (CMM_ICM2)
+    (OEMConfig/GGExternalCMM2.ps)
+  } bind
+
+  /GGCMMCustom {
+    (CMM_CCSExample)  % Custom colorspace conversion setup
+    (OEMConfig/GGCustomCMM.ps)
+  } bind
+>> def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% name DoSetGGColorManagement
+%
+% Set the CMM runes based on 'name' (a key in GGCMMOptionsDict), and apply using setpagedevice.
+% See GGCMMOptionsDict for more details.
+/DoSetGGColorManagement {
+  dup /GGCMMNone ne { RequiresOverprintPreview } if
+
+  dup //GGCMMStateDict /ActiveCMM get ne {
+    % Push CMM name and config file onto stack
+    dup //GGCMMStateDict /ActiveCMM 3 -1 roll put
+
+    //GGCMMOptionsDict exch 2 copy known not {
+      pop /GGCMMNone   % Default value
+      (%%[ Warning: Unknown CMM specified; Using /GGCMMNone ]%%) =
+    } if
+    get exec
+
+    % So we have the two names on the stack now.
+    /CMM_Config_File_Name exch def
+    /CMM_Name exch def
+
+    % Set the CMM
+    <<
+      /AlternateCMM CMM_Name
+      InternalState /PageSize known {/PageSize InternalState /PageSize get}if
+    >>
+    dup PTDebug
+    setpagedevice
+
+    % Apply config file options
+    CMM_Config_File_Name dup status {
+      pop pop pop pop
+      run
+    }{
+      (%%[ Warning: File ) print CMM_Config_File_Name print ( not found; Using default Color Management settings ]%%) =
+      pop
+    } ifelse
+  }{
+    % The specified CMM is already set
+    pop
+  }ifelse
+} bind def
+
+% Determines which PageColorManagement values allow color management
+% to be applied in the RIP.
+/PageColorManagementLookup <<
+  /None   false
+  /Device false
+  /Driver true
+  /System false
+>> def
+
+/DoPageGGColorManagement {
+  begin
+    (->DoPageGGColorManagement) PTDebug
+
+    % Only enable if PageColorManagement allows it
+    RIPPrintTicket /PageColorManagement << /Value /Driver >> GetDictValueWithDefault
+    /Value /Driver GetDictValueWithDefault
+    //PageColorManagementLookup exch true GetDictValueWithDefault
+    {
+      % Color management should be applied - Get setting from PrintTicket
+      pt_value [/Value] /GGCMMNone GetPTValueWithDefault exch pop
+    }{
+      % Color management should not be applied - Use /GGCMMNone
+      /GGCMMNone
+    }ifelse
+
+    //DoSetGGColorManagement exec
+
+    (<-DoPageGGColorManagement) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageGGColorManagement <<
+    /Action //DoPageGGColorManagement
+    /Default << /Value /GGCMMNone >>
+  >>
+>>
+
+end

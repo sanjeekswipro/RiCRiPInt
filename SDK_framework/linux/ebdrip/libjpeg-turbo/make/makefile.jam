@@ -1,0 +1,63 @@
+# Copyright (C) 2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for libjpeg-turbo
+#
+# $HopeName: HQNlibjpeg-turbo!make:makefile.jam(trunk.3) $
+#
+
+  RequiresVariant warning_level : low ;
+
+  ImplementsVariant jpeg thirdparty ;
+
+  DependsOn all : libjpeg-turbo ;
+
+  # Build libjpeg-turbo (Win) or libjpeg (non-Win), but not both.
+  if $(Variant_jpeg) && $(C-Compiler-Family) = msvc {
+
+    C-IncludeExportDirectories
+      jpeg
+      rdrevent
+      standard
+      : .. ;
+
+    local OOPLATFORM ;
+
+    if win_32-x86     in $(JamTargetPlat) { OOPLATFORM = win_32-x86 ; }
+    if win_64-amd64   in $(JamTargetPlat) { OOPLATFORM = win_64-amd64 ; }
+
+    local OODIR = $(CurrentPath)$(FS)lib$(FS)$(OOPLATFORM) ;
+
+    local SourceFiles =
+      libjpegturbo.c
+    ;
+
+    Library libjpeg-turbo : $(SourceFiles) ;
+    Library turbojpeg-static ;
+
+    if $(Variant_thirdparty)
+    {
+      Search turbojpeg-static$(C-Lib-Suffix) : $(OODIR) ;
+
+    } else {
+      Search turbojpeg-static$(C-Lib-Suffix) : $(OODIR) ;
+
+      # We want turbojpeg-static.lib to be in the same place in the exported source
+      ExportSource $(OODIR)$/turbojpeg-static$(C-Lib-Suffix) : Binary  : : : $(OODIR) ;
+
+      # So that exported source can be built without libjpeg-turbo if required
+      ExportSource $(CurrentPath)$/src$/nolibjpegturbo.c : C ;
+    }
+
+    C-LinkWithLibraries libjpeg-turbo : turbojpeg-static ;
+
+  } else {
+
+    C-IncludeExportDirectories
+      standard
+      : .. ;
+
+    Library libjpeg-turbo : nolibjpegturbo.c ;
+  }
+
+# Log stripped

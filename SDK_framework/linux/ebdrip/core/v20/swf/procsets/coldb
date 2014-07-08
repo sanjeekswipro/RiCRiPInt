@@ -1,0 +1,418 @@
+%!PS-Adobe-3.0
+%%Title: HqnColorDatabase
+%%Creator: Global Graphics Software Limited
+%%CreationDate: August 2003
+% Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnColorDatabase) 1 0
+
+% $HopeName: SWv20!swf:procsets:coldb(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+20 dict begin  % workspace within the TintTransform procedure
+
+/NCdict currentdict def
+
+{ /X /Y /Z /T /Xf /Yf /Zf /L* /a* /b* }{ 0 def } forall
+
+% array with lower -> upper case
+/a (a) 0 get def
+/z (z) 0 get def
+/A (A) 0 get def
+/NCcasemap 256 string def
+0 1 255 { NCcasemap exch dup put } for
+a 1 z { NCcasemap exch dup //a sub //A add put } for
+
+/OK true def
+
+/NCstr 256 string def
+
+% converts a string to upper case; converts name to string too, if necessary
+/NCupcase [ (CVP) (CVU) (CVC) (CV)  (C) (M) (U) ] def
+/NCupcase {
+  //NCstr cvs
+  dup length 1 sub 0 1 3 -1 roll {
+    2 copy get //NCcasemap exch get 2 index 3 1 roll put
+  }  for
+
+  PantoneSuffix null ne {
+    //NCupcase {
+      % str test
+      1 index length 1 index length ge {
+        1 index dup length              % str test str l
+        2 index length sub 2 index length getinterval
+        % str test try
+        1 index eq {
+          % we have a match - rebuild name
+          % str test
+          length exch length exch sub
+          % trunclen
+          //NCstr exch
+          2 copy PantoneSuffix putinterval
+          0 exch PantoneSuffix length add getinterval
+          exit
+        } if
+        pop
+      } if
+    } forall
+  } if
+} bind def
+
+/CVCtoCV {                    % name
+  dup length 4 ge {           % name { t | f }
+    dup dup length 4 sub 4    % name name len-4 4
+    getinterval               % name endofname
+    ( CVC) anchorsearch {     % name { () ( CVC) t | endofname f }
+      pop pop                 % name
+      dup length 1 sub 0 exch % name 0 len-1
+      getinterval             % name-less-last-char
+      true                    % newname true
+    } {
+      pop false               % name false
+    } ifelse
+  } {
+    false                     % name false
+  } ifelse
+} bind def                    % { newname true | name false }
+
+/linebuff 100 string def
+  
+/XYZLookup {            % database name
+  exch begin
+    % (LOOKUP: )print dup =print (    )print ThisResource =print (  )print flush
+    % {
+    ForceUpperCase {
+      //NCupcase exec  % convert name to uppercase
+    } if
+    Colors exch 2 copy known {            % colors name
+      get              % color
+      true             % color true
+    } {                % colors name
+      RetrySuffix {
+        //CVCtoCV exec { % colors { name false | newname true }
+          2 copy         % colors newname colors newname
+          known {        % colors newname { t | f }
+            get true     % color true
+          } {            % colors name
+            pop pop      % 
+            false        % false
+          } ifelse       
+        } {
+          pop pop false  % false
+        } ifelse
+      } {
+        pop pop false
+      } ifelse
+    } ifelse           % color true ; or : false
+  end
+% } stopped { defauilthandleerror stop } if
+% dup ==
+} bind def
+
+% This TintTransform procedure will be built into a procedure constructed
+% by the NamedColor mechanism. It gets used like this:
+% { { satvals... } thisTintTransform exec }
+% where satvals... are the XYZ (or whatever) values for the saturated color concerned
+/XYZTintTransform {
+  % T {X Y Z} TintTransform {X' Y' Z'}
+  % don~t do the conversion unless the tint is fractional
+  1 index 1 ne {
+    % quick check for zero - use the white point
+    //NCdict begin
+      1 index 0 eq {
+        pop pop
+        Xn Yn Zn
+      }  {
+        % explode the data array
+        dup xcheck {
+          exec
+        }  {
+          aload pop
+        } ifelse
+        
+        /Z exch def
+        /Y exch def
+        /X exch def
+        /T exch def
+        
+        % calculate common XYZ->L*a*b* factors
+        /Xf X Xn div 0.008856 le { X Xn div 7.787 mul 16 116 div add } { X Xn div 1 3 div exp } ifelse def
+        /Yf Y Yn div 0.008856 le { Y Yn div 7.787 mul 16 116 div add } { Y Yn div 1 3 div exp } ifelse def
+        /Zf Z Zn div 0.008856 le { Z Zn div 7.787 mul 16 116 div add } { Z Zn div 1 3 div exp } ifelse def
+                
+        % calculate L*a*b*
+        /L* Yf 116 mul 16 sub def
+        /a* Xf Yf sub 500 mul def
+        /b* Yf Zf sub 200 mul def
+        
+        % adjust L*a*b* by tintlevel
+        /L* T L* 100 sub mul 100 add def
+        /a* T a* mul def
+        /b* T b* mul def
+        
+        % calculate common L*a*b*->XYZ factors
+        /Yf L* 8 gt { L* 16 add 116 div } { L* 903.3 div 7.787 mul 16 116 div add } ifelse def
+        /Xf a* 500 div Yf add def
+        /Zf Yf b* 200 div sub def
+        
+        % convert back to XYZ
+        /X Xf 0.2069 gt { Xf 3 exp Xn mul } { Xf 16 116 div sub 7.787 div Xn mul } ifelse def
+        /Y L* 8      gt { Yf 3 exp Yn mul } { Yf 16 116 div sub 7.787 div Yn mul } ifelse def
+        /Z Zf 0.2069 gt { Zf 3 exp Zn mul } { Zf 16 116 div sub 7.787 div Zn mul } ifelse def
+        
+        % leave them on the stack
+        X Y Z
+        
+      }  ifelse
+    end % NCdict
+  }  { exch pop aload pop } ifelse
+} bind def
+
+/GenericLookup {          % database name
+  exch begin
+    % (Lookup: )print dup =print (  )print ThisResource =print (  )print flush
+    ForceUpperCase {
+      //NCupcase exec  % convert name to uppercase
+    } if
+    Colors exch 2 copy known {            % colors name
+      get              % color
+      true             % color true
+    }  {                % colors name
+      pop pop false    % false
+    } ifelse           % color true ; or : false
+  end
+% dup ==
+} bind def
+       
+/GenericTintTransform {
+  % v { R G B } or v { C M Y K }
+  {
+    1 index mul exch
+  } forall
+  pop
+} bind def
+
+/GetColors <<
+  32 dup
+  (\t) 0 get dup
+>> def
+/GetColors {
+  <<
+    {
+      /OK true store
+      {
+        currentfile //linebuff readline not { 
+          /OK false store
+          pop exit 
+        } if
+        % trim leading and trailing spaces and tabs
+        0 1 2 index length 1 sub {
+          % s i
+          2 copy get //GetColors exch known not { exit } if
+          pop
+        } for
+        dup type /integertype eq {
+          % s i
+          1 index length 1 index sub getinterval
+        }  {
+          0 0 getinterval         % all spaces
+        } ifelse
+        dup length 0 ne {
+          dup length 1 sub -1 0 {
+            % s i
+            2 copy get //GetColors exch known not { exit } if
+            pop
+          } for
+          % s i
+          exch 0 3 -1 roll 1 add getinterval
+        } if                            
+        dup length 0 ne { exit } if
+      } loop
+      OK not { exit } if
+      cvn
+      [ Channels { currentfile token pop Divisor div } repeat ] 
+    } loop
+  >>
+} bind def
+
+/NullLookup { pop pop false } bind def
+
+% space channels GenericSpace
+/GenericSpace {
+  /Channels exch def
+
+  % return the 'real' resource dict itself.
+  /ColorSpace [ 3 -1 roll ] def
+  /Lookup //GenericLookup def
+  /TintTransform //GenericTintTransform def
+} bind def
+
+/ProcessSpace <<
+
+  /XYZ-D50 {
+    % unless you ensure false setglobal is done before
+    % this, an error will occur which may seem baffling
+    /NCcolorspace /XYZ-D50 /ColorSpace findresource def
+
+    % white point info (needed for fractional tint)
+    //NCdict begin
+      NCcolorspace 1 get /WhitePoint get aload pop
+      /Zn exch def
+      /Yn exch def
+      /Xn exch def
+    end
+                
+    /Channels 3 def
+        
+    % return the 'real' resource dict itself.
+    /Lookup //XYZLookup def
+    /ColorSpace NCcolorspace def
+    /TintTransform //XYZTintTransform def
+  } bind
+
+  /DeviceRGB { /DeviceRGB 3 //GenericSpace exec } bind
+        
+  /DeviceCMYK { /DeviceCMYK 4 //GenericSpace exec } bind
+
+>> def
+  
+/CheckRequiredArgs <<
+  /BaseSpace /nametype
+  /Divisor /realtype
+  /ResName /nametype
+>> def
+
+/HqnColorDatabase <<
+
+% The initialize procedure requires a dictionary as the single operand. Its contents
+% are these:
+%
+% ResName       (Required, string)      The name of the NamedColor resource to be created.
+% BaseSpace     (Required, name)        The color space that the values following the call
+%                                       are defined in. /DeviceRGB, /DeviceCMYK and /XYZ-D50
+%                                       are supported.
+% Divisor       (Required, number)      All values in the following lines will be
+%                                       divided by this value as they are read.
+% Globalness    (Optional, boolean)     The global state should be returned to this
+%                                       state after installing the NamedColor resource.
+%                                       Default = currentglobal.
+% ForceUpperCase(Optional, boolean)     If true, all names will be converted to uppercase
+%                                       before matching one in the database - all names in the
+%                                       database will be expected to be uppercase if so. If
+%                                       false, mixed or lower case names will be allowed in
+%                                       the database. Default = true.
+% RetrySuffix   (Optional, boolean)     If true, and BaseSpace is XYZ-D50 then a separation
+%                                       name ending "CVC" for which no entry is supplied will
+%                                       be retried without the trailing 'C'. Not used for
+%                                       other values of BaseSpace. Default = false.
+% PantoneSuffix (Optional, string)      If not null then all separation names
+%                                       supplied to the Lookup procedure that end with
+%                                       'CVC', 'CVU', 'CVP' or 'CV' will have that ending
+%                                       replaced with the value of PantoneSuffix before
+%                                       checking in the database (the unaltered name is
+%                                       NOT searched for first). Default = null.
+%
+% The current allocation mode must be local when initialize is called,.
+% The call to the database must be immediately followed in the same file by the data
+% entries in pairs of lines. The first line of each pair is the separation name, all
+% in capitals (unless ForceUpperCase is false). The second line is a sequence of
+% values - 3 for DeviceRGB or XYZ-D50, 4 for DeviceCMYK, separated by write space
+% (NOT commas!).
+%
+% Example call
+% <<
+%   /ResName /PantoneV
+%   /BaseSpace /XYZ-D50
+%   /RetrySuffix true
+%   /Divisor 1
+% >> /HqnColorDatabase /ProcSet findresource /initialize get exec
+        
+  /initialize {
+    count 1 lt {
+      /HqnColorDatabase errordict /stackunderflow get exec
+    } if
+    dup type /dicttype ne {
+      /HqnColorDatabase errordict /typecheck get exec
+    } if
+                
+    //NCdict begin
+
+      dup /Globalness known {
+        dup /Globalness get
+        dup type /booleantype ne {
+          /HqnColorDatabase errordict /typecheck get exec
+        } if
+      }{ currentglobal } ifelse
+      /Globalness exch def
+                
+      12 dict begin
+
+        dup /ForceUpperCase known {
+          dup /ForceUpperCase get
+          dup type /booleantype ne {
+            /HqnColorDatabase errordict /typecheck get exec
+          } if
+        }{ true } ifelse
+        /ForceUpperCase exch def
+
+        dup /RetrySuffix known {
+          dup /RetrySuffix get
+          dup type /booleantype ne {
+            /HqnColorDatabase errordict /typecheck get exec
+          } if
+        }{ false } ifelse
+        /RetrySuffix exch def
+
+        dup /PantoneSuffix known { 
+          dup /PantoneSuffix get 
+          dup type dup /stringtype ne exch /nulltype ne and {
+            /HqnColorDatabase errordict /typecheck get exec
+          } if
+        } { null } ifelse
+        /PantoneSuffix exch def
+
+        //CheckRequiredArgs {
+          % dict key type
+          3 copy pop 2 copy known not {
+            /HqnColorDatabase errordict /undefined get exec
+          } if
+          % dict key type dict key
+          get type 2 copy ne {
+            1 index /realtype eq {
+              exch pop /integertype ne
+            } { true } ifelse
+            {
+              /HqnColorDatabase errordict /typecheck get exec
+            } if
+          } { pop pop } ifelse
+          % dict key
+          2 copy get def
+        } forall
+                
+        //ProcessSpace BaseSpace 2 copy known not {
+          /HqnColorDatabase errordict /undefined get exec
+        } if
+        get exec
+
+        /Colors //GetColors exec def      % Actually reads the trailer of the NamedColor resource file.
+        /ThisResource ResName def
+
+        ResName currentdict
+      end
+      /NamedColor defineresource
+                        
+      Globalness
+    end             % NCdict
+    setglobal
+  } bind          % initialize
+
+>> /ProcSet defineresource
+
+end
+exch setglobal
+
+%%EOF

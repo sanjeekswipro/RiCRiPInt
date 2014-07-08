@@ -1,0 +1,160 @@
+%!PS
+%%Title: irs2bpp
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2009 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWirs!swf:irs:irs2bpp(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+currentglobal true setglobal
+
+
+/irsCMYK2bpp_Gfx
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK2bpp_Gfx
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 130
+      /Height 130
+      /Thresholds (%os%Irs/irs2bpp_Gfx_C_inv.bin) (r) file
+      /Depth 2
+   >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 130
+      /Height 130
+      /Thresholds (%os%Irs/irs2bpp_Gfx_M_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 16
+      /Height 16
+      /Thresholds (%os%Irs/irs2bpp_Gfx_Y_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 14
+      /Height 14
+      /Thresholds (%os%Irs/irs2bpp_Gfx_K_inv.bin) (r) file
+      /Depth 2
+    >>
+  % Other colorants will use same screen as black
+  /Default <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 14
+      /Height 14
+      /Thresholds (%os%Irs/irs2bpp_Gfx_K_inv.bin) (r) file
+      /Depth 2
+    >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+/irsCMYK2bpp_Photo
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK2bpp_Photo
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 14
+      /Height 14
+      /Thresholds (%os%Irs/irs2bpp_Photo_C_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 52
+      /Height 52
+      /Thresholds (%os%Irs/irs2bpp_Photo_M_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 106
+      /Height 106
+      /Thresholds (%os%Irs/irs2bpp_Photo_Y_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 52
+      /Height 52
+      /Thresholds (%os%Irs/irs2bpp_Photo_K_inv.bin) (r) file
+      /Depth 2
+    >>
+  % Other colorants will use same screen as black
+  /Default <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 52
+      /Height 52
+      /Thresholds (%os%Irs/irs2bpp_Photo_K_inv.bin) (r) file
+      /Depth 2
+    >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+/irsCMYK2bpp_Text
+<<
+  /HalftoneType 5
+  /HalftoneName /irsCMYK2bpp_Text
+  /Cyan <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 68
+      /Height 68
+      /Thresholds (%os%Irs/irs2bpp_Text_C_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Magenta <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 68
+      /Height 68
+      /Thresholds (%os%Irs/irs2bpp_Text_M_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Yellow <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 24
+      /Height 24
+      /Thresholds (%os%Irs/irs2bpp_Text_Y_inv.bin) (r) file
+      /Depth 2
+    >>
+  /Black <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 16
+      /Height 16
+      /Thresholds (%os%Irs/irs2bpp_Text_K_inv.bin) (r) file
+      /Depth 2
+    >>
+  % Other colorants will use same screen as black
+  /Default <<
+      /HalftoneType 6 /ScreenExtraGrays false
+      /Width 16
+      /Height 16
+      /Thresholds (%os%Irs/irs2bpp_Text_K_inv.bin) (r) file
+      /Depth 2
+    >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+%% The following halftone dict uses the new HqnRIP Halftone type 195 to provide a 
+%% more efficient object based screening implementation. This screen can
+%% be selected when auto object based screening mode is selected.
+/irsCMYK2bppAuto <<
+  /HalftoneType 195
+  /Default << /HalftoneType 199 /Halftone /irsCMYK2bpp_Gfx >>
+  /Text << /HalftoneType 199 /Halftone /irsCMYK2bpp_Text >>
+  /Linework << /HalftoneType 199 /Halftone /irsCMYK2bpp_Gfx >>
+  /Picture << /HalftoneType 199 /Halftone /irsCMYK2bpp_Photo >>
+  /Vignette << /HalftoneType 199 /Halftone /irsCMYK2bpp_Photo >>
+>> /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+
+
+setglobal % restore
+
+% (%stderr%)(w) file (Diags - irs2bpp screens defined\n) writestring

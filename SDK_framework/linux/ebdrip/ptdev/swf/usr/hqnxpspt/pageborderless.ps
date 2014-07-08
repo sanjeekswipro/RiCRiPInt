@@ -1,0 +1,126 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pageborderless.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for PageBorderless.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+% value microns SetPageBorderless -
+/SetPageBorderless {
+    % Store setting as a page buffer device parameter
+    PGBParamDict /PtfPageBorderless 3 index put
+    
+    % Apply page scaling such that (at most) the specified margin
+    % is added to the output page.
+    exch /Borderless eq {
+       % Convert single margin (microns) to overall dimension increase (in PS points)
+       2.0 mul 25400 div 72 mul
+       
+       % Use largest page media dimension
+       InternalState /PageSize get
+       aload pop 2 copy
+       lt { exch }if pop
+       dup 3 1 roll add exch div
+       
+       % Apply scale factor using page device
+       dup 2 array astore DeviceDict /Scaling 3 -1 roll put
+    }{
+      pop
+      
+      % Reset scale factor in page device
+      DeviceDict /Scaling known not {
+        currentpagedevice /Scaling known {
+          currentpagedevice /Scaling get aload pop
+          1.0 ne exch 1.0 ne or {
+            DeviceDict /Scaling [1.0 1.0] put
+          }if
+        }if
+      }if
+    }ifelse
+  
+} bind def
+
+% Store the PageBorderless option as a page buffer device parameter.
+/DoPageBorderless {
+  begin
+    (->DoPageBorderless) PTDebug
+
+    % Use PageGGBorderless when it is specified
+    RIPPrintTicket /PageGGBorderless known not {
+      pt_value [/Value] /None GetPTValueWithDefault exch pop
+      0
+      //SetPageBorderless exec
+    }if
+
+    (<-DoPageBorderless) PTDebug
+  end
+} bind def
+
+% Store the PageBorderless option as a page buffer device parameter,
+% and scale up the destination page such that it's major axis is increased
+% by the specified length (which may include some rounding error).
+/DoPageGGBorderless {
+  begin
+    (->DoPageGGBorderless) PTDebug
+
+    % Use a dictionary to map options to margin sizes (in microns)
+    <<
+      /BORDER_0mm   0
+      /BORDER_3mm   3000
+      /BORDER_5mm   5000
+      /BORDER_10mm  10000
+    >>
+    pt_value [/Value] /BORDER_0mm GetPTValueWithDefault exch pop
+    1 index 1 index known not {
+      (%%[ Warning: Unknown PageGGBorderless value specified. Using default \(0 mm\). ]%%) =
+      pop /BORDER_0mm
+    }if
+    get
+    
+    % Conditionally apply the margin by setting the page scale factor
+    dup 0 gt { /Borderless }{ /None }ifelse
+    exch //SetPageBorderless exec
+
+    (<-DoPageGGBorderless) PTDebug
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageBorderless <<
+    /Action //DoPageBorderless
+    /Default << /Value /None >>
+  >>
+  /PageGGBorderless <<
+    /PostAction //DoPageGGBorderless
+  >>
+>>
+
+end

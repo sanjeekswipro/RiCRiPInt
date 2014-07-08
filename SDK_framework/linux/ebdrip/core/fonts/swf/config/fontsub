@@ -1,0 +1,144 @@
+%!PS
+% Copyright (C) 2010-2013 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: COREfonts!swf:config:fontsub(EBDSDK_P.1) $
+%
+
+% This file is used to define default font and font substitution preferences.
+%
+% It is supplemented by the Font Substitution Database defined in the file
+% /SW/Config/FontSubstitutionDB. That file is not user-editable, but any
+% undesired substitution in that file can be overridden in this file, by
+% substituting with the desired font, or even with itself, eg:
+%
+%   /SomeFontName /SomeFontName
+
+% NOTE:
+% You can cut and paste font names from the RIP window, so if a font is reported
+% as missing, you can copy the name from the report and paste it in here. You
+% can usually identify fonts by a name, /Courier, or a string, (Courier),
+% interchangeably. However, some PDF files refer to fonts using names that can
+% ONLY be defined in string form - in parenthesis - see CIDFontSubstitution
+% below for an example.
+
+% ================================ DEFAULT FONT ================================
+% Uncomment this (and change the name /Courier) for your favourite font to be
+% defaulted.
+
+% $error /SubstituteFont { pop /Courier } bind put                        % <===
+
+% NOTE: This line also appears, commented out, in HqnStart.
+% You should normally change this file and not HqnStart.
+
+
+% ============================== DEFAULT CID FONT ==============================
+
+% Uncomment this (and change the name /CID-Bullet) for your favourite font to be
+% defaulted.
+
+% $error /SubstituteCIDFont { pop /CID-Bullet } bind put                  % <===
+
+
+% ============================== FONT SUBSTITUTION =============================
+
+statusdict /FontSubstitution <<
+% Add entries in this section to have the RIP silently respond all requests for
+% one font by using another.
+%
+% Each line should comprise of two font names, the fonts to be substituted from
+% and to.
+%
+% E.g. if you wanted all requests for Arial to be imaged in Helvetica you would
+% enter:
+%           /Arial  /Helvetica
+%
+% NOTES: You MUST ensure that:
+% a) the two fonts are very similar in glyphs supported and glyph names,
+%    otherwise a lot of glyphs may be missing, or replaced with plain rectangles
+%    on the output.
+% b) single-byte fonts should not be used to substitute for double-byte fonts
+%    and vice versa.
+% c) when substituting for double-byte fonts the two two fonts should use the
+%    same encoding.
+% d) do not include CID fonts here - they should be in the next section. You
+%    cannot use this mechanism to substitute a none-CID font for a CID font or
+%    vice versa
+
+% ENTER NAMES HERE                                                        % <===
+
+>> put
+
+
+% ============================ CID FONT SUBSTITUTION ===========================
+
+statusdict /CIDFontSubstitution <<
+% Add entries in this section to have the RIP silently respond all requests for
+% one CID font by using another.
+%
+% Each line should comprise of two names, the CID fonts to be substituted from
+% and to.
+%
+% E.g. if you wanted all requests for Ryumin-Light to be imaged in RodinCID_DB
+% you would enter:
+%           /Ryumin-Light   /RodinCID_DB
+%
+% NOTES: You MUST ensure that:
+% a) the two fonts have the same Registry and Ordering entries. That means that
+%    they would ordinarily use the same CMaps.
+% b) the two fonts are of the same CIDFontType.
+% c) If the font name contains any international characters (bytes > 126), you
+%    must enclose it in parentheses, prefixing any parenthesis or backslash
+%    characters with a backslash.
+%    E.g. if the RIP says "Cannot find CIDFont |Ç|b(\Ÿ," write:
+%           (|Ç|b\(\\Ÿ)   /SquareGothicBT
+
+% ENTER NAMES HERE                                                        % <===
+
+>> put
+
+
+% ======================== CONDITIONAL FONT SUBSTITUION ========================
+
+% By default, when a conditional font substitution is done, a message is
+% output on the monitor. By un-commenting the following line, defining 
+% /SilentCondFontSub as true, no such messages are displayed.  This 
+% applies to both standard and CID font substitutions.
+%
+% statusdict /SilentConditionalFontSubstitution true put                   % <==
+
+statusdict /ConditionalFontSubstitution <<
+% As for the Font Substitution dictionary above, but substitutions entered
+% will only be made if the original font can not be found.  Note that if an 
+% unconditional font substitution was made (via the dictionary above), and 
+% if that substituted font was not found, it may still be offered for 
+% conditional substitition through this dictionary.
+% In the following dictionary, each key's value is an array of possible
+% substitutions.  Each font name in the array is tried in the order 
+% stated.  Examples are provided but left commented-out.
+
+%
+% /TimesNewRoman   [ /TimesNewRomanPSMT /Times-Roman ]
+% /TimesNewRomanPS-BoldItalic  [ /TimesNewRomanPS-BoldItalicMT
+%                                /TimesNewRoman-BoldItalic 
+%                                /TimesNewRoman,BoldItalic
+%                                /Times-BoldItalic ]
+% /Arial   [ /ArialMT /Helvetica ]
+% /CourierNew [ /CourierNewPSMT /Courier ]
+%
+
+% ENTER FURTHER NAMES HERE                                                % <===
+
+>> put
+
+
+% ====================== CONDITIONAL CID FONT SUBSTITUION ======================
+
+statusdict /ConditionalCIDFontSubstitution <<
+% As for the Conditional Font Substitution dictionary above except that this
+% one is used for CID fonts.  Values are array of possible substitutions.
+
+% ENTER NAMES HERE                                                        % <===
+
+>> put
+
+
+%%EOF

@@ -1,0 +1,37 @@
+%!PS-Adobe-3.0
+%%Title: HqnMicroLines
+%%Creator: Global Graphics Software Limited
+%%CreationDate: November 17, 1993
+%{MicroLines version #1 1
+% Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnMicroLines)" 1 1
+
+% $HopeName: SWv20!swf:procsets:microlin(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+8 dict begin
+  /MicroDict 8 dict def
+  /MicroMatrix matrix def
+  /MicroLines {
+    % args: n a
+    % n - indicates the micro lines required
+    % a - indicates the angle required for the micro lines
+	//MicroDict begin
+	  /a exch def
+	  /n exch def
+      a cos 72 mul a sin 72 mul //MicroMatrix defaultmatrix dtransform dup mul exch dup mul add sqrt
+	  n 2 mul div a { pop 0 lt { 1.0 } { 0.0 } ifelse } setscreen
+      { pop 0.5 } settransfer
+	end
+  } bind def
+  currentdict /MicroDict undef
+  currentdict /MicroMatrix undef
+  currentdict
+end
+
+/HqnMicroLines exch /ProcSet defineresource
+
+%%EndProcSet

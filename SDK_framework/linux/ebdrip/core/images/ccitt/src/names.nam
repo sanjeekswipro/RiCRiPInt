@@ -1,0 +1,22 @@
+/* $HopeName: COREccitt!src:names.nam(EBDSDK_P.1) $
+ *
+ * Copyright (C) 2005-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREccitt. See SWv20!src/names.nam for documentation on
+ * the file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ */
+
+BlackIs1
+Columns
+EncodedByteAlign
+EndOfBlock
+EndOfLine
+K
+Rows
+Uncompressed
+
+/*
+Log stripped */

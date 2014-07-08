@@ -1,0 +1,399 @@
+# $HopeName: HQNlibicu_3_4!tools:make:makefile.jam(EBDSDK_P.1) $
+# 
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for extracts from IBM's ICU Unicode library
+#
+# Tools are required to build data files and compile into a static library
+
+    ImplementsVariant ICU $(ICUVariants) ;
+
+    RequiresVariant warning_level : medium ;
+ 
+    # We have a single makefiles for the ICU Tools, and use some Jam tricks to
+    # put the objects from each tool into a different location.
+    local ICUTools =
+        cdata
+        icupkg
+        makeconv
+    ;
+
+    # Add tool library directories to searchable path
+    local Com = C C++ mixedC ;
+    AddToVar Inherited Local : $(Com)-IncludeDirectories : $(CurrentPath)$/toolutil ;
+
+    local toolutil_files =
+        package.cpp
+        pkgitems.cpp
+        swapimpl.cpp
+        toolutil.c
+        ucbuf.c
+        ucm.c
+        ucmstate.c
+        unewdata.c
+        uoptions.c
+        uparse.c
+    ;
+
+    MakeGristed toolutil_files : $(toolutil_files) : $(CurrentPath)$/toolutil ;
+    SEARCH on $(toolutil_files) = $(CurrentPath)$/toolutil ;
+    Library toolutil : $(toolutil_files) : toolutil : $(CurrentPath)$/toolutil ;
+
+#
+#   Visual C compilers assume that the LIB variable is set.
+#   No such assumptions for gcc.
+
+    if $(NT) && $(Variant_wintel_cpp_compiler) != "gcc_3_4_2"  {
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+            advapi32.lib
+            kernel32.lib
+            user32.lib
+        ;
+    }
+
+    # Build or check the prebuilt executables
+    local cdata_files = cdata.c ;
+    local icupkg_files = icupkg.cpp ;
+    local makeconv_files = makeconv.c gencnvex.c genmbcs.c ucnvstat.c ;
+
+    local i ;
+    for i in $(ICUTools) {
+        # This target is a global symbol for the prebuilt executable
+        MakeGristed ICU-Tools-$(i) : $(i)$(PrebuiltExecSuffix) : $(CurrentPath)$/$(PrebuiltPathPrefix) ;
+
+        PrebuiltExecutable $(ICU-Tools-$(i)) : $($(i)_files) : $(CurrentPath)$/$(i) ;
+
+        if $(INSTALL_PREBUILT) {
+            local Tool = $(ICU-Tools-$(i):BG=$(CurrentPath)-Tool) ;
+            C-LinkWithLibraries $(Tool) : toolutil ;
+            C-LinkWithLibraries $(Tool) : common : .. common ;
+#           C-LinkWithLibraries $(Tool) : i18n : .. i18n ;
+            C-LinkWithLibraries $(Tool) : stubdata : .. stubdata ;
+        }
+    }
+
+    #* Prepare a SW subset map file for files rooted in $(1).
+    #*
+    #* $(1) swfdir
+    #* $(2) subset...
+    #*
+    #* This rule declares that a directory $(1) is the root for SW files used
+    #* by a set of ICU subsets $(2). The directory $(1) is specified relative
+    #* to the current directory.
+    #*
+    #*seerule ICUmakeconv ICUcdata ICUadd ICUremove ICUcopy ICUconvert ICUData SWF
+    #*section ICU
+    rule ICUsubset {
+        local i ; for i in $(2) {
+            if ! $(i) in $(__ICU_subsets) {
+                local swf = $(1) ;
+                local tmpabs = $(CurrentPath)$/$(1) ;
+                local swfabs = $(tmpabs:d) ;
+
+                DirectoryFor $(swfabs:BG=$(swfabs:D)) : $(swfabs:D) ;
+                DirectoryFor $(tmpabs:BG=$(tmpabs:D)) : $(tmpabs:D) ;
+
+                SWF $(swf:D) : $(swf:B) : Unicode : UNICODE : $(i) ;
+
+                __ICU_subsets += $(i) ;
+            }
+        }
+    }
+
+    #* Build an ICU converter source file into a binary converter file.
+    #*
+    #* $(1) target-dir
+    #* $(2) source-dir
+    #* $(3) converter-name
+    #*
+    #* This rule compiles the ICU converter source $(3), found in
+    #* fully-specified directory $(2), into a binary form located in
+    #* directory $(1), which is specified relative to the current directory.
+    #*
+    #*seerule ICUsubset ICUcdata ICUadd ICUremove ICUcopy ICUconvert ICUData
+    #*section ICU
+    actions quietly _ICUmakeconv bind makeconv {
+        echo ...ICU compiling encoding $(>) ...
+        $(makeconv) -c -d $(<:D) $(>)
+    }
+
+    rule ICUmakeconv {
+        local Target ; MakeGristed Target : $(3) : $(CurrentPath) $(1) ;
+        local Source ; MakeGristed Source : $(3:BS=.ucm)         : $(2) ;
+
+        DirectoryFor $(Target) : $(CurrentPath)$/$(1) ;
+        SEARCH on $(Source) = $(2) ;
+
+        makeconv on $(Target) = $(ICU-Tools-makeconv) ;
+        _ICUmakeconv $(Target) : $(Source) ;
+
+        DEPENDS $(Target) : $(ICU-Tools-makeconv) $(Source) ;
+
+        local CnvName = $(3) ;
+        DEPENDS $(TargetPkg) : $(Target) ;
+        ICUNewFiles += $(CnvName) ;
+    }
+
+    #* Convert an ICU binary package into a compilable C file.
+    #*
+    #* $(1) library-target
+    #* [$(2)] l | b
+    #* $(3) source-file
+    #* $(4) tmp-dir
+    #*
+    #* Compiles a ICU binary package with basename $(3), found in
+    #* directory $(4), into a C file, and compile and link this to library
+    #* specified by target $(1). The flag $(2) is <code>l</code> or
+    #* <code>b</code> to indicate if
+    #* the package to be compiled is low-endian or high-endian; both may be
+    #* used in separate invocations of the rule to create universal binaries.
+    #* Directory $(4) is specified relative to the current directory.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUadd ICUremove ICUcopy ICUconvert ICUData
+    #*section ICU
+    actions quietly together _ICUcdata bind cdata {
+        echo ...ICU generating base data $(<) ...
+        $(cdata) -s icu_data -o $(<) $(args)
+    }
+
+    rule ICUcdata {
+        local C-Dir = $(CurrentPath)$/$(GeneratedC-Directory) ;
+        local Srcdir = $(CurrentPath)$/$(4) ;
+        local Target ; MakeGristed Target : $(1:B)_dat.c : $(C-Dir) ;
+        local Source ; MakeGristed Source : $(3) : $(Srcdir) ;
+
+        DirectoryFor $(Target) : $(C-Dir) ;
+        SEARCH on $(Source) = $(Srcdir) ;
+
+        args on $(Target) += -$(2) $(Srcdir)$/$(3) ;
+        cdata on $(Target) = $(ICU-Tools-cdata) ;
+        _ICUcdata $(Target) : $(Source) ;
+        GeneratedIncludable $(Target) ;
+
+        DEPENDS $(Target) : $(ICU-Tools-cdata) $(Source) ;
+
+        # Localise C compiler arguments, we may tweak it to work around a
+        # Visual C limitation. Barf, this is horrible, it should be fixed
+        # properly in the bt/jambits.
+        local C-Compiler_Arguments = $(C-Compiler_Arguments) ;
+        if $(C-Compiler-Family) = msvc && $(Variant_wintel_cpp_compiler) != "gcc_3_4_2" { # Increase compiler memory allocation
+            # Seems VC6 needs even more heap. 2000 causes a different crash. 1000 is not
+            # enough but using an undocumented 1500 appears to work.
+            if $(Variant_wintel_cpp_compiler) = "msvc_6_0" {
+              C-Compiler_Arguments += -Zm1500 ;
+            } else {
+              C-Compiler_Arguments += -Zm200 ;
+            }
+        }
+        JamCompileNLink $(TargetLib) : $(Target) : : Lib : $(C-Object-Directory) ;
+    }
+
+    #* Add a compiled binary ICU file to an ICU package.
+    #*
+    #* $(1) target-dir
+    #* $(2) file-basename
+    #* $(3) package-basename
+    #*
+    #* Adds an ICU binary file specified by basename $(2) into the ICU package
+    #* $(3). The package is created in directory $(1), specified relative to
+    #* the current directory. This is used to add the converter files created
+    #* by the @ICUmakeconv rule to a package.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUcdata ICUremove ICUcopy ICUconvert ICUData
+    #*section ICU
+    actions quietly _ICUadd bind icupkg {
+       echo ...ICU adding $(>:BS) to $(<:BS) ...
+       $(icupkg) -s $(>:D) -a $(>:BS) $(<) 
+    }
+
+    rule ICUadd {
+        local Target ; MakeGristed Target : $(3) : $(CurrentPath) $(1) ;
+        local Source ; MakeGristed Source : $(2) : $(CurrentPath) $(1) ;
+
+        icupkg on $(Target) = $(ICU-Tools-icupkg) ;
+        _ICUadd $(Target) : $(Source) ;
+        DirectoryFor $(Target) : $(CurrentPath)$/$(1) ;
+        DEPENDS $(Target) : $(ICU-Tools-icupkg) $(Source) ;
+    }
+    
+    #* Remove a compiled binary ICU file from an ICU package.
+    #*
+    #* $(1) target-dir
+    #* $(2) file-basename
+    #* $(3) package-basename
+    #*
+    #* Removes an ICU file specified by basename $(2) from the ICU package
+    #* $(3). The package is created in directory $(1), specified relative to
+    #* the current directory. This is used to remove the unwanted ICU features
+    #* from the ICU package.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUcdata ICUadd ICUcopy ICUconvert ICUData
+    #*section ICU
+    actions quietly together _ICUremove bind ResponseFile icupkg {
+        echo ...ICU removing $(>:BS) from $(<) ... 
+        $(icupkg) -r $(ResponseFile) $(<) 
+    }
+
+    rule ICUremove {
+        local Target ; MakeGristed Target : $(3) : $(CurrentPath) $(1) ;
+        NOTFILE $(2) ;
+
+        local ResFile = $(Target:S=.txt) ;
+        DirectoryFor $(ResFile) : $(CurrentPath)$/$(1) ;
+        ResponseFile $(Target) : $(ResFile) : $(2) ;
+
+        icupkg on $(Target) = $(ICU-Tools-icupkg) ;
+        _ICUremove $(Target) : $(ResFile) ;
+        
+        DEPENDS $(Target) : $(ICU-Tools-icupkg) ;
+    }
+    
+    #* Copy an ICU package to a different location.
+    #*
+    #* $(1) target-dir
+    #* $(2) source-file
+    #* $(3) package-basename
+    #*
+    #* The source package $(2) is copied to a package with basename $(3),
+    #* located in directory $(1). The copy rune does not pass the -p flag
+    #* which preserves permissions, so that files can be added to or removed
+    #* from the package later. The directory $(1) is specified relative to
+    #* the current directory. This rule is used to copy ICU packages when the
+    #* endianness does not need changing.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUcdata ICUadd ICUremove ICUconvert ICUData
+    #*section ICU
+    CopyRune = $(FileutilRune) -e \"Fileutil::Copy\" -- -fmnsu ;
+    actions quietly _ICUcopy {
+       echo ...ICU copying $(<:BS) ...
+        $(CopyRune) $(>) $(<) 
+    }
+    rule ICUcopy {
+        local DatName = $(3:BS=.dat) ;
+        local Target ; MakeGristed Target : $(DatName) : $(CurrentPath) $(1) ;
+        local Source = $(2) ;
+                
+        _ICUcopy  $(Target) : $(Source) ;
+        DirectoryFor $(Target) : $(CurrentPath)$/$(1) ;
+        DEPENDS $(Target) : $(Source) ;
+
+        ICUsubset $(1) : $(SW-icu) ;
+        SWF $(1:D) : $(1:B) $(DatName) : $(DatName) : ICU?????.DAT : $(SW-icu) ;
+    }
+
+    #* Convert an ICU package from one endianness to another.
+    #*
+    #* $(1) target-dir
+    #* $(2) source-file
+    #* $(3) package-basename
+    #*
+    #* The source package $(2) is converted from low to high endian, and
+    #* saved in a package with basename $(3), located in directory $(1).
+    #* The directory $(1) is specified relative to the current directory.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUcdata ICUadd ICUremove ICUcopy ICUData
+    #*section ICU
+    actions quietly _ICUconvert bind icupkg {
+       echo ...ICU converting $(<:BS) ...
+        $(icupkg) -tb $(>) $(<) 
+    }
+    rule ICUconvert {
+        local DatName = $(3:BS=.dat) ;
+        local Target ; MakeGristed Target : $(DatName) : $(CurrentPath) $(1) ;
+        local Source = $(2) ;
+
+        icupkg on $(Target) = $(ICU-Tools-icupkg) ;                
+        _ICUconvert $(Target) : $(Source) ;
+        DirectoryFor $(Target) : $(CurrentPath)$/$(1) ;
+        DEPENDS $(Target) : $(ICU-Tools-icupkg) $(Source) ;
+
+        ICUsubset $(1) : $(SW-icu) ;
+        SWF $(1:D) : $(1:B) $(DatName) : $(DatName) : ICU?????.DAT : $(SW-icu) ;
+    }
+    
+    #* Create the ICU package data.
+    #*
+    #* $(1) target-lib
+    #* $(2) new-encodings
+    #* $(3) package-basename
+    #* $(4) src-dir
+    #* $(5) unicode-version
+    #* $(6) all-names
+    #* $(7) wanted-names
+    #*
+    #* The source package $(3) located in directory $(4) is converted from
+    #* low to high endian if necessary, new encodings $(2) are compiled into
+    #* binary form and added to the ICU package. The unwanted names which are
+    #* in $(6) but not in $(7) are removed from the ICU package. The package
+    #* will be compiled into an object file and linked to library $(1), if
+    #* the variant <code>ICUbuiltin</code> is specified.
+    #*
+    #* The directory $(4) is specified with an absolute path.
+    #*
+    #* The unicode version $(5) is not used.
+    #*
+    #*seerule ICUsubset ICUmakeconv ICUcdata ICUadd ICUremove ICUcopy ICUconvert
+    #*section ICU
+    rule ICUData {
+        local TargetLib ; MakeGristed TargetLib : icudt34 : $(CurrentPath) ;
+        local NewEncodings = $(2) ;
+        local SrcDir = $(4) ;
+        local SourcePkg = $(SrcDir)$/$(3) ;
+        local AllEntries = $(6) ;
+        local WantedEntries = $(7) ;
+        local TmpRel = $(C-Object-Directory)$/tmp ;
+        local ICUNewFiles ;
+
+        ExportSource $(SourcePkg) : Binary ;
+
+        local PkgName ; 
+        if l in $(1) {
+            # Copy database 
+            PkgName = icudt34l.dat ; 
+            ICUcopy $(TmpRel) : $(SourcePkg) : $(PkgName) ;
+            ICUcdata $(TargetLib) : l : icudt34l.dat : $(TmpRel) ;
+        }
+        else  {
+            # Convert database 
+            PkgName = icudt34b.dat ;
+            ICUconvert $(TmpRel) : $(SourcePkg) : $(PkgName) ;
+            ICUcdata $(TargetLib) : b : icudt34b.dat : $(TmpRel) ;
+        }
+
+        local TargetPkg ; MakeGristed TargetPkg : $(PkgName) : $(CurrentPath) $(TmpRel) ; 
+
+        local i ;
+        # Create new conversions such as pdfdoc
+        for i in $(NewEncodings) {
+            ICUmakeconv $(TmpRel) : $(SrcDir) : $(i) ;
+        }
+        # And include the new conversions to the database
+        for i in $(ICUNewFiles) {
+            ICUadd $(TmpRel) : $(i) : $(PkgName) ;
+        }
+        
+        # Trim the database to the requirement
+        for i in $(AllEntries) {
+            if ! $(i) in $(WantedEntries) {
+                # not requested: remove it
+                ICUremove $(TmpRel) : $(i) : $(PkgName) ;
+            }
+        }
+
+        # Finally, if both are required, we convert from targetpkg
+        if l in $(1) && b in $(1) {
+            ICUconvert $(TmpRel) : $(TargetPkg) : icudt34b.dat ;
+            ICUcdata $(TargetLib) : b : icudt34b.dat : $(TmpRel) ;
+        }
+    }
+
+
+	if $(NT) {
+      # Need to add DLL to exported files explicitly
+  	  local WinDynLib = $(CurrentPath)$/$(PrebuiltPathPrefix)$/msvcr71.dll ;
+	  if $(WinDynLib:E) {  ExportSource $(WinDynLib) : Binary ; }
+    }
+	
+	
+# Log stripped

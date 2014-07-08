@@ -1,0 +1,45 @@
+%!PS-Adobe-3.0
+%%Title: UTF-16
+%%CreationDate: Dec 2003
+% Copyright (C) Global Graphics Software Limited, 2003. All Rights Reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:fntnmmap:utf-aria(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Example font name map, demonstrating how a single, Unicode
+% TrueType font can be used in print marginalia
+% in non-Latin installations.
+%
+% Note that the ArialUnicodeMS font is NOT supplied with the
+% Harlequin RIP. This file is for illustrative purposes only
+% and is not expected to be used as-is in production systems.
+
+% Font name map for Unicode TrueType
+
+/FontNameMap <<
+
+	/Fonts <<
+		/Plain	/ArialUnicodeMS
+		/Emphasis	<<
+			/Font /ArialUnicodeMS
+			/Oblique 15
+		>>
+		/Narrow	<<
+			/Font /ArialUnicodeMS
+			/SetSize .82
+		>>
+		/NarrowEmphasis	<<
+			/Font /ArialUnicodeMS
+			/SetSize .82
+			/Oblique 15
+		>>
+	>>
+	
+	/FontClass	(UTF-16BE)
+	
+>>
+
+%%EOF

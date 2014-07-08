@@ -1,0 +1,82 @@
+%!PS-Adobe-3.0
+%%Title: HqnHtm
+%%Creation Date: Dec 2006
+% Copyright (c) 2006-2006 Global Graphics Software Ltd., All Rights Reserved.
+%%EndComments
+%BeginProcSet: (HqnHtm)
+
+% $HopeName: SWv20!swf:procsets:hqnhtm(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+% This procset provides mechanisms to make halftones, particularly modular
+% halftones, available to the RIP for use with the /OverrideSpotFunctionName
+% systemparam.
+%
+% Example of installing a file containing halftone dictionary definitions:
+%
+%   (%os%/MyHalftoneDefs)
+%    /HqnHtm /ProcSet findresource /InstallHalftoneDefsFile get exec
+%
+% Example of installing a single halftone dictionary:
+%
+%   currentglobal true setglobal
+%   /MyScreen << .. >>
+%   /HqnHtm /ProcSet findresource /InstallHalftoneDef get exec
+%   setglobal % restore
+%
+
+currentglobal
+true setglobal
+
+/HqnHtm <<
+
+  % |- filename  InstallHalftoneDefsFile
+  
+  /InstallHalftoneDefsFile { 
+    count 1 lt {
+      /InstallHalftoneDefsFile errordict /stackunderflow get exec
+    }if
+    dup type /stringtype ne {
+      /InstallHalftoneDefsFile errordict /typecheck get exec
+    }if
+    currentglobal exch 
+    true setglobal % halftones _must_ be global
+    /markmarkmark exch
+    10 dict begin
+    { run } stopped {
+      defaulthandleerror
+    }{
+      currentdict {
+        $printerdict /switchscreens get 3 1 roll put
+      } forall
+    }ifelse
+    end
+    { /markmarkmark eq {exit} if } loop  % remove garbage
+    setglobal  % restore
+  } bind
+
+  % |- /halftonename  dict  InstallHalftoneDef
+    
+  /InstallHalftoneDef { 
+    count 2 lt {
+      /InstallHalftoneDef errordict /stackunderflow get exec
+    }if
+    dup type /dicttype ne
+    2 index type /nametype ne or {
+      /InstallHalftoneDef errordict /typecheck get exec
+    }if
+    dup gcheck not {
+      /InstallHalftoneDef errordict /invalidaccess get exec
+    }if
+    $printerdict /switchscreens get 3 1 roll put        
+  } bind
+
+>> /ProcSet defineresource pop
+
+setglobal
+
+
+%%EndProcSet
+
+

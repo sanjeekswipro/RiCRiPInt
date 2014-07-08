@@ -1,0 +1,17 @@
+# Copyright (C) 2010-2011 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# 
+# $HopeName: HQNjambits!linux-all:all-all:doxygen_1_6_2.jam(EBDSDK_P.1) $
+#
+
+FatalIfNotSet CompilerVariable ;        # Complain if CV_DOXYGEN_1_6_2 is not set.
+
+CompilerVar DoxygenCommand : $(CompilerVariable)$/linux-all$/bin$/doxygen ;
+
+if $(GraphvizPath) {
+    local NewPath ;
+    Join NewPath : $(SPLITPATH) : $(GraphvizPath) $PATH ;
+    CompilerVar Doxygen_Environment : PATH=$(NewPath) ;
+}
+
+# Log stripped

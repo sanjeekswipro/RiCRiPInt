@@ -1,0 +1,160 @@
+%!PS-Adobe-3.0
+%%Title: HqnExternalFile
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu, August 13, 2009
+% Copyright (c) 2009 Global Graphics Software. All Rights Reserved.
+%%EndComments
+%%BeginProcSet: (HqnExternalFile) 1 1
+
+% $HopeName: SWpdf!swf:procsets:extfile(EBDSDK_P.1) $
+% Global Graphics Software Ltd. Confidential Information.
+
+currentglobal false setglobal
+
+
+userdict /HqnExternalFiledict 10 dict put
+HqnExternalFiledict begin
+
+/globalness exch def
+
+% HHR use:
+% In HHR, this procset allows the user to specify search locations
+% for PDF files that reference external files, for example PDF/X-5g.
+% HHR specifically does not support traditional OPI.
+%
+% The /OPIdirectories key must be an array of directory names in
+% which the high resolution OPI files may be found. Explicit
+% device names may be used - if no volume name is entered then the files
+% will be searched for within the SW directory only, unless other mounted
+% devices have been explicitly marked as searchable.
+%
+% Each file will be searched for in <dir>/<file> where <dir> is the path
+% defined in the OPIdirectories array, and <file> is the file name specified
+% in the OPI comments, and then in <dir>/*/<file>.
+%
+% The default setting of (OPI//) means that only files
+% placed in a directory called OPI within the SW directory will be found.
+%
+% Examples:
+% PC: (%C%/OPI//) will look for external files in the OPI folder of the C drive.
+% Unix: (%/%/usr/fred/opi//) will look for files in /usr/fred/opi.
+% Mac: (%/%/OPI//) will look for files in /OPI.
+%
+% Note that the directory names should have trailing slashes.
+
+/OPIdirectories [ (OPI//) ] def
+
+/HqnOPICommon /ProcSet findresource
+{ /OPIsimpleTranslator }{ 2 copy get def } forall
+
+
+userdict /HqnOPIdict known {
+
+  userdict /HqnOPIdict get
+
+  begin
+
+} {
+  userdict /HqnOPIdict 130 dict put
+
+  HqnOPIdict begin
+}  ifelse
+
+% !!! These should be defined in HqnOPIdict
+//HqnOPIdict /OPIcommentMapping known not {
+  /OPIcommentMapping [ ] def
+} if
+
+//HqnOPIdict /OPIdirectories known not {
+  /OPIdirectories OPIdirectories def
+} if
+
+/HqnOPIisPresent /HqnOPI /ProcSet resourcestatus {
+  pop pop true
+} {
+  false
+} ifelse  def
+
+% ===========================================================================================
+% Now the procset itself
+
+10 dict begin
+
+%     (filename to search for) <<config>> FindExternalFile ->
+% or <<filespec>>  <<config>> FindExternalFile ->
+%
+%    FindExternalFile -> (found file path & name) true
+% or FindExternalFile -> false
+/FindExternalFile {
+%  (!!!!!!!!!!!!!!!FindExternalFile+: )=print 1 index ==
+
+  count 2 lt {
+  /FindExternalFile errordict /stackunderflow get exec
+  } if
+  dup type /dicttype ne 
+  2 index type dup /stringtype ne exch /dicttype ne and or
+  {
+  /FindExternalFile errordict /typecheck get exec
+  } if
+
+  //HqnOPIisPresent {
+    userdict /HqnOPIdict get
+    begin
+      /OPIfavorMatchBase OPIfavorMatch def
+      /OPIfavorMatch true def
+      /ProcessedID null def
+      /FoundFile false def
+
+      /HqnOPICommon /ProcSet findresource /OPImergeValues get exec
+    end
+  } {
+    pop % dict
+    userdict /HqnOPIdict get /FoundFile false put
+  } ifelse
+
+  /HqnOPICommon /ProcSet findresource /SelectFileName get exec
+
+  userdict /HqnOPIdict get /FileList [ 4 -1 roll ] put
+
+  %  userdict /HqnOPIdict get /FileList get ==
+
+  //HqnOPIisPresent {
+    /HqnOPI /ProcSet findresource /HqnOPItranslator_1 get exec
+  } {
+    //HqnOPIdict begin
+
+    /HqnOPICommon /ProcSet findresource /OPIsimpleTranslator get
+    exec
+    FoundFile dup { 
+      % (FOUND FILE)= 
+      OPIfileName exch 
+    } if
+
+    end
+
+  } ifelse
+
+  //HqnOPIisPresent {
+    userdict /HqnOPIdict get begin
+      /OPIfavorMatch OPIfavorMatchBase def
+    end
+  } if 
+
+%  (FindExternalFile-) =print
+} bind def
+
+currentdict
+
+end
+
+globalness exch
+end  % HqnExternalFiledict
+
+end % HqnOPIdict
+
+/HqnExternalFile exch /ProcSet defineresource
+pop
+setglobal
+
+
+%%EndProcSet

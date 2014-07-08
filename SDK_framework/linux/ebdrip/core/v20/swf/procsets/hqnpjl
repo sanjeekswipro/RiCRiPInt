@@ -1,0 +1,222 @@
+%!PS-Adobe-3.0
+%%Title: HqnPJL
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri Sep 14 13:53:00 2001
+%%VMusage: -1 -1
+%{HqnPJL version #1 0
+% Copyright (C) 2001-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnPJL)" 1 0
+
+% $HopeName: SWv20!swf:procsets:hqnpjl(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+#ifdef NORMAL
+%% This procset contains code for skipping HP PJL comments in PostScript jobs
+%% and rejecting PJL jobs which request other (non-supported) languages.
+#endif
+#ifdef EMBEDDED
+%% This procset contains code for closing the input stream on
+%% detection of a UEL.
+#endif
+
+% Create a resource dictionary
+currentglobal false setglobal 20 dict begin
+/globalness exch def
+
+% Set this flag to true to get PJL information messages
+
+/PJLCommandInfo false def
+
+% Robust printing utility routine
+
+/PJLprint (%stderr)(w) file def
+/PJLprint {
+  //PJLCommandInfo {
+    dup type /stringtype ne {
+      //=string cvs
+    } if
+    dup dup length 
+    dup 0 eq {
+      pop pop pop
+    } {
+      1 sub get 13 eq exch
+      //PJLprint exch writestring
+      % flush at end of each line
+      { //PJLprint flushfile } if
+    } ifelse
+  } {
+    pop
+  } ifelse
+} bind def
+
+% Routine for giving a PS error with and extra info string
+
+/PJLError 128 string def
+/PJLError {
+  % offendingcommand errortype mark string1 string2 ... stringn
+  counttomark 2 add //PJLError exch 1 roll
+  1183615869 internaldict /concattomark get exec
+  $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+  /errorinfo [ null 5 -1 roll ] put
+  errordict exch get exec
+} bind def
+
+#ifdef NORMAL
+
+% For handling PJL commands in PostScript streams - look for the ENTER
+% LANGUAGE command and check it is asking for PS - if not, give an
+% error. All other PJL commands are skipped.
+
+/@PJL {
+  % Catch Win2K driver PJL in a PS procedure from stack content.
+  count 3 ge {
+    dup mark eq {
+      countdictstack 3 index eq {
+        /lucas where {
+          /lucas get 2 index eq {
+            UVS(%%[ Info: HqnPJL - skipping unknown command ]%%\n) //PJLprint exec
+            stop
+          } if
+        } if
+      } if
+    } if
+  } if
+
+  currentfile 0 (\n) /SubFileDecode filter
+
+  {
+    dup token {
+      dup cvlit /ENTER ne {
+        UVS (%%[ Info: HqnPJL - skipping ) //PJLprint exec
+        //PJLprint exec ( ) //PJLprint exec
+        {
+          dup token {
+            //PJLprint exec ( ) //PJLprint exec
+          } {
+            exit
+          } ifelse
+        } loop
+        UVS (command ]%%\n) //PJLprint exec
+      } {
+        pop
+      } ifelse
+    } {
+      stop
+    } ifelse
+
+    dup token {
+      cvlit /LANGUAGE ne {
+        stop
+      } if
+    } {
+      stop
+    } ifelse
+
+    dup token {
+      cvlit /= ne {
+        stop
+      } if
+    } {
+      stop
+    } ifelse
+
+    % Got to the end of the "ENTER LANGUAGE =" - just leave the language token
+    % on the stack.
+
+    dup token {
+      exch pop % The SubFile filter
+    } {
+      stop
+    } ifelse
+  }
+
+  stopped {
+    % If the filter is closed, we skipped a comment and that is OK.
+    % If not, we had a problem, so report a syntax error.
+
+    status {
+      /@PJL /syntaxerror mark UVS (Failed to parse PJL command) //PJLError exec
+    } if
+  } {
+    % Got to the end, so we are expecting the language name on the stack.
+    % Carry on if it is PostScript, otherwise barf.
+
+    cvlit dup /POSTSCRIPT eq {
+      pop
+      UVS (%%[ Info: HqnPJL - PostScript mode ]%%\n) //PJLprint exec
+    } {
+      /@PJL /undefinedresult mark UVS ( language not supported) 5 -1 roll
+      //PJLError exec
+    } ifelse
+  } ifelse
+} bind def
+
+#endif
+
+% We only accept an escape in the input stream if it is followed by the
+% recognised PJL comment. We are not expecting a procedure with a
+% single escape as its name to be already defined.
+
+/PJLEscape (\033) cvn def
+//PJLEscape where {
+  pop UVS (%%[ Warning: HqnPJL - escape operator already defined ]%%\n)
+  //PJLprint exec
+} if
+
+% Also accept escape after CTRL-D PS terminator
+/PJLctrldEscape (\004\033) cvn def
+//PJLctrldEscape where {
+  pop UVS (%%[ Warning: HqnPJL - ctrl-d/escape operator already defined ]%%\n)
+  //PJLprint exec
+} if
+
+/PJLbuffer (%-12345X) def
+/PJLUELString (%-12345X) def
+
+//PJLEscape //PJLctrldEscape {
+  {
+    currentfile //PJLbuffer readstring {
+#ifdef NORMAL
+      //PJLUELString ne {
+        stop
+      } if
+#endif
+#ifdef EMBEDDED
+      //PJLUELString eq {
+        % UEL detected - close input stream
+        currentfile closefile
+      } {
+        stop
+      } ifelse
+#endif
+    } {
+      stop
+    } ifelse
+  }
+
+  stopped {
+    //PJLEscape /undefined mark UVS (Escape not followed by valid PJL UEL comment)
+    //PJLError exec
+  } if
+} bind exch 1 index def def
+
+#ifdef NORMAL
+% Stick the @PJL and escape procedures in userdict so they are always around
+#endif
+#ifdef EMBEDDED
+% Stick the escape procedures in userdict so they are always around
+#endif
+userdict //PJLEscape dup load put
+userdict //PJLctrldEscape dup load put
+#ifdef NORMAL
+userdict /@PJL dup load put
+#endif
+
+% Define the resource
+currentdict end
+/HqnPJL exch /ProcSet defineresource
+/globalness get setglobal

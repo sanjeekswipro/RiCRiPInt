@@ -1,0 +1,576 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Compilation rules for exporting source to third parties
+#
+# $HopeName: HQNjambits!comprule:exportsrc.jam(EBDSDK_P.1) $
+#
+
+
+#* Export files listed by $(2) to export directory $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for file listing files to export
+#* $(3) export directory
+#*
+#* Step one of source exporting process.
+#*
+#* Copies all the files listed to the export directory, processing
+#* them as necessary (e.g. stripping HOPE logs).
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule ExportZipAndRebuildSource ExportSource
+#*section Export Source
+actions quietly together _DoExport bind doexport unifdef {
+  $(Perl) $(doexport) $(exportdir) $(exportlist) $(unifdef)
+}
+
+rule DoExport
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local SrcList = $(2) ;
+
+  local doexport ;
+  MakeLeafTarget doexport : doexport.pl : $(BUILDROOT) bt : Search ;
+  DEPENDS $(Target) : $(doexport) ;
+
+  doexport on $(Target) = $(doexport) ;
+  exportdir on $(Target) = $(BUILDROOT)$/$(3) ;
+  exportlist on $(Target) = $(BUILDROOT)$/obj$/exportedsource.txt ;  # As in ExportSource in base.jam
+  unifdef on $(Target) = $(Build-Tools-unifdef) ;
+
+  _DoExport $(Target) ;
+
+  DEPENDS $(Target) : $(SrcList) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Copy tool referenced by CV variable $(4) to export directory $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for DoExport rule
+#* $(3) export directory
+#* $(4) CV variable
+#*
+#* Copies tool to <export dir>/CV_variables/<CV_XXX>
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule DoExport ExportCVs
+#*section Export Source
+actions quietly together _ExportCV {
+  echo ...Copying $(SrcDir) to $(DestDir)
+  $(Copy) "$(Src)" "$(DestDir)"
+}
+
+rule ExportCV
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local DoExportTarget = $(2) ;
+
+  local cv = $(4) ;
+
+  if exportsrc in $(JAM_ARGUMENTS)
+  {
+    if ! $($(cv))
+    {
+      Error Attempting to export unset CV variable $(cv) ;
+    }
+  }
+
+  local TargetDir ; MakeGristed TargetDir : $(cv) : $(CurrentPath) ;
+
+  Src on $(TargetDir) = $($(cv)) ;
+  DestDir on $(TargetDir) = $(BUILDROOT)$/$(3)$/CV_variables$/$(cv) ;
+
+  # Copy into $(DestDir)
+  Copy on $(TargetDir) = $(FileutilRune) -e \"Fileutil::Copy\" -- -dfmnpsu ;
+
+  _ExportCV $(TargetDir) ;
+
+  DEPENDS $(TargetDir) : $(DoExportTarget) ;
+  DEPENDS $(Target) : $(TargetDir) ;
+
+  NOTFILE $(TargetDir) ;
+}
+
+
+#* Create ReadMe file for CV variable $(4) containing text $(5).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for DoExport rule
+#* $(3) export directory
+#* $(4) CV variable
+#* $(5) ReadMe file text
+#*
+#* Creates ReadMe in <export dir>/CV_variables/<CV_XXX>
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule DoExport ExportCVs
+#*section Export Source
+actions quietly together _ExportCVReadMe {
+  echo ...Creating $(DestFile)
+  $(MkDir) "$(DestDir)"
+  echo "$(Message)" > "$(DestFile)"
+}
+
+rule ExportCVReadMe
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local DoExportTarget = $(2) ;
+
+  local cv = $(4) ;
+
+  if exportsrc in $(JAM_ARGUMENTS)
+  {
+    if ! $($(cv))
+    {
+      Error Attempting to export unset CV variable $(cv) ;
+    }
+  }
+
+  local TargetDir ; MakeGristed TargetDir : $(cv) : $(CurrentPath) ;
+
+  Message on $(TargetDir) = $(5) ;
+  DestDir on $(TargetDir) = $(BUILDROOT)$/$(3)$/CV_variables$/$(cv) ;
+  DestFile on $(TargetDir) = $(BUILDROOT)$/$(3)$/CV_variables$/$(cv)$/ReadMe.txt ;
+
+  _ExportCVReadMe $(TargetDir) ;
+
+  DEPENDS $(TargetDir) : $(DoExportTarget) ;
+  DEPENDS $(Target) : $(TargetDir) ;
+
+  NOTFILE $(TargetDir) ;
+}
+
+
+#* Export CV variables listed by $(4) to $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for DoExport rule
+#* $(3) export directory
+#* $(4) CV variables
+#*
+#* Step two of source exporting process.
+#*
+#* Invokes ExportCV or ExportCVReadMe as appropriate for each CV variable.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule DoExport ExportCV ExportCVReadMe ExportZipAndRebuildSource
+#*section Export Source
+rule ExportCVs
+{
+  if exportsrc in $(JAM_ARGUMENTS)
+  {
+    CheckGristed $(1) $(2) ;
+
+    local Target = $(1) ;
+    local DoExportTarget = $(2) ;
+    local cvlist = $(4) ;
+
+    local cv ;
+    for cv in $(cvlist)
+    {
+      switch $(cv)
+      {
+      case CV_DOXYGEN_1_4_4 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+        if $(NT) {        
+          ExportCV $(Target) : $(DoExportTarget) : $(3) : "CV_HTMLHELP_1_3" ;
+        }
+
+      case CV_DOXYGEN_1_6_2 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+        if $(NT) {        
+          ExportCV $(Target) : $(DoExportTarget) : $(3) : "CV_HTMLHELP_1_3" ;
+        }
+        
+      case CV_GRAPHVIZ_2 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Not used" ;
+
+      case CV_GCC_3_2 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your gcc 3.2 installation, e.g. $($(cv))" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_3_2_CPLUSPLUS" 
+          : "Set to point to your g++ 3.2 installation, e.g. /usr/bin/g++" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_3_2_CPP" 
+          : "Set to point to your cpp installation, e.g. /usr/bin/cpp" ;
+
+      case CV_GCC_4_0 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your gcc 4.0 installation, e.g. $($(cv))" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_0_CPLUSPLUS" 
+          : "Set to point to your g++ 4.0 installation, e.g. /usr/bin/g++" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_0_CPP" 
+          : "Set to point to your cpp installation, e.g. /usr/bin/cpp" ;
+
+      case CV_GCC_4_1_2 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your gcc 4.1.2 installation, e.g. $($(cv))" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_1_2_CPLUSPLUS" 
+          : "Set to point to your g++ 4.1.2 installation, e.g. /usr/bin/g++" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_1_2_CPP" 
+          : "Set to point to your cpp installation, e.g. /usr/bin/cpp" ;
+
+      case CV_GCC_4_5_3 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your gcc 4.5.3 installation, e.g. $($(cv))" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_5_3_CPLUSPLUS" 
+          : "Set to point to your g++ 4.5.3 installation, e.g. /usr/bin/g++" ;
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : "CV_GCC_4_5_3_CPP" 
+          : "Set to point to your cpp installation, e.g. /usr/bin/cpp" ;
+
+      case CV_JAM_2_2_5_6 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_MSVCDLL_7_1 :
+        if $($(cv))
+        {
+          ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+            : "Set to point to your directory of DLLs for machines without MSVC .Net 2003, e.g. $($(cv))" ;
+        }
+
+      case CV_MSVCNT_8_0 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your MSVC 8 installation, e.g. $($(cv))" ;
+
+      case CV_MSVCNT_10_0 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Set to point to your MSVC 10 installation, e.g. $($(cv))" ;
+
+      case CV_OMNI_4_1_0 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_OMNI_4_1_4 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_PERL_5_005_02 :
+        if $(NT)
+        {
+          local cv = CV_PERL_5_005_02 ;
+          local TargetDir ; MakeGristed TargetDir : $(cv) : $(CurrentPath) ;
+
+          Src on $(TargetDir) = \\\\storehouse\\toolsandcompilers\\perl\\5_00503\\perl5_00503.zip ;
+          DestDir on $(TargetDir) = $(BUILDROOT)$/$(3)$/CV_variables$/$(cv) ;
+
+          # Copy into $(DestDir)
+          Copy on $(TargetDir) = $(FileutilRune) -e \"Fileutil::Copy\" -- -dfmnpsu ;
+
+          _ExportCV $(TargetDir) ;
+
+          DEPENDS $(TargetDir) : $(DoExportTarget) ;
+          DEPENDS $(Target) : $(TargetDir) ;
+
+          NOTFILE $(TargetDir) ;
+
+          ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+            : "Unzip perl5_00503.zip and point $(cv) at the enclosed perl.exe, e.g. $($(cv))" ;
+        }
+        else
+        {
+          ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+            : "Set to point to your perl installation, e.g. $($(cv))" ;
+        }
+
+      case CV_PREFAST_8_0 :
+        if $($(cv))
+        {
+          ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+            : "Set to point to your PREfast tool, e.g. $($(cv))" ;
+        }
+
+      case CV_SIGNTOOL_1_0 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_SIGNTOOL_1_1 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_SIGNTOOL_1_2 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case CV_WDK_VISTA_6000 :
+        ExportCVReadMe $(Target) : $(DoExportTarget) : $(3) : $(cv)
+          : "Not used" ;
+
+      case CV_CXXTEST_3_7_1 :
+        # Not required; present here to avoid pre-build messages  ;
+         
+      case CV_ZIP_2_3_1 :
+        ExportCV $(Target) : $(DoExportTarget) : $(3) : $(cv) ;
+
+      case * :
+        Error Unhandled CV variable $(cv) in ExportCVs ;
+      }
+    }
+
+    NOTFILE $(Target) ;
+  }
+}
+
+
+#* Writes $(4) to variants text file in $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for ExportCVs rule
+#* $(3) export directory
+#* $(4) build variants
+#*
+#* Step three of source exporting process.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule ExportZipAndRebuildSource
+#*section Export Source
+actions quietly together _RecordExportSrcVariants {
+  echo ...Creating $(variantsfile)
+  echo $(variants) > $(variantsfile)
+}
+
+rule RecordExportSrcVariants
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local Source = $(2) ;
+
+  local Regime ;
+
+  if $(RELEASE) = 1
+  {
+    Regime = rel ;
+  }
+  else if $(ASSERT) = 1
+  {
+    Regime = a ;
+  }
+  else
+  {
+    Regime = na ;
+  }
+
+  variantsfile on $(Target) = $(BUILDROOT)$/$(3)$/buildvariants-$(Regime)-$(TargetPlat).txt ;
+  variants on $(Target) = $(4) ;
+  _RecordExportSrcVariants $(Target) ;
+
+  DEPENDS $(Target) : $(Source) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Zips up $(3) to create $(4).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for ExportCVs rule
+#* $(3) export directory
+#* $(4) zip file name
+#*
+#* Step four of source exporting process.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#* Note: This rule is required because the Zip rule uses -D which causes
+#* empty directories to not be preserved.  We also want to be able to
+#* update (-u) an existing zip file.
+#*
+#*seerule DoExport ExportCVReadMe ExportZipAndRebuildSource
+#*section Export Source
+actions quietly _ZipExport {
+  echo ...Zipping export directory $(SrcDir) into $(ZipFile)...
+  $(ChDir) $(SrcDir)
+  $(ZipCommand) -ruq9 $(ZipFile) * $(Exclusions)
+}
+
+
+rule ZipExport
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local ExportCVsTarget = $(2) ;
+
+  local ZipFileTarget ; MakeGristed ZipFileTarget : $(4) : $(CurrentPath) ;
+  DirectoryFor $(ZipFileTarget) : $(CurrentPath)$/obj ;
+
+  SrcDir on $(ZipFileTarget) = $(3) ;
+  Exclusions on $(ZipFileTarget) =
+    -x \"*$/distrib$/*\"
+    -x \"*$/obj$/*\"
+    -x \"*$/SW$/*\"
+    -x \"*$/SW.tim\"
+    -x \"*.dep\"
+    -x \"*$/jamtmp00.bat\"
+    -x \"*.pdb\"
+    -x \"*$/corelib.def\"
+    -x \"*$/eventgen.h\" ;
+  ZipCommand on $(ZipFileTarget) = $(ZipCommand) ;
+  ZipFile on $(ZipFileTarget) = $(BUILDROOT)$/obj$/$(4) ;
+  _ZipExport $(ZipFileTarget) ;
+
+  DEPENDS $(ZipFileTarget) : $(ExportCVsTarget) ;
+  DEPENDS $(Target) : $(ZipFileTarget) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Executes $(4) in $(3).
+#*
+#* $(1) gristed target for rule
+#* $(2) gristed target for ZipExport rule
+#* $(3) export directory
+#* $(4) build variants
+#* $(5) build targets
+#*
+#* Step five of source exporting process.
+#*
+#* Directory $(3) is relative to $(BUILDROOT).
+#*
+#*seerule ExportZipAndRebuildSource
+#*section Export Source
+actions quietly together _BuildExport {
+  echo ...Building exported source: $(cmd)
+  echo ...From within directory: $(builddir)
+  cd $(builddir)
+  $(cmd)
+  echo ...End of build of exported source
+}
+
+rule BuildExport
+{
+  CheckGristed $(1) $(2) ;
+
+  local Target = $(1) ;
+  local Source = $(2) ;
+
+  local BuildCmd = bt$/hqmake ;
+  local BuildFlavours ;
+  local BuildTargetPlat ;
+  local BuildVariants = -va thirdparty $(4) ;
+  local BuildTargets = $(5) ;
+
+  if $(JAMDEBUG) {
+    BuildFlavours += -jamdebug ;
+  }
+
+  if $(RELEASE) = 1 {
+    BuildFlavours += +r ;
+  } else {
+    BuildFlavours += -r ;
+  }
+
+  if $(ASSERT) = 1 {
+    BuildFlavours += +a ;
+  } else {
+    BuildFlavours += -a ;
+  }
+
+  if $(DEBUG) = 1 {
+    BuildFlavours += +d ;
+  } else {
+    BuildFlavours += -d ;
+  }
+
+  if $(OPTIMISE) = 1 {
+    BuildFlavours += -n ;
+  } else {
+    BuildFlavours += +n ;
+  }
+
+  if $(GLOBAL_OPTIMISE) = 1 {
+    BuildFlavours += +g ;
+  } else {
+    BuildFlavours += -g ;
+  }
+
+  if $(PROFILE_BUILD) = 1 {
+    BuildFlavours += +p ;
+  } else {
+    BuildFlavours += -p ;
+  }
+
+  if $(COVERAGE) = 1 && exportsrc in $(JAM_ARGUMENTS) {
+    Error Use of exportsrc with coverage builds is not supported ;
+  }
+
+  if $(JAM_TARGET_PLATFORM) {
+    BuildTargetPlat += -target $(JAM_TARGET_PLATFORM) ;
+  }
+
+  builddir on $(Target) = $(BUILDROOT)$/$(3) ;
+  cmd on $(Target) = $(BuildCmd) $(BuildFlavours) $(BuildTargetPlat) $(BuildVariants) $(BuildTargets) ;
+  _BuildExport $(Target) ;
+
+  DEPENDS $(Target) : $(Source) ;
+  NOTFILE $(Target) ;
+}
+
+
+#* Convenience rule to execute all source exporting rules in order.
+#*
+#* $(1) gristed target for rule
+#* $(2) export directory
+#* $(3) product name
+#* $(4) zip file name
+#*
+#* Exports source and CV variables, creates zip file and builds using exported source.
+#*
+#* Directory $(2) is relative to $(BUILDROOT).
+#*
+#*seerule DoExport ExportCVs RecordExportSrcVariants ZipExport BuildExport CompilerBits ExportSource
+#*section Export Source
+rule ExportZipAndRebuildSource
+{
+  CheckGristed $(1) ;
+
+  local Target = $(1) ;
+  local ExportedSrcDir = $(2) ;
+  local ProductName = $(3) ;
+  local ExportedSrcZip = $(4) ;
+  local CVList = CV_JAM_2_2_5_6 CV_PERL_5_005_02 $(ExportSourceCVList) ;
+
+  local BuildVariants ;
+  if $(JAM_VARIANTS) {
+    local v ; for v in $(JAM_VARIANTS) {
+      local vv ; for vv in $(Variant_$(v)) {
+        BuildVariants += -va $(v)=$(vv) ;
+      }
+    }
+  }
+
+  local BuildTargets ;
+  local a ; for a in $(JAM_ARGUMENTS) {
+    if $(a) != exportsrc {
+      BuildTargets += $(a) ;
+    }
+  }
+
+  # Must match ExportedSrcList in ExportSource rule in base.jam
+  local ExportedSrcList ; MakeGristed ExportedSrcList : exportedsource.txt : $(BUILDROOT) ;
+  local ExportedSrcDirTarget ; MakeGristed ExportedSrcDirTarget : $(ExportedSrcDir) : $(CurrentPath) ;
+  DoExport $(ExportedSrcDirTarget) : $(ExportedSrcList) : $(ExportedSrcDir)$/$(ProductName) ;
+
+  local ExportCVsTarget ; MakeGristed ExportCVsTarget : exportcvs : $(CurrentPath) ;
+  ExportCVs $(ExportCVsTarget) : $(ExportedSrcDirTarget) : $(ExportedSrcDir) : $(CVList) ;
+
+  local RecordExportSrcVariantsTarget ; MakeGristed RecordExportSrcVariantsTarget : recordexportsrcvariants : $(CurrentPath) ;
+  RecordExportSrcVariants $(RecordExportSrcVariantsTarget) : $(ExportCVsTarget) : $(ExportedSrcDir)$/$(ProductName) : $(BuildVariants) ;
+
+  local ZipExportTarget ; MakeGristed ZipExportTarget : zipexport : $(CurrentPath) ;
+  ZipExport $(ZipExportTarget) : $(RecordExportSrcVariantsTarget) : $(ExportedSrcDir) : $(ExportedSrcZip) ;
+
+  BuildExport $(Target) : $(ZipExportTarget) : $(ExportedSrcDir)$/$(ProductName) : $(BuildVariants) : $(BuildTargets) ;
+  DEPENDS exportsrc : $(Target) ;
+}
+
+
+# Log stripped

@@ -1,0 +1,115 @@
+% Copyright (C) 2007-2011 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: SWv20tiff!src:names.nam(EBDSDK_P.1) $
+
+/* Names table for SWv20tiff. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+% TIFF6 input operators
+settiffparams OPERATOR
+currenttiffparams OPERATOR
+tiffexec OPERATOR
+tiffimageread OPERATOR DICT(1183615869 internaldict)
+tiffbyteflip OPERATOR DICT(1183615869 internaldict)
+reversebyte OPERATOR DICT(1183615869 internaldict)
+
+% TIFF6 parameters
+AbortOnUnknown
+IgnoreOrientation
+AdjustCTM
+DoSetColorSpace
+Verbose
+ListIFDEntries
+InvertImage
+DoImageMask
+DoPageSize
+IgnoreES0
+TreatES0asES2
+NoUnitsSameAsInch
+
+DefaultResolution
+
+% Filters used by TIFF filter
+CCITTFaxDecode
+DCTDecode
+FlateDecode
+LZWDecode
+RunLengthDecode
+
+% Uncategorised names
+Black
+Blue
+Colors
+Columns
+ContoneMask
+Cyan
+Gray
+Green
+Indexed
+InstallICCProfile
+Interpolate
+K
+Magenta
+None
+Red
+Rows
+Separation
+Strict
+Uncompressed
+Yellow
+
+% options to TIFF decompression filters
+BlackIs1
+EODCount
+EODString
+EncodedByteAlign
+EndOfLine
+EndOfBlock
+Predictor
+QuantTables
+JPEGTables
+BigEndian
+
+% tiffexec image dicts
+DataDict
+MaskDict
+
+% operators used by tiffexec
+add
+cvi
+dup
+exch
+get
+pop
+
+% TIFF filter options
+SubImage
+
+% TIFF filter info
+BitsPerComponent
+ColorSpace
+DataSource
+Decode
+DeviceCMYK
+DeviceGray
+DeviceN
+DeviceRGB
+Height
+ImageMatrix
+ImageType
+InterleaveType
+Lab
+L
+a
+b
+MultipleDataSources
+PreMult
+Width
+XResolution
+YResolution
+EmbeddedICCProfile
+
+/*
+Log stripped */

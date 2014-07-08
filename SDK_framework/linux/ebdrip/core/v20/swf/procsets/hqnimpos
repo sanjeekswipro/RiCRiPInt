@@ -1,0 +1,77 @@
+%!PS-Adobe-3.0
+%%Title: HqnImpose
+%%Creator: Global Graphics Software Limited
+%%CreationDate: August 1994
+%{HqnImpose version #1 0
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnImpose) 1 0
+
+% The HqnImpose procset has been superseded by HqnImpose2. 
+% For more details please see Harlequin's Extensions documentation.
+
+% This procset provides a set of routines to enable combinations of
+% imposition, crop marks and other features best obtained using the
+% Beginpage/EndPage/SensePageDevice/Imposition entires in the page
+% device to be produced as easily as possible.
+%
+% For more details please see Harlequin's Extensions documentation.
+
+% NOTE: Multiple separations may not be imposed if Recombine Separations
+%       is turned on.
+
+% $HopeName: SWv20!swf:procsets:hqnimpos(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+
+
+currentglobal false setglobal
+
+6 dict begin % workspace
+
+/workspace currentdict def
+
+/globalness exch def
+
+/Warning (%%[ Warning: The HqnImpose procset has been superseded by HqnImpose2 ]%%\n) def
+
+% =========== the procset ========================
+
+4 dict begin
+
+/HqnInitImpose {
+  //workspace /Warning get =
+  /HqnImpose2 /ProcSet findresource /HqnInitImpose get exec
+} bind def
+
+/HqnFlushFilm {
+  //workspace /Warning get =
+  /HqnImpose2 /ProcSet findresource /HqnFlushFilm get exec
+} bind def
+
+% Called to check whether separation recombination is on.
+/HqnTestRecombination {
+  //workspace /Warning get =
+  /HqnImpose2 /ProcSet findresource /HqnTestRecombination get exec
+} bind def
+
+/HqnUnloadImpose {
+  //workspace /Warning get =
+  /HqnImpose2 /ProcSet findresource /HqnUnloadImpose get exec
+} bind def
+
+currentdict 
+
+end 
+
+/HqnImpose exch /ProcSet defineresource
+
+globalness
+
+end	% workspace
+
+setglobal
+
+%%EndProcSet

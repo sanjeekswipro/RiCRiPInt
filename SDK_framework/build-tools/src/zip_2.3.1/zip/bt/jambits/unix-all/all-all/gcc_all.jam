@@ -1,0 +1,37 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!unix-all:all-all:gcc_all.jam(trunk.10) $
+#
+
+# Compiler
+    CompilerVar C-Compiler         : $(gcc_compiler) ;
+    CompilerVar C++-Compiler       : $(g++_compiler) ;
+
+# Preprocessor
+    CompilerVar C-Preprocessor     : $(cpp_compiler) ;
+
+# Executable linker
+    CompilerVar C-Exec-Linker      : $(gcc_compiler) ;
+    CompilerVar C++-Exec-Linker    : $(g++_compiler) ;
+    CompilerVar mixedC-Exec-Linker : $(g++_compiler) ;
+
+# DynamicLibrary linker
+    CompilerVar C-Dll-Linker       : $(gcc_compiler) ;
+    CompilerVar C++-Dll-Linker     : $(g++_compiler) ;
+    CompilerVar mixedC-Dll-Linker  : $(g++_compiler) ;
+
+    local Com = C C++ mixedC ;
+    CompilerVar $(Com)-Dll-Linker_Arguments        : -shared ;
+
+    # Add -fPIC for building dynamic shared libraries
+    if $(Variant_dll) = d {
+      AddToVar Inherited Local : $(Com)-Compiler_Arguments : -fPIC ;
+    }
+
+    # For gprof profiling
+    local Tool = Compiler Dll-Linker Exec-Linker Lib-Linker ;
+    CompilerVar $(Com)-$(Tool)_Arguments           : -pg : Build TIMING ;
+
+
+# Log stripped

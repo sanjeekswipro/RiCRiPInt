@@ -1,0 +1,387 @@
+% Copyright (C) 2011-2014 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: COREgstate!color:src:names.nam(EBDSDK_P.1) $
+
+/* Names table for COREgstate!color. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+
+% PS Red Book colour spaces
+DeviceCMYK
+DeviceRGB
+DeviceGray
+CIEBasedA
+CIEBasedABC
+CIEBasedDEF
+CIEBasedDEFG
+Separation
+DeviceN
+Indexed
+Pattern
+
+% CIETable colour spaces
+CIETableA
+CIETableABC
+CIETableABCD
+
+MatrixABC
+RangeA
+RangeABC
+RangeABCD
+RangeE
+RangeEFG
+RangeEFGH
+RangeTable
+Table
+TableSize
+TransferInput
+TransferOutput
+
+
+% CIEBased dictionaries
+BlackPoint
+DecodeA
+DecodeABC
+DecodeDEF
+DecodeDEFG
+DecodeLMN
+MatrixA
+MatrixABC
+MatrixLMN
+MatrixPQR
+RangeA
+RangeABC
+RangeDEF
+RangeDEFG
+RangeHIJ
+RangeHIJK
+RangeLMN
+RangePQR
+Table
+WhitePoint
+
+ConvertLabtoXYZ
+ConvertXYZtoLab
+RelativeWhitePoint
+RelativeBlackPoint
+
+
+% Pattern spaces
+Implementation
+PaintType
+PatternType
+
+
+% PDF color spaces
+ICCBased
+CalGray
+CalRGB
+Lab
+
+Gamma
+Alternate
+Range
+Matrix
+
+
+% Hqn internal color spaces
+DeviceCMY
+Preseparation
+CMM
+
+
+% Extensions to color space dicts to assist caching
+ContextID
+XRef
+UniqueID
+XUID
+
+
+% Standard colorant names
+Cyan
+Magenta
+Yellow
+Black
+Red
+Green
+Blue
+Gray
+All
+None
+Default
+Unknown
+
+
+% CRDs
+ColorRenderingType
+EncodeABC
+EncodeLMN
+RenderTable
+TransformPQR
+
+% Extensions to CRDs
+RenderTable16Bit
+
+
+% for Hqn ColorRenderingType 2 CRDs which set the rendering intent directly.
+Intent
+
+% findcolorrendering -- the PS3 operator defined in hcmspss.pss.
+findcolorrendering OPERATOR(useinternaldictop_)
+
+
+% Utility halftone operators
+findspotfunctionnumber OPERATOR DICT(1183615869 internaldict)
+findspotfunctionname OPERATOR DICT(1183615869 internaldict)
+
+
+% sethalftone dictionary keys
+Type
+HalftoneName
+HalftoneType
+Frequency
+Angle
+SpotFunction
+RedFrequency
+RedAngle
+RedSpotFunction
+GreenFrequency
+GreenAngle
+GreenSpotFunction
+BlueFrequency
+BlueAngle
+BlueSpotFunction
+GrayFrequency
+GrayAngle
+GraySpotFunction
+AccurateScreens
+ActualFrequency
+ActualAngle
+Width
+Height
+Thresholds
+RedWidth
+RedHeight
+RedThresholds
+GreenWidth
+GreenHeight
+GreenThresholds
+BlueWidth
+BlueHeight
+BlueThresholds
+GrayWidth
+GrayHeight
+GrayThresholds
+Mapped
+TransferFunction
+Xsquare
+Ysquare
+Width2
+Height2
+LimitScreenLevels
+
+
+% Hqn sethalftone extensions
+Background
+DCS
+DetectSeparation
+DoubleScreens
+Encrypt
+EncryptType
+EncryptLength
+InheritFrequency
+InheritAngle
+HalftoneModule
+Override
+OverrideFrequency
+OverrideAngle
+Positions
+ScreenChanges
+ScreenExtraGrays
+Separations
+
+Depth                 % For multibit halftones
+Invert
+
+Halftone              % HalftoneType 199 keys
+HalftoneColor
+HalftoneObjectType
+
+
+% setcalibration dictionary keys
+CalibrationType
+DeviceCurve
+IntendedPressCurve
+ActualPressCurve
+ToneCurve
+ForceSolids
+NegativePrint
+WarningsCriteria
+MissingCalibrationAbort
+HWResolution
+Exposure
+HalftoneName
+Frequency
+
+
+% setreproduction dictionary keys
+Profile
+IntentMappings
+SourceIntent
+BlackPointCompensation
+NextDevice
+InputColorSpace
+
+
+% keys in a dict that we construct to emulate the tables in an ICC profile. It
+% can be used in the place of an ICC profile when used with setreproduction.
+ProfileType
+Output
+Input
+
+
+% rendering intents used in IntentMappings
+Perceptual
+RelativeColorimetric
+Saturation
+AbsoluteColorimetric
+AbsolutePerceptual
+AbsoluteSaturation
+
+
+% All the possible reproduction types
+Picture
+Text
+Vignette
+Other
+Linework    % One day this will replace Other
+
+
+% Used for colour space in IntentMappings & Profile sub-dictionaries in setreproduction.
+Default
+CMYK
+RGB
+Gray
+NamedColor
+CIE
+
+
+% for setinterceptcolorspace
+DeviceCMYK
+DeviceRGB
+DeviceGray
+BlendCMYK
+BlendRGB
+BlendGray
+SourceCMYK
+SourceRGB
+SourceGray
+OverrideCMYK
+OverrideRGB
+OverrideGray
+NamedColor
+Black
+BlackTint
+BlackTintLuminance
+ConvertRGBBlack
+MultipleNamedColors
+OverprintPreview
+UseBlendSpaceForOutput
+DefaultCMYK
+DefaultRGB
+DefaultGray
+
+
+% Miscellaneous objects subject to being treated as different object types. The
+% usual choice is Picture, Vignette, Other, but any reproduction type will work.
+TreatOneBitImagesAs
+TreatSingleRowImagesAs
+
+
+% Special for tint transforms using our internal spacecache for simple conversions
+% of spot colorants to process, but which nevertheless have to be communicated
+% via postscript colorspace arrays.
+SimpleTintTransform
+
+
+% Names used for obtaining CMYK equivalents for named colorants
+CMYKCustomColors
+CMYKEquivalents
+Colorants
+Composite
+spots
+statusdict
+
+
+% Allowed values of DuplicateColorants userparam
+First
+Last
+
+
+% Dictionaries for finding fixed PS callout idiom replacements
+$printerdict NAME(DollarPrinterdict)
+switchscreens
+switchcieprocs
+
+
+% Used in variable PS callout idiom replacements
+abcop
+add
+div
+dup
+exp
+ifelse
+interpop
+le
+mul
+negative
+pop
+repeat
+sub
+
+
+% System params
+Overprint
+TableBasedColor
+ForcePositive
+
+% User params
+OverprintProcess
+OverprintBlack
+OverprintGray
+OverprintGrayImages
+OverprintWhite
+IgnoreOverprintMode
+TransformedSpotOverprint
+OverprintICCBased
+
+DuplicateColorants
+ExcludedSeparations
+EnableColorCache
+
+AbortOnBadICCProfile
+
+NegativeJob
+IgnoreSetTransfer
+IgnoreSetBlackGeneration
+TransferFunction
+UseAllSetTransfer
+
+PhotoshopInput
+FasterColorMethod
+FasterColorSmoothness
+FasterColorGridPoints
+AdobeProcessSeparations
+HalftoneColorantMapping
+
+% User parameters to control RGB to CMYK conversion method
+UseFastRGBToCMYK
+RGBToCMYKMethod
+
+
+/*
+Log stripped */
+
+%% EOF names.nam %%

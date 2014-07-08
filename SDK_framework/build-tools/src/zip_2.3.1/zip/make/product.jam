@@ -1,0 +1,17 @@
+#
+# Product-level definitions for zip utility
+#
+# $HopeName: HQNzip231-src!make:product.jam(trunk.6) $
+
+    CompilerVersion Inherited Local : C C++ mixedC    : gcc_3_2      : linux ;
+    CompilerVersion Inherited Local : C C++ mixedC RC : gcc_3_3      : macos_x ppc ;
+    CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_0      : macos_x 386 ;
+    CompilerVersion Inherited Local : C C++ mixedC RC : gcc_4_5_3    : netbsd 386 ;
+    CompilerVersion Inherited Local : C RC C++ mixedC : msvcnt_10_0  : win_32 ;
+    CompilerVersion Inherited Local : C RC C++ mixedC : msvcnt_10_0  : win_64 ;
+
+    # for exporting source archive
+    CompilerVersion Inherited Local : Zip : zip_2_3_1 : : ;
+	
+
+# Log stripped

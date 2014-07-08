@@ -1,0 +1,68 @@
+# Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+#
+# Jam makefile for SWirs, the in-rip screening threshold arrays.
+#
+# This makefile adds the swf directory to the list of directories built.
+#
+# $HopeName: SWirs!make:makefile.jam(EBDSDK_P.1) $
+#
+# This example is provided on an "as is" basis and without
+# warranty of any kind. Global Graphics Software Ltd. does not
+# warrant or make any representations regarding the use or results
+# of use of this example.
+#
+
+  SWF swf : irs                         : Irs                     :            : normalclebdrip ;
+  SWF swf : irs irs2bpp                 : Irs2bpp                 :            : normalclebdrip ;
+  SWF swf : irs irs4bpp                 : Irs4bpp                 :            : normalclebdrip ;
+  SWF swf : irs dcthinline_cmyk2        : DCThinLine_CMYK2        : "DCTCMYK2" : normalclebdrip ;
+  SWF swf : irs dcline_cmyk2            : DCLine_CMYK2            : "DCLCMYK2" : normalclebdrip ;
+  SWF swf : irs dcline_cmyk1            : DCLine_CMYK1            : "DCLCMYK1" : normalclebdrip ;
+  SWF swf : irs dcline_mono1            : DCLine_MONO1            : "DCLMONO1" : normalclebdrip ;
+  SWF swf : irs irs2bpp_text_c_inv.bin  : irs2bpp_Text_C_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_text_m_inv.bin  : irs2bpp_Text_M_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_text_y_inv.bin  : irs2bpp_Text_Y_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_text_k_inv.bin  : irs2bpp_Text_K_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_gfx_c_inv.bin   : irs2bpp_Gfx_C_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_gfx_m_inv.bin   : irs2bpp_Gfx_M_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_gfx_y_inv.bin   : irs2bpp_Gfx_Y_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_gfx_k_inv.bin   : irs2bpp_Gfx_K_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_photo_c_inv.bin : irs2bpp_Photo_C_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_photo_m_inv.bin : irs2bpp_Photo_M_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_photo_y_inv.bin : irs2bpp_Photo_Y_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs2bpp_photo_k_inv.bin : irs2bpp_Photo_K_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_text_c_inv.bin  : irs4bpp_Text_C_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_text_m_inv.bin  : irs4bpp_Text_M_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_text_y_inv.bin  : irs4bpp_Text_Y_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_text_k_inv.bin  : irs4bpp_Text_K_inv.bin  :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_gfx_c_inv.bin   : irs4bpp_Gfx_C_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_gfx_m_inv.bin   : irs4bpp_Gfx_M_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_gfx_y_inv.bin   : irs4bpp_Gfx_Y_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_gfx_k_inv.bin   : irs4bpp_Gfx_K_inv.bin   :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_photo_c_inv.bin : irs4bpp_Photo_C_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_photo_m_inv.bin : irs4bpp_Photo_M_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_photo_y_inv.bin : irs4bpp_Photo_Y_inv.bin :            : normalclebdrip ;
+  SWF swf : irs irs4bpp_photo_k_inv.bin : irs4bpp_Photo_K_inv.bin :            : normalclebdrip ;
+  SWF swf : irs dcthinline_2bit_cyan.bin    : DCThinLine_2bit_Cyan.bin    : "DCT2BICY" : normalclebdrip ;
+  SWF swf : irs dcthinline_2bit_magenta.bin : DCThinLine_2bit_Magenta.bin : "DCT2BIMA" : normalclebdrip ;
+  SWF swf : irs dcthinline_2bit_yellow.bin  : DCThinLine_2bit_Yellow.bin  : "DCT2BIYE" : normalclebdrip ;
+  SWF swf : irs dcthinline_2bit_black.bin   : DCThinLine_2bit_Black.bin   : "DCT2BIBL" : normalclebdrip ;
+  SWF swf : irs dcline_1bit_cyan.bin    : DCLine_1bit_Cyan.bin    :  "DCL1BICY" : normalclebdrip ;
+  SWF swf : irs dcline_1bit_magenta.bin : DCLine_1bit_Magenta.bin :  "DCL1BIMA" : normalclebdrip ;
+  SWF swf : irs dcline_1bit_yellow.bin  : DCLine_1bit_Yellow.bin  :  "DCL1BIYE" : normalclebdrip ;
+  SWF swf : irs dcline_1bit_black.bin   : DCLine_1bit_Black.bin   :  "DCL1BIBL" : normalclebdrip ;
+  SWF swf : irs dcline_2bit_cyan.bin    : DCLine_2bit_Cyan.bin    :  "DCL2BICY" : normalclebdrip ;
+  SWF swf : irs dcline_2bit_magenta.bin : DCLine_2bit_Magenta.bin :  "DCL2BIMA" : normalclebdrip ;
+  SWF swf : irs dcline_2bit_yellow.bin  : DCLine_2bit_Yellow.bin  :  "DCL2BIYE" : normalclebdrip ;
+  SWF swf : irs dcline_2bit_black.bin   : DCLine_2bit_Black.bin   :  "DCL2BIBL" : normalclebdrip ;
+  
+  SWF swf : sys                         : Sys                     :            : normalclebdrip ;
+  SWF swf : sys extstart                : ExtraStart              : "EXTSTART" : normalclebdrip ;
+  SWF swf : sys extstart irs            : Irs                     :            : normalclebdrip ;
+
+  SWF swf : testconf                   : TestConfig                  :               : normalclrip ;
+  SWF swf : testconf cmykcompband300_2 : CMYKCompositeBand300dpi2bit : "CMYKCB2.300" : normalclrip ;
+  SWF swf : testconf cmykcompband300_4 : CMYKCompositeBand300dpi4bit : "CMYKCB4.300" : normalclrip ;
+
+
+# Log stripped

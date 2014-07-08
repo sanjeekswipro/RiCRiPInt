@@ -1,0 +1,465 @@
+%!PS-Adobe
+%%Title: "Error info"
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Use this file as a page feature in a ScriptWorks RIP to
+% add additional information related to PostScript errors
+% to the output, and to image the page interpreted so far.
+%
+% Information includes:
+%
+% The error name and offending command
+% Extra error info if present
+% Current font name and type
+% Current point
+% Current clipping path
+% Info on any embedded EPS file that the error may be in:
+%	Title ( possible file name / creating application / operator )
+%	Not all of this info will always be present.
+% Current separation in a pre-separated job
+%
+% This file can also be used as a boot option in the RIP, copy
+% the file into SW/Sys/ExtraStart if you want it to be applied to
+% all jobs.
+
+% $HopeName: SWv20!swf:pagefeat:errinfo(EBDSDK_P.1) $
+
+currentglobal true setglobal
+globaldict /ErrInfoGlobal 4 dict put
+ErrInfoGlobal begin
+
+/EmbedLevel -1 def
+/NoTitle (No title) def
+/EmbedData [ 40 { [ () //NoTitle null null ] } bind repeat ] def
+
+setglobal
+
+userdict /ErrInfoDict 12 dict put
+ErrInfoDict begin
+
+/se serverdict /altout 2 copy known {
+	get dup type /filetype eq {
+		dup status not dup { exch pop } if
+	} { pop true } ifelse
+  } { pop pop true } ifelse
+  	{
+	(%stderr)(w)file 
+  } if
+def
+
+/X1 20 def
+/X2 150 def
+/Y 140 def
+/lead 16 def
+/plain /Helvetica findfont 10 scalefont def
+/bold /Helvetica-Bold findfont 10 scalefont def
+/st {
+	dup type /stringtype ne {
+		=string cvs
+	} if
+} bind def
+/so {
+	gsave
+	1 setgray 1 setlinewidth
+	dup false charpath stroke
+	grestore
+	show 
+} bind def
+/sh {
+	logfile {
+		//se 1 index writestring
+	} if
+	//so exec
+} bind def
+/s {
+	dup //X2 eq logfile and { //se (  ) writestring } if 
+	Y moveto setfont 
+	//st exec
+	//sh exec
+} bind def
+
+/logfile false def
+/nl { 
+	/Y dup load //lead sub def 
+	/X //X1 def
+	X Y moveto
+	logfile { //se (\n) writestring } if
+} bind def
+/HqnErrCurrPoint 2 array def
+
+$error /InsideErrorSave false put
+
+/errorsave {
+	$error begin
+	InsideErrorSave not {
+		{ /command /errorname } { load } forall
+		/InsideErrorSave true def
+		end % $error
+
+		gsave initmatrix
+		{ currentpoint } stopped {
+			//HqnErrCurrPoint 0 null put
+		}	{
+			//HqnErrCurrPoint astore pop
+		} ifelse
+		newpath clippath
+		//ErrInfoDict /HqnClipPath false upath 
+		put
+		grestore
+
+		$error begin 
+		{ /errorname /command }{ exch def } forall 
+		/InsideErrorSave false def
+	} if
+	end		% $error
+} bind def
+
+/nullstring () def
+/blackstring (Black) def
+/compositestring (Composite) def
+/screenstring (setscreen) def
+
+errordict begin 
+
+/handleerror {
+	//systemdict begin //$error begin
+	newerror errorname dup /interrupt ne exch /timeout ne and 
+
+	% report the error as usual in the system monitor
+	//defaulthandleerror exec
+
+		{			% if it's a real error
+			{		% stopped
+				{				% execlevel2
+				//ErrInfoGlobal begin
+				//ErrInfoDict begin
+
+				% draw things in red - likely to stand out
+				currentsystemparams /Separation get dup //compositestring eq {
+					pop false
+				}	{
+					dup //blackstring eq exch //nullstring eq or {
+						currentsystemparams /SeparationMethod get 
+						dup //screenstring ne exch //nullstring ne and
+					} { true } ifelse
+				} ifelse
+					{
+					% pre-separated
+					0 setgray
+				}	{
+					1 0 0 setrgbcolor
+				} ifelse
+				false setoverprint
+
+				//se (ADDING ERROR INFORMATION TO PAGE\n) writestring
+				
+				/Y currentpagedevice /PageSize get 1 get 
+					lead 1.5 mul sub def		
+				
+				% save away current font info before selecting the font
+				% for the error info.
+				currentfont dup /FontName 2 copy 
+				% cf cf /FN cf /FN
+				known {
+					get
+					% cf FN
+					dup /InvalidFont eq {
+						pop pop
+						(No font selected) -1
+						false
+						% FN -1 false
+					} 	{
+						false true
+						% cf FN false true
+					} ifelse
+				}	{
+					pop pop
+					true true
+					% cf true true
+				} ifelse
+					{
+						{
+						% cf
+						dup /FontInfo 2 copy known {
+							get 
+							/FontName 2 copy known {
+								get
+							}	{
+								pop pop
+								(Un-named)
+							} ifelse
+						}	{
+							pop pop (Un-named)
+						} ifelse
+					} if
+					% cf FN
+
+					exch /FontType get 
+				} if
+				/HqnErrFontType exch def
+				/HqnErrFontName exch def
+
+				/logfile true def
+
+				% Start printing the error info
+				(ERROR:) //plain //X1 //s exec
+				errorname //bold //X2 //s exec //nl exec
+				(OFFENDING COMMAND:) //plain //X1 //s exec
+				/command load //bold //X2 //s exec //nl exec
+				$error/errorinfo get dup type /arraytype eq {
+					dup length 0 gt {
+						(EXTRA INFO:) //plain //X1 //s exec
+						dup length 2 eq 1 index 0 get 
+						type /nulltype eq and {
+							1 get //bold //X2 //s exec
+						}	{
+							dup 0 get //bold //X2 //s exec
+							(, )//sh exec
+							1 get //st exec
+							//sh exec
+						} ifelse
+						//nl exec
+					} { pop } ifelse
+				} { pop } ifelse
+
+				% Report the separation in a pre-separated job
+				currentsystemparams /Separation get
+					//st exec
+				dup () ne 1 index (Composite) ne and 
+					{
+					(CURRENT SEPARATION:) //plain //X1 //s exec
+					//bold //X2 //s exec 
+					//nl exec
+				}	{ pop } ifelse
+
+				% report font info
+				(CURRENT FONT:) //plain //X1 //s exec
+				HqnErrFontName //bold //X2 //s exec
+				HqnErrFontType 0 ge {
+					HqnErrFontType dup 111 eq {
+						(  (DLD1)) //sh exec
+						pop
+					}	{
+						(  \(Type )//sh exec //st exec //sh exec (\)) //sh exec
+					} ifelse
+				} if
+				//nl exec
+
+				% report which embedded document the error 
+				% is most likely in.
+				EmbedLevel 0 lt {
+					(Error is probably in base document) //plain 
+					//X1 //s exec
+					//nl exec
+				}	{
+					(EMBEDDED DOCUMENTS:) //plain //X1 //s exec
+					//X2 Y moveto
+					//bold setfont
+					0 1 EmbedLevel {
+						dup 0 ne {
+							(   -> ) //sh exec
+						} if
+						//EmbedData exch get
+						dup 1 get //sh exec
+						( \(File: ) //sh exec
+						dup 0 get dup length 0 gt {
+							//sh exec
+						} { pop } ifelse
+						2 1 3 {
+							[ ( / Creator) ( / For: ) ] 1 index 2 sub get
+							//sh exec
+							1 index exch get
+							dup type /nulltype eq { pop (unknown) } if
+							//sh exec
+						} for
+						(\)) //sh exec
+						pop
+						//nl exec
+					} for
+				} ifelse
+
+				3 setlinewidth
+
+				% report and mark currentpoint
+				//HqnErrCurrPoint 0 get type /nulltype ne {
+					(CURRENT POINT:) //plain //X1 //s exec
+					//HqnErrCurrPoint aload pop
+					(X = ) //bold //X2 //s exec
+					1 index 7.2 div round cvi 10 div =string cvs //sh exec
+					(", Y = )//sh exec 
+					dup 7.2 div round cvi 10 div =string cvs //sh exec
+					logfile { //se (") writestring } if
+					(" (see X)) //so exec
+					newpath
+					10 sub exch 10 sub exch moveto
+					gsave
+					20 20 rlineto stroke
+					grestore
+					0 20 rmoveto 20 -20 rlineto stroke
+				} 	{
+					(NO CURRENT POINT) //plain //X1 //s exec
+				} ifelse
+				//nl exec
+
+				/logfile false def
+
+				% show current clipping path
+				gsave
+				[ 8 4 2 4 ] 0 setdash
+				//ErrInfoDict /HqnClipPath get
+				ustroke
+				(Current clip path is outlined as) //plain 
+					//X1 //s exec
+				12 2.5 rmoveto 72 0 rlineto stroke
+				grestore
+
+				end		% ErrInfoDict
+				end		% ErrInfoGlobal
+
+				% disable output in throughput mode
+				//se (OUTPUT WILL BE DISABLED IN MULTIPLE MODES\n) 
+					writestring
+				false
+				/HqnThroughputControl /ProcSet findresource 
+				/pgbenable get exec
+
+				showpage
+
+				% force page out even when recombining
+				gsave << /Deactivate -1 >> setpagedevice grestore
+			} serverdict /execlevel2 get exec 
+		} stopped { 
+			/logfile false def
+			//defaulthandleerror exec 
+		} if
+	} if
+	$error /newerror false put 
+
+	end		% $error
+	end		% systemdict
+} bind def
+
+	{ 
+	/configurationerror /dictfull /dictstackoverflow 
+	/dictstackunderflow /execstackoverflow /invalidaccess 
+	/invalidexit /invalidfileaccess /invalidfont 
+	/invalidrestore /ioerror /limitcheck /nocurrentpoint 
+	/rangecheck /stackoverflow /stackunderflow /syntaxerror 
+	/timeout /typecheck /undefined /undefinedfilename 
+	/undefinedresource /undefinedresult /unmatchedmark 
+	/unregistered
+}	{
+		[ 
+		//errorsave /exec load 
+		3 index load /exec load 
+	] cvx bind def
+} forall
+
+end		% errordict
+
+% record data on embedded EPS files in job.
+(%%dict) load (%%actions) get begin
+
+	/BeginDocument: { 
+		dup null exec
+		currentglobal true setglobal
+		//ErrInfoGlobal begin
+		exch dup length string copy
+		/EmbedLevel dup load 1 add def
+		//EmbedData EmbedLevel get 
+		dup 1 //NoTitle put
+		dup 2 null put
+		dup 3 null put
+		0 3 -1 roll put
+		end
+		setglobal
+	}
+	dup 1
+	currentdict /BeginDocument: known {
+		/BeginDocument: load
+	}	{
+		{ pop }
+	} ifelse put bind def
+
+	/EndDocument {
+		null exec
+		//ErrInfoGlobal /EmbedLevel 2 copy get 1 sub 
+		put
+	}
+	dup 0
+	currentdict /EndDocument known {
+		/EndDocument load
+	}	{
+		{ pop }
+	} ifelse put bind def
+
+	/Title: { 
+		dup null exec
+		//ErrInfoGlobal begin
+		EmbedLevel 0 ge {
+			currentglobal true setglobal
+			exch dup length string copy
+			//EmbedData EmbedLevel get 1 3 -1 roll put
+			setglobal
+		} { pop } ifelse
+		end
+	}
+	dup 1
+	currentdict /Title: known {
+		/Title: load
+	}	{
+		{ pop }
+	} ifelse put bind def
+	
+	/Creator { 
+		dup null exec
+
+		//ErrInfoGlobal begin
+		EmbedLevel 0 ge {
+			currentglobal true setglobal
+			exch dup length string copy
+			//EmbedData EmbedLevel get 2 3 -1 roll put
+			setglobal
+		} { pop } ifelse
+		end
+	}
+	dup 1
+	currentdict /Creator: known {
+		/Creator: load
+	}	{
+		{ pop }
+	} ifelse put bind def
+	
+	/For: { 
+		dup null exec
+		//ErrInfoGlobal begin
+		EmbedLevel 0 ge {
+			currentglobal true setglobal
+			exch dup length string copy
+			//EmbedData EmbedLevel get 3 3 -1 roll put
+			setglobal
+		} { pop } ifelse
+		end
+	}
+	dup 1
+	currentdict /For: known {
+		/For: load
+	}	{
+		{ pop }
+	} ifelse put bind def
+	
+end		% %%actions
+end		% ErrInfoDict
+end		% ErrInfoGlobal
+
+userdict begin
+	/handleerror        errordict /handleerror get def % in userdict
+	/defaulthandleerror /handleerror load          def % in userdict
+end % userdict
+
+userdict /ErrInfoDict undef
+globaldict /ErrInfoGlobal undef
+
+%%EOF

@@ -1,0 +1,453 @@
+%!PS-Adobe-3.0
+%%Title: HqnPCEPS
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri, May 30, 1997
+%{HqnPCEPS version #1 0
+% Copyright (C) 1997-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnPCEPS) 1 0
+
+% $HopeName: SWv20!swf:procsets:pceps(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This procset provides routines to assist in processing PC format EPS
+% files (those including a header and TIFF or WMF previews, as described
+% in section H.5.2 of the Red Book (2nd ed)).
+%
+% Two procedures are provided:
+%
+% initParsing - loads the appropriate code for automatic detection of PC
+%	format EPS files.
+%
+% processFile - takes a file which is already open on the stack and returns
+%	it at the correct file position and with various bits in place to 
+%	catch the end of the PostScript data.
+
+
+currentglobal false setglobal
+ 
+userdict /PCEPSdict 12 dict put
+PCEPSdict begin
+
+/globalness exch def
+
+/fileList 4 dict def
+
+/thisFile null def
+/positionable false def
+/buffer 8192 string def
+/string25 25 string def
+/string4 4 string def
+/ptr 0 def
+/skipChar 0 def
+/headerLength 0 def
+
+/reportError {
+	% offendingcommand errortype extrainfo
+	$error /extraInfo 3 -1 roll put
+	errordict exch get exec
+} bind def
+
+/setUserParam <<
+	/Adobefileposition false
+>> def
+
+% Fudge fileposition and setfileposition to report and move within the PS data
+% rather than the whole file.
+% Of course, these will still fail with ioerror if the underlying file is not
+% positionable.
+/shadowSet <<
+	/fileposition {
+		{ //PCEPSdict /thisFile 2 index put } exec
+		fileposition
+			{
+			//fileList //PCEPSdict /thisFile get 2 copy known {
+				get /PSstart get sub
+			} { pop pop } ifelse
+		} exec
+	}
+	/setfileposition {
+			{
+			//fileList 2 index known {
+				//fileList 2 index get /PSstart get add
+			} if
+		} exec
+		setfileposition
+	}
+>> def
+
+% Procedures to catch the beginning of TIFF preview data if it falls after the
+% PS data.
+/TIFFescape <<
+	[ (II*) cvn /MM ] {
+			{
+			null //PCEPSdict /thisTag 3 -1 roll put
+			//fileList currentfile 2 copy known {
+				get begin
+				positionable PSlength -1 ne and {
+					% Note that fileposition is shadowed to account for PSstart already.
+					currentfile fileposition PSlength lt {
+						end
+						//PCEPSdict /thisTag get 
+							% GLOB: Debug info only - not for translation
+							/undefined (TIFF escape within PS section) //reportError exec
+					} if
+				} if
+				end
+				% Treat as end of file.
+					{
+					currentfile //buffer readstring exch pop
+					not { exit } if
+				} loop
+			}	{
+				pop pop
+				//PCEPSdict /thisTag get
+					% GLOB: Debug info only - not for translation
+					/undefined (TIFF escape called out of context) //reportError exec
+			} ifelse
+		}
+		dup length array copy
+		dup 0 3 index put
+		cvx bind
+	} forall
+>> def
+
+% Set up error handler to automatically detect PC format EPS files, and to
+% call the handling code if one is found.
+/initialUndefined {
+	errordict begin
+	/originalUndefined /undefined load def
+	/undefined [
+			{
+			dup =string cvs
+			<C5D0D3C6> anchorsearch {
+				3 -1 roll pop
+				
+				$error begin 
+				/newerror false def
+				/offendingcommand /inoffensive def
+				/errorname /nothing def
+				end
+				
+				//PCEPSdict begin
+				/thisFile currentfile def
+				mark currentfile 1183615869 internaldict /fileseekable get { exec } stopped { pop false } if
+				/positionable exch def
+				cleartomark
+				
+				pop /headerSection exch dup length string copy def
+				
+				true HandleFile
+				
+				end		% PCEPSdict
+
+				false
+			}	{
+				pop
+				true
+			} ifelse
+		} /exec load
+		/undefined load
+		/if load
+	] cvx bind def
+	end		% errordict
+} bind def
+
+% Now we're about to run the actual file, set up a different error handler
+% to catch WMF previews which come after the PS data.
+/runningUndefined {
+	errordict begin
+	currentdict /originalUndefined known not {
+		/originalUndefined /undefined load def
+	} if
+	/undefined [
+			{
+			//fileList currentfile known dup {
+				//fileList currentfile get begin
+				positionable PSlength -1 ne and {
+					currentfile fileposition PSlength lt {
+						not
+					} if
+				} if
+				end		% fileList
+			} if
+			dup {
+				% Treat as end of file.
+					{
+					currentfile //buffer readstring exch pop
+					not { exit } if
+				} loop
+			} if
+			not
+		} /exec load
+		/undefined load
+		/if load
+	] cvx bind def
+	end		% errordict
+} bind def
+
+/safereadstring {
+	/thisFile load exch readstring not {
+		pop
+		% GLOB: Debug info only - not for translation
+		/HqnPCEPS /rangecheck (Unexpected end of PC EPS file) //reportError exec
+	} if
+} bind def
+
+/coreMakeNumber {
+	% startval, newstring -> number
+	4 1 index length sub 1 3 {
+		% v s i
+		2 copy get
+		% v s i n
+		exch 8 mul bitshift
+		% v s x
+		3 -1 roll or exch
+	} for
+	pop	% string
+} bind def
+/makeNumber {
+	% newstring -> number
+	0 exch //coreMakeNumber exec
+} bind def
+
+/makeString {
+	% val string -> makeString -> string
+	0 1 2 index length 1 sub {
+		% v s i
+		1 index exch
+		% v s s i
+		3 index 1 index
+		% v s s i v i
+		-8 mul bitshift
+		255 and
+		put
+	} for
+	exch pop
+} bind def
+
+/HandleFile {
+	% readlength bool: true from automatic detection, false from deliberate call.
+	statusdict /HqnPCEPSinstalled 2 copy known {
+		get 
+	}	{
+		pop pop false
+	} ifelse {
+		errordict begin
+		/undefined /originalUndefined load def
+		end
+	} if
+	/autoFound 1 index def
+	//fileList /thisFile load 4 dict dup begin put
+	/positionable dup load def
+	
+	dup positionable not and {
+		% auto and can't be positioned - can't obtain start byte position reliably
+		% read so far = number on stack + [ 0 | 1 ]
+		% store the remainder of the header away, then parse for (%!PS-Ado)
+		% to work out PS offset. Then we can figure out which bytes of the header
+		% match which values ...
+		pop
+		headerSection length 4 add
+		/headerLength 1 index 1 add store	% including posited single byte white space
+		/ptr headerLength store
+		//string25 0 30 4 -1 roll 1 add sub getinterval //safereadstring exec
+		length ptr add /ptr exch store
+		/thisFile load dup
+		0 (%!PS-Ado) /SubFileDecode filter
+			{
+			dup //buffer readstring exch
+			length ptr add /ptr exch store
+			not { exit } if
+		} loop
+		pop	% the filtered file
+		% now skip the rest of the 1st comment line of the PostScript data.
+		//buffer readline 
+		pop pop
+		
+		% ptr is now our estimated offset. It will be right unless PS Offset included
+		% a CR/LF sequence.
+		ptr //string4 makeString
+		0 headerLength 5 sub 
+		dup 4 gt { pop 4 } if getinterval
+		headerSection eq { 0 }{ 1 } ifelse
+		/skipChar 1 index store
+		/PSstart exch ptr add def
+		
+		/headerLength dup load skipChar add store
+		/PSlength headerLength 4 gt {
+			-1	% can't determine length
+		}	{
+			//string25 4 headerLength sub 4 getinterval //coreMakeNumber exec
+		} ifelse
+		def
+		//string25 8 headerLength sub 4 getinterval //makeNumber exec
+		dup 0 eq {
+			pop
+			//string25 16 headerLength sub 4 getinterval //makeNumber exec
+			/TIFF
+		} 	{
+			/WMF
+		} ifelse
+		/PreviewType exch def
+		/PreviewStart exch def
+	}	{
+			{
+			/thisFile load 4 setfileposition
+		} if
+		//string4 //safereadstring exec //makeNumber exec 
+		/PSstart exch def
+		//string4 //safereadstring exec //makeNumber exec 
+		/PSlength exch def
+		
+		//string4 //safereadstring exec //makeNumber exec
+		dup 0 eq { 
+			pop
+			//string4 //safereadstring exec pop
+			//string4 //safereadstring exec //makeNumber exec
+			/TIFF
+			24
+		}	{
+			/WMF
+			16
+		} ifelse
+		3 1 roll
+		/PreviewType exch def
+		/PreviewStart exch def
+		% Move to the start of the PS data
+		positionable {
+			/thisFile load PSstart 
+			setfileposition
+			pop
+		}	{
+			PSstart exch 
+			sub
+				{
+				/thisFile load //buffer
+				2 index dup 8192 lt {
+					0 exch getinterval
+				} { pop } ifelse
+				readstring pop pop
+				8192 sub
+				dup 0 le { exit } if
+			} loop
+			pop
+		} ifelse
+	} ifelse	
+
+	% Prepare to run file ...
+	
+	PreviewStart PSstart
+	gt {
+		PreviewType /TIFF eq {
+			% load specific TIFF start operators
+			//TIFFescape 1183615869 internaldict begin defineop end
+		}	{
+			% Load general error handler for WMF previews after PS
+			runningUndefined
+		} ifelse
+	} if
+	
+	end		% fileList subdict
+	
+	//shadowSet begin
+	currentdict {
+		1183615869 internaldict /shadowproc get
+		2 index 2 copy known {
+			get dup null eq { pop } {
+				% key proc oldproc
+				1 index 2 3 -1 roll put
+			} ifelse
+		} { pop pop } ifelse
+		bind def
+	} forall
+	currentdict end
+	1183615869 internaldict /shadowop get exec
+	
+	% and run it ... !
+	autoFound { 
+		<< /ParseBoundingBox true >> /HqnImpose /ProcSet findresource /HqnInitImpose get exec
+	
+		currentsystemparams /AutoShowpage get not {
+			<<
+			/AutoShowpage	true
+			/Password	0
+			>> setsystemparams
+		} if
+
+		/thisFile load cvx exec 
+	} if
+} bind def
+
+2 dict begin	% the procset itself
+
+% Set the RIP up to automatically handle PC format files.
+%	- -> initParsing -> -
+% The detection is based on an 'undefined' error where the
+% first 4 bytes of the value that's undefined match the magic
+% number for a PC EPS file.
+/initParsing {
+	statusdict /HqnPCEPSinstalled 2 copy known {
+		get not 
+	}	{
+		pop pop true
+	} ifelse {
+		//initialUndefined exec
+		
+		//setUserParam setuserparams
+		
+		statusdict /HqnPCEPSinstalled true put
+	} if
+} bind def
+
+% Explicitly run the file as a PC EPS file.
+%	<file object> processFile -> -
+% The file must either be positionable, or the file pointer must 
+% be positioned at the beginning of the file when called.
+/processFile {
+	count 1 lt {
+		% GLOB: Debug info only - not for translation
+		/HqnPCEPS /stackunderflow (No file object passed to processFile) //reportError exec
+	} if
+	dup type /filetype ne {
+		% GLOB: Debug info only - not for translation
+		/HqnPCEPS /typecheck (Argument to processFile was not a file object) //reportError exec
+	} if
+	//setUserParam setuserparams
+	
+	//PCEPSdict begin
+
+	/thisFile 1 index def
+	mark exch 1183615869 internaldict /fileseekable get exec
+	dup {
+		thisFile 0 setfileposition
+	} if
+	/positionable exch def
+	cleartomark
+	
+	//string4 //safereadstring exec
+	<C5D0D3C6> eq not {
+		% GLOB: Debug info only - not for translation
+		/HqnPCEPS /undefinedresult 
+		% GLOB: Debug info only - not for translation
+		(File was not PCEPS, or was not positionable and not at start of file) //reportError exec
+	} if
+	
+	false HandleFile
+
+	end		% PCEPSdict
+} bind def
+
+currentdict end	% the procset dict
+
+globalness exch
+end		% PCEPSdict
+
+/HqnPCEPS exch /ProcSet defineresource
+
+userdict /PCEPSdict undef
+exch setglobal
+
+%%EndProcSet

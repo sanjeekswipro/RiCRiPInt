@@ -1,0 +1,92 @@
+%!
+
+% $HopeName: SWv20!swf:pagefeat:examples:confiden(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Writes "DRAFT Company Confidential" as a level 2 pattern across
+% each page printed.
+
+userdict begin
+  /SW-Under true def  %% define this as true to print as the background
+  /SW-Over false def    %% define this as true to print in the foreground
+
+<<
+  //SW-Under {
+	/BeginPage {
+
+	  %% For the first page define the background pattern
+	  0 eq {
+		<<
+	  /PaintType 1
+	  /PatternType 1
+	  /TilingType 1
+	  /BBox [ 0 0 190 100]
+	  /XStep 200 /YStep 100
+	  /PaintProc {
+		pop
+		0.8 setgray
+		0 90 moveto 170 90 lineto
+		0 20 moveto 170 20 lineto
+		2 setlinewidth stroke
+		/Times-Roman 40 selectfont
+		10 50 moveto (DRAFT) show
+		/Times-Roman 14 selectfont
+		10 30 moveto (Company Confidential) show
+	  } bind
+		>>
+		[ 0.7 -0.7 0.7 0.7 0 0 ] makepattern
+		userdict /BackPat 3 -1 roll put
+	  } if
+	  %% End of the pattern definition
+
+	  gsave
+		userdict /BackPat get setpattern
+		clippath fill
+	  grestore
+	} bind
+  } if
+
+  //SW-Over {
+	/EndPage {
+
+	  %% For the first page define the foreground pattern
+	  exch 0 eq {
+		<<
+	  /PaintType 1
+	  /PatternType 1
+	  /TilingType 1
+	  /BBox [ 0 0 190 100]
+	  /XStep 200 /YStep 100
+	  /PaintProc {
+		pop
+		0.8 setgray
+		0 90 moveto 170 90 lineto
+		0 20 moveto 170 20 lineto
+		2 setlinewidth stroke
+		/Times-Roman 40 selectfont
+		10 50 moveto (DRAFT) show
+		/Times-Roman 14 selectfont
+		10 30 moveto (Company Confidential) show
+	  } bind
+		>>
+		[ 0.7 -0.7 0.7 0.7 0 0 ] makepattern
+		userdict /ForePat 3 -1 roll put
+	  } if
+	  %% End of the pattern definition
+
+	  2 ne dup {
+		gsave
+		  userdict /ForePat get setpattern
+		  clippath fill
+		grestore
+	  } if
+	} bind
+  } if
+>> setpagedevice
+
+userdict /SW-Under undef
+userdict /SW-Over undef
+
+end

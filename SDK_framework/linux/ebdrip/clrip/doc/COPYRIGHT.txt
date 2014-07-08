@@ -1,0 +1,321 @@
+Copyright (C) 1989-2014 Global Graphics Software Ltd. All rights reserved.
+
+Global Graphics Software Ltd. Confidential Information.
+
+Certificate of Computer Registration of Computer Software. Registration No. 2006SR05517
+
+Protected by U.S Patents 5,862,253; 6,343,145; 6,330,072; 6,483,524; 6,380,951; 6,755,498; 6,624,908; 6,809,839; 6,755,498; 6,624,908; 6,809,839; 6,996,284; 7,298,526; 7,359,530.
+Other U.S. Patents Pending
+
+Protected by European Patents 0 803 160; 0 772 934
+
+Portions  Type 1 font renderer contains licensed third party software
+Portions copyright 1991 International Business Machines, Corp.,
+Portions copyright 1991 Lexmark International, Inc.
+
+Portions Adobe Glyph List. Copyright 1990-2007 Adobe Systems Incorporated.
+Portions Adobe Cmaps. Copyright 1990-2009 Adobe Systems Incorporated
+Portions TrueType ® font renderer  copyright 1997 Bitstream, Inc. 
+
+Portions developed using the Kakadu software. Copyright 2001 David Taubman, The University of New South Wales (Unisearch Ltd)
+
+
+The ECI and FOGRA ICC color profiles supplied with this Harlequin RIP are distributed with the kind permission of the ECI (European Color Initiative) and FOGRA respectively, and of Heidelberger Druckmaschinen AG (HEIDELBERG).
+
+The IFRA ICC profiles supplied with this Harlequin RIP are
+distributed with the kind permission of IFRA and of GretagMacbeth.
+
+Harlequin is a trademark of Global Graphics Software Ltd, which may be registered in certain juristrictions. Harlequin ColorPro, Harlequin Dispersed Screening (HDS), Harlequin Precision Screening (HPS),  and TrapPro are all trademarks of Global Graphics Software Ltd.
+
+TrueType is a registered trademark of Apple Computer, Inc.
+
+PANTONE® Colors displayed herein may not match PANTONE-identified standards. Consult current PANTONE Color Publications for accurate color. PANTONE® and other Pantone trademarks are the property of Pantone LLC. © Pantone LLC, 2014.
+_____________________________________
+
+Portions include software licensed under the following terms:
+_____________________________________
+
+Expat - XML parser library
+
+Copyright © 1998, 1999, 2000 Thai Open Source Software Center Ltd and Clark Cooper
+
+Copyright © 2001, 2002 Expat maintainers.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+_____________________________________
+
+ICU - IBM library providing Unicode and Globalization support 
+
+Copyright © 1995-2003 International Business Machines Corporation
+and others All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, provided that the above copyright notice(s) and this permission notice appear in all copies of the Software and that both the above copyright notice(s) and this permission notice appear in supporting documentation.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
+_____________________________________
+
+Libpng - PNG (Portable Network Graphics) image library
+
+libpng version 1.2.6, December 3, 2004, is Copyright © 2004 Glenn Randers-Pehrson, and is distributed according to the same disclaimer and license as libpng-1.2.5 with the following individual added to the list of Contributing Authors
+
+   Cosmin Truta
+
+libpng versions 1.0.7, July 1, 2000, through 1.2.5 - October 3, 2002, are Copyright © 2000-2002 Glenn Randers-Pehrson, and are
+distributed according to the same disclaimer and license as libpng-1.0.6 with the following individuals added to the list of Contributing Authors
+
+   Simon-Pierre Cadieux
+   Eric S. Raymond
+   Gilles Vollant
+
+and with the following additions to the disclaimer:
+
+There is no warranty against interference with your enjoyment of the library or against infringement.  There is no warranty that our efforts or the library will fulfill any of your particular purposes or needs.  This library is provided with all faults, and the entire risk of satisfactory quality, performance, accuracy, and effort is with the user.
+
+libpng versions 0.97, January 1998, through 1.0.6, March 20, 2000, are Copyright © 1998, 1999 Glenn Randers-Pehrson, and are
+distributed according to the same disclaimer and license as libpng-0.96, with the following individuals added to the list of Contributing Authors:
+
+   Tom Lane
+   Glenn Randers-Pehrson
+   Willem van Schaik
+
+libpng versions 0.89, June 1996, through 0.96, May 1997, are
+Copyright © 1996, 1997 Andreas Dilger
+Distributed according to the same disclaimer and license as libpng-0.88, with the following individuals added to the list of Contributing Authors:
+
+   John Bowler
+   Kevin Bracey
+   Sam Bushell
+   Magnus Holmgren
+   Greg Roelofs
+   Tom Tanner
+
+libpng versions 0.5, May 1995, through 0.88, January 1996, are
+Copyright © 1995, 1996 Guy Eric Schalnat, Group 42, Inc.
+
+For the purposes of this copyright and license, "Contributing Authors" is defined as the following set of individuals:
+
+   Andreas Dilger
+   Dave Martindale
+   Guy Eric Schalnat
+   Paul Schmidt
+   Tim Wegner
+
+The PNG Reference Library is supplied "AS IS".  The Contributing Authors and Group 42, Inc. disclaim all warranties, expressed or implied, including, without limitation, the warranties of merchantability and of fitness for any purpose.  The Contributing Authors and Group 42, Inc. assume no liability for direct, indirect, incidental, special, exemplary, or consequential damages, which may result from the use of the PNG Reference Library, even if advised of the possibility of such damage.
+
+Permission is hereby granted to use, copy, modify, and distribute this source code, or portions hereof, for any purpose, without fee, subject to the following restrictions:
+
+1. The origin of this source code must not be misrepresented.
+
+2. Altered versions must be plainly marked as such and must not
+   be misrepresented as being the original source.
+
+3. This Copyright notice may not be removed or altered from any
+   source or altered source distribution.
+
+The Contributing Authors and Group 42, Inc. specifically permit, without fee, and encourage the use of this source code as a component to supporting the PNG file format in commercial products.  If you use this source code in a product, acknowledgment is not required but would be appreciated.
+_____________________________________
+
+OpenSSL - general purpose cryptography library
+
+Copyright © 1998-2011 The OpenSSL Project.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. All advertising materials mentioning features or use of this software must display the following acknowledgment: "This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+
+4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to endorse or promote products derived from this software without prior written permission. For written permission, please contact openssl-core@openssl.org.
+
+5. Products derived from this software may not be called "OpenSSL" nor may "OpenSSL" appear in their names without prior written permission of the OpenSSL Project.
+
+6. Redistributions of any form whatsoever must retain the following acknowledgment: "This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+
+THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+This product includes cryptographic software written by Eric Young (eay@cryptsoft.com).  This product includes software written by Tim Hudson (tjh@cryptsoft.com).
+
+Copyright © 1995-1998 Eric Young (eay@cryptsoft.com)
+All rights reserved.
+
+This package is an SSL implementation written by Eric Young (eay@cryptsoft.com). The implementation was written so as to conform with Netscapes SSL.
+
+This library is free for commercial and non-commercial use as long as the following conditions are aheared to.  The following conditions apply to all code found in this distribution, be it the RC4, RSA, lhash, DES, etc., code; not just the SSL code.  The SSL documentation included with this distribution is covered by the same copyright terms except that the holder is Tim Hudson (tjh@cryptsoft.com).
+
+Copyright remains Eric Young's, and as such any Copyright notices in the code are not to be removed. If this package is used in a product, Eric Young should be given attribution as the author of the parts of the library used. This can be in the form of a textual message at program startup or in documentation (online or textual) provided with the package.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the copyright notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software must display the following acknowledgement: "This product includes cryptographic software written by Eric Young (eay@cryptsoft.com)" The word 'cryptographic' can be left out if the rouines from the library being used are not cryptographic related :-).
+4. If you include any Windows specific code (or a derivative thereof) from the apps directory (application code) you must include an acknowledgement: "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
+
+THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The licence and distribution terms for any publically available version or derivative of this code cannot be changed.  i.e. this code cannot simply be copied and put under another distribution licence [including the GNU Public Licence.]
+_____________________________________
+
+zlib - general purpose compression library
+
+Copyright © 1995-2013 Jean-loup Gailly and Mark Adler
+
+This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+_____________________________________
+
+Little cms - color management engine
+
+Little cms Copyright © 1998-2004 Marti Maria
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+_____________________________________
+
+pthreads-win32 - a POSIX threads library for Microsoft Windows
+
+This file is Copyrighted
+_____________________________________
+
+This file is covered under the following Copyright:
+
+Copyright © 2001,2006 Ross P. Johnson All rights reserved.
+
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+
+Pthreads-win32 is covered by the GNU Lesser General Public License
+_____________________________________
+
+Pthreads-win32 is open software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation version 2.1 of the License.
+
+Pthreads-win32 is several binary link libraries, several modules, associated interface definition files and scripts used to control its compilation and installation.
+
+Pthreads-win32 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+
+A copy of the GNU Lesser General Public License is distributed with pthreads-win32 under the filename:
+
+COPYING.LIB
+
+You should have received a copy of the version 2.1 GNU Lesser General ublic License with pthreads-win32; if not, write to:
+
+Free Software Foundation, Inc.
+59 Temple Place
+Suite 330
+Boston, MA	02111-1307
+USA
+
+The contact addresses for pthreads-win32 is as follows:
+Web:	http://sources.redhat.com/pthreads-win32
+Email:  Ross Johnson
+Please use: Firstname.Lastname@homemail.com.au
+
+Pthreads-win32 copyrights and exception files
+_____________________________________
+
+With the exception of the files listed below, Pthreads-win32 is overed under the following GNU Lesser General Public License opyrights:
+
+threads-win32 - POSIX Threads Library for Win32
+
+Copyright© 1998 John E. Bossom
+Copyright© 1999,2006 Pthreads-win32 contributors
+
+The current list of contributors is contained n the file CONTRIBUTORS included with the source code distribution. The current list of CONTRIBUTORS can also be seen at the following WWW location:
+
+http://sources.redhat.com/pthreads-win32/contributors.html
+
+Contact Email: Ross Johnson
+Please use: Firstname.Lastname@homemail.com.au
+
+These files are not covered under one of the Copyrights listed above:
+
+COPYING
+COPYING.LIB
+tests/rwlock7.c
+
+This file, COPYING, is distributed under the Copyright found at the top of this file.  It is important to note that you may distribute verbatim copies of this file but you may not modify this file.
+
+The file COPYING.LIB, which contains a copy of the version 2.1 GNU Lesser General Public License, is itself copyrighted by the Free Software Foundation, Inc.  Please note that the Free Software Foundation, Inc. does NOT have a copyright over Pthreads-win32, only the COPYING.LIB that is supplied with pthreads-win32.
+
+The file tests/rwlock7.c is derived from code written by Dave Butenhof for his book 'Programming With POSIX® Threads'. The original code was obtained by free download from his website
+http://home.earthlink.net/~anneart/family/Threads/source.html and did not contain a copyright or author notice. It is assumed to be freely distributable.
+
+In all cases one may use and distribute these exception files freely. And because one may freely distribute the LGPL covered files, the entire pthreads-win32 source may be freely used and distributed.
+
+General Copyleft and License info
+_____________________________________
+
+For general information on Copylefts, see:
+
+http://www.gnu.org/copyleft/
+
+For information on GNU Lesser General Public Licenses, see:
+
+http://www.gnu.org/copyleft/lesser.html
+http://www.gnu.org/copyleft/lesser.txt
+
+_____________________________________
+
+sRGB Profile Licensing Agreement:
+
+To anyone who acknowledges that the files "sRGB_IEC61966-2-1_noBPC.icc" and "sRGB_IEC61966-2-1_withBPC.icc"
+are provided "AS IS" WITH NO EXPRESS OR IMPLIED WARRANTY, permission to use, copy and distribute these file for any purpose is hereby granted without fee, provided that the files are not changed including the HP copyright notice tag, and that the name of Hewlett-Packard Company shall not be used in advertising or publicity pertaining to distribution of the software without specific, written prior permission.  Hewlett-Packard Company makes no representations about the suitability of this software for any purpose.
+
+_____________________________________
+
+Universal Font Scaling Technology (UFST) Version 7.2
+Copyright © 1989 - 2006. All rights reserved, by Monotype Imaging Inc., Woburn, MA.
+
+The software described in this document is furnished under a license agreement with Monotype Imaging Inc., and may be used and copied only in accordance with the terms of such license and with the inclusion of the above copyright notice. This software or any other copies thereof may not be provided or otherwise made available to any other person except as allowed under license. No title to and ownership of this software is hereby transferred. 
+
+The information contained in this document is subject to change without notice. Monotype Imaging Inc. MAKES NO WARRANTY OF ANY KIND WITH REGARD TO THIS MATERIAL, INCLUDING BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OR MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Monotype Imaging Inc. shall not be liable for errors contained herein for incidental or consequential damages in connection with the furnishings, performance, or use of this material.
+
+This document contains proprietary information protected by copyright. All rights are reserved.
+
+No part of this document may be photocopied, reproduced, or translated to another language without the prior written consent of Monotype Imaging Inc.
+
+The Intellifont rasterizer is technology covered by US Patent number 4,675,830, issued to Monotype Imaging Inc. The TrueType rasterizer, licensed from Apple Computer, Inc., is optimized and delivered by Monotype Imaging Inc. The MicroType rasterizer is technology covered by US Patents 5,734,388, 5,754,187 with other US and Foreign patents pending. The Type 1 rasterizer, licensed from Pipeline Associates, Inc., is optimized and delivered by Monotype Imaging Inc.
+
+UFST® and Universal Font Scaling Technology® are trademarks of Monotype Imaging Inc., registered in the United States Patent and Trademark Office, and may be registered in certain jurisdictions.
+
+Monotype® is a trademark of Monotype Imaging Inc., registered in the United States Patent and Trademark Office, and may be registered in certain jurisdictions. MicroType™ is a trademark of Monotype Imaging Inc.
+
+Other product names mentioned herein may be trademarks and/or registered trademarks of their respective companies.
+_____________________________________
+
+The Independent JPEG Group's JPEG software
+This software is copyright © 1991-2014, Thomas G. Lane, Guido Vollbeding.
+
+All Rights Reserved except as specified below.
+
+Permission is hereby granted to use, copy, modify, and distribute this software (or portions thereof) for any purpose, without fee, subject to these conditions:
+
+(1) If any part of the source code for this software is distributed, then this README file must be included, with this copyright and no-warranty notice. unaltered; and any additions, deletions, or changes to the original files must be clearly indicated in accompanying documentation.
+
+(2) If only executable code is distributed, then the accompanying documentation must state that “this software is based in part on the work of the Independent JPEG Group”.
+
+(3) Permission for use of this software is granted only if the user accepts full responsibility for any undesirable consequences; the authors accept NO LIABILITY for damages of any kind.
+
+The authors make NO WARRANTY or representation, either express or implied, with respect to this software, its quality, accuracy, merchantability, or fitness for a particular purpose.  This software is provided "AS IS", and you, its user, assume the entire risk as to its quality and accuracy.
+_____________________________________

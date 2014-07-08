@@ -1,0 +1,833 @@
+# =============================================================================
+# $HopeName: HQNlibopenssl!make:makefile.jam(EBDSDK_P.1) $
+# 
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+    RequiresVariant warning_level : low ;
+
+    # openssl has three values (mainly internal but can be used to override): 
+    #  sec - minimum to satisfy LE security (those use pdf won't build);
+    #  pdf - to include those required by current pdf encryption in RIP
+    #  all - include all
+    
+    if ! $(Variant_openssl) {
+        if pdf in $(Variant_pdls) || $(Variant_pdls) = all {
+            RequiresVariant openssl : pdf ;
+        } else {
+            RequiresVariant openssl : sec ;
+        }
+    }
+    
+    ImplementsVariant openssl ;
+
+    AddToVar Inherited Local : Suffix      : o1 : Variant openssl=sec ;
+    AddToVar Inherited Local : Suffix      : o2 : Variant openssl=pdf ;
+    AddToVar Inherited Local : Suffix      : o3 : Variant openssl=all ;
+
+    IncludeExportDirectories Inherited Local :
+      standard
+    : .. ;
+
+    # At the moment, the algorithms we are using are RC4/MD5 for
+    # LE security, and various encryptions for PDFIn (see hqpki.c).
+    # To reduce the size of exe, we disable as many others as possible.
+    #
+    # PDF envelopes data in PKCS#7 objects, which define the encryption
+    # methods. PDF 1.7 requires: "RC4 with key lengths up to 256-bits, DES,
+    # Triple DES, RC2 with key lengths up to 128 bits, 128-bit AES in Cipher
+    # Block Chaining (CBC) mode, 192-bit AES in CBC mode, 256-bit AES in CBC
+    # mode. Acrobat products have used Triple DES to encrypt the enveloped
+    # data, and support all of these listed algorithms when decrypting the
+    # enveloped data."
+    #
+    # PDF 1.7 also needs the following hash functions: MD5, RC4, SHA1, SHA256
+    # SHA384, SHA512, and RIPEMD160.
+    #
+    # This is a full list of OPENSSL_NO_* defines:
+
+    # CompilerVar C-Defines : OPENSSL_NO_AES ;
+    CompilerVar C-Defines : OPENSSL_NO_ASM ;
+    # CompilerVar C-Defines : OPENSSL_NO_BF ; # Blowfish
+    # CompilerVar C-Defines : OPENSSL_NO_BIO ;
+    # CompilerVar C-Defines : OPENSSL_NO_BUFFER ;
+    # CompilerVar C-Defines : OPENSSL_NO_CAST ;
+    # CompilerVar C-Defines : OPENSSL_NO_COMP ; # Compression
+    # CompilerVar C-Defines : OPENSSL_NO_DES ;
+    # CompilerVar C-Defines : OPENSSL_NO_DH ; # Diffie-Hellman key exchange
+    # CompilerVar C-Defines : OPENSSL_NO_DSA ;
+    # CompilerVar C-Defines : OPENSSL_NO_EC ; # Elliptical curves
+    CompilerVar C-Defines : OPENSSL_NO_ENGINE ;
+    # CompilerVar C-Defines : OPENSSL_NO_ERR ; # Errors
+    # CompilerVar C-Defines : OPENSSL_NO_EVP ; # Envelopes
+    # CompilerVar C-Defines : OPENSSL_NO_FP_API ; # No FILE *
+    # CompilerVar C-Defines : OPENSSL_NO_HASH_COMP ;
+    # CompilerVar C-Defines : OPENSSL_NO_HMAC ;
+    CompilerVar C-Defines : OPENSSL_NO_HW ;
+    # CompilerVar C-Defines : OPENSSL_NO_IDEA ;
+    CompilerVar C-Defines : OPENSSL_NO_INLINE_ASM ;
+    CompilerVar C-Defines : OPENSSL_NO_KRB5 ;
+    # CompilerVar C-Defines : OPENSSL_NO_LHASH ;
+    # CompilerVar C-Defines : OPENSSL_NO_LOCKING ;
+    # CompilerVar C-Defines : OPENSSL_NO_MD2 ;
+    # CompilerVar C-Defines : OPENSSL_NO_MD4 ;
+    # CompilerVar C-Defines : OPENSSL_NO_MD5 ;
+    # CompilerVar C-Defines : OPENSSL_NO_MDC2 ;
+    # CompilerVar C-Defines : OPENSSL_NO_OCSP ;
+    # CompilerVar C-Defines : OPENSSL_NO_RC2 ;
+    # CompilerVar C-Defines : OPENSSL_NO_RC4 ;
+    # CompilerVar C-Defines : OPENSSL_NO_RC5 ;
+    # CompilerVar C-Defines : OPENSSL_NO_RIPEMD ;
+    # CompilerVar C-Defines : OPENSSL_NO_RMD160 ;
+    # CompilerVar C-Defines : OPENSSL_NO_RSA ;
+    # CompilerVar C-Defines : OPENSSL_NO_SHA ;
+    # CompilerVar C-Defines : OPENSSL_NO_SHA0 ;
+    # CompilerVar C-Defines : OPENSSL_NO_SHA1 ;
+    CompilerVar C-Defines : OPENSSL_NO_SOCK ;
+    CompilerVar C-Defines : OPENSSL_NO_SPEED ;
+    CompilerVar C-Defines : OPENSSL_NO_STDIO ;
+    # CompilerVar C-Defines : OPENSSL_NO_X509 ;
+
+
+    if $(Variant_openssl) != all { 
+        CompilerVar C-Defines : USE_MD5_RAND ; 
+        CompilerVar C-Defines : OPENSSL_NO_BF ;
+        CompilerVar C-Defines : OPENSSL_NO_CAST ;
+        CompilerVar C-Defines : OPENSSL_NO_DSA ;
+        CompilerVar C-Defines : OPENSSL_NO_IDEA ;
+        CompilerVar C-Defines : OPENSSL_NO_MD2 ;
+        CompilerVar C-Defines : OPENSSL_NO_MD4 ;
+        CompilerVar C-Defines : OPENSSL_NO_MDC2 ;
+        CompilerVar C-Defines : OPENSSL_NO_RC5 ;
+        CompilerVar C-Defines : OPENSSL_NO_RIPEMD ;
+    }
+
+    if $(Variant_openssl) = sec {
+        CompilerVar C-Defines : OPENSSL_NO_RC2 ;
+        CompilerVar C-Defines : OPENSSL_NO_RSA ;
+    }
+
+    if $(MACOSX) {
+        CompilerVar C-Defines : OPENSSL_THREADS ;
+        CompilerVar C-Defines : OPENSSL_SYSNAME_MACOSX ;
+    }
+
+    # define OPENSSL_SYS_VXWORKS for VXWORKS only
+    if vxworks in $(TargetOS) {
+        CompilerVar C-Defines : OPENSSL_SYS_VXWORKS ;
+        # don't why I need this but it keeps the compiler happy
+        CompilerVar C-Defines : NO_WINDOWS_BRAINDEATH ;
+    }
+    
+    if threadx in $(TargetOS) {
+        CompilerVar C-Defines : OPENSSL_SYS_THREADX ;
+        # don't why I need this but it keeps the compiler happy
+        CompilerVar C-Defines : NO_WINDOWS_BRAINDEATH ;
+        if $(C-Compiler-Family) = rvds-x-arm {
+          CompilerVar C-Defines  : NO_STRINGS_H=1 ;
+          CompilerVar C-Defines  : NO_SYS_TYPES_H ;
+        }
+    }
+
+    if $(UNIX) {
+        CompilerVar C-Defines : OPENSSL_THREADS ;
+        CompilerVar C-Defines : _REENTRANT ;
+        CompilerVar C-Defines : DSO_DLFCN ;
+        CompilerVar C-Defines : HAVE_DLFCN_H ;
+        CompilerVar C-Defines : TERMIO ;
+
+        # Grep the sources to see what this does.
+        CompilerVar C-Defines : NO_WINDOWS_BRAINDEATH ;
+    }
+
+    if $(C-Compiler-Family) = msvc {
+        # This one is a hack. It cuts out calls to Windows API's in a
+        # console build (i.e. SWprod_coreRip). If you grep through the
+        # sources, you will see that setting this is safe for
+        # 0.9.7g. I can't ensure that it will be for future versions,
+        # but will raise the issue to OpenSSL developers. --johnk 25
+        # May 2005
+
+        CompilerVar C-Defines : OPENSSL_SYS_WIN32_CYGWIN ;
+
+        # Rest are as expected
+
+        CompilerVar C-Defines : MK1MF_BUILD ;
+        CompilerVar C-Defines : OPENSSL_SYSNAME_WIN32 ;
+        CompilerVar C-Defines : WIN32_LEAN_AND_MEAN ;
+        CompilerVar C-Defines : DSO_WIN32 ;
+    }
+
+    local Com = C C++ mixedC ;
+
+    # We don't use the src sub-directory to keep the source code structured as
+    # closely to the original openssl source structure as possible, to make
+    # updating easier.
+
+    AddToVar Local : $(Com)-SourceDirectories : crypto ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/md2 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/md4 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/md5 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/sha ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/mdc2 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/hmac ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/ripemd ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/des ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/rc2 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/rc4 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/rc5 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/idea ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/bf ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/cast ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/aes ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/bn ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/rsa ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/dsa ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/dso ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/dh ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/ec ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/buffer ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/bio ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/stack ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/lhash ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/rand ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/err ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/objects ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/evp ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/asn1 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/pem ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/x509 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/x509v3 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/conf ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/pkcs7 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/pkcs12 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/comp ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/ocsp ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/ui ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/krb5 ;
+    AddToVar Local : $(Com)-SourceDirectories : crypto$/txt_db ;
+
+    # So that the dependency / source exporting mechanism can find
+    # header files in non-standard directories
+
+    DeclareExport C-ExportDirectories :
+      $(CurrentPath)$/crypto$/asn1
+      $(CurrentPath)$/crypto$/des
+      $(CurrentPath)$/crypto$/evp
+      $(CurrentPath)$/crypto$/rand
+      $(CurrentPath)$/crypto$/x509v3
+      $(CurrentPath)$/export$/openssl
+    ;
+
+    # The basic package to satisfy LE security.
+    Library openssl :
+        cryptlib.c    # crypto/
+        mem.c         # crypto/
+        mem_clr.c     # crypto/
+        mem_dbg.c     # crypto/
+        cversion.c    # crypto/
+        ex_data.c     # crypto/
+        tmdiff.c      # crypto/
+        cpt_err.c     # crypto/
+        ebcdic.c      # crypto/
+        uid.c         # crypto/
+        o_time.c      # crypto/
+        o_str.c       # crypto/
+        md5_dgst.c    # crypto/md5/
+        md5_one.c     # crypto/md5/
+        rc4_skey.c    # crypto/rc4/
+        rc4_enc.c     # crypto/rc4/
+        digest.c      # crypto/evp/
+        m_md5.c       # crypto/evp/
+        err.c         # crypto/err/
+        lhash.c       # crypto/lhash/
+        lh_stats.c    # crypto/lhash/
+        stack.c       # crypto/stack/
+        buffer.c      # crypto/buffer/
+        buf_err.c     # crypto/buffer/
+        bio_lib.c     # crypto/bio/
+        bss_file.c    # crypto/bio/
+        bss_mem.c     # crypto/bio/
+        b_print.c     # crypto/bio/
+    ;
+
+    # The extra package for PDF encryption etc. Cut down to smaller libraries
+    # to avoid too long a command line.
+    Library openssl_pdf_1 :
+        a_object.c    # crypto/asn1/
+        a_bitstr.c    # crypto/asn1/
+        a_utctm.c     # crypto/asn1/
+        a_gentm.c     # crypto/asn1/
+        a_time.c      # crypto/asn1/
+        a_int.c       # crypto/asn1/
+        a_octet.c     # crypto/asn1/
+        a_print.c     # crypto/asn1/
+        a_type.c      # crypto/asn1/
+        a_set.c       # crypto/asn1/
+        a_dup.c       # crypto/asn1/
+        a_d2i_fp.c    # crypto/asn1/
+        a_i2d_fp.c    # crypto/asn1/
+        a_enum.c      # crypto/asn1/
+        a_utf8.c      # crypto/asn1/
+        a_sign.c      # crypto/asn1/
+        a_digest.c    # crypto/asn1/
+        a_verify.c    # crypto/asn1/
+        a_mbstr.c     # crypto/asn1/
+        a_strex.c     # crypto/asn1/
+        x_algor.c     # crypto/asn1/
+        x_val.c       # crypto/asn1/
+        x_pubkey.c    # crypto/asn1/
+        x_sig.c       # crypto/asn1/
+        x_req.c       # crypto/asn1/
+        x_attrib.c    # crypto/asn1/
+        x_name.c      # crypto/asn1/
+        x_x509.c      # crypto/asn1/
+        x_x509a.c     # crypto/asn1/
+        x_crl.c       # crypto/asn1/
+        x_spki.c      # crypto/asn1/
+        d2i_pu.c      # crypto/asn1/
+        d2i_pr.c      # crypto/asn1/
+        i2d_pu.c      # crypto/asn1/
+        i2d_pr.c      # crypto/asn1/
+        t_x509.c      # crypto/asn1/
+        t_x509a.c     # crypto/asn1/
+        tasn_new.c    # crypto/asn1/
+        tasn_fre.c    # crypto/asn1/
+        tasn_enc.c    # crypto/asn1/
+        tasn_dec.c    # crypto/asn1/
+        tasn_utl.c    # crypto/asn1/
+        tasn_typ.c    # crypto/asn1/
+        f_int.c       # crypto/asn1/
+        f_string.c    # crypto/asn1/
+        a_bool.c      # crypto/asn1/
+        x_exten.c     # crypto/asn1/
+        asn1_par.c    # crypto/asn1/
+        asn1_lib.c    # crypto/asn1/
+        a_bytes.c     # crypto/asn1/
+        a_strnid.c    # crypto/asn1/
+        evp_asn1.c    # crypto/asn1/
+        asn_pack.c    # crypto/asn1/
+        p5_pbe.c      # crypto/asn1/
+        p5_pbev2.c    # crypto/asn1/
+        p8_pkey.c     # crypto/asn1/
+        asn1_err.c    # crypto/asn1/
+        t_pkey.c      # crypto/asn1/
+        x_bignum.c    # crypto/asn1/
+        x_long.c      # crypto/asn1/
+        sha_dgst.c    # crypto/sha/
+        sha1dgst.c    # crypto/sha/
+        sha_one.c     # crypto/sha/
+        sha1_one.c    # crypto/sha/
+        o_names.c     # crypto/objects/
+        obj_dat.c     # crypto/objects/
+        obj_lib.c     # crypto/objects/
+        obj_err.c     # crypto/objects/
+        rand_err.c    # crypto/rand/
+        randfile.c    # crypto/rand/
+        md_rand.c     # crypto/rand/
+        rand_lib.c    # crypto/rand/
+        rand_win.c    # crypto/rand/
+        rand_unix.c   # crypto/rand/
+        rand_os2.c    # crypto/rand/
+        rand_egd.c    # crypto/rand/
+    ;
+
+    Library openssl_pdf_2 :
+        x509_cmp.c    # crypto/x509/
+        x509_obj.c    # crypto/x509/
+        x509_vfy.c    # crypto/x509/
+        x509_txt.c    # crypto/x509/
+        x509_req.c    # crypto/x509/
+        x509_v3.c     # crypto/x509/
+        x509_ext.c    # crypto/x509/
+        x509_att.c    # crypto/x509/
+        x509_lu.c     # crypto/x509/
+        x_all.c       # crypto/x509/
+        x509_trs.c    # crypto/x509/
+        x509rset.c    # crypto/x509/
+        x509name.c    # crypto/x509/
+        x509_err.c    # crypto/x509/
+        v3_bcons.c    # crypto/x509v3/
+        v3_bitst.c    # crypto/x509v3/
+        v3_conf.c     # crypto/x509v3/
+        v3_extku.c    # crypto/x509v3/
+        v3_ia5.c      # crypto/x509v3/
+        v3_lib.c      # crypto/x509v3/
+        v3_prn.c      # crypto/x509v3/
+        v3_utl.c      # crypto/x509v3/
+        v3err.c       # crypto/x509v3/
+        v3_genn.c     # crypto/x509v3/
+        v3_alt.c      # crypto/x509v3/
+        v3_skey.c     # crypto/x509v3/
+        v3_akey.c     # crypto/x509v3/
+        v3_pku.c      # crypto/x509v3/
+        v3_int.c      # crypto/x509v3/
+        v3_enum.c     # crypto/x509v3/
+        v3_sxnet.c    # crypto/x509v3/
+        v3_cpols.c    # crypto/x509v3/
+        v3_crld.c     # crypto/x509v3/
+        v3_purp.c     # crypto/x509v3/
+        v3_info.c     # crypto/x509v3/
+        v3_ocsp.c     # crypto/x509v3/
+        v3_akeya.c    # crypto/x509v3/
+        v3_pcia.c     # crypto/x509v3/
+        v3_pci.c      # crypto/x509v3/
+        encode.c      # crypto/evp/
+        evp_enc.c     # crypto/evp/
+        e_des.c       # crypto/evp/
+        e_des3.c      # crypto/evp/
+        e_rc4.c       # crypto/evp/
+        e_aes.c       # crypto/evp/
+        names.c       # crypto/evp/
+        e_xcbc_d.c    # crypto/evp/
+        m_sha.c       # crypto/evp/
+        m_sha1.c      # crypto/evp/
+        p_sign.c      # crypto/evp/
+        p_verify.c    # crypto/evp/
+        p_lib.c       # crypto/evp/
+        p_enc.c       # crypto/evp/
+        p_dec.c       # crypto/evp/
+        bio_md.c      # crypto/evp/
+        bio_b64.c     # crypto/evp/
+        bio_enc.c     # crypto/evp/
+        c_all.c       # crypto/evp/
+        c_allc.c      # crypto/evp/
+        c_alld.c      # crypto/evp/
+        evp_lib.c     # crypto/evp/
+        evp_pkey.c    # crypto/evp/
+        evp_pbe.c     # crypto/evp/
+        p5_crpt.c     # crypto/evp/
+        p5_crpt2.c    # crypto/evp/
+        e_old.c       # crypto/evp/
+        evp_err.c     # crypto/evp/
+        e_rc2.c       # crypto/evp/
+    ;
+
+    Library openssl_pdf_3 :
+        set_key.c     # crypto/des/
+        ecb_enc.c     # crypto/des/
+        ecb3_enc.c    # crypto/des/
+        cfb64enc.c    # crypto/des/
+        cfb64ede.c    # crypto/des/
+        cfb_enc.c     # crypto/des/
+        ofb64ede.c    # crypto/des/
+        ofb64enc.c    # crypto/des/
+        des_enc.c     # crypto/des/
+        xcbc_enc.c    # crypto/des/
+        aes_core.c    # crypto/aes/
+        aes_ecb.c     # crypto/aes/
+        aes_cbc.c     # crypto/aes/
+        aes_cfb.c     # crypto/aes/
+        aes_ofb.c     # crypto/aes/
+        p12_add.c     # crypto/pkcs12/
+        p12_asn.c     # crypto/pkcs12/
+        p12_crpt.c    # crypto/pkcs12/
+        p12_decr.c    # crypto/pkcs12/
+        p12_key.c     # crypto/pkcs12/
+        p12_utl.c     # crypto/pkcs12/
+        pk12err.c     # crypto/pkcs12/
+        p12_p8d.c     # crypto/pkcs12/
+        p12_p8e.c     # crypto/pkcs12/
+        pk7_asn1.c    # crypto/pkcs7/
+        pk7_lib.c     # crypto/pkcs7/
+        pk7_doit.c    # crypto/pkcs7/
+        pk7_smime.c   # crypto/pkcs7/
+        pk7_attr.c    # crypto/pkcs7/
+        pk7_mime.c    # crypto/pkcs7/
+        pkcs7err.c    # crypto/pkcs7/
+        bn_add.c      # crypto/bn/
+        bn_div.c      # crypto/bn/
+        bn_exp.c      # crypto/bn/
+        bn_lib.c      # crypto/bn/
+        bn_ctx.c      # crypto/bn/
+        bn_mul.c      # crypto/bn/
+        bn_mod.c      # crypto/bn/
+        bn_print.c    # crypto/bn/
+        bn_rand.c     # crypto/bn/
+        bn_shift.c    # crypto/bn/
+        bn_word.c     # crypto/bn/
+        bn_gcd.c      # crypto/bn/
+        bn_sqr.c      # crypto/bn/
+        bn_asm.c      # crypto/bn/
+        bn_recp.c     # crypto/bn/
+        bn_mont.c     # crypto/bn/
+        bn_err.c      # crypto/bn/
+        bn_blind.c    # crypto/bn/
+        bn_prime.c    # crypto/bn/
+        bss_null.c    # crypto/bio/
+        bf_buff.c     # crypto/bio/
+        b_dump.c      # crypto/bio/
+        bio_err.c     # crypto/bio/
+        conf_lib.c    # crypto/conf/
+        conf_api.c    # crypto/conf/
+        conf_def.c    # crypto/conf/
+        conf_err.c    # crypto/conf/
+        hmac.c        # crypto/hmac/
+        dh_key.c      # crypto/dh/
+        dh_lib.c      # crypto/dh/
+        dh_err.c      # crypto/dh/
+        err_all.c     # crypto/err/
+        err_prn.c     # crypto/err/
+        ocsp_asn.c    # crypto/ocsp/
+        ocsp_err.c    # crypto/ocsp/
+        dso_err.c     # crypto/dso/
+        ec_err.c      # crypto/ec/
+        pem_err.c     # crypto/pem/
+        ui_err.c      # crypto/ui/
+        rsa_eay.c     # crypto/rsa/
+        rsa_lib.c     # crypto/rsa/
+        rsa_asn1.c    # crypto/rsa/
+        rsa_sign.c    # crypto/rsa/
+        rsa_gen.c     # crypto/rsa/
+        rsa_saos.c    # crypto/rsa/
+        rsa_err.c     # crypto/rsa/
+        rsa_pk1.c     # crypto/rsa/
+        rsa_ssl.c     # crypto/rsa/
+        rsa_none.c    # crypto/rsa/
+        rsa_oaep.c    # crypto/rsa/
+        rsa_chk.c     # crypto/rsa/
+        rsa_null.c    # crypto/rsa/
+        rc2_ecb.c     # crypto/rc2/
+        rc2_skey.c    # crypto/rc2/
+        rc2_cbc.c     # crypto/rc2/
+        rc2cfb64.c    # crypto/rc2/
+        rc2ofb64.c    # crypto/rc2/
+    ;  
+
+    # all other currently not in use but might be used later
+    Library openssl_1 :
+        ui_lib.c      # crypto/ui/
+        ui_openssl.c  # crypto/ui/
+        ui_util.c     # crypto/ui/
+        ui_compat.c   # crypto/ui/
+        md2_one.c     # crypto/md2/
+        md2_dgst.c    # crypto/md2/
+        mdc2dgst.c    # crypto/mdc2/
+        mdc2_one.c    # crypto/mdc2/
+        md4_one.c     # crypto/md4/
+        md4_dgst.c    # crypto/md4/
+        rmd_dgst.c    # crypto/ripemd/
+        rmd_one.c     # crypto/ripemd/
+        cbc_enc.c     # crypto/des/
+        enc_read.c    # crypto/des/
+        enc_writ.c    # crypto/des/
+        ofb_enc.c     # crypto/des/
+        str2key.c     # crypto/des/
+        pcbc_enc.c    # crypto/des/
+        qud_cksm.c    # crypto/des/
+        rand_key.c    # crypto/des/
+        fcrypt_b.c    # crypto/des/
+        fcrypt.c      # crypto/des/
+        rpc_enc.c     # crypto/des/
+        cbc_cksm.c    # crypto/des/
+        ede_cbcm_enc.c # crypto/des/
+        des_old.c     # crypto/des/
+        des_old2.c    # crypto/des/
+        read2pwd.c    # crypto/des/
+        rc5_skey.c    # crypto/rc5/
+        rc5_ecb.c     # crypto/rc5/
+        rc5_enc.c     # crypto/rc5/
+        rc5cfb64.c    # crypto/rc5/
+        rc5ofb64.c    # crypto/rc5/
+        i_cbc.c       # crypto/idea/
+        i_cfb64.c     # crypto/idea/
+        i_ofb64.c     # crypto/idea/
+        i_ecb.c       # crypto/idea/
+        i_skey.c      # crypto/idea/
+        bf_skey.c     # crypto/bf/
+        bf_ecb.c      # crypto/bf/
+        bf_enc.c      # crypto/bf/
+        bf_cfb64.c    # crypto/bf/
+        bf_ofb64.c    # crypto/bf/
+        c_skey.c      # crypto/cast/
+        c_ecb.c       # crypto/cast/
+        c_enc.c       # crypto/cast/
+        c_cfb64.c     # crypto/cast/
+        c_ofb64.c     # crypto/cast/
+        aes_misc.c    # crypto/aes/
+        aes_ctr.c     # crypto/aes/
+        bn_kron.c     # crypto/bn/
+        bn_sqrt.c     # crypto/bn/
+        bn_mpi.c      # crypto/bn/
+        bn_exp2.c     # crypto/bn/
+        conf_mod.c    # crypto/conf/
+        conf_mall.c   # crypto/conf/
+        conf_sap.c    # crypto/conf/
+    ;
+
+    Library openssl_2 :   
+        dsa_gen.c     # crypto/dsa/
+        dsa_key.c     # crypto/dsa/
+        dsa_lib.c     # crypto/dsa/
+        dsa_asn1.c    # crypto/dsa/
+        dsa_vrf.c     # crypto/dsa/
+        dsa_sign.c    # crypto/dsa/
+        dsa_err.c     # crypto/dsa/
+        dsa_ossl.c    # crypto/dsa/
+        dso_dl.c      # crypto/dso/
+        dso_dlfcn.c   # crypto/dso/
+        dso_lib.c     # crypto/dso/
+        dso_null.c    # crypto/dso/
+        dso_openssl.c # crypto/dso/
+        dso_win32.c   # crypto/dso/
+        dso_vms.c     # crypto/dso/
+        dh_asn1.c     # crypto/dh/
+        dh_gen.c      # crypto/dh/
+        dh_check.c    # crypto/dh/
+        ec_lib.c      # crypto/ec/
+        ecp_smpl.c    # crypto/ec/
+        ecp_mont.c    # crypto/ec/
+        ecp_recp.c    # crypto/ec/
+        ecp_nist.c    # crypto/ec/
+        ec_cvt.c      # crypto/ec/
+        ec_mult.c     # crypto/ec/
+        bio_cb.c      # crypto/bio/
+        bss_fd.c      # crypto/bio/
+        bss_sock.c    # crypto/bio/
+        bss_conn.c    # crypto/bio/
+        bf_null.c     # crypto/bio/
+        b_sock.c      # crypto/bio/
+        bss_acpt.c    # crypto/bio/
+        bf_nbio.c     # crypto/bio/
+        bss_log.c     # crypto/bio/
+        bss_bio.c     # crypto/bio/
+        x509_def.c    # crypto/x509/
+        x509_d2.c     # crypto/x509/
+        x509_r2x.c    # crypto/x509/
+        x509spki.c    # crypto/x509/
+        x509_set.c    # crypto/x509/
+        x509cset.c    # crypto/x509/
+        x509type.c    # crypto/x509/
+        by_file.c     # crypto/x509/
+        by_dir.c      # crypto/x509/
+    ;
+
+    Library openssl_3 :
+        evp_key.c     # crypto/evp/
+        evp_acnf.c    # crypto/evp/
+        e_bf.c        # crypto/evp/
+        e_idea.c      # crypto/evp/
+        e_cast.c      # crypto/evp/
+        e_rc5.c       # crypto/evp/
+        m_null.c      # crypto/evp/
+        m_md2.c       # crypto/evp/
+        m_md4.c       # crypto/evp/
+        m_dss.c       # crypto/evp/
+        m_dss1.c      # crypto/evp/
+        m_mdc2.c      # crypto/evp/
+        m_ripemd.c    # crypto/evp/
+        p_open.c      # crypto/evp/
+        p_seal.c      # crypto/evp/
+        e_null.c      # crypto/evp/
+        bio_ok.c      # crypto/evp/
+        x_info.c      # crypto/asn1/
+        nsseq.c       # crypto/asn1/
+        t_req.c       # crypto/asn1/
+        t_crl.c       # crypto/asn1/
+        t_spki.c      # crypto/asn1/
+        t_bitst.c     # crypto/asn1/
+        n_pkey.c      # crypto/asn1/
+        f_enum.c      # crypto/asn1/
+        a_hdr.c       # crypto/asn1/
+        x_pkey.c      # crypto/asn1/
+        a_meth.c      # crypto/asn1/
+        asn_moid.c    # crypto/asn1/
+        txt_db.c      # crypto/txt_db/
+        p12_attr.c    # crypto/pkcs12/
+        p12_crt.c     # crypto/pkcs12/
+        p12_init.c    # crypto/pkcs12/
+        p12_kiss.c    # crypto/pkcs12/
+        p12_mutl.c    # crypto/pkcs12/
+        p12_npas.c    # crypto/pkcs12/
+        pem_sign.c    # crypto/pem/
+        pem_seal.c    # crypto/pem/
+        pem_info.c    # crypto/pem/
+        pem_lib.c     # crypto/pem/
+        pem_all.c     # crypto/pem/
+        pem_x509.c    # crypto/pem/
+        pem_xaux.c    # crypto/pem/
+        pem_oth.c     # crypto/pem/
+        pem_pk8.c     # crypto/pem/
+        pem_pkey.c    # crypto/pem/
+        comp_lib.c    # crypto/comp/
+        comp_err.c    # crypto/comp/
+        c_rle.c       # crypto/comp/
+        c_zlib.c      # crypto/comp/
+        ocsp_ext.c    # crypto/ocsp/
+        ocsp_ht.c     # crypto/ocsp/
+        ocsp_lib.c    # crypto/ocsp/
+        ocsp_cl.c     # crypto/ocsp/
+        ocsp_srv.c    # crypto/ocsp/
+        ocsp_prn.c    # crypto/ocsp/
+        ocsp_vfy.c    # crypto/ocsp/
+        krb5_asn.c    # crypto/krb5/
+    ;
+
+# I currently do nothing with these files, but do keep them listed in the event
+# that we decide to add them. These files have NOT been added to HOPE, but can
+# be found in the source distribution.
+NOTUSED =
+        rmdtest.c     # crypto/ripemd/
+        destest.c     # crypto/des/
+        rc2test.c     # crypto/rc2/
+        rc4test.c     # crypto/rc4/
+        rc5test.c     # crypto/rc5/
+        ideatest.c    # crypto/idea/
+        bftest.c      # crypto/bf/
+        casttest.c    # crypto/cast/
+        bntest.c      # crypto/bn/
+        exptest.c     # crypto/bn/
+        rsa_test.c    # crypto/rsa/
+        dsatest.c     # crypto/dsa/
+        dhtest.c      # crypto/dh/
+        ectest.c      # crypto/ec/
+        randtest.c    # crypto/rand/
+        evp_test.c    # crypto/evp/
+        fips/fips.c
+        fips/fips_err_wrapper.c
+        fips/aes/fips_aes_core.c
+        fips/aes/fips_aes_selftest.c
+        fips/des/fips_des_enc.c
+        fips/des/fips_des_selftest.c
+        fips/des/fips_set_key.c
+        fips/dsa/fips_dsa_ossl.c
+        fips/dsa/fips_dsa_gen.c
+        fips/dsa/fips_dsa_selftest.c
+        fips/dh/fips_dh_check.c
+        fips/dh/fips_dh_gen.c
+        fips/dh/fips_dh_key.c
+        fips/rand/fips_rand.c
+        fips/rsa/fips_rsa_eay.c
+        fips/rsa/fips_rsa_gen.c
+        fips/rsa/fips_rsa_selftest.c
+        fips/sha1/fips_sha1dgst.c
+        fips/sha1/fips_sha1_selftest.c
+        fips/aes/fips_aesavs.c
+        fips/des/fips_desmovs.c
+        fips/dsa/fips_dsatest.c
+        fips/rand/fips_randtest.c
+        fips/sha1/fips_sha1test.c
+        ssl/ssltest.c
+        apps/verify.c
+        apps/asn1pars.c
+        apps/req.c
+        apps/dgst.c
+        apps/dh.c
+        apps/dhparam.c
+        apps/enc.c
+        apps/passwd.c
+        apps/gendh.c
+        apps/errstr.c
+        apps/ca.c
+        apps/pkcs7.c
+        apps/crl2p7.c
+        apps/crl.c
+        apps/rsa.c
+        apps/rsautl.c
+        apps/dsa.c
+        apps/dsaparam.c
+        apps/x509.c
+        apps/genrsa.c
+        apps/gendsa.c
+        apps/s_server.c
+        apps/s_client.c
+        apps/speed.c
+        apps/s_time.c
+        apps/apps.c
+        apps/s_cb.c
+        apps/s_socket.c
+        apps/app_rand.c
+        apps/version.c
+        apps/sess_id.c
+        apps/ciphers.c
+        apps/nseq.c
+        apps/pkcs12.c
+        apps/pkcs8.c
+        apps/spkac.c
+        apps/smime.c
+        apps/rand.c
+        apps/ocsp.c
+        apps/prime.c
+        apps/openssl.c
+        ssl/s2_meth.c
+        ssl/s2_srvr.c
+        ssl/s2_clnt.c
+        ssl/s2_lib.c
+        ssl/s2_enc.c
+        ssl/s2_pkt.c
+        ssl/s3_meth.c
+        ssl/s3_srvr.c
+        ssl/s3_clnt.c
+        ssl/s3_lib.c
+        ssl/s3_enc.c
+        ssl/s3_pkt.c
+        ssl/s3_both.c
+        ssl/s23_meth.c
+        ssl/s23_srvr.c
+        ssl/s23_clnt.c
+        ssl/s23_lib.c
+        ssl/s23_pkt.c
+        ssl/t1_meth.c
+        ssl/t1_srvr.c
+        ssl/t1_clnt.c
+        ssl/t1_lib.c
+        ssl/t1_enc.c
+        ssl/ssl_lib.c
+        ssl/ssl_err2.c
+        ssl/ssl_cert.c
+        ssl/ssl_sess.c
+        ssl/ssl_ciph.c
+        ssl/ssl_stat.c
+        ssl/ssl_rsa.c
+        ssl/ssl_asn1.c
+        ssl/ssl_txt.c
+        ssl/ssl_algs.c
+        ssl/bio_ssl.c
+        ssl/ssl_err.c
+        ssl/kssl.c
+    ;
+
+    if $(C-Compiler-Family) = msvc {
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+            advapi32.lib
+            comctl32.lib
+            comdlg32.lib
+            gdi32.lib
+            kernel32.lib
+            user32.lib
+            ws2_32.lib
+            mpr.lib
+        ;
+    }
+
+    local LIBRARIES =
+        openssl
+    ;
+
+    if $(Variant_openssl) = pdf || $(Variant_openssl) = all {
+        C-LinkWithLibraries openssl : openssl_pdf_1 openssl_pdf_2 openssl_pdf_3 ;
+    }
+
+    if $(Variant_openssl) = all {
+        C-LinkWithLibraries openssl : openssl_1 openssl_2 openssl_3 ;
+        
+        # Build just one of the test executables - to show how its done.
+        Executable md2test :
+            md2test.c
+        ;
+
+        local i ; for i in $(LIBRARIES) {
+            C-LinkWithLibraries md2test : $(i) ;
+        }
+    }
+
+
+    # Note any #included .c files explicitly for WDK build
+    NoteWDKExtraSources openssl_pdf_3 : ncbc_enc.c ;
+
+
+# =============================================================================
+# Log stripped

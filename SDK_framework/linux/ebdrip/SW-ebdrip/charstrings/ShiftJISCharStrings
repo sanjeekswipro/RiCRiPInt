@@ -1,0 +1,54 @@
+/ShiftJISCharStrings
+
+189 dict dup begin
+  /.notdef 0 def     /c40 1 def         /c41 2 def         /c42 3 def
+  /c43 4 def         /c44 5 def         /c45 6 def         /c46 7 def
+  /c47 8 def         /c48 9 def         /c49 10 def        /c4A 11 def
+  /c4B 12 def        /c4C 13 def        /c4D 14 def        /c4E 15 def
+  /c4F 16 def        /c50 17 def        /c51 18 def        /c52 19 def
+  /c53 20 def        /c54 21 def        /c55 22 def        /c56 23 def
+  /c57 24 def        /c58 25 def        /c59 26 def        /c5A 27 def
+  /c5B 28 def        /c5C 29 def        /c5D 30 def        /c5E 31 def
+  /c5F 32 def        /c60 33 def        /c61 34 def        /c62 35 def
+  /c63 36 def        /c64 37 def        /c65 38 def        /c66 39 def
+  /c67 40 def        /c68 41 def        /c69 42 def        /c6A 43 def
+  /c6B 44 def        /c6C 45 def        /c6D 46 def        /c6E 47 def
+  /c6F 48 def        /c70 49 def        /c71 50 def        /c72 51 def
+  /c73 52 def        /c74 53 def        /c75 54 def        /c76 55 def
+  /c77 56 def        /c78 57 def        /c79 58 def        /c7A 59 def
+  /c7B 60 def        /c7C 61 def        /c7D 62 def        /c7E 63 def
+  /c80 64 def        /c81 65 def        /c82 66 def        /c83 67 def
+  /c84 68 def        /c85 69 def        /c86 70 def        /c87 71 def
+  /c88 72 def        /c89 73 def        /c8A 74 def        /c8B 75 def
+  /c8C 76 def        /c8D 77 def        /c8E 78 def        /c8F 79 def
+  /c90 80 def        /c91 81 def        /c92 82 def        /c93 83 def
+  /c94 84 def        /c95 85 def        /c96 86 def        /c97 87 def
+  /c98 88 def        /c99 89 def        /c9A 90 def        /c9B 91 def
+  /c9C 92 def        /c9D 93 def        /c9E 94 def        /c9F 95 def
+  /cA0 96 def        /cA1 97 def        /cA2 98 def        /cA3 99 def
+  /cA4 100 def       /cA5 101 def       /cA6 102 def       /cA7 103 def
+  /cA8 104 def       /cA9 105 def       /cAA 106 def       /cAB 107 def
+  /cAC 108 def       /cAD 109 def       /cAE 110 def       /cAF 111 def
+  /cB0 112 def       /cB1 113 def       /cB2 114 def       /cB3 115 def
+  /cB4 116 def       /cB5 117 def       /cB6 118 def       /cB7 119 def
+  /cB8 120 def       /cB9 121 def       /cBA 122 def       /cBB 123 def
+  /cBC 124 def       /cBD 125 def       /cBE 126 def       /cBF 127 def
+  /cC0 128 def       /cC1 129 def       /cC2 130 def       /cC3 131 def
+  /cC4 132 def       /cC5 133 def       /cC6 134 def       /cC7 135 def
+  /cC8 136 def       /cC9 137 def       /cCA 138 def       /cCB 139 def
+  /cCC 140 def       /cCD 141 def       /cCE 142 def       /cCF 143 def
+  /cD0 144 def       /cD1 145 def       /cD2 146 def       /cD3 147 def
+  /cD4 148 def       /cD5 149 def       /cD6 150 def       /cD7 151 def
+  /cD8 152 def       /cD9 153 def       /cDA 154 def       /cDB 155 def
+  /cDC 156 def       /cDD 157 def       /cDE 158 def       /cDF 159 def
+  /cE0 160 def       /cE1 161 def       /cE2 162 def       /cE3 163 def
+  /cE4 164 def       /cE5 165 def       /cE6 166 def       /cE7 167 def
+  /cE8 168 def       /cE9 169 def       /cEA 170 def       /cEB 171 def
+  /cEC 172 def       /cED 173 def       /cEE 174 def       /cEF 175 def
+  /cF0 176 def       /cF1 177 def       /cF2 178 def       /cF3 179 def
+  /cF4 180 def       /cF5 181 def       /cF6 182 def       /cF7 183 def
+  /cF8 184 def       /cF9 185 def       /cFA 186 def       /cFB 187 def
+  /cFC 188 def
+
+end
+/CharStrings defineresource pop

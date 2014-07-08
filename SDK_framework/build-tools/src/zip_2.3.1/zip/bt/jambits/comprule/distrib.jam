@@ -1,0 +1,184 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Distribution rules.
+#
+# $HopeName: HQNjambits!comprule:distrib.jam(trunk.22) $
+#
+
+#* $(1) type
+#* $(2) destination path ...
+#* $(3) sources ...
+#* $(4) source path ...
+#* [$(5)] distributiontarget
+#* [$(6)] platform
+#* [$(7)] suffix
+#* [$(8)] flags
+#* Add $(3) to the list of things to be copied to the
+#* <code>distrib</code> directory.  If $(1) is <code>File</code>, then $(3)
+#* may be target names or files.  If $(1) are target names, then $(4)
+#* should be the path to the compound that describes them, rather
+#* than the full path to the files.  Otherwise, or if $(1) is
+#* <code>Tree</code>, $(4) should be the full path to the directory
+#* containing the file or tree to copy.  $(4) will be joined with file
+#* separator characters to produce the full path.
+#*
+#* The trees or files will be copied to a destination named in $(2).
+#* This is joined with file separator characters also.  If more than
+#* one $(3) is specified, the last element of $(2) should be <code>*</code>,
+#* meaning <em>copy with the same name as the source</em>.  (You may
+#* specify <code>*</code> will only one source, of course.)
+#*
+#* The $(5) is now obsolete and won't be documented.
+#*
+#* $(6), if specified, will be used to name the $(6) part of the
+#* distribution directory, overriding any platform information encoded
+#* with the source target and the default distribution platform.
+#*
+#* The $(7) argument (if specified) is a list of strings that are to be
+#* joined with <code>-</code> to produce the $(7) part of the
+#* distribution directory.  The following elements are treated
+#* specially, however:
+#* <dl><dt><code>Build</code><dd>Replaced by <code>rel</code>, <code>a</code> or
+#* <code>na</code> as appropriate
+#* <dt><code>Variant_<em>foo</em></code><dd>Replaced by any modifiers to the
+#* <code>Suffix</code> variable arising from the current value of the
+#* <em>foo</em> variant.</dl>
+#*
+#* The following $(8) are recognised:
+#* <dl><dt><code>PlatformThenSuffix</code><dd>Order the distribution
+#* directory nodes the opposite way round</dl>
+#*eg Distribute File : foo bar * : myexec mydll : subdir ;
+    rule Distribute {
+        local RelativeToDest ; MakePath RelativeToDest : $(2) ;
+        local FromParent     ; MakePath FromParent : $(4) ;
+        local flags = $(8) ;
+        local Sources ;
+        if $(1) = File {
+            MakeGristed Sources : $(3) : $(FromParent) ;
+        }
+        else {
+            Sources = $(FromParent)$/$(3) ;
+        }
+
+        local Targets = $(5) ; Targets ?= distrib ;
+        local SpecifiedTargetPlatform = $(6) ;
+
+      # Override the local definition of Suffix by parsing the entries
+      # in the seventh argument
+        local DistSuffix = $(Suffix) ;
+        if $(7) {
+          DistSuffix = ;
+          local i ; for i in $(7) {
+            switch $(i) {
+              case Build :
+                if $(RELEASE) = 1 {
+                  DistSuffix += rel ;
+                }
+                else {
+                  if $(ASSERT) = 1 {
+                    DistSuffix += a ;
+                  }
+                  else {
+                    DistSuffix += na ;
+                  }
+                }
+
+            # This will break if the variable flavouring changes:
+              case Variant_* : DistSuffix += $(_$(i)-Suffix) ;
+
+              case * : DistSuffix += $(i) ;
+            }
+          }
+          Join DistSuffix : - : $(DistSuffix) ;
+          DistSuffix ?= all ; # In case the list collapses
+        }
+
+    # Check for multiple files destined for the same place
+        if $(Sources[2-]) && $(RelativeToDest:B) != * {
+            Error Cannot distribute all of $(3) to $(RelativeToDest) ;
+        }
+
+    # Add the distribution directory to the clean target
+        CleanDir $(BUILDROOT)$/distrib ;
+
+        local DistTarget RawTarget ; for RawTarget in $(Targets) {
+            # A hack to create "sub"-distributions within the platform-specific
+            # directory.
+            local OptionalSubDir = $($(RawTarget)-Distribution-Directory) ;
+            if $(RawTarget) != distrib { OptionalSubDir ?= $(RawTarget) ; }
+
+            MakeGristed DistTarget : $(RawTarget) : $(Dot) ;
+            NOTFILE $(RawTarget) $(DistTarget) ;
+
+            local FromTarget ; for FromTarget in $(Sources) {
+            # The platform part of the directory
+                local TargetPlatform = $(SpecifiedTargetPlatform) ;
+                TargetPlatform ?= $(TargetPlatform-$(TargetFile-$(FromTarget))) ;
+                TargetPlatform ?= $(TargetPlatform-$(FromTarget)) ;
+                TargetPlatform ?= $(TargetOS) $(TargetArch) ;
+                Join TargetPlatform : - : $(TargetPlatform) ;
+
+            # If there is an alternative target for the file represented by
+            # the source, then use that instead.
+                if $(TargetFile-$(FromTarget)) {
+                    FromTarget = $(TargetFile-$(FromTarget)) ;
+                }
+
+            # Make the destination directory
+                local ToDest ;
+                if PlatformThenSuffix in $(flags) {
+                  MakePath ToDest : $(BUILDROOT) distrib
+                    $(TargetPlatform) $(DistSuffix)
+                    $(OptionalSubDir) $(RelativeToDest) ;
+                }
+                else {
+                  MakePath ToDest : $(BUILDROOT) distrib
+                    $(DistSuffix) $(TargetPlatform)
+                    $(OptionalSubDir) $(RelativeToDest) ;
+                }
+
+            # Replace a final * with the base and suffix of the source
+                if $(ToDest:BS) = * { ToDest = $(ToDest:D)$/$(FromTarget:BS) ; }
+
+            # Set up ToTarget to be the target where we shall copy it to (ToDest)
+                local ToTarget = $(ToDest:BS) ;
+                MakeGristed ToTarget : $(ToTarget) : Distrib-$(ToDest:D) ;
+                DirectoryFor $(ToTarget) : $(ToDest:D) ;
+
+            # For files,
+                if $(1) = File {
+                # Make a guess at the location in case it isn't a real jam
+                # target:
+                    SEARCH on $(FromTarget) += $(FromParent) ;
+                # Do the copy
+                    CopyFile $(ToTarget) : $(FromTarget) ;
+                    # Hack the copy rune
+                    CopyFile on $(ToTarget) = $(DistribCopyRune) ;
+                }
+            # For trees,
+                else {
+                    if $(1) = TreeLink {
+                        CopyTreeLink $(ToDest) : $(FromTarget) ;
+                    }
+                    else {
+                      # Use ToTarget as a pseudo target for a directory copy
+                        CopyTree $(ToTarget) : $(FromTarget) : $(ToDest) ;
+                    }
+                # Hack the copy rune
+                    Copy on $(ToTarget) = $(DistribCopyRune) ;
+                }
+
+            # Now the remaining dependencies...
+                DEPENDS $(DistTarget) : $(ToTarget) ;
+            }
+        }
+    }
+
+# We need to get around the timestamp updating feature of the default
+# $(Copy) and $(CopyFile) runes, since that marks the contents of the
+# distrib directory as updated.  As long as we don't use
+# `FloatingDepends' on targets that use this rune, it doesn't matter.
+    DistribCopyRune = $(FileutilRune) -e \"Fileutil::Copy\" -- -fmnps ;
+
+# Log stripped

@@ -1,0 +1,136 @@
+/* -*- Mode: PostScript -*-
+ * $HopeName: COREtrapping!src:names.nam(EBDSDK_P.1) $
+ * $Id: src:names.nam,v 1.29.2.1.1.1 2013/12/19 11:25:07 anon Exp $
+ *
+ * Copyright (C) 2001-2011 Global Graphics Software Ltd. All rights reserved.
+ * Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREtrapping. See SWv20!src/names.nam for documentation on
+ * the file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ */
+
+settrapintent       OPERATOR
+currenttrapintent   OPERATOR
+settrapparams       OPERATOR          DICT(1183615869 internaldict)
+currenttrapparams   OPERATOR          DICT(1183615869 internaldict)
+settrapzone         OPERATOR          DICT(1183615869 internaldict)
+
+Trapping
+
+/* 3010 settrapparams/currenttrapparams keys. */
+
+BlackColorLimit
+BlackDensityLimit
+BlackWidth
+ColorantZoneDetails
+Enabled
+HalftoneName
+ImageInternalTrapping
+ImageResolution
+ImageToObjectTrapping
+ImageTrapPlacement
+SlidingTrapLimit
+StepLimit
+TrapColorScaling
+TrapSetName
+TrapWidth
+null
+
+/* Values for ImageTrapPlacement above. */
+
+Center
+Choke
+Spread
+Normal
+
+/* Additional (optional) Harlequin keys to settrapparams. */
+
+HqnSmallTextThreshold
+HqnTrapWidthRatioLimit
+HqnTextToImageRule
+HqnAutoChokeSuperBlack
+HqnSmallTextTrapWidth
+HqnObjectToImageRule
+HqnImageTrapWidth
+HqnHighlightTrapColor
+HqnDefaultZone
+HqnPoorTrapRule
+HqnWhiteDensityLimit
+HqnTrapAspectRatio
+HqnTrapFeathering
+HqnSmallObjectProtectionFactor
+HqnObjectCoalesceFactor
+HqnThinnessLimit
+HqnTrapOverprintedObjects
+Override
+
+/* Values for HqnTrapOverprintedObjects above. */
+
+All
+NotBlack
+None
+
+/* Trapping systemparams. */
+
+HqnTrappingCellSize
+
+/* TechNote 5622 params. */
+
+TrapJoinStyle
+
+Miter
+Round
+Bevel
+
+TrapEndStyle
+
+% Miter
+Overlap
+
+ImageToImageTrapping
+MinimumBlackWidth
+
+/* Debug-only switches. */
+
+HqnDebugHiliteBoundingBoxes
+HqnDebugHiliteBrushes
+
+HqnDebugHiliteRLEShapes
+HqnDebugHiliteRLESeeds
+HqnDebugHiliteRLETrapMasks
+HqnDebugHiliteRLEImageEdges
+
+HqnTraceColors
+HqnTraceSequencePoints
+HqnTraceMaskingDecisions
+HqnTraceRLESpans
+HqnTraceRuleDecisions
+HqnTraceMemoryStats
+
+HqnRoundTripFidelityTest
+HqnRestrictedObjectList
+
+HqnDebugDropOriginalDL
+
+HqnDebugHiliteCellGrid
+HqnDebugHiliteCells
+
+HqnDebugIsolateCellRow
+HqnDebugIsolateCellColumn
+
+HqnSkipSimpleTraps
+HqnSkipComplexTraps
+
+/* Values for HqnDebugHilite[Shapes|Seeds|TrapMasks|ImageEdges] switches. */
+
+/* None */
+Singly
+Together
+
+/* Additional value for HqnDebugHiliteRLESeeds which show just the top
+   and bottom complex-colored seeds (color lists). */
+
+
+/* Log stripped */

@@ -1,0 +1,1990 @@
+%!PS-Adobe-3.0
+%%Title: HqnLocal
+%%CreationDate: 2003
+%%VMusage: -1 -1
+%{HqnLocal version #1 0
+% Copyright (C) Global Graphics Software Limited, 2003. All Rights Reserved.
+% $Revision: 1.5.1.1.1.1 $
+%%EndComments
+%%BeginProcSet: (HqnLocal) 1 0
+
+% Localise strings for use in the PostScript world.
+% $HopeName: SWv20!swf:procsets:hqnlocal(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+<< /UVPS {} >> 1183615869 internaldict /defineop get exec
+
+currentglobal false setglobal
+50 dict begin
+/globalness exch def
+/tws currentdict def
+
+statusdict /HqnLocalDict currentdict put
+
+/procsetversion ($Revision: 1.5.1.1.1.1 $) 11 1 index length 13 sub getinterval def
+
+/Validate true def
+/Debug false def					% Set to false for production, true when developing support files.
+
+/s 512 string def
+/ts 512 string def
+/s1 1 string def
+/s0 () def
+/concattomark 1183615869 internaldict /concattomark get def
+
+/EncodedFonts <<
+	{ /Plain /Emphasis /Narrow /NarrowEmphasis /Monospace /MonospaceEmphasis }{ 6 dict } forall
+>> def
+/OptionalEncodedFonts <<
+	/Monospace /Plain
+	/MonospaceEmphasis /Emphasis
+>> def
+
+
+/InputEncodings 6 dict def
+
+/stderr serverdict /altout 2 copy known {
+	get dup type /filetype eq {
+		dup status not dup { exch pop } if
+	} { pop true } ifelse
+  } { pop pop true } ifelse
+  	{
+	(%stderr)(w)file 
+  } if
+def
+
+/DoError {
+	%|- offendingcommand errortype extrainfo
+	$error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+	% offendingcommand errortype extrainfo dict
+	/errorinfo [ null 5 -1 roll ] put
+	errordict exch get exec
+} bind def
+
+/ValidateValues {
+	% dict lookup -> ValidateValues -> dict
+		{
+		% dict key testtype
+		3 copy pop 
+		% dict key testtype dict key
+		2 copy known {
+			get type 
+			% dict key testtype valtype
+			1 index type /dicttype eq { 
+				known not
+			}{ ne } ifelse
+				{
+				errordict /typecheck get exec
+			} if
+			% dict key
+		}	{
+			pop pop pop
+			errordict /undefined get exec
+		} ifelse
+		pop
+	} forall
+} bind def
+
+/ValidateFile {
+{
+	begin
+	countdictstack mark 2 index
+	% fname dicts mark fname
+	(r) file cvx stopped {
+		$error begin /command load errorname end ErrorTag DoError
+	} if
+	Validate {
+		% fname dicts mark key dict
+		count 4 lt {
+			/HqnLocal /stackunderflow ErrorTag DoError
+		} if
+		dup type /dicttype ne
+		2 index type /nametype ne or 
+		3 index type /marktype ne or
+		4 index type /integertype ne or {
+			/HqnLocal /typecheck ErrorTag DoError
+		} if
+		countdictstack 4 index ne {
+			/HqnLocal /undefinedresult ErrorTag DoError
+		} if
+		1 index KeyTag ne {
+			/HqnLocal /undefinedresult KeyTag DoError
+		} if
+		FileValidation //ValidateValues exec
+		EntryValidation {
+			% thisdict key valdict|valtype
+			3 copy pop get exch
+			% thisdict key subdict valdict/type
+			/ErrorTag 4 -1 roll def
+			% thisdict subdict valdict|valtype
+			dup type /dicttype eq {
+				//ValidateValues exec
+				pop
+			}	{
+				exch {
+					% thisdict valtype key val
+					type 2 index ne {
+						/typecheck ErrorTag DoError
+					} if
+					% thisdict valtype key
+					pop
+				} forall
+				% thisdict valtype
+				pop
+			} ifelse
+		} forall
+	} if
+	end
+	% fname dicts mark key dict
+	
+	% Store into master copy of this dict, to allow immediate evaluation below.
+	exch load begin
+	currentdict { pop currentdict exch undef } forall
+	{ def } forall
+	end
+	
+	pop pop pop 	% mark dictcount fname
+} stopped { defaulthandleerror stop } if
+} bind def
+
+/slashs (/) def
+/endmarker (+#+#+) def
+
+/SortedFiles {
+	[ exch { dup length string copy } //s filenameforall
+	counttomark 2 ge {
+			{
+			/done true def
+			counttomark /c exch def
+			c 1 sub {
+				2 copy lt { 
+					exch
+					/done false def
+				} if
+				c 1 roll
+			} repeat
+	
+			c 1 roll
+			done { exit } if
+		} loop
+	} if
+} bind def
+
+% Load the current language file, e.g. (Config/PSLocales/Language.ENU)
+/BaseLangName (Config/PSLocales/Language.) def
+/DefaultLanguage (en_US) def
+
+/Language 8 dict def
+/FontNameMap 2 dict def
+/EncodingMap 4 dict def
+/OSLocale 4 dict def
+/InputEncoding 12 dict def
+/LanguageSupplement 2 dict def
+/MessageDict 3 dict def
+
+/LoadLanguage <<
+	/ErrorTag (Language file)
+	/KeyTag /Language
+	/FileValidation <<
+		/Name /stringtype
+		/MessageEncoding	/nametype
+		/EncodingMap /stringtype
+		/FontNameMap /stringtype
+		/LongDate /arraytype
+		/ShortDate /arraytype
+	>>
+	/EntryValidation << >>
+>> def
+/LoadLanguage {
+	/LangName 1 index def
+	//s mark 3 -1 roll //BaseLangName //concattomark exec
+	//Debug { (HqnLocal: Loading Language file: )print dup == } if
+	mark 1 index status {
+	 	cleartomark
+	 	//LoadLanguage ValidateFile
+	 	true
+	}	{
+		cleartomark pop false
+	} ifelse
+} bind def
+
+/BaseMessagesName (Config/PSLocales/Messages.) def
+/LoadMessages <<
+	/ErrorTag (Translations file)
+	/KeyTag /MessageDict
+	/FileValidation <<
+		/Name /stringtype
+		/MessageEncoding	/nametype
+		/Messages 	/dicttype
+	>>
+	/EntryValidation <<
+		/Messages /stringtype
+	>>
+>> def
+/LoadMessages {
+	/LangName 1 index def
+	//s mark 3 -1 roll //BaseMessagesName //concattomark exec
+	//Debug { (HqnLocal: Loading Messages file: )print dup == } if
+	mark 1 index status {
+	 	cleartomark
+	 	//LoadMessages ValidateFile
+	 	true
+	}	{
+		cleartomark pop false
+	} ifelse
+} bind def
+
+/BaseCharMappingName (Config/PSLocales/CharMapping/) def
+/LoadCharMapping {
+	//s mark 3 -1 roll //BaseCharMappingName //concattomark exec
+	//Debug { (HqnLocal: Loading CharMapping file: )print dup == } if
+	mark 1 index status {
+	 	cleartomark
+	 	mark exch run
+	 	Validate {
+		 	count 3 lt {
+		 		/HqnLocal /stackunderflow (CharMapping file) DoError
+		 	} if
+		 	2 index type /marktype ne
+		 	2 index type /nametype ne or
+		 	1 index type /arraytype ne or {
+		 		/HqnLocal /typecheck (CharMapping file) DoError
+		 	} if
+		 	1 index /CharMap ne {
+		 		/HqnLocal /undefinedresult (CharMapping file) DoError
+		 	} if
+		 	dup length 256 ne {
+		 		/HqnLocal /rangecheck (CharMapping file) DoError
+		 	} if
+		} if
+	 	//Language /Chars 3 -1 roll put
+	 	pop pop
+	}	{
+		/HqnLocal /undefinedfilename (CharMapping file) DoError
+	} ifelse
+} bind def
+
+/DefaultFileStrip 12 dict dup begin
+
+	% This is good for all likely Latin encodings (nobody's using EBCDIC or 
+	%  Inverse TTS, right?)
+	% Also works just fine for UTF-8 and EUC-JP, because all non-ASCII chars in
+	%  those have the top bit set for all bytes.
+	
+	/backslash 16#5C def
+	/slash 16#2F def
+	/colon 16#3A def
+	/percent 16#25 def
+	
+	/dots (.) def
+	/colons (:) def
+	/slashs (/) def
+	/backslashs (\\) def
+	/percents (%) def
+	
+	/Scan <<
+		slash  /PS
+		colon	/Mac
+		backslash	/Win
+		percent /PS
+	>> def
+	
+	% (filename) -> IdentifyPlatform -> (filename) /platform
+	/IdentifyPlatform {
+			{
+			dup length 2 lt { /Auto exit } if
+			
+			dup 1 get //colon eq { /Win exit } if
+			
+			//Scan 1 index 0 get
+			2 copy known { get exit } if
+			pop pop
+			
+			dup //colons search {
+				% post match pre
+				3 1 roll pop pop
+				//slashs search {
+					%   e.g.   pclib/eng:\pdfdocs\spec.pdf
+					pop pop pop
+					/Win exit
+				} if
+				pop
+				/Mac
+				exit
+			} { pop } ifelse
+			
+			/Auto exit
+		} loop
+	} bind def
+	
+	% (filename) /platform -> StripFileName -> (strippedfilename)
+	% Platform is one of:
+%		/Win	- Windows, either D:xxx\xxx\yyy.pdf or \\Host\Share\xxx\xxx\yyy.pdf
+%		/Mac	- Macintosh, :HD:xxx:xxx:yyy.pdf
+%		/PS		- PostScript, either xxx/xxx/yyy.pdf or %device%xxx/xxx/yyy.pdf
+%		/Auto	- indentification failed, use brute force
+	/StripFileName <<
+		/Win {
+				{
+				//backslashs search {
+					pop pop
+				} { exit } ifelse
+			} loop
+			dup 1 get //colon eq {
+				2 1 index length 2 sub getinterval
+			} if
+		} bind
+		/Mac {
+				{
+				//colons search {
+					pop pop
+				} { exit } ifelse
+			} loop
+		} bind
+		/PS {
+				{
+				//slashs search {
+					pop pop
+				} { exit } ifelse
+			} loop
+			dup 0 get //percent eq {
+				dup 1 1 index length 1 sub getinterval
+				% base lessopener
+				//percents search {
+					pop pop
+					dup length 0 gt { exch } if
+					pop
+				}	{
+					pop
+				} ifelse
+			} if
+		} bind
+		/Auto {
+			dup length 1 sub -1 0 {
+				% str i
+				2 copy get //Scan exch known {
+					% str i
+					1 add 1 index length 1 index sub getinterval
+					exit
+				} if
+				pop
+			} for
+		} bind
+		/Extens {
+				{
+				//dots search {
+					pop pop
+				} { exit } ifelse
+			} loop
+		} bind
+	>> def
+	/StripFileName {
+		//StripFileName exch 2 copy known {
+			get exec
+		}	{
+			/StripFileName errordict /undefined get exec
+		} ifelse
+	} bind def
+
+end def
+
+/BaseFileStripName (Config/PSLocales/FileStrip/*) def
+/LoadFileStrips {
+	4 dict begin
+	BaseFileStripName {
+		//Debug { (HqnLocal: Loading FileStrip file: )print dup == } if
+		mark 1 index run
+	 	Validate {
+		 	% filename mark /FileStrip <<>>
+		 	counttomark 2 ne {
+		 		/HqnLocal /stackunderflow (FileStrip file) DoError
+		 	} if
+		 	1 index type /nametype ne
+		 	1 index type /dicttype ne or {
+		 		/HqnLocal /typecheck (FileStrip file) DoError
+		 	} if
+		 	1 index /FileStrip ne {
+		 		/HqnLocal /undefinedresult (FileStrip file) DoError
+		 	} if
+		 	dup /StripFileName 2 copy known not {
+		 		/StripFileName /undefined (FileStrip file) DoError
+		 	} if
+		 	get dup type /arraytype ne exch xcheck not or {
+		 		/StripFileName /typecheck (FileStrip file) DoError
+		 	} if
+		} if
+		% filename mark /FileStrip <<>>
+		4 -1 roll BaseFileStripName length 1 sub 1 index length 1 index sub getinterval
+		exch def
+		pop pop
+	} //s filenameforall
+	//Language /FileStrips currentdict put
+	end
+} bind def
+
+% If the same language is addressed by different names, e.g. on Mac & Windows,
+% but the same file set should be used for both, one language file can include just
+%	(newlang) LanguageAlias
+/LanguageAlias {
+	count 1 lt {
+		/LanguageAlias errordict /stackunderflow get exec
+	} if
+	dup type /stringtype ne {
+		/LanguageAlias errordict /typecheck get exec
+	} if
+	/LangName 1 index store
+	//s mark 3 -1 roll //BaseLangName //concattomark exec
+	//Debug { (HqnLocal: Loading Language file: )print dup == } if
+	run
+} bind def
+
+/Supplement <<
+	/ErrorTag (Translations supplement)
+	/KeyTag /LanguageSupplement
+	/FileValidation <<
+		/MessageEncoding	/nametype
+		/Messages 	/dicttype
+	>>
+	/EntryValidation <<
+		/Messages /stringtype
+	>>
+>> def
+
+/UTF-16BE-BOM <FEFF> def
+/UTF-16LE-BOM <FFFE> def
+/UTF-8-BOM <EFBBBF> def
+
+/UTFBOMS <<
+	/UTF-16BE //UTF-16BE-BOM 
+	/UTF-16LE //UTF-16LE-BOM 
+	/UTF-8    //UTF-8-BOM    
+>> def
+
+/utf-8-bits <<
+	16#F	3
+	16#E	2
+	16#C	1
+	16#D	1
+>> def
+
+/SelectBOM {
+	true
+	//UTFBOMS {
+		% string true key test
+		3 index exch anchorsearch {
+			% s t k post match
+			pop pop 
+			exch pop
+			false
+			exit
+		} { pop pop } ifelse 
+	} forall
+	% "string /whichUTF false" or "string true"
+} bind def
+
+/IdentifyUTF <00> def
+/IdentifyUTF {
+	% Now figure out which Unicode encoding is in use
+	//SelectBOM exec
+	% string bool
+		{
+		% No BOM, find another way to identify
+		dup //IdentifyUTF search {
+			% orig post match pre
+			length 2 mod 0 eq { /UTF-16BE }{ /UTF-16LE } ifelse
+			3 1 roll pop pop
+		}	{
+			pop		% Extra copy of string
+			% VALIDATE AS UTF-8, otherwise treat as UTF-16BE
+			//tws begin
+			
+			/trail 0 def
+			/encoding /UTF-8 def
+			dup {
+				trail 0 gt {
+					-6 bitshift 16#2 ne {
+						/encoding /UTF-16BE def
+						exit
+					} if
+					/trail trail 1 sub def
+				}	{
+					dup 16#80 and 0 eq { pop }{
+						-4 bitshift
+						//utf-8-bits exch 2 copy known {
+							get /trail exch def
+						}	{
+							pop pop
+							/encoding /UTF-16BE def
+							exit
+						} ifelse 
+					} ifelse
+				} ifelse
+			} forall
+			
+			encoding
+
+			end	% tws
+		} ifelse
+	} if
+} bind def
+
+/TJobName <<
+% All called with the jobname on the stack. Must just add the job name encoding.
+
+	/PDF {
+    statusdict /jobnameisfilename known {
+      statusdict /jobnameisfilename get
+    } {
+      false
+    } ifelse
+    {
+      //EncodingMap /FileNameEncoding get
+    }{
+		  dup //UTF-16BE-BOM anchorsearch {
+			  pop pop /UTF-16BE
+		  }	{
+			  pop /PDFDoc
+		  } ifelse
+		} ifelse
+	} bind
+	
+	/EPS {
+		userdict /md known userdict /dscInfo known or {
+			statusdict /AppleDSCEncoding known {
+				statusdict /AppleDSCEncoding get /UTF8 ne {
+					stderr dup (HqnLocal: Warning: Mac OS X DSC encoding is not UTF-8\n) writestring
+				} if
+				% There's no need for MacX in PSNameEncoding, it's hard-coded as UTF-8 
+				/UTF-8 false
+			}	{
+				% Not all OS/X files have the AppleDSCEncoding comment.
+				% Check if this string is valid utf-8
+				% Note that 7-bit utf-8 codes are a pure superset of MacRoman
+				%	(many more stand-alone accents are available).
+				% It's possible that this may lead to mis-identification of, e.g.
+				%	SJIS strings as utf-8, but the error is better in that direction
+				%	than treating utf-8 as SJIS.
+				//IdentifyUTF exec /UTF-8 eq { /UTF-8 false }{ /Mac true } ifelse
+			} ifelse
+		}	{
+			% Can't differentiate between Win, Unix, etc.
+			/Unknown true
+		} ifelse
+			{
+			//EncodingMap /PSNameEncoding get
+			exch get
+		} if
+	} bind
+	
+	/PS 1 index
+
+>> def
+
+/GetJobNameEncoding {
+	% Determine the encoding for the incoming job name from the type of the file.
+	//SelectBOM exec {
+		//TJobName
+	    1183615869 internaldict /fileType 2 copy known { get }{ pop pop /Other } ifelse
+		2 copy known { get exec }{ 
+			pop pop 
+			//EncodingMap /OtherNameEncoding get
+			dup xcheck { exec } if
+		} ifelse
+	} if
+} bind def
+
+/doTranslate {
+ 	//Language /Messages get 
+ 	exch 2 copy known {
+ 		get
+ 	}	{ exch pop } ifelse
+} bind def
+
+/colons (: )def
+/semicolons (; )def
+
+/Escape <001B> def
+/StripPDFLanguage 256 string def
+/StripPDFLanguage {
+	mark exch
+		{
+		//Escape search {
+			% post match pre
+			dup length 2 mod 0 eq {
+				counttomark 1 roll pop
+				//Escape search {
+					% pre1 post match pre
+					% We don't test that the language code is a multiple of two bytes here
+					pop pop
+				}	{
+					% pre1 post
+					% Must have not be a language escape sequence after all
+					//Escape counttomark 1 roll
+				} ifelse
+			}	{
+				% Can't have been a real escape sequence
+				% post match pre
+				counttomark 2 roll
+			} ifelse
+		} { exit } ifelse
+	} loop
+	counttomark 1 eq {
+		exch pop
+	}	{
+		counttomark 1 roll
+		//=string counttomark 1 add 1 roll
+		//concattomark exec
+	} ifelse
+	dup length 256 gt {
+		dup length string
+	}	{ //StripPDFLanguage } ifelse copy
+} bind def
+
+/GetJobNameAndEncoding {
+	% Get the job name
+	statusdict /jobname get dup type /stringtype ne {
+		pop currentpagedevice /JobName get dup type /stringtype ne {
+			pop 
+			UVPS (Untitled) //doTranslate exec
+			//Language /MessageEncoding get
+		} if
+	} if
+	dup type /stringtype eq {
+		//GetJobNameEncoding exec
+	} if
+		
+	% jobname encoding
+} bind def
+
+currentglobal true setglobal
+/unds (und) def
+globaldict /globaljobname << /jobname null /jobnameencoding //unds /jobnameutf8 null >> put
+setglobal
+
+/SetJobNameEncoding {
+	statusdict begin
+	% If an OEM-provided procedure has changed jobname, then they will
+	% either have also changed jobnameencoding, or it's correct to leave
+	% it as (und), as set by the !HqnLocal StartRender procedure
+	currentdict /jobname-original known {
+		jobname jobname-original eq
+		/jobname-unchanged 1 index def
+	}	{ 
+		currentdict /jobname-unchanged known {
+			jobname-unchanged
+		}	{
+			true
+		} ifelse
+	} ifelse 
+		{
+		//GetJobNameAndEncoding exec
+
+		currentglobal 3 1 roll
+		true setglobal
+
+		/jobnameencoding exch 
+			dup type /stringtype ne {
+				//=string cvs dup length string copy
+			} if
+			def
+		jobnameencoding cvn /UTF-16BE eq {
+			//StripPDFLanguage exec
+		} if
+		/jobname exch def
+	}	{
+		currentglobal true setglobal
+	} ifelse
+	
+	% Now poke a copy into global VM, so it gets carried through to EndRender,
+	% ensuring that the job name in the completion message in the system 
+	% monitor matches the name of the last pagebuffer.
+	{ /jobname /jobnameencoding } {
+		dup load //globaljobname 2 index get ne {
+			dup load dup xcheck not {
+				% key string
+				dup length string copy
+			} if
+			//globaljobname 3 1 roll put
+		} { pop } ifelse
+	} forall
+	
+	setglobal
+	
+	end
+} bind def
+
+/initialized false def
+ /UnicodeEncodeParams <<
+   /From null
+   /To /UTF-8
+   /ByteOrderMark true
+   /Substitute <efbfbd>   % UTF-8 form of unicode replacement character (U+FFFD)
+ >> def
+/pagebuffer (%pagebuffer%) def
+/clearJobNameUTF8Params << /JobNameUTF8 () >> def
+/setJobNameUTF8Params << /JobNameUTF8 null >> def
+
+/resetjobname {	
+	currentglobal true setglobal
+	//globaljobname /jobname 
+		//statusdict /jobname get
+		dup type /stringtype eq {
+			dup length string copy
+		} if
+		put
+	//globaljobname /jobnameencoding //unds put
+	//globaljobname /jobnameutf8 null put
+	setglobal
+	
+	mark 
+	//pagebuffer //clearJobNameUTF8Params { setdevparams } stopped 
+	cleartomark
+} bind def
+
+% null | (LANG) -> initialize
+/initialize {
+	//tws begin
+	dup null eq {
+		pop
+		statusdict /Language 2 copy known { get }{ 
+			pop pop 
+			currentsystemparams /RIPLocale get
+		} ifelse
+	} if
+	/LangRequested 1 index def
+	//LoadLanguage exec
+	dup not LangName DefaultLanguage ne and {
+		pop
+		DefaultLanguage //LoadLanguage exec
+	} if
+	not {
+		//Language begin
+			/Name (Default) def
+			/MessageEncoding /PDFDoc def
+			/EncodingMap /Latin def
+			/FontNameMap /T1-Helvetica def
+			/LongDate [ /Dy2 ( ) /MnS ( ) /Yr4 (, ) /Hr24 (:) /Min (:) /Sec ] def
+			/ShortDate [ /Hr24 (:) /Min (:) /Sec ( ) /Mn2 (/) /Dy2 (/) /Yr2 ] def
+		end
+	} if
+	
+	LangRequested //LoadMessages exec
+	dup not LangName DefaultLanguage ne and {
+		pop
+		DefaultLanguage //LoadMessages exec
+	} if
+	not {
+		//MessageDict begin
+			/MessageEncoding /PDFDoc def
+			/Messages << >> def
+		end
+	} if
+	//Language /MessageEncoding get //MessageDict /MessageEncoding get ne {
+		/HqnLocal /rangecheck (MessageEncoding: Language vs Messages) DoError
+	} if
+	//Language begin //MessageDict { def } forall end
+	
+	//Language /MessageEncoding get //LoadCharMapping exec
+
+	% Now load all supplements files.
+	/ErrorTag (Supplements) def
+	//s mark (/*) LangName (Config/PSLocales/Supplements/) //concattomark exec
+	SortedFiles
+	counttomark {
+		//Debug { (HqnLocal: Loading Language supplement: )print dup == } if
+		//Supplement ValidateFile
+		//Language /MessageEncoding get LanguageSupplement /MessageEncoding get ne {
+			/HqnLocal /rangecheck (Supplement encoding) DoError
+		} if
+		//Language /Messages get begin
+		//LanguageSupplement /Messages get {
+			currentdict 2 index known {
+				1 index 
+				load
+				1 index 
+				ne //Validate and {
+					stderr dup (HqnLocal: Warning: Multiple definitions of the same translation: ) writestring
+					dup 3 index //=string cvs writestring
+					(\n) writestring
+				} if
+				pop pop
+			}	{
+				def
+			} ifelse
+		} forall
+		end
+	} repeat
+	pop		% mark
+
+	% Build quick lookup for charsTranslate
+	//Language /Chars get dup
+	//Language /Messages get {
+		% Chars Chars base trans
+		1 index length 1 eq {
+			exch //=string cvs 0 get exch
+			% Chars Chars baseI trans
+			dup length 1 eq { 0 get } if
+			put
+			dup
+		} { pop pop } ifelse
+		% Chars Chars
+	} forall
+	pop pop		% Chars Chars
+	
+	//LoadFileStrips exec
+
+	/Platform currentsystemparams /OperatingSystem get def
+
+	% Load the Encodingmapping file
+	s mark //Language /EncodingMap get (Config/PSLocales/Mapping/) //concattomark exec
+	Debug { (HqnLocal: Loading Encoding Map file: )print dup == } if
+	mark 1 index status not {
+		/HqnLocal /undefinedfilename (Encoding Map) DoError
+	} if
+	cleartomark
+		<<
+		/ErrorTag (EncodingMap)
+		/KeyTag /EncodingMap
+		/FileValidation <<
+			/FileNameEncoding	/dicttype
+			/PSNameEncoding 	/dicttype
+			/OtherNameEncoding	<< /nametype null /arraytype null >>
+		>>
+		/EntryValidation <<
+			/FileNameEncoding <<
+				/Mac /nametype
+				/Win /nametype
+				/Unix /nametype
+				/MacX /nametype
+			>>
+			/PSNameEncoding 1 index
+		>>
+	>> ValidateFile
+
+	//EncodingMap begin
+	/FileNameEncoding dup load Platform get def
+	
+	% Load the OS locale file
+	s mark currentsystemparams /OSLocale get (Config/PSLocales/OSLocales/) //concattomark exec
+	Debug { (HqnLocal: Loading OS Locale file: )print dup == } if
+	mark 1 index status not {
+		Debug { (... not found, using default language: )print DefaultLanguage == } if
+		cleartomark pop  % part 1 avoidance of #28595
+		s mark DefaultLanguage (Config/PSLocales/OSLocales/) //concattomark exec
+		mark  % part 2 avoidance of #28595
+	} if
+	cleartomark
+		<<
+		/ErrorTag (OSLocale)
+		/KeyTag /OSLocale
+		/FileValidation <<
+			/Mac	/nametype
+			/MacX	/nametype
+			/Win	/nametype
+			/Unix	/nametype
+		>>
+		/EntryValidation <<
+		>>
+	>> ValidateFile
+	
+	/GUIEncoding OSLocale Platform get def
+	end
+	
+	% Load the FontNameMapping file
+	s mark //Language /FontNameMap get (Config/PSLocales/FontNameMap/) //concattomark exec
+	Debug { (HqnLocal: Loading FontName Map file: )print dup == } if
+	mark 1 index status not {
+		/HqnLocal /undefinedfilename (FontName Map) DoError
+	} if
+	cleartomark
+		<<
+		/ErrorTag (FontNameMap)
+		/KeyTag /FontNameMap
+		/FileValidation <<
+			/Fonts /dicttype
+			/FontClass	/stringtype
+		>>
+		/EntryValidation <<
+		>>
+	>> ValidateFile
+	FontNameMap /Fonts get dup begin
+	EncodedFonts {
+		% FontStyle dict
+		pop
+		currentdict 1 index known not {
+			% fontstyle
+			//OptionalEncodedFonts 1 index 2 copy 
+			known {
+				% fontstyle //oef fontstyle
+				get
+				% fontstyle mapped
+				currentdict exch 2 copy known {
+					% fontstyle cd mapped
+					get def
+					null	% just to be popped
+				}	{ 
+					% Don't bother reporting the error here; it'll be picked up very soon!
+					% fontstyle mapped cd mapped
+					pop pop pop
+				} ifelse
+			}	{
+				% fontstyle //oef fontstyle
+				pop pop
+			/undefined (FontNameMap Fonts entry) DoError
+			} ifelse
+		} if
+		% fontstyle
+		pop
+	} forall
+		{
+		% value should be name or subdict. Convert all to fully populated subdicts.
+		dup type dup /nametype eq {
+			pop		% /nametype
+			% FontStyle Font
+			3 dict dup begin
+			/Font 3 -1 roll def
+			/Oblique 0 def
+			/SetSize 1.0 def
+		}	{
+			/dicttype ne {
+				/HqnLocal /typecheck (FontNameMap Fonts entry) DoError
+			} if
+			dup begin
+			dup /Font known {
+				/Font load type /nametype ne {
+					/HqnLocal /typecheck (FontNameMap Font) DoError
+				} if
+			}	{
+				/HqnLocal /undefined (FontNameMap Font) DoError
+			} ifelse
+			dup /Oblique known {
+				/Oblique load type dup /integertype ne exch /realtype ne and {
+					/HqnLocal /typecheck (FontNameMap Oblique) DoError
+				} if
+			}	{
+				/Oblique 0 def
+			} ifelse
+			dup /SetSize known {
+				/SetSize load type dup /integertype ne exch /realtype ne and {
+					/HqnLocal /typecheck (FontNameMap SetSize) DoError
+				} if
+			}	{
+				/SetSize 1 def
+			} ifelse
+		} ifelse
+		% preload the font, outside save/restore contexts.
+		/DefaultFont 
+      Font /Font resourcestatus {
+        pop pop % pop status and size
+        Font findfont 
+      }{ 
+        Font /CIDFont findresource 
+      } ifelse
+    def
+		end
+		def
+	} bind forall
+	end
+	
+	% Now load all type/input encodings files.
+	/ErrorTag (Input Encoding) def
+	(Config/PSLocales/ReEncode/*) SortedFiles
+	counttomark {
+		Debug { (HqnLocal: Loading input encoding: )print dup == } if
+		dup
+			<<
+			/ErrorTag (Input Encoding)
+			/KeyTag /InputEncoding
+			/FileValidation <<
+				/ReEncode /arraytype		% the procedure itself.
+			>>
+			/EntryValidation <<
+			>>
+		>> ValidateFile
+		% fname
+		26 1 index length 26 sub getinterval		% 26 from (Config/PSLocales/ReEncode/)
+		//slashs search not {
+			/HqnLocal /undefinedresult /ErrorTag DoError
+		} if
+		% encname (/) ftypename
+		exch pop
+		//InputEncodings exch
+		2 copy known not {
+			2 copy 6 dict put
+		} if
+		get
+		% encname ftypedict
+		exch InputEncoding dup length dict copy put
+	} repeat
+	pop		% mark
+	
+	vmstatus pop pop 2 lt {
+			<<
+			/StartRender <<
+				% We want this one to be run very early, before any OEM-
+				% provided procedures set statusdict jobname.
+				(!HqnLocal) {
+				  statusdict /jobname-original known not {
+					  statusdict begin
+					  /jobname-original jobname def
+					  /jobnameencoding //unds def
+					  end
+					} if
+				} bind
+				% We want this to run late, so it's after OEM-provided 
+				% procedures that set jobname in statusdict, hence the
+				% pipe at the start of the name.
+				(\246HqnLocal)	{
+					//SetJobNameEncoding exec
+
+          statusdict /notedjobnameutf8 known {
+            statusdict /jobname get
+            statusdict /notedjobname get eq
+          } {
+            false
+          } ifelse
+
+          {
+            % Have notedjobnameutf8 and jobname matches notedjobname
+            % so set pagebuffer device /JobNameUTF8 to notedjobnameutf8
+            mark
+            //setJobNameUTF8Params /JobNameUTF8
+            statusdict /notedjobnameutf8 get
+            put
+            //pagebuffer //setJobNameUTF8Params { setdevparams } stopped
+            cleartomark
+          } {
+            % Set pagebuffer device /JobNameUTF8 if job name encoding is known
+            statusdict /jobnameencoding get
+              //unds ne {
+              mark
+              //setJobNameUTF8Params /JobNameUTF8
+              512 string dup
+              { //UnicodeEncodeParams dup
+                /From statusdict /jobnameencoding get put
+                /UnicodeEncode filter
+              } stopped not
+              {
+                dup
+                statusdict /jobname get
+                % writestring will fail if UTF-8 encoded job name longer than 
+                % buffer, but buffer will have truncated version
+                { writestring } stopped { pop pop } if
+                % closefile will fail if UTF-8 encoded job name longer than
+                % buffer, but buffer will have truncated version
+                { closefile } stopped { pop } if
+                % Look for first NUL since won't occur in UTF-8 encoded string
+                <00> search {
+                  exch pop exch pop
+                } if
+
+                % copy UTF-8 name into globaldict for /EndJob hook to pick up
+                currentglobal true setglobal
+                //globaljobname /jobnameutf8 3 index
+                dup length string copy
+                put
+                setglobal
+
+                % put into //setJobNameUTF8Params without the 3 byte UTF-8 BOM
+                3 1 index length 3 sub getinterval
+                put
+
+                //pagebuffer //setJobNameUTF8Params { setdevparams } stopped
+              }
+              if
+              cleartomark
+            } if
+          } ifelse
+
+				} bind
+			>>
+      /StartJob <<
+        (HqnLocal) {
+          //globaljobname /jobname null put
+          //globaljobname /jobnameutf8 null put
+        } bind
+      >>
+      /EndJob <<
+        (HqnLocal) {
+          statusdict begin
+            //globaljobname begin
+              jobnameencoding
+              jobnameutf8 dup null eq { pop jobname } if
+            end
+            dup null eq { pop }{ /jobname exch def } ifelse
+            /jobnameencoding exch def
+          end
+        } bind
+      >>
+		>> setpagedevice
+	} if
+
+	/initialized true store
+	end		% tws
+} bind def
+
+currentdict /UnicodeEncodeParams undef
+currentdict /pagebuffer undef
+currentdict /clearJobNameUTF8Params undef
+currentdict /setJobNameUTF8Params undef
+
+/checkinitialized {
+	//tws /initialized get not {
+		null //initialize exec
+	} if
+} bind def
+
+/currentplatform {
+  currentsystemparams /OperatingSystem get
+} bind def
+
+/charsTranslate {
+	% fontstyle charsequence
+
+	/ptr 0 def
+		{
+		//Language /Chars get exch get
+		% //ts mark ... new
+		dup type /integertype eq {
+			//ts ptr 3 -1 roll put
+			/ptr ptr 1 add def
+		}	{
+			//ts ptr 2 index putinterval
+			/ptr ptr 3 -1 roll length add def
+		} ifelse
+	} forall
+	//ts 0 ptr getinterval
+	dup length string copy
+	//Language /MessageEncoding get 
+} bind def
+
+/DateParts 8 dict def
+
+/weekdays [
+	UVPS (Saturday) UVPS (Sunday) UVPS (Monday) UVPS (Tuesday) UVPS (Wednesday) UVPS (Thursday) UVPS (Friday)
+] def
+
+% UVPS (Mon) UVPS (Tue) UVPS (Wed) UVPS (Thu) UVPS (Fri) UVPS (Sat) UVPS (Sun)
+
+% Separate to allow separate translations.
+/weekdays3 [ weekdays { 0 3 getinterval } forall ] def
+
+% Magic numbers used in calculating the day of the week
+/WeekMonths [ 0 3 3 6 1 4 6 2 5 0 3 5 ] def
+
+/GetWeekDay {
+	/yr year cvx exec def
+	yr 1 sub
+	dup 4 idiv add
+	yr 1 sub 100 idiv sub
+	yr 1 sub 400 idiv add
+	
+	/mn month cvx exec def
+	WeekMonths mn 1 sub get add
+	yr 4 mod 0 eq {
+		yr 100 mod 0 ne yr 400 mod 0 eq or {
+			mn 2 gt {
+				1 add
+			} if
+		} if
+	} if 
+	
+	day cvx exec 1 sub add
+	2 add
+	7 mod
+} bind def
+
+/months [
+	UVPS (January) UVPS (February) UVPS (March) UVPS (April) UVPS (May) UVPS (June)
+	UVPS (July) UVPS (August) UVPS (September) UVPS (October) UVPS (November) UVPS (December)
+] def
+
+% Separate to allow separate translations.
+/months3 [ months { 0 3 getinterval } forall ] def
+
+/mlookup <<
+	UVPS (Jan) (01)	UVPS (Feb) (02)	UVPS (Mar) (03)	UVPS (Apr) (04)	UVPS (May) (05)	UVPS (Jun) (06)
+	UVPS (Jul) (07)	UVPS (Aug) (08)	UVPS (Sep) (09)	UVPS (Oct) (10)	UVPS (Nov) (11)	UVPS (Dec) (12)
+>> def
+
+/am UVPS (am) def
+/pm UVPS (pm) def
+
+/DateComponents <<
+
+	/Yr4 {	% 4 digit year
+		year
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Yr2 {	% 2 digit year
+		year 2 2 getinterval
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Mn1 {	% month - not padded
+		month dup 0 get dup 32 eq exch 48 eq or {
+			1 1 getinterval
+		} if
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Mn2 {	% month - padded with leading zero
+		month
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Mn {	% month name in full
+		//months month cvx exec 1 sub get
+		//doTranslate exec
+	} bind
+	
+	/MnS {	% short month name
+		//months3 month cvx exec 1 sub get
+		//doTranslate exec
+	} bind
+	
+	/Dy {	% day - not padded
+		day dup 0 get dup 32 eq exch 48 eq or {
+			1 1 getinterval
+		} if
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Dy2 {	% day - padded with leading zero
+		day
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/DyOrd {	% ordinal, appended to day
+		day cvx exec
+		//Language /OrdinalUnique get 1 index 
+		2 copy known {
+			get
+			exch pop
+		}	{
+			pop pop
+			dup 10 mod 
+			//Language /OrdinalLastDigit get exch 2 copy known {
+				get exch pop
+			}	{
+				pop pop pop
+				//Language /OrdinalDefault get
+			} ifelse
+		} ifelse
+	} bind
+	
+	/WDy {	% weekday - full name
+		//weekdays //GetWeekDay exec get
+		//doTranslate exec
+	} bind
+	
+	/WDyS { % weekday - short form
+		//weekdays3 //GetWeekDay exec get
+		//doTranslate exec
+	} bind
+	
+	/Hr12 { % hour - 12 hour
+		hour cvx exec 12 mod
+		//ts cvs
+		dup length 1 eq {
+			pop
+			//ts 1 //ts 0 get put
+			//ts 0 32 put
+			//ts 0 2 getinterval
+		} if
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Hr24 {	% hour - 24 hour
+		hour
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Min {	% minute
+		min
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/Sec {	% second
+		sec
+		//charsTranslate exec
+		pop				% the encoding
+	} bind
+	
+	/AP	{ 	% a.m./.p.m.
+		hour cvx exec 12 lt { //am }{ //pm } ifelse
+		//doTranslate exec
+	} bind
+
+>> def
+
+/makedate {
+	/o //s /NullEncode filter def
+	df {
+		dup type /stringtype eq {
+			o exch writestring
+		}	{
+			//DateComponents exch get exec
+			o exch writestring
+		} ifelse
+	} forall
+	o dup //endmarker writestring closefile
+	//s //endmarker search pop 3 1 roll pop pop
+} bind def
+
+/DateLabel (D:) def
+
+% Utility procedure for encoding-specific files.
+% string FontStyle encoding -> ReEncodeFont -> string fontdict
+/ReEncodeT1Font_1 {
+	count 3 lt {
+		/ReEncodeT1Font_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	% This procedure is designed only for Type 1 fonts
+	//EncodedFonts 2 index
+	% FontStyle encoding //EF FontStyle
+	2 copy known not {
+		/undefined (HqnLocal-ReEncodeFont) DoError
+	} if
+	get
+	% FontStyle encoding //EFdict
+	exch 2 copy known {
+		get exch pop
+	}	{
+		% FontStyle  //EFdict encoding
+		FontNameMap /Fonts get
+		4 -1 roll get
+		begin Font
+		%  //EFdict encoding fname
+    DefaultFont
+		dup /FontType get dup 1 ne exch 111 ne and {
+			/FontType /undefinedresult (HqnLocal-ReEncodeFont) DoError % this should never happen
+		} if
+		dup length dict begin {
+			1 index /FID eq {
+		pop pop
+			}	{
+				def
+			} ifelse
+		} forall
+		%  //EFdict encoding fname
+		/Encoding mark 3 index /Encoding resourcestatus not {
+			cleartomark pop pop
+			/undefined (HqnLocal-ReEncodeFont) DoError
+		} if
+		cleartomark
+		2 index findencoding def
+		currentdict end
+		definefont
+		%  //EFdict encoding fdict
+		[ SetSize 0 Oblique sin Oblique cos div 1 0 0 ] makefont
+		dup 4 1 roll put
+		end		% Fonts entry
+	} ifelse
+	% string fdict
+} bind def
+
+% fontstyle (cmap) /fontclass -> LoadCID_1 -> fontdict
+/LoadCID_1 {
+	count 3 lt {
+		/LoadCID_1 errordict /stackunderflow get exec
+		} if
+	//checkinitialized exec
+	dup type /nametype ne
+	2 index type /stringtype ne or
+	3 index type /nametype ne or {
+		/parameter /typecheck (HqnLocal-LoadCID_1) DoError
+		} if
+
+	//Debug { (HqnL: LoadCID_1: )print 1 index =print (   )print dup =print (   )print 2 index == } if
+	
+	//EncodedFonts 3 index get
+	% /fontstyle (cmap) /fontclass  EF/fs
+	2 index 2 copy known { get }{
+		% /fontstyle (cmap) /fontclass  EF/fs (cmap)
+		6 dict 
+		% /fontstyle (cmap) /fontclass  EF/fs (cmap) <<dict>>
+		dup 4 1 roll put
+	} ifelse
+	% /fontstyle (cmap) /fontclass  EF/fs/cmap
+	
+	exch 2 copy known {
+		get
+		3 1 roll pop pop
+	}	{
+		% /fontstyle (cmap) EF/fs/cmap /fontclass
+
+		FontNameMap /Fonts get 5 -1 roll
+		% (cmap) EF/fs /fontclass FNM/F /fontstyle
+		2 copy known not {
+			/undefinedresource (HqnLocal-LoadCID_1 A) DoError
+		} if
+		get begin
+		% (cmap) EF/fs/cmap /fontclass
+		//ts mark 5 -1 roll 
+		% EF/fs /fontclass =string mark (cmap)
+		mark 1 index /CMap resourcestatus not {
+			pop /undefinedresource (HqnLocal-LoadCID_1 B) DoError
+		} if cleartomark
+		(-) Font //concattomark exec findfont
+		% EF/fs /fontclass fdict
+		[ SetSize 0 Oblique sin Oblique cos div 1 0 0 ] makefont
+		end
+		% EF/fs /fontclass fdict
+		dup 4 1 roll
+		% fdict EF/fs/cmap /fontclass fdict
+		put
+		% fdict
+	} ifelse
+} bind def
+		
+/CharMapDict 12 dict def CharMapDict begin
+
+	/iptr 0 def
+	/optr 0 def
+		
+	/OutString 512 string def		% ################################
+		
+	/getc {
+% (GET )print iptr =print (  )print (%stdout)(w)file InString writehexstring (  )print
+		iptr isl ge {
+% (END)=
+			false
+		}	{
+			InString iptr get
+% dup ==
+			/iptr iptr 1 add def
+			true
+		} ifelse
+	} bind def
+	
+	/puts {
+% (PUT )print optr =print (  )print (%stdout)(w)file 1 index writehexstring (\n)print
+		//OutString optr 2 index putinterval
+		/optr optr 3 -1 roll length add def
+	} bind def
+	
+	/typemap 2 dict def
+
+	/DictType {
+		//getc exec {
+			2 copy known {
+				get 
+				dup type //typemap exch get exec
+			}	{
+					pop pop
+				Undefined //puts exec
+				false
+			} ifelse
+		}	{
+			CharMap ne {
+				Undefined //puts exec
+			} if
+			true
+		} ifelse
+	} bind def
+	
+	typemap begin
+	
+		/dicttype //DictType def
+		
+		/stringtype {
+			//puts exec
+			false
+		} bind def
+			
+			end
+
+	% string  -> UseCharMap -> string2 
+	/UseCharMap {
+		/InString exch 
+		dup length string copy				% Appears to vary under our feet otherwise. Should not be necessary! #############
+		def
+		/isl InString length def
+% (ReEnc: )print  (%stdout)(w)file dup InString writehexstring (\n) writestring
+		/iptr 0 def
+		/optr 0 def
+			{
+			CharMap //DictType exec { exit } if
+		} loop
+		//OutString 0 optr getinterval
+		dup length string copy
+% (>>: )print  (%stdout)(w)file dup 2 index writehexstring (\n) writestring
+	} bind def
+
+end		% CharMapDict
+
+% string -> UseCharMap_1 -> string2
+% current dict must define CharMap and Undefined
+% Designed to be called from a ReEncode procedure
+/UseCharMap_1 {
+	//CharMapDict begin
+	UseCharMap
+		end
+} bind def
+
+20 dict begin  % the procset itself ==============================================
+	
+% null | (LANG) -> Initialize_1
+/Initialize_1 {
+	count 1 lt {
+		/Initialize_1 errordict /stackunderflow get exec
+	} if
+	dup type dup /stringtype ne exch /nulltype ne and {
+		/Initialize_1 errordict /typecheck get exec
+	} if
+	//tws begin
+	initialized not {
+		//initialize exec
+	}	{
+		dup LangRequested ne {
+			//initialize exec
+		}	{ pop } ifelse
+	} ifelse
+	end		% tws
+} bind def
+
+% FontStyle string inputencoding -> Transform_1 -> string2 fontdict
+/Transform_1 {
+	count 3 lt {
+		/Transform_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	//tws begin
+	//Debug { (HqnL: Transform_1: )print 1 index =print (   )print dup =print (   )print 2 index == } if
+	//InputEncodings FontNameMap /FontClass get 
+	2 copy known not {
+		/HqnLocal-Transform_1-1 /undefined 3 -1 roll DoError
+	} if
+	get
+	exch 2 copy known not {
+		stderr dup (HqnLocal: Warning: Source encoding not defined: ') writestring
+		dup 3 -1 roll dup type /stringtype ne { //=string cvs } if writestring
+		dup (' to ') writestring
+		dup FontNameMap /FontClass get dup type /stringtype ne { //=string cvs } if writestring
+		('\n) writestring
+		/PDFDoc
+	} if
+	get
+	begin
+	exch
+	ReEncode
+	end
+	end
+} bind def
+
+% FontStyle string -> TranslateString -> string2 fontdict
+/TranslateString_1 {
+	count 2 lt {
+		/TranslateString_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	//Debug { (HqnL: TranslateString_1: )print dup == } if
+	//Language /Messages get
+	exch 2 copy known {
+		get 
+		//Language /MessageEncoding get
+	}	{
+		% string <<Messages>> string
+		exch pop
+		/PDFDoc
+	} ifelse
+	//Transform_1 exec
+} bind def
+
+% FontStyle charsequence -> TranslateChars_1 -> string fontdict
+/TranslateChars_1 {
+	count 2 lt {
+		/TranslateChars_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	//Debug { (HqnL: TranslateChars_1: )print dup == } if
+	//charsTranslate exec
+	//Transform_1 exec
+} bind def
+
+% FontStyle string -> TransformGUI_1 -> string2 fontdict
+/TransformGUI_1 {
+	count 2 lt {
+		/TransformGUI_1 errordict /stackunderflow get exec
+	} if
+	dup type /stringtype ne 2 index type /nametype ne or {
+		/TransformGUI_1 errordict /typecheck get exec
+	} if
+	//Debug { (HqnL: TransformGUI_1: )print dup == } if
+	//EncodingMap /GUIEncoding get
+	//Transform_1 exec
+} bind def
+
+% CurrentFileNameEncoding_1 -> (encoding)
+/CurrentFileNameEncoding_1 {
+	//checkinitialized exec
+	//EncodingMap /FileNameEncoding get
+} bind def
+
+% FontStyle filename -> TransformFileName -> string2 fontdict
+/TransformFileName_1 {
+	count 2 lt {
+		/TransformFileName_1 errordict /stackunderflow get exec
+		} if
+	//Debug { (HqnL: TransformFileName_1: )print dup == } if
+	//CurrentFileNameEncoding_1 exec
+	//Transform_1 exec
+} bind def
+
+% filenameWithPath -> filenameWithoutPath
+% filenameWithPath <<config>> -> filenameWithoutPath
+%  Config can include:
+%	/Encoding - the encoding to assume for file names (default is filename encoding from localisation files)
+%	/Platform - the platform format to assume:
+%		/Win	- Windows, either D:xxx\xxx\yyy.pdf or \\Host\Share\xxx\xxx\yyy.pdf
+%		/Mac	- Macintosh, HD:xxx:xxx:yyy.pdf
+%		/PS		- PostScript, either xxx/xxx/yyy.pdf or %device%xxx/xxx/yyy.pdf
+%		/Auto (default) - try to guess intelligently.
+%  Platform is needed to allow, e.g. a Mac file name xxx:xxx:yy/yy.pdf to be extracted correctly
+/StripFileName_1 {
+	count 1 lt {
+		/StripFileName_1 errordict /stackunderflow get exec
+	} if
+	dup type /dicttype eq {
+		begin
+		
+		count 1 lt {
+			/StripFileName_1 errordict /stackunderflow get exec
+		} if
+		dup type /stringtype ne {
+			/StripFileName_1 errordict /typecheck get exec
+		} if
+
+		currentdict /Platform 2 copy known {
+			get
+			dup type /nametype ne {
+				/StripFileName_1 errordict /typecheck get exec
+			} if
+		}	{
+			pop pop /Auto
+		} ifelse
+		
+		currentdict /Encoding 2 copy known {
+			get
+			dup type /nametype ne {
+				/StripFileName_1 errordict /typecheck get exec
+			} if
+		}	{
+			pop pop
+			//CurrentFileNameEncoding_1 exec
+		} ifelse
+		
+		end
+	}	{
+		dup type /stringtype ne {
+			/StripFileName_1 errordict /typecheck get exec
+		} if
+		/Auto
+		//CurrentFileNameEncoding_1 exec
+	} ifelse
+	
+	//Language /FileStrips get exch
+	2 copy known {
+		get
+	}	{
+		pop pop
+		//DefaultFileStrip
+	} ifelse
+	
+	begin
+	
+	dup /Auto eq {
+		currentdict /IdentifyPlatform known {
+			pop
+			IdentifyPlatform
+		} if
+	} if
+	
+	StripFileName
+	end
+} bind def
+
+% filenameWithExtension -> Extension
+% filenameWithExtension <<config>> -> Extension
+%  Config can include:
+%	/Encoding - the encoding to assume for file names (default is filename encoding from localisation files)
+/StripExtension_1 << 16#5C 16#2F 16#3A 16#25 >> def
+/StripExtension_1 {
+	count 1 lt {
+		/StripExtension_1 errordict /stackunderflow get exec
+	} if
+	dup type /dicttype eq {
+		begin
+		
+		count 1 lt {
+			/StripExtension_1 errordict /stackunderflow get exec
+		} if
+		dup type /stringtype ne {
+			/StripExtension_1 errordict /typecheck get exec
+		} if
+
+		currentdict /Encoding 2 copy known {
+			get
+			dup type /nametype ne {
+				/StripExtension_1 errordict /typecheck get exec
+			} if
+		}	{
+			pop pop
+			//CurrentFileNameEncoding_1 exec
+		} ifelse
+		
+		end
+	}	{
+		dup type /stringtype ne {
+			/StripExtension_1 errordict /typecheck get exec
+		} if
+		//CurrentFileNameEncoding_1 exec
+	} ifelse
+	
+	//Language /FileStrips get exch
+	2 copy known {
+		get
+	}	{
+		pop pop
+		//DefaultFileStrip
+	} ifelse
+	
+	begin
+	
+	dup /Extens StripFileName
+	
+	end
+	
+	% filename extension
+	1 index length 1 index length eq {
+		% No extension, we have the whole name still
+		pop //s0
+	} if
+	exch pop
+	
+	% Now test for invalid characters in an extension. This is deliberately
+	% in ASCII, not using the supplied encoding.
+	dup length 5 gt {
+		pop //s0
+	}	{
+		false 1 index {
+			//StripExtension_1 exch known {
+				pop true exit
+			} if
+		} forall
+			{
+			pop //s0
+		} if
+	} ifelse
+} bind def
+
+/PDFTextStringEncoding_1 {
+	count 1 lt {
+		/PDFTextStringEncoding_1 errordict /stackunderflow get exec
+	} if
+	dup type /stringtype ne {
+		/PDFTextStringEncoding_1 errordict /typecheck get exec
+	} if
+	dup //UTF-16BE-BOM anchorsearch {
+		pop pop
+		/UTF-16BE
+	}	{
+		pop
+		/PDFDoc
+	} ifelse
+} bind def
+
+% FontStyle string -> TransformFileName -> string2 fontdict
+/TransformPDFTextString_1 {
+	count 2 lt {
+		/TransformPDFTextString_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	//Debug { (HqnL: TransformPDFTextString_1: )print dup == } if
+	//UTF-16BE-BOM anchorsearch {
+		pop
+		/UTF-16BE
+	}	{
+		/PDFDoc
+	} ifelse
+	//Transform_1 exec
+} bind def
+
+% FontStyle string - TransformUnicodeString_1 - string2 fontdict
+/TransformUnicodeString_1 {
+	count 1 lt {
+		/TransformUnicodeString_1 errordict /stackunderflow get exec
+	} if
+	dup type /stringtype ne {
+		/TransformUnicodeString_1 errordict /typecheck get exec
+	} if
+	//checkinitialized exec
+	
+	//IdentifyUTF exec
+
+	//Transform_1 exec
+} bind def
+
+% FontStyle string -> TransformJobString_1 -> string2 fontdict
+/TransformJobString_1 {
+	count 2 lt {
+		/TransformJobString_1 errordict /stackunderflow get exec
+		} if
+	//checkinitialized exec
+	//Debug { (HqnL: TransformJobString_1: )print dup =print (   )print 1 index == } if
+	//tws begin
+
+	//GetJobNameEncoding exec
+	
+	% FontStyle string inputencoding -> Transform_1 -> string2 fontdict
+	//Transform_1 exec
+	
+	end		% tws
+} bind def
+
+% FontStyle -> TransformJobName_1 -> string fontdict
+/TransformJobName_1 {
+	count 1 lt {
+		/TransformJobName_1 errordict /stackunderflow get exec
+	} if
+	//checkinitialized exec
+	//Debug { (HqnL: TransformJobName_1)= } if
+	//GetJobNameAndEncoding exec
+	//Transform_1 exec
+} bind def
+
+% /FontStyle (date) /LongDate | /ShortDate | [ ... ] -> PDFDate_1 -> string fontdict
+/PDFDate_1 {
+	//checkinitialized exec
+	//tws begin
+	//Debug { (HqnL: PDFDate_1: )print 1 index == } if
+	% (D:YYYYMMDDHHmmSSOHH'mm')
+	count 3 lt {
+		/PDFDate_1 errordict /stackunderflow get exec
+	} if
+	dup type dup /nametype ne exch /arraytype ne and
+	2 index type /stringtype ne or
+	3 index type /nametype ne or
+		{
+		/PDFDate_1 errordict /typecheck get exec
+	} if
+	dup type /nametype eq {
+		dup /LongDate ne 1 index /ShortDate ne and {
+			PDFDate_1 errordict /undefined get exec
+	} if
+		//Language exch get
+	} if
+	/df exch def
+	//DateLabel anchorsearch {
+		pop
+		//DateParts begin
+		
+		mark 1 index
+			{
+			/year 1 index 0 4 getinterval def
+			/month 1 index 4 2 getinterval def
+			/day 1 index 6 2 getinterval def
+			/hour 1 index 8 2 getinterval def
+			/min 1 index 10 2 getinterval def
+			/sec 1 index 12 2 getinterval def
+			pop
+			//makedate exec		
+		} stopped {
+			cleartomark
+		}	{
+			3 1 roll pop pop
+		} ifelse
+		
+		end		% DateParts
+	} if
+	//Language /MessageEncoding get //Transform_1 exec
+	end			% tws
+} bind def
+
+% fontstyle /LongDate | /ShortDate | array -> CurrentDate_1 -> string fontdict
+/CurrentDate_1 {
+	//checkinitialized exec
+	//tws begin
+	//Debug { (HqnL: CurrentDate_1: )print dup == } if
+	count 2 lt {
+		/CurrentDate_1 errordict /stackunderflow get exec
+	} if
+	dup type dup /nametype ne exch /arraytype ne and
+	2 index type /nametype ne or
+		{
+		/CurrentDate_1 errordict /typecheck get exec
+	} if
+	dup type /nametype eq {
+		dup /LongDate ne 1 index /ShortDate ne and {
+			/CurrentDate_1 errordict /undefined get exec
+		} if
+		//Language exch get
+	} if
+	/df exch def
+	daytime
+	% (Thu May 08 19:06:51 2003)
+	//DateParts begin
+	
+	//mlookup 1 index 4 3 getinterval 2 copy known {
+		get
+	}	{
+		/CurrentDate_1 errordict /undefinedresult get exec
+	} ifelse
+	/month exch def
+	
+	/day 1 index 8 2 getinterval def
+	/hour 1 index 11 2 getinterval def
+	/min 1 index 14 2 getinterval def
+	/sec 1 index 17 2 getinterval def
+	/year exch 20 4 getinterval def
+
+	//makedate exec		
+	
+	end
+	//Language /MessageEncoding get //Transform_1 exec
+	end		% tws
+} bind def
+
+% Retained for backward compatibility only - this version does not amend
+% font encodings etc.
+% Do NOT use for new code.
+/Translate {
+	//checkinitialized exec
+	//tws begin
+	//Debug { (HqnL: Translate: )print dup == } if
+	% string -> Translate -> string2
+	count 0 eq {
+		/Translate errordict /stackunderflow get exec
+	} if
+	dup type dup /stringtype ne exch /nametype ne and {
+		/Translate errordict /typecheck get exec
+	} if
+	//doTranslate exec
+	end		% tws
+} bind def
+
+/ResetJobName {
+	//resetjobname exec
+} bind def
+
+/ProcsetVersion procsetversion def
+
+/HqnLocal currentdict end /ProcSet defineresource pop
+
+globalness end setglobal
+
+%%EOF

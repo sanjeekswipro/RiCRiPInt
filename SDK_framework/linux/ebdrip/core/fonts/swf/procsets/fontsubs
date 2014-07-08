@@ -1,0 +1,29 @@
+%!PS-Adobe 
+%%Title: "HqnFontSubstitution"
+%%Creator: Global Graphics Software Limited
+%%CreationDate: April 26, 1994
+% Copyright (C) 1994-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnFontSubstitution) 1 0
+
+
+
+% This procset has been replaced by similar, but extended, functionality
+% within the RIP binary itself.
+%
+% The configuration of font substitution in ScriptWorks Classic and 
+% ScriptWorks EE has been moved to:
+%
+%					 SW/Config/FontSubstitution.
+%
+% For ScriptWorks LE and other editions please see the ScriptWorks 
+% Extensions Manual.
+
+
+
+currentglobal false setglobal
+/HqnFontSubstitution <<>> /ProcSet defineresource pop
+setglobal
+
+
+%%EOF

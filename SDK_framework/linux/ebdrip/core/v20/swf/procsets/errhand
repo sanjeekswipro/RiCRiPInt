@@ -1,0 +1,1233 @@
+%!PS-Adobe-3.0
+%%Title: HqnErrorHandler
+%%Creator: Global Graphics Software Limited
+%%CreationDate: October 14, 1994
+%{HqnTrap version #1 1
+% Copyright (C) 1994-2011 Global Graphics Software Ltd. All rights reserved.
+% $Revision: 1.19.2.1.1.1 $
+%%EndComments
+%%BeginProcSet: (HqnErrorHandler) 1 1
+
+% $HopeName: SWv20!swf:procsets:errhand(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+userdict /errglobalness 3 -1 roll put
+
+% First set up our workspace dictionary
+userdict /hqn_ErrHandleDict 20 dict put
+//hqn_ErrHandleDict begin
+
+  % ==============================================================================
+  %
+  % Configuration values which may be passed in to a call to LoadErrorHandler
+
+  % Set this to false to just show the top 3 operand stack entries and the top file entry
+  /longErrorReport true def
+  % Set this to the number of components of a dictionary to report in full.
+  /fullDictReport 6 def
+
+  % Set the following to show or disable individual stack info reports.
+  /HqnShowOperand true def
+  /HqnShowDictionary true def
+  /HqnShowExecution true def
+  /HqnShowFiles true def
+
+  % If positive then show the following lines section in the file stack with
+  % this number of bytes. Set to 0 to suppress that section
+  /HqnShowFollowing 512 def
+
+  % Set the maximum length of strings (in bytes) to show in the operand stack.
+  % Any string over this length will be truncated and displayed with '...' after it.
+  % Use -1 for "no limit"
+  /HqnShowStrings 128 def
+  % And for strings inside arrays or in the dict stack list:
+  /HqnShowSubStrings 64 def
+
+  % Set how various classes of characters should be shown in strings'.
+  % 'Normal ASCII' (<20>-<FE>)
+  /HqnNormalChars /raw  def
+  % 'Useful' control bytes (BT, CR, LF)
+  /HqnPrintControls /raw def
+  % Other low-byte characters (<00>-<1F> and <7F>, excluding HT, CR and LF)
+  /HqnControlChars  /allhex def
+  % High-byte characters (<80>-<FF>) in non-UTF-8-compliant strings
+  /HqnHighByte    /raw def
+  % High-byte characters (<80>-<FF>) in UTF-8-compliant strings
+  /HqnUTF8      /hex def
+  % Values of each should be:
+  % /raw    - just show the char for that byte in the current font (not recommended!)
+  % /dot    - replace with a dot ('.')
+  % /oct    - report in octal with a leading '\' character
+  % /hex    - report as a block of two hex digits, surrounded by '<' and '>'
+  % /allhex - the whole string should be shown as a hex string if any relevant bytes occur
+  % In addition, the following may be used ONLY for HqnUTF8
+  % /unihex - convert multi-byte UTF-8 sequences to a unicode code point, and report that
+  %       as a block of 4 hex digits, surrounded by '<' and '>'
+
+  % If the string contains any 3-byte sequences matching the percent escape used in
+  % URLs (e.g. "%20" for a space) they will be resolved to the referenced byte value
+  % before display, and the string will be prefixed with "P:" if this is true.
+  /HqnResolveURLPercent false def
+
+  % Set the maximum number of bytes to show of Arrays in the operand stack. Any array
+  % (executable or literal) over this length will be truncated and displayed with '...' after it.
+  % Use -1 for "no limit"
+  /HqnShowArrays 768 def
+  % And for arrays in the dict stack list and in dicts in the operand list:
+  /HqnShowDictArrays 256 def
+
+  % The top and bottom of the execution stack are usually suppressed as they
+  % don't provide interesting information. Occasionally the determination of
+  % where the relevant portion of the stack is can be incorrect. These switches
+  % allow the whole exec stack to be shown.
+  /HqnShowExecTop false def
+  /HqnShowExecBase false  def
+
+  %
+  % ==============================================================================
+
+  /ErrPrint serverdict /altout 2 copy known {
+    get dup type /filetype eq {
+      dup status not dup { exch pop } if
+    } { pop true } ifelse
+    } { pop pop true } ifelse
+      {
+    (%stderr)(w)file
+    } if
+  def
+  /ErrPrint {
+    //ErrPrint exch
+    dup type /stringtype ne { //=string cvs } if
+    writestring
+  } bind def
+
+  /MaxLen 65530 def
+
+  % Validation table for config data
+  /Validation <<
+    /Bool {
+      % key val -> key val bool
+      dup type /booleantype ne
+    } bind
+    /PosInt {
+      % key val -> key val bool
+      dup type /integertype eq {
+        dup 0 le { true }{
+          dup //MaxLen gt { pop //MaxLen } if
+          false
+        } ifelse
+      } { true } ifelse
+    } bind
+    /PosIntPlus {
+      % key val -> key val bool
+      dup type /integertype eq {
+        dup 0 le {
+          pop //MaxLen
+        } {
+          dup //MaxLen gt { pop //MaxLen } if
+        } ifelse
+        false
+      } { true } ifelse
+    } bind
+    /PosIntZero {
+      % key val -> key val bool
+      dup type /integertype eq {
+        dup 0 lt {
+          pop //MaxLen
+        } {
+          dup //MaxLen gt { pop //MaxLen } if
+        } ifelse
+        false
+      } { true } ifelse
+    } bind
+    /Enum {
+      % key val <<list>> -> key val bool
+      1 index type /nametype ne {
+        pop true
+      } {
+        1 index known not
+      } ifelse
+    } bind
+  >> def
+  /Validate <<
+    /longErrorReport /Bool
+    /fullDictReport /PosIntZero
+
+    /HqnShowOperand /Bool
+    /HqnShowDictionary /Bool
+    /HqnShowExecution /Bool
+    /HqnShowFiles /Bool
+
+    /HqnShowFollowing /PosIntZero
+
+    /HqnShowStrings /PosIntPlus
+    /HqnShowSubStrings /PosIntPlus
+
+    /HqnNormalChars << { /raw /dot /oct /hex /allhex } { null } forall >>
+    /HqnPrintControls 1 index
+    /HqnControlChars  1 index
+    /HqnHighByte    1 index
+    /HqnUTF8      << { /raw /dot /oct /hex /allhex /unihex } { null } forall >>
+
+    /HqnResolveURLPercent /Bool
+
+    /HqnShowArrays /PosIntPlus
+    /HqnShowDictArrays /PosIntPlus
+
+    /HqnShowExecTop /Bool
+    /HqnShowExecBase /Bool
+  >> def
+
+  /ErrHandleString 65535 string def
+  /ErrHandlePrint { //ErrHandleString cvs print } bind def
+  /nl{(\n) print} bind def
+
+  /hostserver (%hostserver%IOR:) def
+
+  /globflags {
+    ( \()print
+    (W)print dup wcheck {(+)}{(-)}ifelse print    % W writeable
+    (R)print dup rcheck {(+)}{(-)}ifelse print    % R readable
+    dup gcheck {(G)}{(L)}ifelse print       % G global, L local
+    (\)  )print
+  } bind def
+
+  /HqnErrorCharcount -1 def
+  /InOperand false def
+  /InExec false def
+
+  /showprint /print load type /operatortype eq { { print } bind } { /print load } ifelse def
+  /showprint {
+    HqnErrorCharcount 0 lt {
+      //showprint exec
+    } {
+      HqnErrorCharcount 0 eq {
+        pop
+      } {
+        dup length HqnErrorCharcount lt {
+          /HqnErrorCharcount HqnErrorCharcount 2 index length sub store
+          //showprint exec
+        } {
+          0 HqnErrorCharcount getinterval //showprint exec
+          /HqnErrorCharcount 0 store
+        } ifelse
+      } ifelse
+    } ifelse
+  } bind def
+
+  30 dict dup /stringtemp exch def begin
+
+  /StringLabeled false def
+
+  /Js (J) def
+  /Ps (P) def
+  /colons (:) def
+  /percents (%) def
+  /opens (\() def
+  /closes (\) ) def
+  /closecuts (\)... ) def
+  /openas (<) def
+  /closeass (> ) def
+  /closeas (>) def
+  /closeacuts (>... ) def
+  /dots (.) def
+  /slashs (\\) def
+  /spaces( ) def
+
+  /up <<
+    /ptr 0
+    /v 0
+    /labeled false
+  >> def
+  /post {
+    //ErrHandleString ptr 2 index putinterval
+    /ptr ptr 3 -1 roll length add def
+  } bind def
+  /hex <<
+    48 1 57 { dup 48 sub } for
+    65 1 70 { dup 55 sub } for
+    97 1 102 { dup 87 sub } for
+  >> def
+  /vs 4 string def
+  /vs1 vs 0 1 getinterval def
+
+  /doresolveURLs {
+    //up begin
+    /Labeled false def
+    /ptr 0 def
+      {
+      //percents search {
+        % post match pre
+        //post exec
+        pop % (%)
+        dup length 2 ge {
+          % Might be - are the next two chars hex digits?
+          /v 0 def
+          0 1 1 {
+            % str i
+            1 index exch get
+            % str str[i]
+            //hex exch
+            % str hex str[1]
+            2 copy known {
+              % str hex str[1]
+              get v 4 bitshift add
+              /v exch def
+              true
+            } {
+              pop pop false
+            } ifelse
+            % str bool
+            exch
+          } for
+          % bool bool str
+          3 1 roll and
+          % str bool
+            {
+            % Yes, it's a hex escape
+            Labeled not {
+              //Ps //showprint exec
+              /Labeled true def
+              /StringLabeled true store
+            } if
+            /Overage Overage 2 add store
+            //vs1 dup 0 v put
+            //post exec
+            dup length 2 eq {
+              pop
+              exit
+            } {
+              2 1 index length 2 sub getinterval
+            } ifelse
+          } {
+            % Not hex
+            //percents //post exec
+            //post exec
+            % If there was a percent that did not expand, there should be no others!
+            exit
+          } ifelse
+        } {
+          % Can't be percent escaped
+          //percents //post exec
+          //post exec
+          exit
+        } ifelse
+      } {
+        //post exec
+        exit
+      } ifelse
+    } loop
+    //ErrHandleString 0 ptr getinterval
+    end   % up
+  } bind def
+
+  /utf-8-bits << 16#F 3 16#E 2 16#C 1 16#D 1 >> def
+  /utf-8-mask << 16#F 16#7 16#E 16#F 16#C 16#1F 16#D 16#1F >> def
+
+  /validateUTF8 {
+    % Is this string in UTF-8?
+    % Don't bother with a BOM check, it can't be fully trusted and will trigger high-byte checking anyway.
+    /trail 0 def
+    /state /unknown def
+    dup {
+      trail 0 gt {
+        -6 bitshift 16#2 ne {
+          /state /no def
+          exit
+        } if
+        /trail trail 1 sub def
+      } {
+        dup 16#80 and 0 eq { pop }{
+          -4 bitshift
+          //utf-8-bits exch 2 copy known {
+            get /trail exch def
+            /state /yes def
+          } {
+            pop pop
+            /state /no def
+            exit
+          } ifelse
+        } ifelse
+      } ifelse
+    } forall
+
+    /IsUTF8 state /yes eq trail 0 eq and def
+  } bind def
+
+  /bytemap [
+    /null
+    8 { /HqnControlChars } repeat
+    2 { /HqnPrintControls } repeat
+    2 { /HqnControlChars } repeat
+    /HqnPrintControls
+    18 { /HqnControlChars } repeat
+    95 { /HqnNormalChars } repeat
+    /HqnControlChars
+    128 { /high } repeat
+  ] def
+
+  /ss <<
+    /str null
+    /inhex false
+    /trail 0
+    /v 0
+    /endhex {
+      inhex {
+        //closeas //showprint exec
+        /inhex false def
+      } if
+    } bind
+    /raw {
+      endhex
+      //vs1 0 3 -1 roll put
+      //vs1 //showprint exec
+    } bind
+    /dot {
+      endhex
+      //dots //showprint exec
+    } bind
+    /oct {
+      endhex
+      //slashs //showprint exec
+      % Must show all three digits to be valid
+      -6 3 0 {
+        1 index exch bitshift 7 and 8 //vs1 cvrs
+         //showprint exec
+      } for
+      pop
+    } bind
+    /hex {
+      inhex { //spaces }{ //openas } ifelse //showprint exec
+      /inhex true def
+      dup -4 bitshift 16 //vs1 cvrs //showprint exec
+      16#F and 16 //vs1 cvrs //showprint exec
+    } bind
+    /unihex {
+      trail 0 eq {
+        inhex { //spaces }{ //openas } ifelse //showprint exec
+        /inhex true def
+        dup -4 bitshift
+        //utf-8-bits 1 index get /trail exch def
+        //utf-8-mask exch get and
+        trail 6 mul bitshift
+        /v exch def
+      } {
+        /trail trail 1 sub def
+        16#3F and trail 6 mul bitshift
+        v add /v exch def
+        trail 0 eq {
+          % end of sequence
+          -12 4 0 {
+            v exch bitshift 16#F and 16 //vs1 cvrs
+             //showprint exec
+          } for
+        } if
+      } ifelse
+    } bind
+  >> def
+
+  /showstring {
+    save 1 index
+
+    dup rcheck {
+      //stringtemp begin
+
+      /StringLabeled false def
+
+      /StringLength InOperand HqnErrorArrayDepth 0 eq
+        and { HqnShowStrings }{ HqnShowSubStrings } ifelse
+        dup -1 eq { pop //ErrHandleString length 4 sub } if   % Should be enough.
+                  % Must leave space for UTF-8 trails
+        def
+      /Overage StringLength 2 index length sub def
+
+      HqnResolveURLPercent //doresolveURLs if
+
+      /IsUTF8 false def
+      HqnHighByte HqnUTF8 ne //validateUTF8 if
+
+      /null HqnControlChars dup /raw eq { pop /dot } if def
+      /high IsUTF8 { HqnUTF8 }{ HqnHighByte } ifelse def
+
+      StringLabeled { //colons //showprint exec } if  % ':'
+
+      dup type /stringtype ne {
+        % Must be a longstring
+        0 1 StringLength 3 add {
+          % s i
+          2 copy get
+          //ErrHandleString 3 1 roll put
+        } for
+        pop
+        //ErrHandleString 0 StringLength 4 add getinterval
+      } if
+
+      false { /null /HqnPrintControls /HqnControlChars /HqnNormalChars /high } {
+        load /allhex eq or
+      } forall {
+        % May need to show as hex string
+        false 1 index {
+          //bytemap exch get
+          load /allhex eq {
+            pop true exit
+          } if
+        } forall
+      } { false } ifelse
+
+        {
+        % show as hex
+        //openas //showprint exec
+        dup length StringLength gt dup {
+          exch
+          0 StringLength getinterval
+        } { exch } ifelse
+          {
+          % must show both digits
+          dup -4 bitshift 16 //vs1 cvrs //showprint exec
+          16#F and 16 //vs1 cvrs //showprint exec
+        } forall
+        { //closeacuts }{ //closeass } ifelse //showprint exec
+      } {
+        % don't show as hex
+        //opens //showprint exec
+
+        //ss begin
+        /str null def
+        /inhex false def
+        /trail 0 def
+          {
+          //bytemap 1 index get load load exec
+          /StringLength StringLength 1 sub def
+          StringLength 0 le
+            high /unihex ne trail 0 eq or
+            and { exit } if
+        } forall
+        inhex { //closeas //showprint exec } if
+        StringLength Overage gt { //closecuts }{ //closes } ifelse //showprint exec
+        end   % ss
+      } ifelse
+
+      end % stringtemp
+    } {
+      pop (-string-) //showprint exec
+    } ifelse
+
+    HqnErrorCharcount exch restore /HqnErrorCharcount exch store
+    pop % original string
+  } bind
+
+  end % stringtemp
+  def % showstring
+
+  /InDictReport 0 store
+  /HqnErrorArrayDepth 0 def
+  /HqnExecutableArray false def
+
+  /showarray /== load 0 get /arraytype get def
+  /showarray {
+    % Arrays can be horrendously long, and showing more than the initial
+    % substring doesn't usually tell you much. Just show the initial section.
+    HqnErrorArrayDepth 0 eq {
+      /HqnErrorCharcount
+        InOperand InDictReport 0 eq and
+        InExec
+        or { HqnShowArrays }{ HqnShowDictArrays } ifelse 1 sub store
+      /HqnExecutableArray 1 index xcheck store
+    } if
+    /HqnErrorArrayDepth HqnErrorArrayDepth 1 add store
+    /HqnErrorArrayStack count 2 sub def
+    dup rcheck { //showarray exec }{
+      dup type /arraytype eq {  (-array- ) }{ (-packedarray- ) } ifelse //showprint exec
+    } ifelse
+    count HqnErrorArrayStack sub dup 0 gt { { pop } repeat }{ pop } ifelse
+    /HqnErrorArrayDepth HqnErrorArrayDepth 1 sub store
+    HqnErrorArrayDepth 0 eq {
+      HqnErrorCharcount
+      /HqnErrorCharcount -1 store
+      0 eq  { HqnExecutableArray { (}... ) }{ (]... ) } ifelse //showprint exec } if
+    } if
+  } bind def
+
+  /reportfile {
+    statusdict begin
+    dup //ErrHandleString filename pop
+    (")print dup print (")print
+    dup (%exec%) eq {
+      pop   % (%exec%)
+      end     % statusdict
+      pop   % file
+      false   % we didn't report it.
+    } {
+      dup (%ip:) anchorsearch {
+        % It's an input plugin?
+        pop pop % dregs from anchorsearch
+        currentdevparams
+        /ChannelClass 2 copy known {
+          get
+          ( - ")print
+          dup print
+          (" plugin)print
+          (SpoolFolder) eq {
+            /lastfileseen load
+            dup null eq {
+              pop
+            } {
+              dup status {
+                closefile
+              } {
+                pop
+              } ifelse
+            } ifelse
+          } if
+        } { pop pop } ifelse
+      } { pop pop } ifelse
+      ( - )print dup filekind exch =print
+      (, )print { (open) }{ (closed) } ifelse print
+      dup filelinenumber {
+        (, line: )print =print
+      } if
+      end   % statusdict
+
+      dup statusdict begin filekind end exch /editfile ne and {
+        % Don't want to try reading from executive or closed files.
+        mark 1 index
+        { fileposition } stopped {
+          (, NOT POSITIONABLE)=
+        } {
+          (, byte: )print
+          dup type /integertype eq {
+            //ErrHandleString cvs =
+          } {
+            (??unknown??) =
+          } ifelse
+        } ifelse
+        cleartomark
+
+        HqnShowFollowing 0 gt {
+          (  **FOLLOWING LINES:\n)print
+          //ErrHandleString 0 HqnShowFollowing getinterval
+          readstring pop
+          print
+          true    % we reported it
+        } {
+          pop
+          true
+        } ifelse
+      }   {
+        pop   % file
+        false   % we didn't report it.
+      } ifelse
+    } ifelse
+    nl
+  } bind def
+
+  /whichdict {
+    globflags
+    true exch
+    % array of dictionaries. These can be keys or strings, or a procedure. If a proc then
+    % the first item must be the name that will be reported
+    [ /userdict /globaldict /systemdict /errordict /statusdict /serverdict /$error
+      /execdict /$printerdict
+      /currentpagedevice /currentsystemparams /currentuserparams
+      /FontDirectory /GlobalFontDirectory
+      { /internaldict pop 1183615869 internaldict }
+      { /==dict pop /== load 0 get }
+      (%dict) { (%%dict) pop (%dict) load begin (%%dict) load end }
+      { (InputAttributes) pop currentpagedevice /InputAttributes 2 copy known { get }{ pop pop 0} ifelse }
+      { (OutputAttributes) pop currentpagedevice /OutputAttributes 2 copy known { get }{ pop pop 0} ifelse }
+      { (Policies) pop currentpagedevice /Policies 2 copy known { get }{ pop pop 0} ifelse }
+      /dictlistforerrors /hqn_globdictlistforerrors
+      { /hqn_ErrHandleDict pop //hqn_ErrHandleDict }
+      ] {
+      dup dup type
+      dup /nametype eq exch /stringtype eq or {
+        { load }
+      } if
+      stopped { pop null } if
+      2 index eq {
+        dup type dup /nametype ne exch /stringtype ne and{
+          0 get
+        } if
+        ErrHandlePrint
+        exch pop false exch
+        exit
+      } {
+        pop
+      } ifelse
+    } forall
+    exch {
+      true exch
+      0 1 dictlistcountsofar 1 sub {
+        dictlistforerrors exch get dup
+        0 get 2 index eq {
+          1 get ErrHandlePrint
+          exch pop false exch
+          exit
+        } {
+          pop
+        } ifelse
+      } for
+      dup gcheck 2 index and {
+        0 1 hqn_globdictlistcountsofar 1 sub {
+          hqn_globdictlistforerrors exch get dup
+          0 get 2 index eq {
+            1 get ErrHandlePrint
+            exch pop false exch
+            exit
+          } {
+            pop
+          } ifelse
+        } for
+      } if
+
+      exch {
+        % One last try - is the dictionary a value in one of the base dicts?
+        true exch
+        { /userdict /globaldict /systemdict /errordict /statusdict /serverdict }{
+          dup load
+          % true lookingfor key val
+          2 index eq {
+            % Yup, we've found it
+            ErrHandlePrint
+            exch pop false exch
+            null    % false lookingfor null
+            exit
+          } if
+          pop
+          1 index not { exit } if
+        } forall
+        % bool lookingfor
+        exch {
+          (UNKNOWN DICT) print flush
+          dup rcheck {
+            fullDictReport 0 gt {
+              /x fullDictReport def
+              (  -  <<)=
+              /InDictReport InDictReport 1 add store
+              dup
+                {
+                (    *** )print exch =print ( - )print
+                ==
+                /x x 1 sub def
+                x 0 le { exit } if
+              } forall
+              dup length fullDictReport gt {
+                (    *** ...    -     ...)=
+              } if
+              /InDictReport InDictReport 1 sub store
+              (    >>  -  )print
+            } {
+              % Try and find dictionary type by reporting characteristic keys
+              % Can't do this if the dictionary isn't readable.
+              [ /HalftoneType /FontType /FormType /PatternType /ImageType /ColorRenderingType
+              /RangeABC /RangeA     % CIE color space dicts
+              /FamilyName       % FontInfo dictionary in font
+              /Type
+              ] {
+                2 copy known
+                  {
+                  ( \()print dup ErrHandlePrint ( )print
+                  1 index exch get ErrHandlePrint (\))print
+                  exit
+                } if
+                pop % key
+              } forall
+            } ifelse
+          } if
+        } if
+      } if
+    } if
+    dup rcheck {
+      (\t\(length )print
+      dup length ErrHandlePrint ( / max )print maxlength ErrHandlePrint (\) )print
+    } {
+      nl pop
+    } ifelse
+  } bind def
+
+  /dictlistforerrors 40 dict def
+  /dictlistcountsofar 0 def
+  /installdictinlist {
+    count 2 ge {
+      {
+        currentglobal
+        1 index gcheck dup setglobal {
+          hqn_globdictlistforerrors hqn_globdictlistcountsofar [ 4 index 6 index ] put
+          globaldict /hqn_globdictlistcountsofar hqn_globdictlistcountsofar 1 add put
+        }{
+          dictlistforerrors dictlistcountsofar [ 4 index 6 index ] put
+          /dictlistcountsofar dictlistcountsofar 1 add def
+        } ifelse
+        setglobal
+      }
+                        serverdict /execlevel2 get exec
+    } if
+  } bind def
+
+  /reporterror {
+    (ERROR:             )print errorname ==
+    (OFFENDING COMMAND: )print /command load flush //ErrHandleString cvs print nl
+    $error /extraInfo known {
+      /extraInfo load type /stringtype eq {
+        (EXTRA INFO:        )print /extraInfo load print nl
+      } if
+    } if
+
+    % Don't report errors from interrupt or timeout
+    errorname dup /interrupt ne exch /timeout ne and{
+        {       % execlevel2
+        /currentpagedevice currentpagedevice def
+        /currentsystemparams currentsystemparams def
+        /currentuserparams currentuserparams def
+
+        /print //showprint def
+
+        /== load 0 get begin
+        /stringtype //showstring def
+        /longstringtype //showstring def
+        /arraytype //showarray def
+        /packedarraytype //showarray def
+        end
+
+        longErrorReport {
+          $error/errorinfo get dup type /arraytype eq {
+          dup length 0 gt {
+            (CONFIG INFO:       )print
+            dup length 2 eq 1 index 0 get type /nulltype eq and {
+              1 get
+            } if
+            ==
+          } { pop } ifelse
+          } { pop } ifelse
+
+          (VMSTATUS:          )print vmstatus 3 -1 roll ErrHandlePrint ( )print
+              exch ErrHandlePrint ( )print ==
+          (CTM:               )print matrix currentmatrix ==
+          (COLORSPACE:        )print currentcolorspace ==
+
+          % report font name, accesses, type & scalematrix.
+          (CURRENT FONT:      )print currentfont
+          dup /FontName 2 copy known {
+            get /InvalidFont eq {
+              (NO FONT SELECTED)print
+              false
+            }   {
+              true
+            } ifelse
+          } {
+            pop pop
+            true
+          } ifelse
+            {
+            globflags
+            (  )print
+
+            dup /FontName 2 copy known {
+              get (")print =print (")print
+            } {
+              pop /FontInfo 2 copy known {
+                get /FontName 2 copy known {
+                  get (")print =print (")print
+                } {
+                  pop pop
+                } ifelse
+              } {
+                pop pop
+              } ifelse
+            } ifelse
+
+            dup /FontType get dup 111 eq {
+              (  DLD1)print
+              pop
+            } {
+              (  Type )print
+              =print
+            } ifelse
+            /ScaleMatrix 2 copy known {
+              (  )print
+              get ==
+            } {
+              pop pop
+              nl
+            } ifelse
+          }   {
+            pop
+            nl
+          }ifelse
+        } if
+
+        % VMerrors don't record stack info
+        recordstacks errorname /VMerror ne and {
+          HqnShowOperand {
+          (\nOPERAND STACK: )print $error/ostack get aload length dup ==
+          dup 0 gt {
+            /InOperand true store
+            0 1 3 -1 roll 1 sub{
+              dup 2 le longErrorReport or {
+                (****\t)print ErrHandlePrint (:\t\()print dup type dup ErrHandlePrint (\) )print
+                dup /dicttype eq {
+                  pop whichdict nl
+                } {
+                  dup /arraytype eq exch dup /packedarraytype eq
+                  exch dup /stringtype eq exch /longstringtype eq or or or {
+                    % Global/read/write flags
+                    globflags
+                    dup rcheck {
+                      % array/string size
+                      dup length (\(length )print ErrHandlePrint (\) )print
+                      ==
+                    }   {
+                      pop
+                      ()=
+                    } ifelse
+                  } {
+                    ==
+                  } ifelse
+                } ifelse
+              } {
+                pop pop
+              } ifelse
+            }for
+            /InOperand false store
+          } {
+            pop
+            (-- EMPTY --)=
+          } ifelse
+        } if  % HqnShowOperand
+
+          longErrorReport {
+            HqnShowDictionary {
+            (\nDICTIONARY STACK: )print $error/dstack get aload length dup ==
+            dup 0 gt {
+              0 1 3 -1 roll 1 sub{(****\t)print ErrHandlePrint (:\t)print whichdict nl flush}for
+            } {
+              pop
+              (-- EMPTY --)=
+            } ifelse
+          } if % HqnShowDictionary
+
+          HqnShowExecution {
+            (\nEXECUTION STACK: )print
+            /InExec true store
+            $error/estack get aload
+            length /execcount exch def
+
+            % count ignore top and base - we don't want to report stuff related to the error
+            % handler and the server loop since they can be big and are not interesting.
+            /execbaseignore 0 def
+            /exectopignore 0 def
+            /state 0 def
+            /lastexec null def
+            /ptr 0 def
+            0 1 execcount 1 sub {
+              /ptr 1 index def
+            index true 1 index
+
+            % val bool val
+            dup type /arraytype eq state 0 eq and {
+              % val bool val
+              dup length 1 eq {
+                0 get /stop load eq {
+                  /exectopignore ptr def
+                  /state 1 def
+                  pop false
+                } if
+              }   {
+                % val bool val
+                pop pop false
+                % val false
+              } ifelse
+            }  { exch } ifelse  {
+              % If not just closed state 0
+              /stopped load eq {
+                state 0 eq {
+                  /exectopignore 0 def
+                  /execbaseignore execcount ptr sub def
+                } if
+                /state 1 def
+                lastexec /filetype eq {
+                  % Definite end to top
+                  /execbaseignore execcount ptr sub def
+                  pop % Won't be needed to set lastexec
+                  exit
+                } if
+              } if
+            } if
+            % val
+            /lastexec exch type cvlit def
+            } for
+          HqnShowExecTop state 0 eq or { /exectopignore 0 def } if
+          HqnShowExecBase { /execbaseignore 0 def } if
+
+          /execcount execcount execbaseignore sub exectopignore sub dup ErrHandlePrint nl
+            def
+
+           exectopignore { pop } repeat
+          execcount 0 gt {
+              0 1 execcount 1 sub{
+                (****\t)print ErrHandlePrint (:\t)print
+                dup type /filetype eq {
+                  (file: ")print
+                  statusdict begin //ErrHandleString filename end pop print
+                  ("\n)print
+                } {
+                  ==
+                } ifelse
+              }for
+            } {
+              (-- EMPTY --)=
+            } ifelse
+            execbaseignore { pop } repeat
+            /InExec false store
+          } if  % HqnShowExecution
+        } if    % longErrorReport
+
+        HqnShowFiles {
+          (\nFILE STACK: )=
+          /lastfileseen null def
+          $error/estack get length 1 sub -1 0 {
+            $error/estack get exch get
+            dup type
+            /filetype eq {
+              (****:\t)print
+              dup
+              reportfile {
+                /lastfileseen 1 index def
+              } if
+              pop
+              longErrorReport not { exit } if
+            }{
+              pop
+            } ifelse
+          } for
+          longErrorReport /lastfileseen load null eq or {
+            serverdict /stdin get dup
+            type /filetype eq 1 index /lastfileseen load ne and {
+              (**** STD:\t)print reportfile pop
+            } {
+              pop
+            } ifelse
+          } if
+        } if % HqnShowFiles
+      }   {
+        recordstacks not {
+          (VMerror or recordstacks is false - no stack reports)=
+        } if
+      } ifelse
+
+      (\n*************** END OF ERROR HANDLER REPORT **************)=
+
+      } serverdict /execlevel2 get exec
+    } if
+    errordict begin
+    $error /newerror false put
+    oldhandleerror end
+  } bind def
+
+  /hqnhandlerror {
+    {
+      //systemdict begin //$error begin //hqn_ErrHandleDict begin
+        newerror //errordict /senderrorevent get exec
+        newerror {
+          (****************** ERROR HANDLER REPORT \()print
+          longErrorReport { (Long) }{ (Short)} ifelse print
+          ( format\) ******************)=
+          //reporterror exec
+        }if
+      end end end % hqn_ErrHandleDict $error systemdict
+    } stopped {
+      //systemdict begin //$error begin //hqn_ErrHandleDict begin
+        (\n****************** ERROR HANDLER FAILED ******************)=
+        //reporterror exec
+      end end end % hqn_ErrHandleDict $error systemdict
+    } if
+  } bind readonly def
+
+  end %hqn_ErrHandleDict
+
+  % Set up global workspace
+  currentglobal true setglobal
+  globaldict begin
+    /hqn_globdictlistforerrors 6 dict def
+    /hqn_globdictlistcountsofar 0 def
+  end
+  setglobal
+
+  % Save away the old error handler
+  errordict begin
+  /oldhandleerror /handleerror load def
+  end
+
+  % Save away the old start of job stuff
+  serverdict begin
+  /oldexecjob /execjob load { def } 1183615869 internaldict /superexec get exec
+  end
+
+% Now create the procset itself.
+4 dict begin
+
+/ClearErrorHandler {
+  //errordict /oldhandleerror known {
+    <<
+    /Password 0
+    /CountLines false
+    >> setsystemparams
+
+    <<
+    /def null
+    /store null
+    /put null
+    /defineresource null
+    (>>) cvn null
+    >>  1183615869 internaldict /shadowop get exec
+
+    //errordict begin
+    /handleerror /oldhandleerror load def
+    //userdict begin
+      /handleerror        //errordict /handleerror get def % in userdict
+      /defaulthandleerror /handleerror load          def % in userdict
+    end
+
+    //serverdict begin
+    /execjob /oldexecjob load def
+    end
+
+    (******************* EXTENDED ERROR HANDLER REMOVED *******************\n)print flush
+  } if
+} bind def
+
+/LoadErrorHandler {
+  % Stack is dictionary to merge with workspace
+  //hqn_ErrHandleDict begin
+    {
+    Validate 2 index 2 copy known {
+      % key val Validate key
+      get
+      dup type /nametype ne { /Enum } if
+      Validation exch get exec
+        {
+        (%%[ Warning: HqnErrorHandler: Config key ') ErrPrint
+        pop ErrPrint
+        (' has bad value and will be ignored ]%%\n) ErrPrint
+      } {
+        def
+      } ifelse
+    } {
+      (%%[ Warning: HqnErrorHandler: Unknown config key ') ErrPrint
+      pop ErrPrint
+      (' will be ignored ]%%\n) ErrPrint
+    } ifelse
+  } forall
+
+  (****************** LOADING EXTENDED ERROR HANDLER \() ErrPrint
+  longErrorReport { (Long) }{ (Short)} ifelse ErrPrint
+  ( format\) ******************\n) ErrPrint
+
+  % Install our error handler
+  errordict /handleerror /hqnhandlerror load put
+
+  % zero the local dictionary count
+  /dictlistcountsofar 0 def
+  end % hqn_ErrHandleDict
+
+  userdict begin
+    /handleerror        errordict /handleerror get def % in userdict
+    /defaulthandleerror /handleerror load          def % in userdict
+  end % userdict
+
+  serverdict begin
+  /execjob {
+    (******************* RUNNING EXTENDED ERROR HANDLER *******************\n) ErrPrint
+    //hqn_ErrHandleDict begin
+    /dictlistcountsofar 0 def
+    end
+    //globaldict /hqn_globdictlistcountsofar 0 put
+    //serverdict /oldexecjob get
+    exec    % Note - this calls cleardictstack.
+  } bind { def } 1183615869 internaldict /superexec get exec
+  end % serverdict
+
+  % Make the RIP record line counts
+  <<
+  /Password 0
+  /CountLines true
+  >> setsystemparams
+
+  % zero the global dictionary count
+  currentglobal true setglobal
+  globaldict /hqn_globdictlistcountsofar 0 put
+  setglobal
+
+  % set up procedures to catch dictionary names.
+  <<
+  /def {
+    dup type /dicttype eq {
+      //hqn_ErrHandleDict begin installdictinlist end
+    } if
+    //def
+  } bind
+
+  /store {
+    dup type /dicttype eq {
+      //hqn_ErrHandleDict begin installdictinlist end
+    } if
+    //store
+  } bind
+
+  /put {
+    2 copy type /dicttype eq exch type /nametype eq and {
+      //hqn_ErrHandleDict begin installdictinlist end
+    } if
+    //put
+  } bind
+
+  /defineresource {
+    1 index type /dicttype eq {
+      3 1 roll
+      //hqn_ErrHandleDict begin installdictinlist end
+      3 -1 roll
+    } if
+    //defineresource
+  } bind
+
+  % catch sub-dictionaries defined inside << ... >> constructs
+  (>>) cvn {
+    >>
+    dup {
+      dup type /dicttype eq {
+        //hqn_ErrHandleDict begin installdictinlist end
+      } if
+      pop pop
+    } forall
+  } bind
+
+  >>  1183615869 internaldict /shadowop get exec
+} bind def
+
+/QuickErrorHandler {
+  <<
+  /longErrorReport false
+  /fullDictReport 0
+  >>
+  //LoadErrorHandler exec
+} bind def
+
+/FullErrorHandler {
+  <<
+  /longErrorReport true
+  /fullDictReport 6
+  >>
+  //LoadErrorHandler exec
+} bind def
+
+currentdict end
+
+userdict /hqn_ErrHandleDict undef
+
+/HqnErrorHandler exch /ProcSet defineresource
+errglobalness setglobal
+
+%%EndProcSet

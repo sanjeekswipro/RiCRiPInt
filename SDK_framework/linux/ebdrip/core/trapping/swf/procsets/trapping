@@ -1,0 +1,176 @@
+%!PS-Adobe-3.0
+%%Title: Trapping
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Oct 8, 1998
+%{Trapping version #1 1
+% Copyright (C) 1998-2010 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(Trapping)" 2 1
+
+% $HopeName: COREtrapping!swf:procsets:trapping(EBDSDK_P.1) $
+% 
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% (Loading Harlequin Trapping ProcSet...) print flush
+
+currentglobal false setglobal
+
+10 dict begin
+  /globalness exch def
+
+  /settrapparams {
+    1183615869 internaldict /currenttrapparams get exec
+    dup /Override known {
+      /Override get 1 index /Override 2 copy known {
+        get lt {
+          % valid Override key found
+          1183615869 internaldict /settrapparams get exec
+        }{
+          % invalid Override key
+          pop
+        } ifelse
+      }{
+        % no Override key supplied
+        pop pop pop pop
+      } ifelse
+    }{
+      % no Override key used last time
+      pop
+      1183615869 internaldict /settrapparams get exec
+    } ifelse
+  } bind def
+
+  /currenttrapparams {
+    1183615869 internaldict /currenttrapparams get exec
+
+    dup length dict begin
+    
+    {
+        dup type dup /arraytype eq {
+            pop dup length array copy
+        } {
+            /dicttype eq {
+                dup length dict copy
+            } if
+        } ifelse
+        def
+    } forall
+
+    currentdict end
+  } bind def
+
+  /settrapzone {
+    currentpagedevice /Trapping get {
+      1183615869 internaldict /settrapzone get exec
+    } {
+      newpath
+    } ifelse
+  } bind def
+
+  /stringconcat {
+    % string1, string2 -> string3.
+    2 copy length exch length add string
+    2 index 1 index copy pop
+    dup 4 -1 roll length 
+    4 -1 roll putinterval
+  } bind def
+
+  % A hook called by the core RIP just as it is about to begin inserting traps.
+  % The gstate path is set to the current trapping zone path before calling.
+  % On the stack is either:
+  % false: indicates traps will be drawn only in their 'real' color
+  % zone c m y k true: highlight traps will be drawn in the given color.
+  %                    'zone' is the sequence number of the current
+  %                    trapping zone.
+
+  /TrapBeginZone {
+    % If we're drawing highlight traps, set up a separation colorspace for them
+    % so that if the Harlequin RIP is autoseparating, each zone's traps will
+    % show up in their own PGB: makes for easier identification of traps in
+    % ROAM etc. When highlighting is on, TrapBeginZone must leave the current
+    % color and other gstate attributes in the state desired for drawing the
+    % highlights.
+
+    {
+      % What we want to arrive at here is:
+      % [
+      %   /Separation (Zone 'zone' Traps)
+      %   /DeviceCMYK { pop 'c' 'm' 'y' 'k' }
+      % ] setcolorspace
+
+      [ /pop load 6 2 roll ] cvx exch 128 string cvs
+      (Zone ) exch //stringconcat exec ( Traps) //stringconcat exec
+      [ /Separation 3 -1 roll /DeviceCMYK 5 -1 roll ] setcolorspace
+
+      % Alternatively the above could simply be replaced with
+      % "5 -1 roll pop setcmykcolor" to draw highlight traps on
+      % the process plates as in previous releases of the Harlequin
+      % RIP.
+
+      % Always overprint highlight traps - don't want to knock out
+      % the real traps underneath.
+
+      true setoverprint
+
+      % Draw a dashed line in the highlight color around the edge of the zone.
+
+      gsave initclip initmatrix
+      .5 setlinewidth [ 4 2 2 2 ] 0 setdash stroke
+      grestore
+    } if
+  } bind def
+
+  % Called when all the traps for a given zone have been inserted. The gstate
+  % path is set to the current trapping zone path before calling. On the stack
+  % is a boolean reflecting whether highlight traps are being drawn.
+
+  /TrapEndZone {
+    pop
+  } bind def
+
+  % Called when raster-based trapping is active. On the stack is the zone number
+  % and the current path is set to the zone path. Assumes 10-bit RLE.
+
+  /asn 1183615869 internaldict /addtoseparationcolornames get def
+  /aso 1183615869 internaldict /addtoseparationorder get def
+  /tzcs [ /Separation (Trapping Zones) /DeviceCMYK { pop 0 0.05 0.2 0 } ]  def
+  /tzp << /ColorantType /TrapZones /NeutralDensity 0.1 >> def
+  /tzn (Trapping Zones) cvn def
+
+  % STTS - TrapAddSeparation; separated this out of TrapFinalizeRasterZone so 
+  % it can be called externally (in pagedev.pss in fact)
+
+  /TrapAddSeparation {
+    currentpagedevice /Private get /Colorants get //tzn known not {
+      //tzn //asn   //tzn //tzp //aso
+    } if
+  } bind def
+
+  /TrapFinalizeRasterZone {
+    gsave
+    {
+      //TrapAddSeparation exec
+    } if
+    //tzcs setcolorspace
+    true setoverprint 1023.0 div setcolor fill
+    grestore
+  } bind def
+
+  { /stringconcat /aso /asn /tzcs /tzp /tzn } { currentdict exch undef } forall
+
+  % This dummy entry prevents ScenicSoft Preps going 'clip clippath
+  % false upath exec' which interferes with our default zones (causes
+  % default zones on the page to go degenerate).
+
+  /SSiOrgSetTrapZone_FixClip null def
+
+  currentdict
+end
+
+/Trapping exch /ProcSet defineresource
+/globalness get setglobal
+
+% (done\n) print
+
+%%EndProcSet

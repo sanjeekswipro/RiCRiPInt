@@ -1,0 +1,34 @@
+# =============================================================================
+# $HopeName: HQNuri!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.6.4.1.1.1 2013/12/19 11:24:42 anon Exp $
+# 
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+    ImplementsVariant xml xps ;
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : uri ;
+
+    IncludeExportDirectories Local :
+      standard
+    : .. ;
+
+    LIBFILES =
+        # RFC 2396 is now obsolete but will leave code in place in the
+        # event that its needed again.
+        hqnuri.c
+        hqnuri-3986.c
+    ;
+
+    Library uri : $(LIBFILES) ;
+
+# =============================================================================
+# Log stripped

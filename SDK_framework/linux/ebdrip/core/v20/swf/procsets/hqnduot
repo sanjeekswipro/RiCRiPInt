@@ -1,0 +1,699 @@
+%!PS-Adobe
+%%Title: HqnDuotones
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Feb 27, 1998
+%%VMusage: -1 -1
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnDuotones) 1 1
+
+% Adobe PhotoShop is a registered trademark of Adobe Systems, Incorporated.
+
+	
+% $HopeName: SWv20!swf:procsets:hqnduot(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+
+% Entry point: -- HqnDuotonesEnable --
+
+% The Photoshop duotone code tries to work out whether it's running on a color
+% system or is preseparating, to decide what to print. If it's color (such as
+% composite, or in our case possible a separating RIP) it sets up a process
+% color simulation of the duotone; if preseparating, it decides which of the
+% separations it is on, and sets up the appropriate transfer function.
+%
+% We fool it into thinking it is on each one of the relevant separations,
+% while also going through the "color" code for much of the rest of it.
+% We do this by setting a shadowop on two of the variable names used by
+% the Photoshop duotone code, and also on the operators eq and gt. This
+% way, we can say that particular pieces of code, done conditionally on
+% a number retrieved from one of those variables, are to be done always
+% (or on some other condition of our choice) as eq and gt recognize a
+% special value returned by those "variables".
+
+% A simplified version of what goes on is that the Photoshop code works
+% out a value for duotoneink then does
+%	 duotoneink 1 eq {
+%		 {
+%			 % transfer function for ink 1
+%		 } bind
+%	 } if
+%	 duotoneink 2 eq {
+%		 {
+%			 % transfer function for ink 2
+%		 } bind
+%	 } if
+%	 duotoneink 3 eq {
+%		 {
+%			 % transfer function for ink 3
+%		 } bind
+%	 } if
+%	 settransfer
+% and we make duotoneink return a value which causes eq to remember what
+% it was being compared against, and return true. bind then picks up the
+% value stashed by eq.
+
+currentglobal false setglobal
+
+20 dict begin % the procset dictionary
+
+/DEBUG false def
+
+/buffer 400 string def
+
+/p serverdict /altout 2 copy known {
+	get dup type /filetype eq {
+		dup status not dup { exch pop } if
+	} { pop true } ifelse
+  } { pop pop true } ifelse
+  	{
+	(%stderr)(w)file 
+  } if def
+/p {
+	//p exch
+	dup type /stringtype ne {
+		//buffer cvs
+	} if
+	writestring
+} bind def
+
+% our workspace:
+
+/duotoneWorkspace <<
+	/MostRecentDuotoneCurves [ [] [] [] [] ]
+	/MostRecentCustomColor (Unknown color)
+	/duotoneinkcount -1
+	/band -42
+	/inknumbering << >>
+	/MostRecentDuotoneink -1
+	/MostRecentBand -1
+	/TransfersByInkName 4 dict
+	/SkipTransfer false
+
+	% Here we store the transfer functions for the CMYK channels, in case 
+	% one or more of the specified separations will be emulated in CMYK.
+	/SimulationChannels [ null null null null ]
+	/SimulationChannelCount -1
+
+	/amSpottingDuotones false
+	/amInGrayScaleFile false
+	/originalimage null
+
+	/oldfindcmykcustomcolor {}
+>> def
+
+/EnablePseudoSeparator {
+	% Now define findcmykcustomcolor and setcustomcolor in userdict -- in effect,
+	% we start pretending to be a preseparator, to divert the duotone code into
+	% giving us the information we want. findcmykcustomcolor is the one in which
+	% we are interested; if we define it, we have to define setcustomcolor too,
+	% as that gets called immediately afterwards.
+	% If findcmykcustomcolor or setcustomcolor is already defined, we call the
+	% old definition, having done our own work.
+
+	//duotoneWorkspace /oldfindcmykcustomcolor
+		/findcmykcustomcolor where {
+			pop
+			/findcmykcustomcolor load
+		} {
+			/Level1Separator /ProcSet findresource /findcmykcustomcolor get
+		} ifelse
+	put
+
+	userdict begin
+
+		/findcmykcustomcolor {
+			//duotoneWorkspace /MostRecentCustomColor 2 index put
+			//duotoneWorkspace /oldfindcmykcustomcolor get exec
+		} def
+
+		/setcustomcolor {
+			pop pop
+			0 setgray
+		} def
+
+	end % userdict
+} bind def
+
+% Convert from an array of transfer procedures to a single string for use
+% as the lookup in an Indexed colorspace
+/TransferFunctionsToStrings 1024 string def
+/TransferFunctionsToStrings {							% ff
+	dup length exch
+	0 exch
+		{
+		% chan proc 
+		0 1 255 {							% chancount chan proc colno
+			dup 255 div						% chancount chan proc colno col
+			2 index							% chancount chan proc colno col proc
+			exec							% chancount chan proc colno vr
+			1 exch sub
+			255 mul round cvi				% chancount chan proc colno vi
+			//TransferFunctionsToStrings 
+			4 index							% chancount chan proc colno v arr chan
+			4 -1 roll						% chancount chan proc v arr chan colno 
+			6 index mul add				% chancount chan proc v arr offset
+			3 -1 roll						% chancount chan proc arr offset v
+			put		% chan proc
+		} for
+		pop
+		1 add
+	} forall
+	//TransferFunctionsToStrings 0 3 -1 roll 256 mul getinterval
+	exch pop
+} bind def
+
+/RemoveFirstStageShadow <<
+	 { /band /duotoneink /def /store /gt /le /eq }{ null } forall
+>> def
+
+/RemoveSecondStageShadow << 
+	{ /image /settransfer /setcolortransfer /bind } { null } forall
+	RemoveFirstStageShadow {} forall
+>> def
+
+/endSpottingDuotones {
+	//duotoneWorkspace /amSpottingDuotones get {
+		//RemoveSecondStageShadow 1183615869 internaldict /shadowop get exec
+		//duotoneWorkspace /amSpottingDuotones false put
+		/band //duotoneWorkspace /band get store
+	} if
+} bind def
+
+% The core of the TintTransform used in the DeviceN colorspace. This will
+% only ever be called for assigning roam colors.
+/BuildTintTransform 4 dict def
+/BuildTintTransform {
+	% stack: V1 V2 ... Vn [ [ C1 M1 Y1 K1 ] [ C2 M2 Y2 k2 ] ... ]
+	//BuildTintTransform begin
+	/t [ 0 0 0 0 ] def					% total CMYK
+	/r 1 index def						% array of CMYK values
+	length 1 sub -1 0 {
+		r exch get /c exch def
+		0 1 3 {
+			% Vx i
+			t exch 2 copy get
+			% Vx t i t[i]
+			c 2 index get
+			% Vx t i t[i] c[i]
+			4 index mul add
+			dup 1. gt { pop 1. } if
+			put
+		} for
+		pop		% Vx
+	} for
+	t aload pop
+	end
+} bind def
+
+/FullTestSpot /HqnSpots /ProcSet findresource /FullTestSpot get def
+
+% We know we have a duotone at this point.
+% The alternative to this is HqnDuotonesGoAwayAgainAfterAll
+/startSpottingDuotones {
+	//duotoneWorkspace /amSpottingDuotones get not {
+		//DEBUG { (startSpottingDuotones)= } if
+
+			<<
+
+			 % When we spot that we're looking at which transfer function to do,
+			 % we say "yes" to each of them, remembering which one it was. The next
+			 % use of "bind" will then be to bind the transfer function concerned,
+			 % so we can now stash it under the appropriate ink identification.
+			/bind {
+				% Check that it really is a transfer function and not a 
+				% spot function in a halftone
+				dup length 0 gt {
+					dup 0 get /mark eq 
+				} { false } ifelse
+					{
+					bind
+					//duotoneWorkspace /MostRecentDuotoneink get 0 gt {										 
+						 //duotoneWorkspace /inknumbering get 
+							% MostRecentCustomColor saved here by "store" on /duotoneink
+						 //duotoneWorkspace /MostRecentDuotoneink get 
+							% the number stored by "eq" and "gt" if compared against /whateverDuotoneink
+						 
+						 2 copy known {
+							 get
+							 //duotoneWorkspace /TransfersByInkName get exch 2 index
+							 put
+						 }	{
+							% GLOB: Do not translate - treat as assert
+							(Could not find duotone ink numbered ) //p exec //p exec (\n) //p exec
+							(in <<\n) //p exec 
+							{ exch (	)//p exec //p exec ( - ) //p exec //p exec (\n) //p exec } forall 
+							(>>\n) //p exec
+							/HqnDuotones errordict /undefinedresult get exec
+						 } ifelse
+
+						 //duotoneWorkspace /MostRecentDuotoneink get 1 ne {
+							 pop
+						 } if
+						 //duotoneWorkspace /MostRecentDuotoneink -1 put
+						 //duotoneWorkspace /SkipTransfer false put
+
+						 % Reset this one; the simulation channels (see below) follow this,
+						 % but there may have been things mistaken for this previously which
+						 % will have incremented this count spuriously:
+						 //duotoneWorkspace /SimulationChannelCount -1 put
+					 } {
+						//duotoneWorkspace /SimulationChannels get
+						//duotoneWorkspace /SimulationChannelCount
+						2 copy get 1 add dup 4 1 roll put
+						dup 4 lt {
+							 % Binding transfer function for simulation channel
+							 2 index put
+						}	{
+							% Binding something probably extraneous
+							pop pop
+						} ifelse
+					 } ifelse
+				}	{
+					bind
+				} ifelse
+			 } bind
+
+			 /setcolortransfer {
+				pop pop pop pop
+			 } bind
+
+			 /settransfer {
+				 pop % don't do settransfer, we don't want the hacked procedure
+
+				 //duotoneWorkspace /originalimage get null eq {
+					 //duotoneWorkspace /originalimage
+						 1183615869 internaldict /shadowproc get /image 2 copy known {
+							 get
+						 } {
+							 pop pop
+							 systemdict /image get
+						 } ifelse
+					 put
+				 } if
+
+				% Now set image up to do our specialized stuff
+					<<
+
+					/image {
+						% We've now got all the information we want,
+						% so switch off most of our shadowops
+						//endSpottingDuotones exec
+
+						% Pick a channel order (by making an array of the keys of the
+						% dictionary we are given), and stick to it (rather than assuming
+						% that forall on a dictionary will get the same order each time,
+						% even if in this case it should have little reason not to).
+						//duotoneWorkspace /DuotoneChannels [
+							//duotoneWorkspace /TransfersByInkName get {
+								pop
+							} forall
+						] put
+
+						% Work out whether all the separations used by the duotone are available:
+						true
+						//duotoneWorkspace /DuotoneChannels 
+						2 copy get [ exch
+						% true //ws /dc [ dc
+							{
+							% true //ws /dc [ ... colorname
+							dup //FullTestSpot exec { 
+								% true //ws /dc [ ... colorname newcolorname
+								pop 
+							}	{
+								% true //ws /dc [ ...
+								cleartomark pop pop pop false
+								exit
+							} ifelse
+						} forall
+						% true //ws /dc [ ... | false
+						dup type /booleantype ne { ] put } if
+						
+						% Now, we've decided whether we can construct and use a colorspace that
+						% puts the duotone straight into the appropriate separations -- the value
+						% now on the top of the stack indicates this.
+							{
+							% Yes - all the channels will be produced - go for it!
+
+							//duotoneWorkspace /DuotoneChannelTransfers	[
+								//duotoneWorkspace /DuotoneChannels get {
+									//duotoneWorkspace /TransfersByInkName get
+									exch get
+								} forall
+							] put
+
+							% Create and install a Indexed on DeviceN colorspace
+								[
+								/Indexed
+									[
+									/DeviceN
+										[ 
+										//duotoneWorkspace /DuotoneChannels get
+											{
+											dup //FullTestSpot exec { exch pop } if
+										} forall
+									]
+									/DeviceCMYK
+
+									% We never use this tint transform for real,
+									% but it may be used for setting the roam colour.
+									% Approximate it from the values from parsing
+									% %%CMYKCustomColor: comments
+										[
+											[
+											//duotoneWorkspace /DuotoneChannels get {
+												statusdict /CMYKCustomColors get
+												exch 2 copy known {
+													get
+												}	{
+													% Don't know this colour - use black
+													pop pop [ 0 0 0 1 ]
+												} ifelse
+											} forall
+										]
+										//BuildTintTransform /exec load
+									] cvx bind		% Tint transform in DeviceN colorspace
+								]
+								255
+								//duotoneWorkspace /DuotoneChannelTransfers get 
+									//TransferFunctionsToStrings exec
+							] setcolorspace
+
+							% //DEBUG { (Hacked dictionary is:\n<<\n) //p exec 
+							%	dup { exch //p exec (\n) //p exec //p exec (\n) //p exec } forall (>>\n) //p exec } if
+
+							% Switch from DeviceGray or DeviceCMYK to [ 0 255 ] for indexed.
+							dup /Decode [ 0 255 ] put
+							
+
+							% Make sure we only get the one channel, not 4 for emulation.
+							dup /DataSource 2 copy get 0 1 getinterval put
+
+							//DEBUG { (Duotone image re-diverted back to proper separations\n) //p exec } if
+						}	{
+							% Nope - at least one of the separations required will not be generated.
+							//DEBUG { (Not all separations used in Duotone are available; using process equivalent\n) //p exec } if
+
+								[
+								/Indexed
+								//duotoneWorkspace /SimulationChannelCount get 0 eq {
+									/DeviceGray
+								}	{
+									/DeviceCMYK
+								} ifelse
+								255
+								//duotoneWorkspace /SimulationChannels get 
+								2 index /DeviceGray eq { 0 1 getinterval } if
+								//TransferFunctionsToStrings exec
+							] setcolorspace
+
+							% Switch from DeviceGray or DeviceCMYK to [ 0 255 ] for indexed.
+							dup /Decode [ 255 0 ] put
+							
+
+							% Make sure we only get the one channel, not 4 for emulation.
+							//duotoneWorkspace /SimulationChannelCount get 0 gt {
+								dup /DataSource 2 copy get 0 1 getinterval put
+							} if
+						} ifelse
+
+						//duotoneWorkspace /originalimage get exec
+					} bind
+
+				 >> 1183615869 internaldict /shadowop get exec
+
+			} bind
+
+		>> 1183615869 internaldict /shadowop get exec
+
+		//duotoneWorkspace /amSpottingDuotones true put
+	} if
+} bind def
+
+% This is used an alternative to startSpottingDuotones
+
+/HqnDuotonesGoAwayAgainAfterAll {
+	//DEBUG { (HqnDuotonesGoAwayAgainAfterAll)= } if
+	//RemoveFirstStageShadow 1183615869 internaldict /shadowop get exec
+
+	% In a PShop 3 file band hasn't been set yet, but it doesn't matter
+	% that we pre-set it here.
+	/band //duotoneWorkspace /band get def
+
+	% It's called early enough that we don't need to worry about
+	% resetting duotoneink - it hasn't been defined yet.
+} bind def
+
+% This is the discriminator routine that decides whether we really are on a
+% Photoshop duotones job.
+
+/ReallyLooksLikeDuotonesComingUp {
+	//DEBUG { (ReallyLooksLikeDuotonesComingUp)= } if
+	currentuserparams /PhotoshopInput get
+	/setcolorscreen2 where {
+		pop false
+	} {
+		true
+	} ifelse
+	and 
+	/hascolor where {
+		pop true
+	} {
+		false
+	} ifelse
+	and { hascolor } { false } ifelse
+} bind def
+
+% We know we're processing a grayscale PhotoShop image at this point.
+/HqnDuotonesEnableNextStage {
+	//duotoneWorkspace /amInGrayScaleFile get not {
+		//DEBUG { (HqnDuotonesEnableNextStage)= } if
+
+		% Overload findcmykcolor etc. This has to be done so early so that the 
+		% definitions supplied by QuarkXPress etc. don't disable it.
+		//EnablePseudoSeparator exec
+
+			<<
+			 % The variable names /band and /duotoneink are rigged to return distinctive
+			 % values which eq and gt can pick up to handle specially. Also, once a value is stored
+			 % into either of these, turn on the rest of the shadows.
+
+			/band {
+				/whateverBand
+			} bind
+
+			/duotoneink {
+				 /whateverDuotoneink
+			} bind
+
+			% This is here to pick up duotones from PhotoShop 5 and later
+			% which do their own conversion to DeviceN which we want to 
+			% continue to use.
+			% It's also used in analysing duotones from v4 and earlier.
+			/def {
+				1 index /level3 eq {
+					 //HqnDuotonesGoAwayAgainAfterAll exec
+				}	{
+					1 index /band eq {
+						//duotoneWorkspace /band 3 -1 roll put
+						{ /whateverBand } bind
+					} if
+				} ifelse
+				def
+			} bind
+
+
+			 % the variable names /duotoneink and /band are rigged to return special
+			 % values (see other entries in this call to shadowop) so here we remember
+			 % the real values when they're stored into. Also, once a value is stored
+			 % into either of these, turn on the rest of the shadows.
+
+			/store {
+				1 index /duotoneink eq {
+					//duotoneWorkspace /inknumbering get 1 index 
+					//duotoneWorkspace /MostRecentCustomColor get put
+					pop
+					% store would otherwise overwrite the shadow for this name
+						{
+						/whateverDuotoneink
+					} bind
+					//startSpottingDuotones exec
+				}	{
+					1 index /band eq {
+						% //DEBUG { (store storing into /band: ) //p exec dup //p exec (\n) //p exec } if
+						2 copy //duotoneWorkspace 3 1 roll put
+						pop
+						% store would otherwise overwrite the shadow for this name
+							{
+							/whateverBand
+						} bind
+					} if
+				} ifelse
+				store
+			} bind
+
+			/gt {
+				1 index /whateverDuotoneink eq {
+					//duotoneWorkspace /MostRecentDuotoneink 3 -1 roll 
+					put % "bind" will look at this later
+					pop true
+					//duotoneWorkspace /SkipTransfer false put
+				}	{
+					gt
+				} ifelse
+			} bind
+
+			% this is only see where additional transfer functions have been added
+			% for calibration. We choose to discard them.
+			% We also need to return 'false' on eq between this call and one to gt.
+			/le {
+				1 index /whateverDuotoneink eq {
+					pop pop true
+					//duotoneWorkspace /SkipTransfer true put
+				}	{
+					le
+				} ifelse
+			} bind
+
+			/eq {
+				1 index /whateverDuotoneink eq {
+					//duotoneWorkspace /SkipTransfer get {
+						pop pop false
+					}	{
+						//duotoneWorkspace /MostRecentDuotoneink 3 -1 roll put 
+						% "bind" will look at this later
+						pop
+						true
+					} ifelse
+				}	{
+					1 index /whateverBand eq {
+						//ReallyLooksLikeDuotonesComingUp exec {
+							exch pop
+
+							dup //duotoneWorkspace /MostRecentBand 3 -1 roll put
+
+							dup dup 
+							dup 1 ge exch 4 le and {
+								//duotoneWorkspace /MostRecentCustomColor {
+									null
+									(Cyan)
+									(Magenta)
+									(Yellow)
+									(Black)
+								} 4 -1 roll get
+								put
+							}	{
+								pop
+							} ifelse
+
+							dup 0 ne exch 5 ne and
+
+							//startSpottingDuotones exec
+						}	{
+							//HqnDuotonesGoAwayAgainAfterAll exec
+							exch pop band eq
+						} ifelse
+					}	{
+						eq
+					} ifelse
+				} ifelse
+			} bind
+
+		>> 1183615869 internaldict /shadowop get exec
+
+		//duotoneWorkspace /amInGrayScaleFile true put
+	} if
+} bind def
+
+/nullstring () def
+/blackstring (Black) def
+/compositestring (Composite) def
+/screenstring (setscreen) def
+
+% Our entry point:
+/HqnDuotonesEnable ("beginimage") def
+/HqnDuotonesEnable {
+	//DEBUG { (HqnDuotonesEnable)= } if
+
+	//duotoneWorkspace /amSpottingDuotones false put
+	//duotoneWorkspace /amInGrayScaleFile false put
+	
+	(%dict) load (%actions) get begin
+	
+	% Add a hook on %ImageData: comments
+	/ImageData: [
+		currentdict /ImageData: 2 copy known {
+			get 
+			dup 0 get /HqnDuotones ne {
+				/dup load exch /exec load
+			}	{
+				pop
+			} ifelse
+		} { pop pop } ifelse
+
+			{
+			/HqnDuotones pop
+			mark exch 
+			currentuserparams /PhotoshopInput get {
+				% We're in a PShop job.
+				currentsystemparams /Separation get dup //compositestring eq {
+					pop true
+				}	{
+					dup //blackstring eq exch //nullstring eq or {
+						currentsystemparams /SeparationMethod get 
+						dup //screenstring eq exch //nullstring eq or
+					} { false } ifelse
+				} ifelse
+					{
+					//HqnDuotonesEnable search {
+						% The post and match will be handled by cleartomark.
+						{ token not { exit } if exch } loop
+						counttomark 9 eq {	
+							% post, match, and 7 numbers from the 'pre' string
+							4 index 8 eq 4 index 1 eq and {
+								% It's a greyscale image - could be a duotone
+								//HqnDuotonesEnableNextStage exec
+							} if
+						} if
+					} if
+				} if
+			} if
+			cleartomark
+		} /exec load
+	] cvx bind def
+
+	end
+} bind def
+
+	currentdict {
+		/duotoneWorkspace
+		/EnablePseudoSeparator
+		/ReallyLooksLikeDuotonesComingUp
+		/HqnDuotonesEnableNextStage
+		/HqnDuotonesGoAwayAgainAfterAll
+		/TransferFunctionsToStrings
+		/startSpottingDuotones
+		/endSpottingDuotones
+		/BuildTintTransform
+		/RemoveFirstStageShadow
+		/RemoveSecondStageShadow
+		/DEBUG
+		/buffer
+		/p
+		/nullstring
+		/blackstring
+		/compositestring
+		/screenstring
+	} {
+		1 index exch undef
+	} forall
+
+end % our dict
+
+/HqnDuotones exch /ProcSet defineresource pop
+
+setglobal
+
+%%EndProcSet

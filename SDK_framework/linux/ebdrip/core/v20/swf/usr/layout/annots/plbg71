@@ -1,0 +1,35 @@
+%!PS-Adobe-3.0
+%%Title: PlateControlBar_G7_1
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Aug 2007
+% Copyright (C) 2007 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.2.10.1.1.1 $
+%%EndComments
+
+% Global Graphics Software Ltd. Confidential Information.
+
+
+% $HopeName: SWv20!swf:usr:layout:annots:plbg71(EBDSDK_P.1) $
+
+% A file in this directory provides the definition of an annotation option
+% for use with the HqnLayout procset, providing simple in-RIP imposition.
+
+% The file must return a single dictionary
+	<<
+
+	% The dictionary must contain the name of the annotation,
+	/Name		(PlateBar_G7_1)
+
+	% Two annotation types are supported, a simple Mark, and a dynamically
+	% constructed control bar
+	/AnnotType /ControlBar
+
+	% A ControlBar annotation must refer to a control bar defined in
+	% SW/Usr/ColorBars/Components
+	/BarName   /PlateControlBar_G7_1
+
+>>
+
+%%EOF
+

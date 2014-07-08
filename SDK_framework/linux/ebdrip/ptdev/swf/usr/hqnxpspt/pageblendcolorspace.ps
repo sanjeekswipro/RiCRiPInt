@@ -1,0 +1,153 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pageblendcolorspace.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for PageBlendColorSpace.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries (amongst others):
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%
+% For more information see ProcessTicket in the HqnXPSPrintTicket procset.
+
+/DefaultICCProfile_sRGB  (%os%iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) def
+/DefaultICCProfile_scRGB (%os%iccprofiles/scRGB.icc) def
+
+% Get information about the specified ICC profile.
+% 'iccarray' will be of the form [/ICCBased file].
+%
+% icc_filename GetICCProfileInfo iccarray colorspace
+/GetICCProfileInfo {
+  dup status {
+    % File exists
+    pop pop pop pop
+
+    [/ICCBased 3 -1 roll (r) file]
+  }{
+    % File not found
+    (%%[ Warning: PageBlendColorSpace profile not found. Using default. ]%%) =
+
+    pop [/ICCBased //DefaultICCProfile_sRGB (r) file]
+  }ifelse
+
+  dup geticcbasedinfo exch pop
+
+} bind def
+
+% icc_filename DoConfigureBlendSpaceFromICC -
+/DoConfigureBlendSpaceFromICC {
+  //GetICCProfileInfo exec
+
+  % Use default when unsupported ICC profile is specified
+  dup [/DeviceCMY /DeviceN] IsOneOf {
+    (%%[ Warning: PageBlendColorSpace profile uses an unsupported color space. Using default profile. ]%%) =
+    pop pop
+    //DefaultICCProfile_sRGB //GetICCProfileInfo exec
+  }if
+
+  % Stack is: iccarray colorspace
+
+  % Configure the page device
+  DeviceDict /VirtualDeviceSpace 2 index put
+
+  % Configure the intercept color space
+  <<
+    % Device     % Blend color space
+    /DeviceGray  /BlendGray
+    /DeviceRGB   /BlendRGB
+    /DeviceCMYK  /BlendCMYK
+  >>
+  exch get
+  1 dict begin
+    exch def
+    currentdict setinterceptcolorspace
+  end
+} bind def
+
+/DoPageBlendColorSpace {
+  begin
+    RequiresOverprintPreview
+
+    % Dictionary of available PageBlendColorSpace options
+    <<
+      % Use specific ICC profile
+      /sRGB  { //DefaultICCProfile_sRGB } bind
+      /scRGB { //DefaultICCProfile_scRGB } bind
+
+      % Use the ICC profile named in the PrintTicket, falling back on a default
+      % if necessary.
+      /ICCProfile {
+        pt_value /URI << /Value //DefaultICCProfile_sRGB >> GetDictValueWithDefault
+        /Value get
+
+        % Convert URI to PostScript filename
+        1183615869 internaldict /xpsurifilename get exec
+      } bind
+    >>
+
+    % Push the name of the required ICC profile onto the stack
+    pt_value [/Value] /sRGB GetPTValueWithDefault exch pop
+    get exec
+
+    % Apply setting
+    //DoConfigureBlendSpaceFromICC exec
+  end
+} bind def
+
+/OverridePageBlendColorSpace {
+  begin
+    % Check for a GUI RIP override value in statusdict -> GuiRIPXPSOverrides -> PageBlendColorSpace
+    statusdict /GuiRIPXPSOverrides 2 copy known {
+      get /PageBlendColorSpace 2 copy known {
+        get dup null eq
+        {
+          % null value means ignore PT value (i.e. act on the PSU setting)
+          pop
+          null true
+        } {
+          << /Value 3 -1 roll >>
+          true
+        } ifelse
+      }{
+        pop pop
+        false
+      }ifelse
+    }{
+      pop pop
+      false
+    }ifelse
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageBlendColorSpace
+    <<
+      /Action //DoPageBlendColorSpace
+      /Override //OverridePageBlendColorSpace
+    >>
+>>
+
+end

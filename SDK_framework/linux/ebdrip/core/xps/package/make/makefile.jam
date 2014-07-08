@@ -1,0 +1,29 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# =============================================================================
+# $HopeName: COREedoc!package:make:makefile.jam(EBDSDK_P.1) $
+# $Id: package:make:makefile.jam,v 1.14.10.1.1.1 2013/12/19 11:24:47 anon Exp $
+# 
+# Modification history at end of file.
+# ============================================================================
+
+    RequiresVariant warning_level : high ;
+
+    DependsOn all : package ;
+
+    IncludeExportDirectories Local :
+        xps
+    : .. .. ;
+
+    LIBFILES =
+        contenttype.c
+        coreproperties.c
+        package.c
+        relationships.c
+        versioning.c
+    ;
+
+    Library package : $(LIBFILES) ;
+
+# =============================================================================
+# Log stripped

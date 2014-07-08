@@ -1,0 +1,76 @@
+# =============================================================================
+# $HopeName: CORExml!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.24.4.1.1.1 2013/12/19 11:25:09 anon Exp $
+#
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+# Variant details come before dependant compilation rules
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    # We are not ready for this yet.
+    #
+    #AddToVar Inherited Local : SplintOptions :
+    #    +checks                 # The highest useful level of checking, probably
+    #    +partial                # Only part of the source code - i.e. just 1 file
+    #    -no-effect              # Don't complain about EMPTY_STATEMENT etc.
+    #    -name-checks            # SW uses reserved namespace :(
+    #    +bool-int               # SW uses various int types as bool type
+    #;
+
+    ImplementsVariant metrics xml ;
+
+    # Compilation rules
+
+    DependsOn all : xml ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        mm
+        objects
+        tables
+    : .. ;
+
+    # \todo ajcd 2007-12-13: Sometime, we need to get rid of the v20 include.
+    IncludeExportDirectories Inherited Local :
+        v20
+    : .. ;
+
+    IncludeExportDirectories Inherited Local :
+        unicode
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        # Generic core XML functions
+        psdevuri.c
+        recognition.c
+        xmlcache.c
+        xmldebug.c
+        xmlhash.c
+        xmlparse.c
+        xmlstrhash.c
+        xmltypeconv.c
+
+        # PS operator and close friends
+        xmlops.c
+        xmlcontext.c
+    : Variant xml ;
+
+    ReplaceVar Local : CFILES : noxml.c : Variant Non_xml ;
+
+    Library xml : $(CFILES) ;
+
+    if $(Variant_xml) {
+      # So that exported source can be built without xml if required
+      ExportSource $(CurrentPath)$/src$/noxml.c : C ;
+    }
+
+# =============================================================================
+# Log stripped
+
+# EOF makefile.jam

@@ -1,0 +1,135 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+%%CreationDate:30/11/93 3:15 PM
+% Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+%
+% This file will convert all fonts installed in type 1 format to DLD1
+% for increased efficiency.
+% Fonts installed into the fonts directory and composite font leaf
+% fonts using HQNsubfindfont will be converted.
+%
+%%EndComments
+
+
+% Suppress warning messages from findfont and ignore definefonts in
+% included subsidiary leaf fonts.
+userdict /findfont {
+    execdict begin
+      /print load exch
+      /print { pop } def
+    end
+	optidict /insideloop 2 copy get
+	3 1 roll true put
+	exch
+	//findfont exec
+	optidict /insideloop 4 -1 roll put
+    execdict /print 4 -1 roll put
+} bind put
+
+userdict /optidict 6 dict put
+optidict begin
+/FontConvDict /HqnFontConverter /ProcSet findresource def
+/insideloop false def
+/optifontname 0 def
+/optiscratch 100 string def
+/optifontindex 0 def
+/optitempfile	(tmp/optifile) def
+/optifonttype 2222 def
+FontConvDict begin
+
+
+% redefine definefont to pick up what fonts are defined when this file is run.
+<<
+
+/definefont {
+	optidict /insideloop get not {
+		( -- Found font ") print
+		optidict begin
+		1 index //optiscratch 
+		cvs 
+		/optifontname 1 index def print
+		(" - \() print
+		dup /FontType get dup 111 eq {
+			(DLD1\)) =
+		}	{
+			(Type ) print
+			dup =print
+			(\))=
+		} ifelse
+		/optifonttype exch store
+		/optifontindex optifontindex 1 add def
+		end		% optidict
+	} if
+	//definefont
+} bind
+
+>> 1183615869 internaldict begin shadowop end
+
+[ (fonts/*) (subfonts/*) ] {
+		{
+		dup (fonts/NotDefFont) ne {
+			optidict begin
+			/optifontfile exch def
+			save /optisave exch def
+			/optifontindex 0 def
+			/insideloop false def
+			
+			countdictstack 
+			mark 
+			optifontfile 
+			(Processing ")print dup print (")= flush
+			{
+				run 
+			} stopped {
+				( @@ FILE FAILED TO RUN)=
+				/optifontindex -1 store
+			} if
+			cleartomark
+			% a failing file may leave dictionaries open
+			countdictstack 
+			exch sub { end } repeat
+			/insideloop true def
+			FontConvDict begin
+			optifontindex 1 eq {
+				optifonttype 1 eq {
+					( ** Optimising ")print
+					optifontname print flush
+					(" - )print
+					optifontfile (fonts/) anchorsearch {
+						pop pop
+						% it's in SW/fonts - copy out and install back in
+						mark optitempfile { deletefile } stopped cleartomark
+						optifontfile optitempfile renamefile
+						[ optitempfile ] convertfonts
+						mark optitempfile { deletefile } stopped cleartomark						
+					}	{
+						% Not in SW/fonts - install in then copy out.
+						pop
+						[ optifontfile ] convertfonts
+						optifontfile deletefile
+						optifontname buildfontname optifontfile renamefile
+					} ifelse
+				}	{
+					( -- The font ")print optifontname print
+					(" is not of Type 1 - It cannot be optimized using this utility.)=
+				} ifelse
+			} 	{
+				( -- The file ")print optifontfile print 
+				optifontindex 1 lt {
+					(" did not process correctly or is not a font file\n       )
+				}	{
+					(" contains more than one font)
+				} ifelse
+				print ( - It cannot be optimized using this utility.)=
+			} ifelse
+			end
+			optisave restore
+			end
+		}	{
+			pop
+		} ifelse
+	} 256 string filenameforall
+} forall
+
+end		% font converter
+end		% optidict

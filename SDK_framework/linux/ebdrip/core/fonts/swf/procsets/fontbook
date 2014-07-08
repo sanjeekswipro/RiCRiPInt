@@ -1,0 +1,921 @@
+%!PS-Adobe-3.0
+%%Title: HqnFontBook
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Nov 11, 1991
+%{HqnFontBook version #1 2
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnFontBook) 1 2
+
+% this proc set provides a procedure 'fontbook' which takes an array of
+% font names (names or strings) and an optional dictionary and displays 
+% characters from those fonts. 
+% 
+% The dictionary contains parameters for the font display, which will be
+% defaulted if the dictionary is not present or the appropriate key is
+% not given. If the key AllFonts is given, there is no array operand:
+% instead all the fonts that can be found are used. See below for other 
+% recognised entries iun the dictionary.
+% 
+% It is level 2 code so cannot be run when level 2 is turned off. A typical
+% job that uses it looks like this (assuming you are worried about the 
+% level2ness):
+%         {
+%           /HqnFontBook /ProcSet findresource begin
+%             [ /Times-Roman /Courier /StoneInformal ]
+%             << /Verbose true >> fontbook
+%           end
+%         } serverdict /execlevel2 get exec
+
+
+
+currentglobal false setglobal
+
+% << 
+% /stopped { //stopped dup { $error /errorname get /interrupt eq { pop stop } if } if } 
+% >> 1183615869 internaldict /shadowop get exec
+
+% the resource:
+8 dict begin
+  /globalness exch def
+  /bdf { bind def } bind def 
+  /samplestr 1 string def
+  /inch { 72 mul } bdf
+
+ 
+  /markDict
+    currentglobal true setglobal
+      << /marksOnPage false >>
+    exch setglobal
+  def
+ 
+  /show {
+    //markDict /SavedCount count put
+    //markDict /marksOnPage true put
+    {show} stopped
+    % ignore errors and restore stack - cleartomark can't be used because show
+    % will often leave a mark on the stack. Add 1 for the show argument.
+    {count 1 add //markDict /SavedCount get sub {pop} repeat} if 
+  } bind def
+ 
+  /fontbookdefaults <<
+    % the defaults:
+    /AllFonts        false
+    /Verbose         false
+    /SampleSize      9                      % point size used
+    /EM              { SampleSize 1.2 mul } bind
+    /TextSize        { SampleSize 1 sub }   bind % point size of text below
+                                                 % em square in sample
+    /LeftOff         0
+    /XGutter         .35 inch
+    /YGutter         0 inch
+    /FontHeader      { 2 EM mul } bind
+    /OptColWid       { SampleSize Verbose { 2.5 } { 3.5 } ifelse div } bind
+    /SampleLine1     (abcdefghijklmnopqrstuvwxyz)
+    /SampleLine2     (ABCDEFGHIJKLMNOPQRSTUVWXYZ)
+    /SampleLine3     (1234567890-=\!@#$%^&*()_+)
+  >> def
+
+  /fontbookdict 30 dict def
+  fontbookdict begin
+    /ClipIt {
+      initclip
+      xstart ColWidth XGutter add CurrentCol 1 sub mul add EM sub
+      0 
+      ColWidth EM dup add add
+      ystart EM add 
+      rectclip
+    } bdf
+
+    /CompositeLevel 0 def
+    /CompositeNameStr 100 string def
+    /CompositeSave null def
+    /CompositeSample 26 string def
+
+    /ProofComposite {
+      CompositeLevel 0 eq {
+        /CompositeName NextFont CompositeNameStr cvs def
+        UVS(Info: Composite font - proofing all leaf fonts:)=
+        /CompositeSave 3 -1 roll store
+        Verbose not {
+          ClipIt
+          % Font name title
+          HeadFont setfont
+          /x xstart ColWidth CurrentCol 1 sub mul add 
+          XGutter CurrentCol 1 sub mul add def
+          x y moveto 
+          CompositeName ColWidth exch ReduceString show
+          /y y EM sub def
+          /x x EM add def
+        } if
+        /CompositeContinue false def
+      } if
+      /CompositeLevel CompositeLevel 1 add store
+      % stack: save dict
+      /FDepVector get {
+        % stack: leafdict
+        dup /CIDFontName 2 copy known {
+	  get
+        } {
+	  pop /FontName 2 copy known {
+	    get
+	  } {
+	    % FontName not known
+	    pop pop UVS(No name specified)
+	  } ifelse
+	} ifelse
+        FontName cvs (NotDefFont) search {
+          % Some vendors (e.g. FontWorks) include their own NotDefFont, e.g.
+          % Matisse-Medium-NotDefFont - skip these as well as standard ones.
+          pop pop pop pop % post match pre leafdict
+        } {
+          /LeafName exch def
+          CompositeLevel { (-- )print } repeat LeafName =print 
+
+	  dup /CIDFontType known {
+	    ( \(CID Type )print
+	    dup /CIDFontType get =print
+	    (\))=
+	    ProofCID
+	  } {
+	    dup /FontType get 0 eq {
+	      % Nested type 0!!! Recurse into this routine!!
+	      % stack: leafdict
+	      ( \(Subsidiary Type 0 font\)) =
+	      ProofComposite
+	    } {
+	      % real leaf font to proof 
+	      % stack: leafdict
+	      /LeafDict exch def
+	      LeafDict /FontType get dup 111 eq {
+		pop ( \(DLD1\))=
+	      } {
+		( \(Type )print
+		=print
+		(\))=
+	      } ifelse
+	      save /LeafSave exch def
+	      Verbose {
+		ClipIt
+		% Font name title
+		HeadFont setfont
+		/x xstart ColWidth CurrentCol 1 sub mul add 
+		XGutter CurrentCol 1 sub mul add def
+		x y moveto 
+		LeafName FontName cvs ColWidth exch ReduceString show
+		CompoFont setfont
+		% Leaf font of ... title
+		/y y EM 0.6 mul sub def
+		x y moveto (Leaf font of ) dup show 
+		stringwidth pop ColWidth exch sub CompositeName ReduceString show
+		% It may not be possible to get the leaf font name, so we can't
+		% get to it through findfont (and it might require HQNsubfindfont
+		% anyway ...), but we've already got the font dictionary, so use it!
+		/SampleFontDict LeafDict def
+		userdict /findfont {
+% (ff: )print dup == 
+		  dup SampleFontName eq {
+		    pop SampleFontDict
+		  } {
+% { //findfont exec } stopped { $error /errorname get == pop /Courier //findfont exec } if
+		    //findfont exec
+% dup { == == } forall
+		  } ifelse
+		} bind put
+
+		/x x EM add def
+		{
+		  /ACompositeLeaf fontdump
+		  /newy exch def 
+		  /x exch def     % kill this
+		  /Fontnumchars exch def
+		  /CurrentCol exch def
+		} stopped pop
+		newy y lt {
+		  /y y newy y sub abs sub YGutter sub FontHeader sub def
+		}{
+		  /y newy YGutter sub FontHeader sub def
+		} ifelse 
+	      } {
+		/x xstart ColWidth XGutter add CurrentCol 1 sub mul add EM add def 
+		CompositeContinue {
+		  HeadFont setfont
+		  x EM sub y moveto 
+		  CompositeName
+		  % str str
+		  ColWidth exch ReduceString show
+		    CompoFont setfont /y y EM 0.6 mul sub def
+		    x y moveto 
+		  ColWidth (continued) ReduceString show
+		  /y y EM sub def
+		  /CompositeContinue false store
+		} if
+		LeafDict SampleSize scalefont setfont
+		x y moveto
+		% Set up a sample string, ignoring notdef characters
+		/Cchar (a) 0 get def
+		{ LeafDict /Encoding get } stopped not {
+		  /Cencoding exch def
+		  0 1 CompositeSample length 1 sub {
+		    /Cpos exch def
+		    Cchar 1 255 {
+		      /Cchar exch def
+		      Cencoding Cchar { get } stopped {
+			pop pop /.notdef
+		      } if
+		      /.notdef ne {
+			CompositeSample Cpos Cchar put
+			/Cchar Cchar 1 add def
+			exit
+		      } {
+% (AA)= pstack (*)= Cchar == Cpos ==
+		      } ifelse
+		    } for
+		    Cchar 255 ge {
+		      Cpos 1 CompositeSample length 1 sub {
+			% It looks a bit strange, but most nastily encoded leaf fonts work well like this!
+			CompositeSample exch dup 1 add 
+			dup 255 gt { pop 32 } if
+			put
+		      } for
+		      exit
+		    } if
+		  } for
+% CompositeSample ==
+		  ColWidth EM 2 mul sub CompositeSample ReduceString show
+		  /y y EM sub def 
+		  /newy y store
+		}   {
+		  pop pop
+		} ifelse
+	      } ifelse
+	      /x xstart ColWidth XGutter add CurrentCol 1 sub mul add def
+	      x  y  newy CurrentCol
+	      LeafSave restore  
+	      /CurrentCol exch def 
+	      /newy exch def /y exch def /x exch def
+
+	      /CompositeContinue false def
+	      y ylimit Verbose { 6 }{ 1 } ifelse EM mul add FontHeader add le {
+		/y ystart def
+		/x xstart ColWidth XGutter add CurrentCol mul add def 
+		  % EM add EM 2 div add def % EM 2 mul add def
+		/CurrentCol CurrentCol 1 add def
+		/CompositeContinue true def
+		ClipIt
+	      } if
+	      CurrentCol Cols ge {
+	        //markDict /marksOnPage false put
+		showpage
+		/CurrentCol 1 def
+		/x xstart def /y ystart def
+		ClipIt
+	      } if
+	    } ifelse
+          } ifelse
+        } ifelse
+      }forall
+      /CompositeLevel CompositeLevel 1 sub store
+      CompositeLevel 0 eq {
+        % stick the save back on the stack
+        /y y EM sub def
+        CompositeSave
+      } if
+    } bdf
+
+    /ProofCID { % dict --ProofCID--
+      /CIDdict exch def
+      save mark {
+        Verbose {
+          HeadFont setfont
+          x y moveto 
+          CIDdict /CIDFontName get FontName cvs ColWidth exch ReduceString show
+          /x x EM add def
+          /y y EM sub def
+          CIDdict SampleSize scalefont dup setfont
+          /CIDCount get
+          0 1 2 index {
+	    /no_chars 1 index 1 add def
+	    x y EM sub moveto glyphshow
+	    inc3 xnumchars gt {
+	      /y y EM sub def
+	      dup no_chars ne y ylimit le and {
+		/y ystart def
+		/x xstart ColWidth CurrentCol mul add 
+		   XGutter CurrentCol mul add def 
+		/CurrentCol CurrentCol 1 add def
+		ClipIt
+		CurrentCol Cols ge {
+		  showpage
+		  /CurrentCol 1 def
+		  /x xstart def /y ystart def
+		  ClipIt
+		  gsave
+		    x y moveto
+		    HeadFont setfont
+		    CIDdict /CIDFontName get FontName cvs ColWidth exch ReduceString show
+		  grestore
+		  /x x EM add def
+		} if
+	      } if
+	      /x xstart ColWidth CurrentCol 1 sub mul add 
+	       XGutter CurrentCol 1 sub mul add def
+	      /inc3 1 def
+	    } if
+	    /x x EM add def
+	    /inc3 inc3 1 add def
+          } for
+          CurrentCol exch currentpoint
+          6 -2 roll
+        } {
+          % UVS(CID fonts cannot be proofed - try Proof fonts in long format)
+          (CID fonts cannot be proofed - try Proof fonts in long format\n)print
+          CurrentCol 0 x y
+          6 -2 roll
+        } ifelse
+      } stopped {
+        $error /errorname get ==
+          % UVM(Problem in printing font %s)
+          (Problem in printing font ) print CIDdict /CIDFontName get ==
+          % where were we?
+          cleartomark
+          % set the stack up as though no error had occurred
+          CurrentCol
+          /no_chars where { pop no_chars } { 0 } ifelse
+          currentpoint
+          5 -1 roll
+      } {
+        pop
+      } ifelse
+      restore
+      /newy exch def 
+      /x exch def     % kill this
+      /Fontnumchars exch def
+      /CurrentCol exch def
+      % Allow space for next font; taken from normal fontdump case
+      /x xstart ColWidth CurrentCol 1 sub mul add 
+      XGutter CurrentCol 1 sub mul add def
+      newy y lt {
+        /y y newy y sub abs sub YGutter sub FontHeader sub def
+      }{
+        /y newy YGutter sub FontHeader sub def
+      } ifelse 
+      y ylimit Verbose { 9 EM mul add } if 
+      FontHeader add le {
+        /y ystart def
+        /x xstart ColWidth CurrentCol mul add 
+          XGutter CurrentCol mul add def 
+          % EM add EM 2 div add def % EM 2 mul add def
+        /CurrentCol CurrentCol 1 add def
+      } if
+% pstack (*******)=
+      CurrentCol Cols ge {
+        //markDict /marksOnPage false put
+        showpage
+	/CurrentCol 1 def
+	/x xstart def /y ystart def
+	ClipIt
+      } if
+    } bdf
+
+    /IsFontSuitable  % expects a font dictionary on the stack.
+    {
+      /FontType get 0 eq {
+        ProofComposite
+        false
+      } {
+        true
+      } ifelse 
+    } bdf
+
+    /VerifyFont {
+      NextFont
+      % UVM(Skipping NotDefFont - (%t))
+      dup /NotDefFont eq { (Skipping NotDefFont - ) print stop } if
+%      dup /Harlequin eq { (Skipping Harlequin font - ) print stop } if
+      dup /CIDFont resourcestatus {
+        pop pop /CIDFont findresource ProofCID false
+      } {
+        findfont dup
+        IsFontSuitable dup {
+          exch 10 scalefont setfont
+          SampleLine1 stringwidth pop pop % Check for bad or no characters
+          SampleLine2 stringwidth pop pop % Check for bad or no characters
+          SampleLine3 stringwidth pop pop % Check for bad or no characters
+        } if
+      } ifelse
+    } bdf
+
+    /SampleText {
+      NextFont findfont SampleSize scalefont setfont
+      x EM add y moveto
+      ColWidth EM 2 mul sub SampleLine1 ReduceString show  
+      /y y EM sub def 
+      x EM add y moveto 
+      ColWidth EM 2 mul sub SampleLine2 ReduceString show
+      /y y EM sub store
+      x EM add y moveto
+      ColWidth EM 2 mul sub SampleLine3 ReduceString show
+      /newy y store
+      %newy
+    } bdf
+
+    %Recursively truncates strings until they are the correct width for 
+    %a column. Takes a width, and a string as paramaters
+    /ReduceString {
+      /TempString exch def
+      /ClipWidth exch def
+      TempString stringwidth
+      pop
+      /Wx exch def
+      TempString length
+      /len exch def
+      Wx ClipWidth ge 
+      {
+        ClipWidth
+        TempString 0 len 1 sub getinterval
+        ReduceString  
+      }{
+        TempString
+      } ifelse
+    } bdf
+
+    /GetPageDims {
+      mark
+        clippath pathbbox 
+      ]
+      /PageDims exch def
+      % Add margins
+%     PageDims 0 get
+%     PageDims exch 0 exch put
+%     PageDims 1 get
+%     PageDims exch 1 exch put
+%     PageDims 3 get
+%     PageDims exch 3 exch put
+    } bdf
+
+    % Just for Debugging at the moment
+    /FindOptColWidth {
+      /Width exch def
+      /Cols 1 def
+      /Wid1 Width def
+      /Wid2 Width Cols div def
+      /Return 0 def
+      {
+        Wid1 OptColWid inch ge Wid2 OptColWid inch le and {
+          Wid1 OptColWid inch sub OptColWid inch Wid2 sub le {
+            /Return Cols 1 sub def
+          }{
+            /Return Cols def
+          } ifelse
+        }{
+          Wid1 OptColWid inch le Wid2 OptColWid inch le and {
+            /Return 1 def
+          } if
+        }ifelse
+        Return 0 ne { exit } if
+        /Cols Cols 1 add def
+        /Wid1 Wid2 def
+        /Wid2 Width Cols div XGutter add EM add def
+      } loop
+      Width Return div 
+      EM div truncate
+      EM mul
+      /ColWidth exch def
+      /xnumchars ColWidth EM div truncate def
+    } bdf
+
+    % Takes Page Dims, and works out optimal Fontlayout
+    /Layout {
+      GetPageDims
+      PageDims 2 get
+      PageDims 0 get
+      sub xstart 2 mul sub /xdim exch def
+      PageDims 3 get
+      PageDims 1 get
+      sub ylimit add /ydim exch def
+      xdim xstart sub FindOptColWidth
+    } bdf
+
+    /SampleFont {
+      SampleFontDict setfont      
+    } bdf
+
+    /ndstring (.notdef) 24 string  cvs def
+    /namestring 64 string def
+    /pagenum 3 string def
+
+    /fontdump {
+% countdictstack ==
+      /RealFontName 1 index def
+      /SampleFontName exch def
+      /SampleFontDict SampleFontName findfont 
+      dup /SampleBaseFont exch def
+      SampleSize scalefont def
+      save mark
+      { 
+        /CharID 0 def
+        /page 1 def
+        /s 0 def
+        { 
+          /lastcharname (<no name>) def
+          SampleBaseFont /Encoding get
+          {
+            namestring cvs /lastcharname exch def
+            lastcharname ndstring ne {  % if the character is not .notdef ...
+              samplestr 0 CharID put
+              CompositeLevel 0 eq {
+                Sample
+              }   {
+                % Oh yuck!!! (and I wrote it!!)
+                % Not all chars in composite fonts are always shown, so expect some faults!
+                inc3 x y
+                countdictstack mark
+                { Sample } stopped {
+                  cleartomark countdictstack exch sub 
+                  { end } repeat
+                  /y exch def /x exch def /inc3 exch def
+                } {
+                  pop pop pop pop pop 
+                } ifelse
+              } ifelse
+            } if
+            /CharID CharID 1 add store
+          } forall
+        } stopped
+        {
+          % UVM(problem in printing encoded char: %s)
+          (problem in printing encoded char: ) print lastcharname =print (\n) print stop
+        } if
+        { 
+          /lastcharname (<preparing char list>) def
+          /Fontnumchars SampleBaseFont /Encoding get length def
+          SampleFontDict /CharStrings known {
+            SampleFontName /NewFontName getunencodedchars
+            dup 0 gt {
+              /no_chars exch def
+              /SampleFontDict SampleBaseFont SampleSize scalefont def
+              /SampleFontName /NewFontName def
+              /i 0 def
+              /chunk 0 def
+              /CharID 256 def
+
+              % Should know font length by now.
+              SampleFontDict /Encoding get {
+                i no_chars ge {
+                  pop exit
+                } if
+
+                i 255 gt {
+                  SampleFontDict /Encoding get chunk 2 copy
+                  256 add 256 getinterval putinterval
+                  newfontname newdict definefont
+                  /SampleBaseFont exch def
+                  /chunk chunk 256 add def
+                  /i 0 def
+                  /no_chars no_chars 256 sub def
+                } if
+
+                namestring cvs /lastcharname exch def
+                samplestr 0 i put
+                SampleFont
+                lastcharname ndstring ne {
+                  CompositeLevel 0 eq {
+                    Sample
+                  }   {
+                    % Oh yuck!!! (and I wrote it!!)
+                    % Not all chars in composite fonts are always shown, so expect some faults!
+                    inc3 x y
+                    countdictstack mark
+                    { Sample } stopped {
+                      cleartomark countdictstack exch sub 
+                      { end } repeat
+                      /y exch def /x exch def /inc3 exch def
+                    } {
+                      pop pop pop pop pop 
+                    } ifelse
+                  } ifelse
+                } if
+                /i i 1 add def
+              } forall
+            } {
+              pop
+            } ifelse
+          } if
+        } stopped
+        {
+          % UVM(problem in printing unencoded char: %s)
+          (problem in printing unencoded char: ) print lastcharname =print (\n) print stop
+        } if
+        CurrentCol
+        Fontnumchars 
+        currentpoint
+        6 -2 roll
+      } stopped
+      {
+       $error /errorname get ==
+        % UVM(Problem in printing font %s)
+        (Problem in printing font ) print RealFontName ==
+        % where were we?
+        cleartomark
+        % set the stack up as though no error had occurred
+        CurrentCol
+        /no_chars where { pop no_chars } { 0 } ifelse
+        currentpoint
+        5 -1 roll
+      } { pop } ifelse
+      restore
+    } bdf
+
+    /newpage {
+      //markDict /marksOnPage false put
+      showpage
+      restore
+      /CurrentCol 1 def
+      /x xstart def /y ystart def
+    } bdf
+
+    /Sample {
+   %   /s SampleBaseFont 1000 scalefont setfont samplestr stringwidth pop def
+      x y EM sub moveto % go to baseline, left 
+      SampleFont
+      samplestr 
+      show
+      inc3 xnumchars 
+      gt {
+        /y y EM sub def 
+        /x xstart ColWidth CurrentCol 1 sub mul add 
+          XGutter CurrentCol 1 sub mul add def
+        /inc3 1 def
+      } if
+      /x x EM add def
+      /inc3 inc3 1 add def
+    } bdf
+
+    /sortarray2{% [array] left right
+      2 copy exch sub 300 lt{
+        % do an insert sort for small subarrays (the threshold is empirical)
+        3 1 roll exch 3 2 roll  % l [..] r
+        -1 3 index 1 add{ % l [..] i
+          2 copy get 2 copy  % l [..] i [i] i [i]
+          1 index 1 sub -1 7 index{  % l [..] i [i] i [i] j
+            dup 6 index exch get  % l [..] i [i] i [i] j [j]
+            dup 3 index gt{4 2 roll}if  % l [..] i [i] i [i] j [i]
+            pop pop  % l [..] i [i] m [m]
+          }for
+          exch 4 3 roll 2 copy ne{  % l [..] [i] [m] m i
+            4 index exch 4 3 roll put
+            3 copy exch put
+          }{pop pop}ifelse
+          pop pop
+        }for
+        pop pop
+      }{
+        % do a quicksort for larger subarrays
+        2 copy                % lhold, rhold
+        4 index 2 index get   % (pivot) = array[left]
+        5 3 roll              % lhold rhold (pivot) left right
+        exch 1 add exch       % [..] lb rb (pivot) l r
+        { % while(1)
+          exch              % [..] lb rb (pivot) r l
+          {                 % while
+            2 copy gt       %   left < right and
+            3 index 7 index 3 index get gt  % array[left] < pivot
+            and{
+              1 add
+            }{exit}ifelse
+          }loop
+          exch              % [..] lb rb (pivot) l r
+          {                 % while
+            2 copy le       %   left < right and
+            3 index 7 index 3 index get lt  % array[right] > pivot
+            and{
+              1 sub
+            }{exit}ifelse
+          }loop
+          2 copy lt{        % if left != right
+            % [..] lo ro (p) l r
+            5 index 3 copy %... [..] l r [..]
+            exch 4 2 roll %... [..] r [..] l
+            4 copy %... [..] r [..] l [..] r [..] l
+            get 5 1 roll get put put
+            1 sub exch 1 add exch  % l++ r--
+          }{exit}ifelse
+        }loop
+    
+        exch pop  % [..] lb rb (p) l
+        4 index 2 copy  % [..] lb rb (p) l [..] l [..]
+        2 copy exch % [..] lb rb (p) l [..] l [..] [..] l
+        8 index 3 1 roll  % [..] lb rb (p) l [..] l [..] lb [..] l
+        get put % [..] lb rb (p) l [..] l
+        4 3 roll put % [] lb rb l
+    
+        4 copy exch pop 1 sub  % [] l r p [] l p-1
+        2 copy le{sortarray2}{pop pop pop}ifelse
+        4 copy 3 2 roll pop 1 add exch
+        2 copy le{sortarray2}{pop pop pop}ifelse
+        pop
+        pop pop pop
+      }ifelse
+    }bdf
+    
+    /sortarray{
+      1 sub 0 exch
+      3 copy 1 exch{2 copy 2 copy get dup
+      type /nametype eq {dup length} {6} ifelse string cvs put pop}for pop
+      3 copy sortarray2
+      1 exch{2 copy 2 copy get cvn put pop}for pop
+    }bdf
+
+    % Given a font and a name, it makes a copy of the font
+    % under the new name, with its encoding vector containing
+    % the characters that were not encoded in the original font.
+    /getunencodedchars 65535 array def
+    /getunencodedchars {    % oldfont newname
+      /newfontname exch def
+      /font exch def
+      SampleBaseFont dup length dict /newdict exch def
+      {
+        1 index /FID ne {
+          newdict 3 1 roll put
+        }{
+          pop pop
+        } ifelse
+      } forall
+      /oldencoding newdict /Encoding get def
+      % Add the unencoded chars to encoding vector
+      /j 0 def
+      newdict /CharStrings known {
+        newdict /CharStrings get
+        {
+          pop 
+          /name exch def
+          name type /nametype eq % is it a name?
+          dup {   % if it's a name, is it already in the encoding?
+            0 1 oldencoding length 1 sub {
+              oldencoding exch get name eq {
+                pop false exit
+              } if
+            } for
+          } if
+          {     % it's an unencoded name...
+            //getunencodedchars j name put
+            /j j 1 add def
+          } if 
+        } forall
+      } if
+      //getunencodedchars j sortarray
+      /size j def
+      % Add encoded characters (to ensure compound chars can be built)
+      oldencoding
+      {
+        dup /.notdef ne {
+          //getunencodedchars j 3 -1 roll put
+          /j j 1 add def
+        } { pop } ifelse
+      } forall
+      %  Contains the number of unique character descriptions in a given font.
+      /Fontnumchars j def
+      % Mark remaining positions undefined
+      j 1 255 {
+        /i exch def
+        //getunencodedchars i /.notdef put
+      } for
+      newdict /Encoding //getunencodedchars put
+      newfontname newdict definefont 
+      /SampleBaseFont exch def
+      size
+    } bdf       % returns number of chars in new font
+
+    % find the lowest font in the collating sequence that
+    % is in FontList and that hasn't yet been removed therefrom,
+    % and remove it from FontList and return it.
+
+    /FontName 100 string def  %This var defed in getfonts
+
+    /getnextfont {
+      /thename null def
+      //FontName 0 16#ff put
+      /thestr //FontName 0 1 getinterval def
+      FontList {
+        pop 
+        dup //=string cvs
+        dup thestr lt {
+          /thestr 1 index //FontName copy def
+          /thename 2 index def
+        } if
+        pop pop
+      } forall
+      FontList thename undef
+      thename
+    } bdf
+
+  end % fontbookdict
+
+  /fontbook {
+    //fontbookdict begin
+      % set up the defaults
+      //fontbookdefaults { def } forall
+
+      % override the defaults
+      dup type /dicttype eq { { def } forall } if
+
+      /HeadFont /Helvetica-Bold findfont SampleSize 1 add scalefont def
+      /CompoFont /Helvetica findfont SampleSize 1 add 2 div scalefont def
+
+      AllFonts {
+        % work out which fonts to show
+        << (*) { cvn null } //=string /Font resourceforall >>
+      }{
+        % expect array on stack
+        << exch { 0 } forall >>
+      } ifelse
+      /FontList exch def
+
+      % other definitions:
+      /inc3 1 def
+
+      /xstart .3 inch def
+      /ylimit .3 inch def
+      Layout
+      /xlimit xdim xstart sub def
+      /ystart ydim 1.25 inch sub def
+      /x xstart def
+      /y ystart def
+      /CurrentCol 1 def
+
+      %PageDims 3 get 0 translate
+      %90 rotate      
+
+      0 1 FontList length 1 sub {
+        /NextFont getnextfont def
+        1 add =print ( - ) print
+        /tempy y def
+        save dup /TopSave exch def
+        NextFont ==
+        ClipIt
+        { VerifyFont } stopped {
+          UVS(Did not print font.) == clear
+          TopSave restore
+          /y tempy def  
+        }{
+          % boolean returned by VerifyFont
+          {
+            HeadFont setfont
+            x y moveto 
+            NextFont FontName cvs ColWidth exch ReduceString show 
+            /y y EM sub def
+            x y moveto
+            { SampleText } stopped pop
+            Verbose {
+              {
+                NextFont fontdump 
+                /newy exch def 
+                /x exch def     % kill this
+                /Fontnumchars exch def
+                /CurrentCol exch def
+              } stopped pop
+            } if
+            /x xstart ColWidth CurrentCol 1 sub mul add 
+               XGutter CurrentCol 1 sub mul add def
+            newy y lt {
+              /y y newy y sub abs sub YGutter sub FontHeader sub def
+            }{
+              /y newy YGutter sub FontHeader sub def
+            } ifelse 
+            y ylimit Verbose { 9 EM mul add } if 
+            FontHeader add le {
+              /y ystart def
+              /x xstart ColWidth CurrentCol mul add 
+                XGutter CurrentCol mul add def 
+                % EM add EM 2 div add def % EM 2 mul add def
+              /CurrentCol CurrentCol 1 add def
+            } if
+% pstack (*******)=
+            CurrentCol Cols ge {
+              newpage
+            }{
+              x exch y exch newy exch CurrentCol exch
+	      restore
+              /CurrentCol exch def /newy exch def /y exch def /x exch def
+            } ifelse 
+          } {
+            x exch y exch CurrentCol exch
+	    restore
+            /CurrentCol exch def /y exch def /x exch def
+          } ifelse
+        } ifelse
+      } for
+    end
+    //markDict /marksOnPage get {
+      showpage
+    } if
+  } bdf
+
+  currentdict
+end
+
+/HqnFontBook exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet

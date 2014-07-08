@@ -1,0 +1,74 @@
+Perl -Sx "{0}" {"Parameters"}
+Exit
+
+#!perl
+#######################################################################
+#	File		:	SafeInstall		-	Install newer files in a folder
+#	Author	:	Matthias Neeracher
+#	Started	:	17Jul93								Language	:	MPW Shell/Make
+#	Modified	:	17Jul93	MN	
+#	Last		:	17Jul93
+#######################################################################
+
+$y = "-y";
+
+while ($arg = shift(@ARGV)) {
+	if ($arg eq "-to") {
+		$tofolder = &regularize(shift @ARGV);
+	} elsif ($arg eq "-from") {
+		$fromfolder = &regularize(shift @ARGV);
+	} elsif ($arg eq "-c") {
+		$createfolders = 1;
+	} elsif ($arg eq "-y") {
+		$y = "";
+	} else {
+		push(@args, $arg);
+	}
+}
+
+$tofolder || die "No destination folder specified.";
+
+&mkdirs($tofolder) if $createfolders;
+
+-d $tofolder || die "'$tofolder' is no folder.";
+
+while ($arg = shift(@args)) {
+	$arg 		=~ /([^:]+):?$/;
+	$toarg	=	"$tofolder$1";
+	$arg 		= "$fromfolder$arg" unless ($arg =~ /:/);
+	
+	-e $arg || die "'$arg' does not exist.";
+	
+	if (!-e $toarg) {
+		print "Duplicate '$arg' '$toarg'\n";
+	} elsif ((stat $arg)[9] > (stat $toarg)[9]) {
+		print "Duplicate $y '$arg' '$toarg'\n";
+	}
+}
+
+sub mkdirs 
+{
+	local($dir) = @_;
+	
+	if (!-d $dir) {
+		if ($dir =~ /(.*:)[^:]+:/) {
+			&mkdirs($1);
+		}
+		
+		mkdir($dir, 0777) || die "Couldn't create directory \"$dir\"";
+	}
+}
+
+sub regularize
+{
+	local($dir) = @_;
+	
+	if ($dir !~ /:/) {
+		$dir = ":$dir:";
+	} elsif ($dir !~ /:$/) {
+		$dir = "$dir:";
+	}
+	
+	$dir;
+}
+

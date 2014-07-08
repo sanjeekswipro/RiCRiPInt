@@ -1,0 +1,99 @@
+#######################################################################
+#	Project	:	GUSI				-	Grand unified socket interface
+#	File		:	GUSI.distr		-	Distribution
+#	Author	:	Matthias Neeracher
+#	Language	:	Distribute
+#	
+#	$Log: GUSI.distr,v $
+#	Revision 1.2  1999/04/23  08:45:49  peterg
+#	Automatic checkin:
+#	changed attribute _comment to '#	'
+#
+#	Revision 1.2  1994/12/30  19:28:58  neeri
+#	Version 1.5.0:
+#	- PowerPC version
+#	- Separate INETd support
+#
+#	Revision 1.1  1994/04/22  00:02:19  neeri
+#	Initial revision
+#
+#	Revision 0.2  1993/11/17  00:00:00  neeri
+#	GUSIRemoteConsole
+#	
+#	Revision 0.1  1993/07/29  00:00:00  neeri
+#	/etc/services
+#	
+#######################################################################
+
+TARGET GUSI
+	GUSIFSp.cp 
+	GUSIDispatch.cp 
+	GUSIFileDispatch.cp 
+	GUSIMPWGlue.cp 
+	GUSISocket.cp 
+	GUSIFile.cp 
+	GUSIMPWFile.cp 
+	GUSISIOW.cp 
+	GUSIBuffer.cp 
+	GUSIUnix.cp 
+	GUSIAppleTalk.cp 
+	GUSIPPC.cp 
+	GUSIINET.cp 
+	GUSITCP.cp 
+	GUSIUDP.cp 
+	GUSINetDB.cp 
+	GUSIPAP.cp 
+	GUSIINETd.cp
+	GUSICfg.c 
+	GUSIRemoteConsole.cp
+	GUSI.web 
+	GUSI.tex 
+	GUSI.ps 
+	README 
+	GUSI.r 
+	GUSICfrg.r
+	GUSI.rsrc
+	MakeAliases 
+	Internalize 
+	Distribute
+	GUSI.distr
+	SafeDel 
+	SafeInstall
+	Aliases 
+	GUSI.ext 
+	Makefile
+	/etc/services
+
+TARGET GUSI:Lib
+	:Lib:GUSI.o 
+	:Lib:GUSIRemoteConsole.o
+	:Lib:GUSI_Everything.cfg 
+	:Lib:GUSI_Appletalk.cfg 
+	:Lib:GUSI_Internet.cfg 
+	:Lib:GUSI_Unix.cfg 
+	:Lib:GUSI_PPC.cfg 
+	:Lib:GUSI_PAP.cfg 
+	:Lib:GUSI.xcoff
+	:Lib:GUSI 
+	:Lib:GUSISIOW.xcoff 
+	:Lib:GUSI.xSYM
+	:Lib:GUSIINETd.o 
+	:Lib:GUSIINETd.xcoff 
+
+TARGET GUSI:Obj
+	:Obj:dnr.c.o.68K
+	:Obj:GUSI.dn
+	:Obj:GUSI_C.dn
+
+TARGET GUSI:PPC_Obj
+	:PPC_Obj:dnr.c.o.PPC
+
+TARGET GUSI:include
+	:include:Å.h 
+
+TARGET GUSI:Examples
+	:Examples:GUSIÅ.c 
+	:Examples:GUSIÅ.h 
+	:Examples:GUSIÅ.r 
+	:Examples:GUSIÅ.rsrc 
+	:Examples:Makefile

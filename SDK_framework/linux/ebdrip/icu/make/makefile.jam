@@ -1,0 +1,142 @@
+# $HopeName: HQNlibicu_3_4!make:makefile.jam(EBDSDK_P.1) $
+# 
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+
+    # include the list of icu package entries $(ICU_ALL_ENTRIES)
+    Include $(CurrentPath)$/make$/icudt34l.jam ;
+
+    # At the moment, we do not make much provision for multiple variants
+    # in a single build. Don't turn on any of the variants except ICUnorm or
+    # ICUconv at the moment, they don't have source code installed and will
+    # break. These variants exist to capture the dependency process 
+    ImplementsVariant ICU $(ICUVariants) endian ;
+
+    AddToVar Inherited Local : Suffix : m : Variant ICUconv=minimal ;
+    AddToVar Inherited Local : Suffix : a : Variant ICUconv=all ;
+
+    RequiresVariant warning_level : low ;
+
+    # Check that endianness of target platform is known
+    # It should have been set in all-all:all-<arch>:all.jam
+    if ! $(Variant_endian) {
+        Error No value for endian variant in HQNlibicu_3_4!make:makefile.jam ;
+    }
+
+    # Functional components of ICU we require. If we ever add i18n or other
+    # functionality from ICU, it will be additional libraries linked in here.
+    local Libraries =
+        common
+#       i18n  # not yet a library
+        stubdata
+    ;
+
+    IncludeExportDirectories Inherited Local :
+        standard
+    : .. ;
+
+    # Add ICU library source directories to include path, it is promiscuous
+    # with includes.
+    AddToVar Inherited Local : C-IncludeDirectories :
+        $(CurrentPath)$/$(Libraries)
+        $(CurrentPath)$/i18n
+        $(CurrentPath)$/export
+    ;
+
+    # Stub library (this may expand to include glue) to get ICU to build.
+    Library icu ;
+
+    # stubdata: is required to build tools
+    # tools: are required to generate stored data
+    # data: raw data required to generate library
+    # common: contains the actual functionality we want
+    Makefile tools $(Libraries) ;
+
+    # New encodings; include the .cnv files for these
+    ReplaceVar Local : ENCODING_NEW : 
+        PDFDoc.cnv
+    ;
+
+    ExportSource $(CurrentPath)$/data$/in$/PDFDoc.ucm : Text ;
+
+    # Minimal encodings
+    ReplaceVar Local : WANTED_ENCODINGS : # These from ICU ucmcore.mk
+        ibm-943_P15A-2003.cnv  # Shift JIS
+        ibm-1363_P11B-1998.cnv # Korean (KSC 5601)
+        ibm-1383_P110-1999.cnv # Chinese (GB2312)
+        ibm-5346_P100-1998.cnv # Windows codepage 1250
+        ibm-5348_P100-1997.cnv # Windows codepage 1252
+        macos-0_2-10.2.cnv     # Mac Roman
+        windows-950-2000.cnv   # Chinese (Big5) depends on ibm-1373_P100-2002
+        ibm-1373_P100-2002.cnv # Base for Big5
+        cnvalias.icu
+    : Variant ICUconv=minimal ;
+
+    # Extra encodings
+    ReplaceVar Local : WANTED_ENCODINGS : # These from ICU ucmfiles.mk
+        $(ICU_ALL_ENCODINGS)
+        cnvalias.icu
+    : Variant ICUconv=all ;
+
+    # Break iteration (word/text boundary analysis)
+    ReplaceVar Local : WANTED_BRKITR :
+        $(ICU_ALL_BRKITR)
+    : Variant ICUbreak ;
+
+    # Locales
+    ReplaceVar Local : WANTED_LOCALES :
+        $(ICU_ALL_LOCALES)
+        res_index.res
+    : Variant ICUlocale ;
+
+    # Collation locales
+    ReplaceVar Local : WANTED_COLLATIONS :
+        $(ICU_ALL_COLLATIONS)
+        ucadata.icu
+        invuca.icu
+    : Variant ICUcollate ;
+
+    # Timezone info
+    ReplaceVar Local : WANTED_ZONEINFO :
+        $(ICU_ALL_ZONEINFO)
+    : Variant ICUtz ;
+
+    ReplaceVar Local : WANTED_ENTRIES :
+        $(WANTED_ENCODINGS)
+        $(WANTED_BRKITR)
+        $(WANTED_LOCALES)
+        $(WANTED_COLLATIONS)
+        $(WANTED_ZONEINFO)
+        pnames.icu
+        unames.icu
+    ;
+
+    local PkgSfx ; 
+    if $(Variant_endian) = lb {
+        PkgSfx = l b ;
+    }
+    else {
+        PkgSfx = $(Variant_endian) ;
+    }
+
+    ICUData $(PkgSfx) :             # generated object library
+        $(ENCODING_NEW) :           # customised such as pdfdoc
+        icudt34l.dat :              # packaged data
+        $(CurrentPath)$/data$/in :  # source dir
+        4.0.1 :                     # unicode version not used for the moment
+        $(ICU_ALL_ENTRIES) :        # all entries in the database
+        $(WANTED_ENTRIES)           # all entries we want
+    ;
+
+    if $(Variant_ICUbuiltin) {
+      C-LinkWithLibraries icu : icudt34 ;
+    }
+ 
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries icu : $(i) : $(i) ;
+    }
+
+    DependsOn make-tools : make-tools : tools ;
+
+
+# Log stripped

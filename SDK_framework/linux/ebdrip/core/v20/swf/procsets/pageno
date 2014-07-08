@@ -1,0 +1,350 @@
+%!PS-Adobe-3.0
+%%Title: HqnPageCounter
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 2000
+%%VMusage: -1 -1
+% Copyright (C) 2000-2012 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnPageCounter) 1 0
+
+% $HopeName: SWv20!swf:procsets:pageno(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+% Code to recognise which logical page each 'page' of a pre-separated file is from.
+
+% global values
+true setglobal
+globaldict /HqnPageCountDict 8 dict dup begin put
+
+  /Initialized false def
+
+  /PageNumber 1 def
+  /SepList 6 dict def
+  /ExplicitPageNumber false def
+
+  /QRKPageBeginSeen false def
+  /QRKMultiplePageBeginSeen false def
+
+  /PageSeen false def
+  /MultiplePageSeen false def
+
+  /InDesignRecombine false def
+
+end
+false setglobal
+
+HqnPageCountDict begin
+  8 dict begin
+
+    /workspace currentdict def
+
+    { /currentsystemparam /recombinestatus } {
+      1183615869 internaldict 1 index get def
+    } forall
+
+    /incrementnumber false def
+
+    /pcmatrix matrix def
+
+    /pagedevdict <<
+      /StartRender <<
+        % StartRender procedures are handled in alpha order. This one may well
+        % be generating values used by others, so it should be run early,
+        % hence the spaces at the beginning of the name.
+        (  HqnPageCounter) {
+          //HqnPageCountDict /ExplicitPageNumber get not {
+            recombinestatus exec 2 ge and {
+              % must be 'composite' - rely on the RIP to recognise the right seps.
+              //workspace /incrementnumber true put
+            } {
+              % If it's really composite then the Separation system param
+              % will be (Composite) on every page, so the 'separated'
+              % mechanism will work just fine :-)
+              //SepList /Separation currentsystemparam
+              known {
+                % seen before - new page
+                //HqnPageCountDict /PageNumber 2 copy get 1 add put
+                currentglobal true setglobal
+                //SepList { pop //SepList exch undef } forall
+                setglobal
+              } if
+            } ifelse
+          } if
+          //HqnPageCountDict /QRKPageBeginSeen false put
+        } bind
+      >>
+      % And this should be run last among EndRender calls. That way the result
+      % of the PageNumber procedure below will be as accurate as possible for
+      % all other StartRender and EndRender procedures installed.
+      /EndRender <<
+        (\777\777HqnPageCounter) {
+          //workspace /incrementnumber get {
+            //HqnPageCountDict /PageNumber 2 copy get 1 add put
+          } if
+          //HqnPageCountDict /ExplicitPageNumber get not {
+            /Separation currentsystemparam
+            dup type /nametype ne { cvn } if
+            currentglobal true setglobal
+            //SepList 3 -1 roll null put
+            setglobal
+          } if
+        } bind
+      >>
+    >> def
+
+    /RegisteredQRKCalls 2 dict def
+    /RegisteredPageCalls 3 dict def
+
+    /GetPageNumber <<
+
+      /PS {
+        //HqnPageCountDict /PageNumber get
+        recombinestatus exec 2 ge and not {
+          % If we're not recombining then PageNumber is only set in a canonically
+          % correct way at the end of each separation. Patch it up here.
+          //SepList /Separation currentsystemparam known { 1 add } if
+        } if
+      } bind
+
+      /PDF {
+        { currentpdfcontext /PageIndex get } stopped { 1 } if
+      } bind
+    >> def
+
+    /ID15 ( 1.5) def
+    /One (1) 0 get def
+    /colon (:) def
+    /Sec (Sec) def
+
+    /HqnPageCounter <<
+
+      /Initialize {
+        //HqnPageCountDict /Initialized get not {
+          //pagedevdict setpagedevice
+
+          (%%dict) load (%%actions) get begin
+
+            /QRKPageBegin: {
+              /HqnPageCounter pop
+              dup null exec
+              //HqnPageCountDict /QRKPageBeginSeen get {
+                % Not the first comment on this page - must be an imposed job
+                pop
+                //HqnPageCountDict /QRKMultiplePageBeginSeen true put
+                //HqnPageCountDict /QRKPageBegin undef
+              } {
+                statusdict /impositionstatus get exec {
+                  pop
+                  //HqnPageCountDict /QRKPageBegin undef
+                } {
+                  mark exch
+                  % ensure string is a single integer
+                  token {
+                    exch token not {
+                      dup type /integertype eq {
+                        % page number on stack
+
+                        % Additional code may be registered to be run here,
+                        % e.g. from the HqnXPressPatch procset.
+                        //RegisteredQRKCalls {
+                          exch pop exec
+                        } forall
+
+                        //HqnPageCountDict /PageNumber 2 index put
+                        //HqnPageCountDict /QRKPageBegin 3 -1 roll put
+                        //HqnPageCountDict /ExplicitPageNumber true put
+                      } if
+                    } if
+                  } if
+                  cleartomark
+                } ifelse
+              } ifelse
+            }
+            dup 3 currentdict /QRKPageBegin: 2 copy known {
+              get
+              dup 0 get /HqnPageCounter eq {
+                pop { pop }
+              } if
+            } {
+              pop pop
+              { pop }
+            } ifelse put
+            bind def
+
+            /Page: {
+              /HqnPageCounter pop
+              dup null exec
+              //HqnPageCountDict /PageSeen get {
+                % Not the first comment on this page - must be an imposed job
+                pop
+                //HqnPageCountDict /MultiplePageSeen true put
+                //HqnPageCountDict /Page undef
+              } {
+                statusdict /impositionstatus get exec {
+                  pop
+                  //HqnPageCountDict /Page undef
+                } {
+                  //RegisteredPageCalls {
+                    exch pop exec
+                  } forall
+                  pop   % the string
+                } ifelse
+              } ifelse
+            }
+            dup 3 currentdict /Page: 2 copy known {
+              get
+              dup 0 get /HqnPageCounter eq {
+                pop { pop }
+              } if
+            } {
+              pop pop
+              { pop }
+            } ifelse
+            put bind def
+
+          end   % (%%actions)
+
+          //userdict /HqnCreatorDict known {
+            HqnCreatorDict /InDesign known not
+          } { true } ifelse
+          {
+            {
+              dup //ID15 anchorsearch {
+                pop pop
+                //RegisteredPageCalls /InDesign15 {
+                  % Act only on lines like "%%Page: Sec1:2 8"
+                  mark 1 index
+                  //Sec search {
+                    % post match pre
+                    pop pop
+
+                    % (1:2 8)
+                    //colon search {
+                      { cvi } stopped not {
+                        1 sub 1000000 mul
+                        3 1 roll pop
+
+                        { token not { exit } if exch } loop
+                        counttomark 3 eq {
+                          dup type /integertype eq 2 index type /integertype eq and {
+                            pop    % sep number
+                            add    % add page to section number
+
+                            1183615869 internaldict /recombinestatus get exec
+                            2 ge and {
+                              //HqnPageCountDict /InDesignRecombine get {
+                                dup //HqnPageCountDict /PageNumber get ne {
+                                  % export the pages so far
+                                  1183615869 internaldict /recombineshowpage get exec
+                                } if
+                              } if
+                            } if
+
+                            % Page number on stack
+                            //HqnPageCountDict /PageNumber 2 index put
+                            //HqnPageCountDict /Page 3 -1 roll put
+                            //HqnPageCountDict /ExplicitPageNumber true put
+                          } if
+                        } if
+                      } if
+                    } if
+                  } if
+                  cleartomark
+                  % leaves original string on the stack.
+                } put
+              } {
+                dup length 1 gt {
+                  1 get //One ne
+                } { pop true } ifelse
+                {
+                  % NOTE - this will get used for all versions after 1.5. Tested with 2.0 and
+                  % with beta release of 3.0.
+                  //RegisteredPageCalls /InDesign2 {
+                    mark 1 index
+                    { token not { exit } if exch } loop
+                    counttomark 2 eq {
+                      dup type /integertype eq 2 index type /integertype eq and {
+                        pop   % sep number
+
+                        1183615869 internaldict /recombinestatus get exec
+                        2 ge and {
+                          //HqnPageCountDict /InDesignRecombine get {
+                            dup //HqnPageCountDict /PageNumber get ne {
+                              % export the pages so far
+                              1183615869 internaldict /recombineshowpage get exec
+                            } if
+                          } if
+                        } if
+
+                        % Page number on stack
+                        //HqnPageCountDict /PageNumber 2 index put
+                        //HqnPageCountDict /Page 3 -1 roll put
+                        //HqnPageCountDict /ExplicitPageNumber true put
+                      } if
+                    } if
+                    cleartomark
+                    % leaves original string on the stack.
+                  } put
+                } if
+              } ifelse
+            } bind (InDesign) HqnAddCreator
+          } if
+
+          statusdict /pagenumber /HqnPageCounter /ProcSet findresource /PageNumber get put
+          //HqnPageCountDict /Initialized true put
+        } if
+      }   % NOT bound
+
+      /PageNumber {
+        //GetPageNumber 1183615869 internaldict /fileType get
+        2 copy known {
+          get exec
+        } {
+          pop pop 1
+        } ifelse
+      } bind
+
+      % name procedure -> -|
+      % procedures will be called with the new page number on the stack and may
+      % obtain the current value from the HqnPageCountDict.
+      /Register {
+        count 2 lt {
+          /HqnPageCounter errordict /stackunderflow get exec
+        } if
+        dup type /arraytype ne 1 index xcheck not or
+        2 index type dup /nametype ne exch /stringtype ne and
+        or {
+          /HqnPageCounter errordict /typecheck get exec
+        } if
+        //RegisteredQRKCalls 3 1 roll put
+      } bind
+
+      /RecombineInDesign {
+        count 1 lt {
+          /RecombineInDesign errordict /stackunderflow get exec
+        } if
+        dup type /booleantype ne {
+          /RecombineInDesign errordict /typecheck get exec
+        } if
+        /HqnPageCounter /ProcSet findresource /Initialize get exec
+        //HqnPageCountDict /InDesignRecombine 3 -1 roll put
+      } bind
+
+      /SetExplicitPageNumber {
+        //HqnPageCountDict /PageNumber 2 index put
+        //HqnPageCountDict /Page 3 -1 roll put
+        //HqnPageCountDict /ExplicitPageNumber true put
+      }
+
+    >> /ProcSet defineresource pop
+
+    setglobal
+
+  end   % temp dict
+end   % global dict
+
+%%EOF

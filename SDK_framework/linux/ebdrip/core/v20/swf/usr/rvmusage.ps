@@ -1,0 +1,137 @@
+%! Hqn-1.0
+%%Title: resourceVMusage.ps
+%%Creator: Global Graphics Software Limited
+%%CreationDate: 12/6/92
+% © Copyright (C) 1989-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(Harlequin resourceVMusage)" 1 5
+
+% $HopeName: SWv20!swf:usr:rvmusage.ps(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+
+/bd { bind def } bind def
+
+/mytempstring 1024 string def
+/hqncopyfile {
+  /tofile exch def
+  /fromfile exch def
+  {
+    fromfile mytempstring readstring exch
+    tofile exch writestring
+    not { exit } if
+  } loop
+} bd
+
+
+/writeusage {
+  tmpf (%%VMusage: ) writestring
+  tmpf vmmax tempstring cvs writestring
+  tmpf ( ) writestring
+  tmpf vmmin tempstring cvs writestring
+  tmpf (\n) writestring
+} bd
+
+
+/analyzeresources {
+  nulldevice
+
+  (tmp/resourcelist) status {
+    pop pop pop pop
+  } {
+    (Make a file, called "tmp/resourcelist", which contains a list of\n) print
+    (filenames, one per line, enclosed in parenthesis.\n) print
+    (eg:\n) print
+    (   (fonts/Times-Roman)\n) print
+    (   (encodings/StandardEncoding)\n) print
+    /resourceVMusage /undefinedfilename .error
+  } ifelse
+  /tmp_reslist (tmp/resourcelist) (r) file def
+  /tempstring 256 string def
+  /temp2string 256 string def
+
+  {
+    tmp_reslist tempstring readline not
+    { pop exit } if
+ 
+    token not {
+      exit
+    } if
+    /resname exch def
+    pop
+
+    /sv1 save def
+
+    /inf resname (r) file def
+    /fil inf 0 (%%VMusage:) /SubFileDecode filter def
+    fil { flushfile } stopped dup {
+      exch pop
+    } if
+    /hascomment exch not def
+    
+    fil closefile inf closefile
+
+    (Doing resource in file ) print resname print (\n) print
+
+    true setglobal
+    /gvm1 vmstatus pop exch pop def
+    false setglobal
+    /lvm1 vmstatus pop exch pop def
+
+    resname {run} stopped {
+      (Error in resource file ) print resname print
+      exit
+    } if
+
+    true setglobal    
+    /gvm2 vmstatus pop exch pop def
+    false setglobal
+    /lvm2 vmstatus pop exch pop def
+ 
+    resname {run} stopped {
+      (Error in resource file ) print resname print
+      exit
+    } if
+
+    true setglobal    
+    /gvm3 vmstatus pop exch pop def
+    false setglobal
+    /lvm3 vmstatus pop exch pop def
+
+    /vmmax gvm2 gvm1 sub lvm2 lvm1 sub add def
+    /vmmin gvm3 gvm2 sub lvm3 lvm2 sub add def
+
+    /inf resname (r) file def
+    /tmpf (HQNTMP) (w) file def
+    hascomment {
+      % file did have a vm usage comment, so modify it
+      /fil inf 0 (%%VMusage:) /SubFileDecode filter def
+      fil tmpf hqncopyfile
+      writeusage
+      inf tempstring readline pop pop % throw it away
+      inf tmpf hqncopyfile
+    } {
+      % file did not have vm usage comment, so add one as a second line
+      inf tempstring readline pop tmpf exch writestring
+      tmpf (\n) writestring
+      writeusage
+      inf tmpf hqncopyfile
+    } ifelse
+
+    tmpf closefile
+    inf closefile
+
+    resname deletefile
+    (HQNTMP) resname renamefile
+
+    sv1 restore
+  } loop
+
+  tmp_reslist closefile
+
+} bd
+
+analyzeresources
+
+
+%%EndProcSet

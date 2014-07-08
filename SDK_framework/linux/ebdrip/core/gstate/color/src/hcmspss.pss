@@ -1,0 +1,1066 @@
+%!
+
+% /* $HopeName: COREgstate!color:src:hcmspss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+currentglobal
+
+%
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Resource Categories for HCMS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+
+true setglobal
+
+%
+% %%%%%%%%%%%%%%% ReproductionCriteria %%%%%%%%%%%%%%%%
+%
+
+/ReproductionCriteria
+  /Generic /Category findresource
+  dup length 1 add dict copy
+
+  dup /Category /ReproductionCriteria put
+
+  dup /InstanceType /arraytype put
+
+/Category defineresource pop
+
+% ColorRendering resource category was once defined here but 
+% that was a duplicate -- it is really in src/resource.pss;
+% hence mentions of defining resource categorieS.
+
+%
+% %%%%%%%%%%%%%%% Named Colors %%%%%%%%%%%%%%%%
+%
+
+/NamedColor
+  /Generic /Category findresource
+  dup length 1 add dict copy
+
+  dup /Category /NamedColor put
+
+  dup /InstanceType /dicttype put
+
+/Category defineresource pop
+
+false setglobal
+
+%
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Operator internals %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+
+1183615869 internaldict begin
+
+currentglobal true setglobal
+ /hcmsbuffer 100 string def
+ /hcmsstatedict 1 dict def
+ /partlywrittencrdfilenamebuf 256 string def
+setglobal
+/crddevname (%HqnCRDGenerator%) def
+
+%
+% %%%% eqdict: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% Takes two dictionaries on the stack, and compares them asymmetrically,
+% such that all the elements in the top one must be matched by the other
+% one; surplus elements in the second one are ignored.
+% If they thus match, return true, else return false.
+%
+
+% obj1 obj2 eqdict bool
+% Specialised object equivalence allowing for fp error with numbers (no harm
+% applying check to two integers)
+% Helper dict for simple number object type check
+/eqdict <<
+  /realtype null
+  /integertype null
+>> def
+/eqdict {
+  //eqdict 1 index type known //eqdict 2 index type known and {
+    % Both are numbers, see if within relative error reasonable relative error
+    % (same to 20 bits of mantissa roughly)
+    2 copy abs exch abs 2 copy le { exch } if pop
+    % | a b max(|a|, |b|)
+    1e-6 mul 3 1 roll
+    % | max(|a|,|b|)*relative-error a b
+    sub abs 
+    % | max(|a|,|b|)*relative-error |a-b|
+    ge 
+  }{
+    % At least 1 non-numeric so default PS comparison
+    eq
+  } ifelse
+  % | bool
+} bind def
+
+% dict1 dict2 eqdict bool
+% Returns true if entries in dict2 are a subset of dict1 and the values are the
+% same, but does not do a deep compare of array and dict values.
+/eqdict {
+  true exch
+  % | dict1 true dict2
+  {
+    % Is dict2 entry known in dict1
+    % | dict1 true key val2
+    exch 3 index exch 2 copy known not {
+      pop pop
+      pop pop
+      false
+      exit
+    } if
+    % Are values in dict1 and dict2 equal
+    % | dict1 true val2 dict1 key
+    get //eqdict exec not {
+      pop
+      false
+      exit
+    } if
+  } forall
+  % | dict1 bool
+  exch pop
+  % | bool
+} bind def
+
+%
+% %%%% hackdateformat: auxiliary procedure for makecrdname %%%%
+%
+
+/DefaultString (Default) def
+
+% string hackdateformat substring
+% Returns substring of string containing just the digits in it in order.  If
+% there are more than 8 digits, then just the last 8 digits are returned.  If
+% only the digit 0 is present, or ther are no digits at all then the substring
+% contains the word Default. 
+% Note: 48 is the ASCII code for 0, and 57 the code for 9.
+% Note: Assumes string passed in is at least 7 characters long so it can hold
+%       Default.
+/hackdateformat (0) def 
+/hackdateformat {
+  % Get array of digits from string
+  [
+    1 index { dup dup 48 lt exch 57 gt or { pop } if } forall
+    % If no digits present then insert 0
+    counttomark 0 eq { 48 } if
+  ]
+  % | string array
+
+  % If more than 8 digits, use last 8 only
+  dup length 8 sub dup 0 gt {
+    8 getinterval
+  }{
+    pop
+  } ifelse
+  % | string array
+  
+  % Get substring of same length as array
+  1 index 0 2 index length getinterval exch
+  % | string substring array
+
+  % Write digits into substring using index on top of opstack
+  0 exch {
+    % | string substring index val
+    3 copy put
+    pop
+    1 add 
+  } forall
+  pop
+  % | string substring
+
+  % (0) is a special case, replace with (Default)
+  dup //hackdateformat eq {
+    pop
+    dup 0 7 getinterval % Default is 7 chars long!
+    dup 0 //DefaultString putinterval
+  } if
+  % | string substring
+  exch pop 
+  % | substring
+} bind def
+
+%
+% %%%% getrcresourcename: reproduction criteria to ResourceName
+%
+
+% string rcdict getrcresourcename substring
+% Return substring containing resource name based on entries in
+% reproductioncriteria dictionary - currently just the profile date.
+/getrcresourcename {
+  /ProfileDate get 
+  dup length 7 lt {
+    % Profile date needs to be at least 7 characters in case it maps to Default
+    % - pad with NULs if shorter than this (string should always be more than 7
+    % chars!)
+    exch 0 7 getinterval
+    7 { 1 index exch 0 put } repeat
+    exch 0 exch putinterval
+  }{
+    exch copy
+  } ifelse
+  //hackdateformat exec
+} bind def
+
+%
+% %%%% makenewfilename: auxiliary routine for makecrdname
+%
+
+% Given a predicate (procedure) and a string, generates a new
+% filename based on that string, by poking AAA, AAB etc in turn
+% into the last three chars of the string. The predicate takes a
+% string (which it must consume) on the stack and should
+% return true if the name produced does not exist -- doing it by
+% a procedure like this lets us fit it flexibly around ResourceFileName
+% and other ways of making full filenames.
+
+% The result is in the original string (which must have room for
+% prodding the extra characters into it) and if it is not possible
+% to make a new name it executes stop, leaving the stack as it was.
+
+% substring updateext bool
+% Increments letter used in extension, resetting to A after hitting Z, and
+% flagging if hit Z. 
+/updateext {
+  dup 0 get 90 eq {
+    0 65 put true
+  }{
+    dup 0 get 1 add 0 exch put false
+  } ifelse
+} bind def
+
+% proc string makenewfilename string true
+% proc string makenewfilename false
+% Find unique 3 letter extension for the file name string for which the
+% procedure returns true
+/makenewfilename {      % pred str
+  % Create 3 substrings on filename string for the 3 letters of extension and
+  % set to A.  We can then update the extension by writing to the appropriate
+  % substring.
+  dup length 3 sub
+  % | string len-3
+  0 1 2 {                       % | proc string len-3 index
+    3 copy add 1 getinterval    % | proc string len-3 index substring
+    dup 0 65 put
+    4 1 roll                    % | proc substr string len-3 index
+    pop                         % | proc substr string len-3
+  } for
+  pop 5 -1 roll                 % | substr1 substr2 substr3 string proc
+
+  % Loop over various extensions until we find one not yet used or we run out of
+  % extensions (17576 possible so very unlikely).
+  {
+    % Check if filename not used.
+    2 copy exec {
+      true exit
+    } if
+
+    % Update extension AAA-AAZ, ABA-ABZ, etc.
+    2 index //updateext exec {
+      3 index //updateext exec {
+        4 index //updateext exec {
+          false exit
+        } if
+      } if
+    } if
+  } loop
+
+  % | substr1 substr2 substr3 string proc bool
+  exch pop 5 2 roll pop pop pop
+
+  % Remove string if failed to find unique extension
+  dup not { exch pop } if 
+
+} bind def
+
+%
+% %%%% makecrdname: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% Given a rendering criteria dict, make up a unique name for the associated
+% profile to be stored under.
+%
+
+% string makecrdname bool
+% Helper procedure when looking for unique resource file name. 
+% Returns true if the color rendering resource does not exist.
+% Note: resourcestatus will not reset global allocation mode 
+/makecrdname {
+  /ColorRendering resourcestatus {
+    pop pop false
+  }{
+    true
+  } ifelse
+} bind def
+
+% rcdict makecrdname rcdict string
+% Create a unique CRD resource filename based on the reproductioncriteria
+% dictionary. 
+/makecrdname {
+  % Get resource file name root in hcmsbuffer and find its length
+  //hcmsbuffer dup 2 index
+  //getrcresourcename exec length % | rc string rootlen
+
+  % Add dot after filename root 
+  2 copy 46 put                   % | rc string rootlen
+  % Get substring with space for generated extensions (????.ext)
+  4 add 0 exch getinterval        % | rc string
+
+  % Find unique filename for the resource.
+  //makecrdname exch //makenewfilename exec {
+    % Copy final filename out of hcmsbuffer into new string
+    dup length string copy
+  }{
+    % Hack for now - raise error and let interpreter tidy up!
+    stop
+  } ifelse
+} bind def
+
+
+%
+% %%%% openCRDbucket: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% Given a reproduction criteria dict, open up the bucket of RC / CRDname pairs
+% associated with it. If it has no such bucket, start up a fresh one. By bucket
+% I mean array (bucket in the hash table sense) and by open, I mean explode it
+% onto the stack with a mark below the pieces.
+%
+% rc -> rc mark arrayelement arrayelement ........
+
+/openCRDbucket {                  % rc
+  //hcmsbuffer 1 index            % rc string rc
+  //getrcresourcename exec cvn
+  /ReproductionCriteria           % rc date /rc
+  2 copy resourcestatus           
+  {                               % rc date /rc status size
+    % bucket already exists
+    pop pop                       % rc date /rc
+    findresource                  % rc [rcinstance]
+    mark exch aload pop           % rc mark arrayelement arrayelement ......
+  } 
+  {                               % rc date /rc
+    % not got any in this bucket, start a new bucket
+    pop pop                       % rc
+    mark                          % rc mark
+  } ifelse
+} bind def
+
+
+%
+% %%%%  fileColorRendering: auxiliary procedure for addnewCRpair and findcolorrenderingintent %%%%
+%
+
+% file/string resname rcdict fileColorRendering -
+% Creates the CRD resource file.  Takes either the name of file to be run to get
+% the CRD data (from imported ICC profiles) or the CRD generator filestream.
+% The filestream passed in is closed on exit. 
+/fileColorRendering {
+  true setglobal
+
+  % Add mark to tidy up after an error
+  mark 4 1 roll                       % | mark rcdict file/string resname
+
+  3 dict begin
+    {
+      % Remember CRD data source
+      /crdgenerator 2 index def
+
+      % Get full CRD resource filename
+      3 1 roll                        % | mark rcdict file/string resname
+      /ColorRendering /Category findresource begin
+        dup =string ResourceFileName  % | mark rcdict file/string resname crdfilename
+      end
+
+      % Remember name of CRD resource file for tidying up
+      dup //partlywrittencrdfilenamebuf copy /crdfilename exch def
+      % Create the CRD resource file and remember it for tidying up
+      (w) file                        % | mark rcdict file/string resname crdfilename crdfile
+      dup /crdfile exch def
+
+      % Why I wonder
+      //hcmsstatedict /global get setglobal
+
+      % Write out CRD resource header
+      dup (%!PS Harlequin Generated Color Rendering Dictionary\n) writestring
+      dup (\n% Generated from the following parameters:\n) writestring
+
+      % Write out CRD resource parameters - the RC dict entries
+      4 -1 roll {                     % | mark file/string resname crdfile rckey rcval
+        % Write key
+        2 index (%  ) writestring
+        exch =string cvs 2 index exch writestring
+        % Write value
+        1 index (: ) writestring
+        =string cvs 1 index exch writestring
+        dup (\n) writestring
+      } forall                        % | mark file/string resname crdfile
+
+      % Write out the CRD resource name
+      dup (\n/) writestring 
+      dup 3 -1 roll writestring 
+      dup (\n) writestring            % | mark file/string crdfile
+
+      % Write out CRD resource contents - either from the CRD generator or name of
+      % another file to run.
+      1 index type /filetype eq {
+        % Plugin generated CRD - write data read from the generator to the resource
+        % file.  This is where the CRD plugin is tickled to produce the CRD|
+        exch 
+        {
+          2 copy
+          =string readstring          % | mark crdfile file crdfile substr bool
+          3 1 roll writestring        % | mark crdfile file bool
+          not { exit } if
+        } loop
+        pop                           % | mark crdfile
+
+      }{                              % | mark string crdfile
+        % CRD is in another file - write PS snipper to run that file when the
+        % resource is loaded.
+        % Note: 0x28 and 29 are ( and ) in hex as the PSS compiler cannot cope with
+        %       escaped parens in PS strings.
+        dup <28> writestring 
+        dup 3 -1 roll writestring 
+        dup <29> writestring 
+        dup ( run\n) writestring      % | mark crdfile
+      } ifelse
+
+      % Write out resource definition PS - The End.
+      dup (\n/ColorRendering defineresource pop\n) writestring
+
+      % Close the CRD resource file
+      closefile
+
+    } superstopped % Run superstopped so we catch interrupts!
+    currentdict                       % | mark ... bool dict
+  end
+  exch {
+    % Two ways in which can get here -
+    % 1) CRD plugin threw an error due to a problem with the profile, or
+    % 2) user interrupts CRD generation.
+    % Need to tidy up by closing file objects and deleting any partially created
+    % CRD resource.
+    dup /crdgenerator get dup type /filetype eq { closefile }{ pop } ifelse
+    dup /crdfile known {
+      % Very unlikely to error - filename must be valid for file object to exist
+      dup /crdfile get closefile
+      /crdfilename get deletefile
+    } if
+
+    % Clear the stack of anything left on it
+    cleartomark
+
+    % Rethrow the error, but interrupt is as per errorpss.pss
+    $error /errorname get /interrupt eq interruptenabled and { superstop }{ stop } ifelse
+  } if
+
+  % Pop the dict and mark
+  cleartomark
+
+} bind def
+
+%
+% %%%% globalize: auxiliary procedure for addnewCRpair
+%
+% This takes a dictionary on the stack, and returns a global
+% dictionary with equivalent contents, copying things as needed.
+% For now, it assumes the current allocation mode is global.
+%
+
+/globalizeByType 4 dict def
+
+/globalize {
+  dup gcheck not {
+    <<
+       exch
+       {
+         % only need to globalize the value -- assume key is a name
+         dup type //globalizeByType exch known
+         {
+           dup type //globalizeByType exch get exec
+         } if % else just leave it on the stack
+       } forall
+    >>
+  } if
+} bind def
+
+% auxiliary bits for globalizeByType
+
+globalizeByType begin
+
+  /stringtype {
+    dup length string copy
+  } bind def
+
+  /dicttype {
+    <<
+       exch
+       {
+         % only need to globalize the value -- assume key is a name
+         //globalize exec
+       } forall
+    >>
+  } bind def
+
+  /arraytype {
+    xcheck
+    currentpacking false setpacking
+    [
+      4 -1 roll {
+        //globalize exec
+      } forall
+    ]
+    exch setpacking
+    exch { cvx } if
+  } bind def
+
+  /packedarraytype {
+    xcheck
+    currentpacking true setpacking
+    [
+      4 -1 roll {
+        //globalize exec
+      } forall
+    ]
+    exch setpacking
+    exch { cvx } if
+  } bind def
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% %%%% addnewCRpair: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% This assumes we have an open hash bucket of RC / CRDname pairs on the stack
+% (see head comment for openCRDbucket) and adds a new pair to the top of the
+% stack.
+%
+
+/addnewCRpair {                   % crdstream rc mark elt elt ... elt
+  counttomark                     % crdstream rc mark elt elt ... elt n
+  1 add index                     % crdstream rc mark elt elt ... elt rc
+  true setglobal                  % crdstream rc mark elt elt ... elt rc
+  //makecrdname exec              % crdstream rc mark elt elt ... elt rc keystring
+  false setglobal                 % crdstream rc mark elt elt ... elt rc keystring
+  dup                             % crdstream rc mark elt elt ... elt rc keystring keystring
+
+  counttomark 3 add -1 roll       % rc mark elt elt ... elt rc keystring keystring crdstream
+
+  % then read it as text to refile it, and also defineresource
+
+  exch                            % rc mark elt elt ... elt rc keystring crdstream keystring
+  3 index                         % rc mark elt elt ... elt rc keystring crdstream keystring rc
+  //fileColorRendering exec       % rc mark elt elt ... elt rc keystring
+  /ReproductionCriteria           % rc mark elt elt ... elt rc keystring /rc
+  3 -1 roll                       % rc mark elt elt ... elt keystring /rc rc
+
+  true setglobal                  % rc mark elt elt ... elt keystring /rc rc
+  //globalize exec                % rc mark elt elt ... elt keystring /rc RC
+
+  /ColorRenderingDictName         % rc mark elt elt ... elt keystring /rc rc /crdn
+  4 -1 roll                       % rc mark elt elt ... elt /rc rc /crdn keystring
+  <<                              % rc mark elt elt ... elt /rc rc /crdn keystring mark
+     5 1 roll                     % rc mark elt elt ... elt mark /rc rc /crdn keystring
+  >>                              % rc mark elt elt ... elt newpair
+  false setglobal                 % rc mark elt elt ... elt newpair
+} bind def
+
+
+%
+% %%%% ccrdwritetypes: dict of type writers that can be used here %%%
+%
+% Each writer expects its argument (which it should consume) on TOS,
+% with the filestreeam (which it should not consume) below it.
+%
+
+/ccdwritesimple { 
+  //hcmsbuffer cvs
+  1 index exch
+  writestring
+} bind def
+
+/ccrdwritetypes <<
+  /stringtype {                % filestream string
+    40                         % filestream string bracket
+    2 index exch               % filestream string filestream bracket
+    write                      % filestream string
+    1 index exch               % filestream filestream string
+    writestring                % filestream
+    dup 41                     % filestream filestream bracket
+    write                      % filestream
+  } bind
+  /integertype //ccdwritesimple
+  /realtype //ccdwritesimple
+  /booleantype //ccdwritesimple
+>> def
+
+//ccrdwritetypes
+  /arraytype {
+    (  [) 2 index exch writestring
+    {
+      dup type
+      //ccrdwritetypes exch get
+      exec
+    } forall
+    dup (  ]) writestring
+  } bind put
+
+//ccrdwritetypes
+  /dicttype {                      % stream value
+    (\n    << ) 2 index               % stream value bracket stream
+    exch                           % stream value stream bracket
+    writestring                    % stream value
+    {                              % stream key val
+      exch                         % stream val key
+      2 index (\n      /) writestring % stream val key
+      =string cvs                  % stream val keystring
+      2 index exch writestring     % stream val
+      1 index (   ) writestring    % stream val
+      dup type                     % stream val valtype
+      //ccrdwritetypes exch get    % stream writer
+      exec                         % stream
+    } forall                       % stream
+    dup (\n    >>) writestring     % stream
+  } bind put
+
+%
+% %%%% closeCRDbucket: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% This assumes we have an open hash bucket of RC / CRDname pairs on the stack (and
+% have added a new one).  So now we bundle it back into a hash bucket (array) and
+% file it away.
+%
+/closeCRDbucket {                 % in mark in rc newpair mark elt elt ... elt newpair
+  true setglobal                  % in mark in rc newpair mark elt elt ... elt newpair
+  ]                               % in mark in rc newpair [dict]
+
+  % It then wraps this up and stores this in the crd resource
+  % area, along with a reproductioncriteria (the currently held
+  % one) of the same name in the reproductioncriteria resource
+  % category.
+  //hcmsbuffer 
+  3 index                         % in mark in rc newpair [dict] string rc
+  //getrcresourcename exec cvn
+  exch                            % in mark in rc newpair date [dict]
+  /ReproductionCriteria           % In Mark In Rc Newpair Date [Dict] /Rc
+  3 copy defineresource pop       % in mark in rc newpair date [dict] /rc
+
+  false setglobal                 % in mark in rc newpair date [dict] /rc
+  /Category findresource          % In Mark In Rc Newpair Date [Dict] Catres
+  2 index exch                    % In Mark In Rc Newpair Date [Dict] Date Catres
+  dup begin                       % in mark in rc newpair date [dict] date catres
+    /ResourceFileName get         % In Mark In Rc Newpair Date [Dict] date Rfnproc
+    =string exch                  % in mark in rc newpair date [dict] date buf rfnproc
+    exec                          % in mark in rc newpair date [dict] filename
+  end                             % in mark in rc newpair date [dict] filename
+  (w) file                        % in mark in rc newpair date [dict] filestream
+  dup                             % in mark in rc newpair date [dict] filestream filestream
+  (%!PS Harlequin ReproductionCriteria->ColorRendering index\n) writestring
+  dup (currentglobal true setglobal\n)  writestring
+                                  % in mark in rc newpair date [dict] filestream
+  dup (/) writestring             % in mark in rc newpair date [dict] filestream
+  dup                             % in mark in rc newpair date [dict] filestream filestream
+  4 -1 roll                       % in mark in rc newpair [dict] filestream filestream date
+  =string cvs                     % in mark in rc newpair [dict] filestream filestream datestring
+  writestring                     % in mark in rc newpair [dict] filestream
+  dup ( [\n) writestring          % in mark in rc newpair [dict] filestream
+  1 index                         % in mark in rc newpair [dict] filestream [dict]
+
+  {                               % in mark in rc newpair [dict] filestream dict
+    1 index (  <<\n) writestring  % in mark in rc newpair [dict] filestream dict
+    {                             % in mark in rc newpair [dict] filestream dictkey dictval
+      2 index (    /)             % in mark in rc newpair [dict] filestream dictkey dictval filestream str
+      writestring                 % in mark in rc newpair [dict] filestream dictkey dictval
+      exch                        % in mark in rc newpair [dict] filestream dictval dictkey
+      =string cvs                 % in mark in rc newpair [dict] filestream dictval dictkeystring
+      2 index exch                % in mark in rc newpair [dict] filestream dictval filestream dictkeystring
+      writestring                 % in mark in rc newpair [dict] filestream dictval
+      1 index ( ) writestring     % in mark in rc newpair [dict] filestream dictval
+      dup type                    % in mark in rc newpair [dict] filestream dictval dictvaltype
+      //ccrdwritetypes exch get   % in mark in rc newpair [dict] filestream dictval writer
+      exec                        % in mark in rc newpair [dict] filestream
+      dup (\n) writestring        % in mark in rc newpair [dict] filestream
+    } forall                      % in mark in rc newpair [dict] filestream
+    dup (  >>\n) writestring      % in mark in rc newpair [dict] filestream
+  } forall                        % in mark in rc newpair [dict] filestream
+  dup (] /ReproductionCriteria defineresource\n)      % in mark in rc newpair [dict] filestream tail
+  writestring                     % in mark in rc newpair [dict] filestream
+  dup (pop setglobal\n)           % in mark in rc newpair [dict] filestream tail
+  writestring                     % in mark in rc newpair [dict] filestream
+  dup (%% End of ReproductionCriteria index file\n)   % in mark in rc newpair [dict] filestream tail
+  writestring                     % in mark in rc newpair [dict] filestream
+  closefile                       % in mark in rc newpair [dict]
+                                  % in mark in rc newpair [dict]
+  pop
+                                  % in mark in rc newpair
+} bind def
+
+%
+% %%%% generateCRDfromRC: auxiliary procedure for findcolorrenderingintent %%%%
+%
+% Given a reproduction criteria dict, push over it a freshly baked CRD stream to match
+%
+
+/generateCRDfromRC 2 dict def
+generateCRDfromRC /Password 0 put
+
+%
+% %%%% setupCRDgenerator: auxiliary procedure for generateCRDfromRC and getCRDgeneratordetails %%%%
+%
+% Ensure that the CRD generator is mounted, and send it the information it
+% needs to determine which plugin to call.
+%
+
+/setupCRDgenerator { % PluginCharacteristics Style
+  % check that the CRD device exists
+  //crddevname devstatus
+  {
+    % it is mounted
+    % |- size free length removable mounted relative writable searchable
+    8 { pop } repeat        % size
+  } {
+    //hcmsstatedict /global known { //hcmsstatedict /global get setglobal } if
+    //crddevname devmount pop 
+    //crddevname <<
+      /DeviceType 22
+      /Enable true
+      /SearchOrder -1
+      /Password 0
+    >> setdevparams
+  } ifelse
+  % set its parameters - do Style and PluginCharacteristics specially now
+  %                      the others are set en masse later if required
+
+  //generateCRDfromRC /Style 3 -1 roll put
+  //crddevname //generateCRDfromRC setdevparams
+  //generateCRDfromRC /Style undef
+
+  //generateCRDfromRC /PluginCharacteristics 3 -1 roll put
+  //crddevname //generateCRDfromRC setdevparams
+  //generateCRDfromRC /PluginCharacteristics undef
+
+} bind def
+
+%
+% %%%% getCRDgeneratordetails: exported for coregui!swf:procsets:psuconf %%%%
+%
+% Get the characteristics of the specified CRD generator plugin
+
+/getCRDgeneratordetails { % PluginCharacteristics Style
+  //setupCRDgenerator exec
+  //crddevname currentdevparams
+} bind def
+
+% CRD parameters to ignore in the general case.
+/CRDfilter <<
+  /Style null
+  /PluginCharacteristics null
+  /PluginDate null
+>> def
+
+% rcdict openCRDgenerator file true
+% rcdict openCRDgenerator false
+% Procedure that setups the CRD device according the reproductioncriteria
+% dictionary and opens a file on the device to read the CRD from. 
+/openCRDgenerator {
+  % Set up CRD generator for characteristic and style - these must be done first
+  dup /Style 2 copy known { get }{ pop pop () } ifelse
+  exch                            % stystr rc
+  dup /PluginCharacteristics 2 copy known { get }{ pop pop 0 } ifelse
+  3 -1 roll                       % rc plcstr stystr
+  //setupCRDgenerator exec        % rc
+
+  % Pass remaining parameters to CRD generator one at a time, ignoring any
+  % problems.
+  dup {                           % rc key val
+    //CRDfilter 2 index known {
+      pop pop
+    }{
+      //generateCRDfromRC 2 index 2 index put
+      //crddevname //generateCRDfromRC { 
+        setdevparams
+      } stopped
+      { 
+        pop pop
+      } if
+      pop
+      //generateCRDfromRC exch undef
+    } ifelse
+  } forall
+
+  % Send current device type to CRD
+  //crddevname 
+  << 
+    /DeviceInfo currentpagedevice /PageBufferType get
+    (                                ) cvs
+  >> setdevparams
+
+  % Now open it for reading and read a new CRD from it
+  {
+    true setglobal
+    //crddevname (r) file         % rc crdstream
+    //hcmsstatedict /global get setglobal
+  } stopped
+  {                               % rc
+    pop pop false                 % rc false
+  }{
+    true                          % rc crdstream true
+  } ifelse                        % rc crdstream true   OR rc false
+} bind def
+
+
+%
+% %%%%%%%%%%%%%%% findcolorrenderingintent %%%%%%%%%%%%%%%%
+%
+
+  % Called from operator of the same name
+  %
+  % cri-dict findcolorrenderingintent /crd-resource-name true (if resource exists)
+  %                                   false (if no resource)
+
+  /findcolorrenderingintent {
+    % (findcolorrenderingintent\n) print % DEBUG
+    //hcmsstatedict /global currentglobal put
+
+    % Stage 1 - look for reproduction criteria that matches the current one
+    % eactly.
+    //hcmsbuffer 1 index //getrcresourcename exec cvn /ReproductionCriteria
+                                              % | crc-dict munged-profile-date /ReproductionCriteria
+    % (Resource name ) print 1 index =string cvs print (\n) print % DEBUG
+    2 copy resourcestatus {
+      % (Found RC resource.\n) print % DEBUG
+      % Load existing resource
+      pop pop
+      findresource                            % | crd-dict rc-array
+
+      % Find first entry that matches the current reproduction criteria
+      % (not expecting more than 1, but one day we might, and we might want a
+      % fancier selection mechanism other than the first match ...) 
+      false exch                              % | crc-dict false rc-array
+      {
+        dup /ReproductionCriteria get 3 index % | crc-dict false rc-dict rc-dict crc-dict
+        //eqdict exec                         % | crc-dict false rc-dict bool
+        { % Found a matching CRD
+          % (Found match.\n) print % DEBUG
+          exch not                            % | crc-dict rc-dict true
+          exit
+        } if
+        pop
+      } forall % rc-array
+
+    } { % No resources for RC
+      % (No RC resource.\n) print % DEBUG
+      pop pop false                           % | crc-dict false
+    } ifelse
+
+    % Stage 2 - if we have not found a reproduction criteria resource with a
+    % matching reproduction criteria then create one.
+    dup not {
+      % (Generating new RC resource.\n) print % DEBUG
+      pop     % false
+
+      % Hqn CRD intent
+      % (Hqn CRD intent.\n) print % DEBUG
+      //openCRDgenerator exec               % | crc-dict crdstream bool
+
+      { % CRD source opened ok - add to RC array
+        % (Adding new RC to resource.\n) print % DEBUG
+        exch                                  % | crdstream crc-dict 
+        % (Opening bucket.\n) print % DEBUG
+        //openCRDbucket exec                  % | crdstream crc-dict resource-dict mark elt ... elt
+        % (Adding new CR pair.\n) print % DEBUG
+        //addnewCRpair exec                   % | crc-dict resource-dict mark elt ... elt rc-dict
+        dup counttomark 1 add 1 roll          % | crc-dict resource-dict rc-dict mark elt ... elt rc-dict
+        % (Closing bucket.\n) print % DEBUG
+        //closeCRDbucket exec                 % | crc-dict resource-dict rc-dict
+        true
+
+      } { % Failed to find CRD
+        % (Failed to find CRD.\n) print % DEBUG
+        pop false                             % | false
+      } ifelse
+    } if
+
+    % Stage 3 - we have found/generated a reproduction criteria resource, get
+    % the CRD for it.
+    dup { 
+      % (Check for CRD resource.\n) print % DEBUG
+      pop                                     % | crc-dict rc-dict
+
+      dup /ColorRenderingDictName get         % | crc-dict rc-dict crd-name
+      dup /ColorRendering resourcestatus {
+        % (CRD resource exists.\n) print % DEBUG
+        pop pop
+        true                                  % | crc-dict crdstream crd-name true
+      } {
+        % (Generating CRD resource.\n) print % DEBUG
+        3 -1 roll                             % | rc-dict crd-name crc-dict
+        //openCRDgenerator exec {             % | rc-dict crd-name crc-dict crdstream bool
+          % (Opened CRD generator.\n) print % DEBUG
+          2 index 2 index
+          //fileColorRendering exec           % | rc-dict crd-name crc-dict 
+          3 1 roll true                       % | crc-dict rc-dict crd-name true
+        } {
+          % (Failed opening CRD generator.\n) print % DEBUG
+          pop pop pop false                   % | false
+        } ifelse
+      } ifelse
+
+      dup { % CRD resource defined ok - tidy up stack
+        4 2 roll pop pop                      % | crd-name true
+      } if
+    } if
+
+    //hcmsstatedict /global get setglobal
+
+    % (findcolorrenderingintent - done.\n) print % DEBUG
+  } bind def
+
+
+%
+% %%%%%%%%%%%%%%% findcolorrendering %%%%%%%%%%%%%%%%
+%
+
+  % This is a PS operator. It has a very simple definition because our
+  % implementation works with the help of a non-standard Type 2 crd.
+  % findcolorrendering is defined to return a crd, which would normally be the
+  % operand to a later call to setcolorrendering. In a colour environment based
+  % on ICC profiles, this is an irritation because we would be converting an
+  % ICC table to a postscript crd with the inherit quality problems of the
+  % connection space being CIEXYZ and limited by an 8 bit RenderTable.
+  % Instead, we return a Type 2 crd that contains only a trampoline onto
+  % setrenderingintent. Both of these are Hqn extensions. There are 4 Type 2
+  % crd's defined, one for each of the ICC rendering intents. 
+
+  /findcolorrendering { % intent -> crdname bool
+    % We have defined 4 special crd's with the same names as the 4 ICC rendering
+    % intents. So we only need return the same name in the common case. 
+    dup /ColorRendering resourcestatus {
+      % |- intent status size
+      % return true to say we found an exact match
+      pop pop true
+    } {
+      % The case where the intent doesn't match one of the ICC intents is really
+      % an error in the job.
+      /DefaultColorRendering false
+    } ifelse
+  } bind def
+
+
+  % The ColorRenderingType 2 crd definitions
+  <<
+    /ColorRenderingType 2
+    /Intent /Perceptual
+  >> /Perceptual exch /ColorRendering defineresource pop
+
+  <<
+    /ColorRenderingType 2
+    /Intent /RelativeColorimetric
+  >> /RelativeColorimetric exch /ColorRendering defineresource pop
+
+  <<
+    /ColorRenderingType 2
+    /Intent /Saturation
+  >> /Saturation exch /ColorRendering defineresource pop
+
+  <<
+    /ColorRenderingType 2
+    /Intent /AbsoluteColorimetric
+  >> /AbsoluteColorimetric exch /ColorRendering defineresource pop
+
+
+  % The ColorRendering procset resource
+  % The Red Book defines a procsest supplying procedures to help with the standard
+  % service of returning a crd from findcolorrendering. Since the Hqn rip uses
+  % a colour environment based on ICC profiles, we don't need these so we only
+  % supply compatibility procedures that simply return the default values.
+
+  3 dict begin % the procset dictionary
+
+    /GetPageDeviceName {
+      /none
+    } bind def
+
+    /GetHalftoneName {
+      /none
+    } bind def
+
+    /GetSubstituteCRD { % intent -> subst-crdname
+      pop /DefaultColorRendering
+    } bind def
+
+    currentdict
+  end % the procset dictionary
+
+  /ColorRendering exch /ProcSet defineresource pop
+
+
+  [ /hackdateformat
+    /DefaultString
+    /NoneString
+    /hcmsbuffer
+    /crddevname
+    /hcmsstatedict
+    /eqdict
+    /makecrdname
+    /openCRDbucket
+    /fileColorRendering
+    /globalizeByType
+    /globalize
+    /addnewCRpair
+    /closeCRDbucket
+    /generateCRDfromRC
+    /openCRDgenerator
+    /ccdwritesimple
+    /ccrdwritetypes
+    /setupCRDgenerator
+    /partlywrittencrdfilenamebuf
+    /getrcresourcename
+    /updateext
+    /makenewfilename
+  ] { currentdict exch undef } forall
+
+end % internaldict
+
+% Define a procedure to emulate the deprecated setcolorrenderingintent operator
+% |- intent -> -
+userdict begin
+/setcolorrenderingintent {
+  % Test the intent operand for existence and correctness
+  count 1 lt {
+    /setcolorrenderingintent /stackunderflow systemdict /.error get exec
+  } if
+  dup type /nametype ne {
+    /setcolorrenderingintent /typecheck systemdict /.error get exec
+  } if
+
+  % We will map Picture and Logo onto their own rendering intent. The other
+  % reproduction types of Vignette, Other, NamedColor will be mapped onto
+  % RelativeColorimetric.
+  % We aren't caring whether the name is correct as one of the previously
+  % supported reproduction types.
+  <<
+    /Picture      /Perceptual
+    /Logo         /Saturation
+  >>
+  exch 2 copy known {
+    get
+  } {
+    pop pop /RelativeColorimetric
+  } ifelse
+  setrenderingintent
+} def
+end
+
+
+setglobal
+
+% end of hcmspss.pss

@@ -1,0 +1,205 @@
+% -*- Mode: PostScript -*-
+% Copyright (C) 2003-2012 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: COREfonts!src:names.nam(EBDSDK_P.1) $
+
+/* Names table for COREfonts. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+% direct TrueType and OpenType font support
+definettfont OPERATOR
+definecfffont OPERATOR
+defineotffont OPERATOR
+
+debug_hint % Debug T1 hinting
+debug_tt % Debug TrueType fonts
+
+% Type 32 font operators defined in BitmapFontInit procset. These operators
+% are stubbed out when Type 32 fonts are not present in the RIP, so setup
+% PostScript will continue to work. The names file should not contain
+% preprocessor conditionals on anything but the build type.
+addglyph OPERATOR DICT(1183615869 internaldict)
+removeglyphs OPERATOR DICT(1183615869 internaldict)
+removeall OPERATOR DICT(1183615869 internaldict)
+
+% Extra keys for collection fonts (TTC, CFF)
+SubFont
+
+% CID font dictionary names
+CMap
+CIDCount
+CIDFont
+CIDFontName
+CIDFontType
+CIDMap
+CIDSystemInfo
+
+% Font dictionary names
+CharStrings
+Encoding
+ExpertEncoding
+Font
+FontBBox
+FontFile
+FontInfo
+FontMatrix
+FontName
+FontType
+ItalicAngle
+NotDefEncoding
+Ordering
+PDF
+PaintType
+Registry
+StandardEncoding
+StrokeWidth
+Supplement
+
+% Type 1 charstring info names
+UnderlinePosition
+UnderlineThickness
+initialRandomSeed
+isFixedPitch
+BuildChar
+BuildGlyph
+CDevProc
+CIDMapOffset
+ExpansionFactor
+FamilyName
+FullName
+FDArray
+FDBytes
+FID
+FontOffset
+GDBytes
+GlyphData
+GlyphDirectory
+LanguageLevel
+Metrics
+Metrics2
+MetricsCount
+NormalizedDesignVector
+Notice
+Private
+RunInt
+SDBytes
+stdCDevProc
+SubrCount
+SubrMapOffset
+Subrs
+UniqueID
+UserDesignVector
+Weight
+WeightVector
+WMode
+XUID
+defaultWidthX
+lenBuildCharArray
+lenIV
+nominalWidthX
+sfnts
+version
+
+% Some keys of the Private dictionary of a Type1 font.
+BlueFuzz
+BlueScale
+BlueShift
+BlueValues
+ForceBoldThreshold
+FamilyBlues
+FamilyOtherBlues
+ForceBold
+LanguageGroup
+MinFeature
+OtherBlues
+OtherSubrs
+RndStemUp
+StdHW
+StdVW
+StemSnapH
+StemSnapV
+password
+
+% Required charstring names
+.notdef NAME(notdef)
+
+% Operators invoked indirectly
+defineresource
+findresource
+
+% System/User parameters
+CurFontCache
+FontFillRule
+FontHintingMethod
+HintedFonts
+MaxFontCache
+MaxFontData
+MorisawaFontOutlines
+MorisawaFonts
+MorisawaCIDFonts
+TrueTypeHints
+% values of TrueTypeHints are /None (or false), /Check (or null), /Safe (or true), and /Silent
+None
+Check
+Safe
+Silent
+
+% CMap 0 -> .null enforcement
+ForceNullMapping
+
+fill
+eofill
+
+% CMaps
+CodeMap
+codespacerangeblock
+mappingblock
+notdefrangeblock
+usematrixblock
+
+% Font filters
+FONTDecodeParams
+Strategy
+
+% Encodings
+ISOLatin1Encoding
+
+% debugging
+debug_hint
+debug_tt
+
+% Encryption
+eCCRun
+SpecialRun
+
+% Yuck. T1 file
+xsuperexec
+
+% XPS font flag
+XPSFont
+
+% TT handling
+OpenType
+
+% PFIN handling
+PFIN
+SW
+Exceptions
+image
+imagemask
+resourcestatus
+undefineresource
+wildeq OPERATOR
+pfinhook OPERATOR DICT(1183615869 internaldict)
+pfinop OPERATOR
+setpfinparams OPERATOR
+
+% font repair reporting
+ReportFontRepairs
+
+% expose fontcache font UIDs
+currentfontcacheuids OPERATOR DICT(1183615869 internaldict)
+
+% Log stripped

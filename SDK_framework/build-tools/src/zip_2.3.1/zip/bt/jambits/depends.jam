@@ -1,0 +1,257 @@
+# Copyright (C) 1999-2012 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam rules for creating dependencies
+#
+# $HopeName: HQNjambits!depends.jam(trunk.24) $
+#
+
+# Avoid parsing files for dependency information unless the user has requested
+# the "depend" or "exportsrc" target.
+    if depend in $(JAM_ARGUMENTS) {
+        DoFileParsing = 1 ;
+        ECHO ...calculating \"include\" dependencies... ;
+    }
+    if ! $(DoFileParsing) && $(RELEASE) = 1 {
+        Warning Not recalculating dependencies for release build ;
+    }
+
+    if exportsrc in $(JAM_ARGUMENTS) || wdkbuild in $(JAM_ARGUMENTS) {
+        DoExportSourceTree = 1 ;
+        ECHO ...noting source tree to export... ;
+    }
+
+# To avoid Jam complaining when it didn't find any sources to scan for
+# dependencies:
+    no-op depend ;
+    no-op exportsrc ;
+
+
+# Simple rule for creating a dependency filename
+    rule _DepFileIs {
+        local DepFile ;
+        DepFile = $(CurrentPath)$/$(Suffix).dep ;
+        AddUnique _DependencyFiles : $(DepFile) ;
+        $(1) = $(DepFile) ;
+    }
+
+# Rule for including cached-dependency files
+    rule _IncludeDependencies {
+        local i ; for i in $(1) {
+            if ! $(DoFileParsing) {
+                if $(i:E) { Include $(i) ; }
+                else {
+                    Warning Dependency file $(i) is missing ;
+                }
+            }
+            # Add bits for cleaning the file
+            LOCATE on <$(i:D)>$(i:BS) = $(i:D) ;
+            CleanFile <$(i:D)>$(i:BS) ;
+        }
+    }
+
+###################################
+# Dependency implementation rules #
+###################################
+
+# These are the rules that implement the dependencies themselves.  They should
+# not assume any particular variable values, as they are also called from
+# cached-dependency files.
+
+#* $(1) source
+#* $(2) headers ...
+#* $(3) includepath ...
+#* $(4) metaincludepath ...
+#* $(5) metavariable
+#* Add a <code>INCLUDES</code> dependency between the $(1) and its
+#* $(2).  Uses the $(3) and the $(4), stored in the $(5) to produce a
+#* list of all possible locations for the $(2).  This is used to create
+#* the dependency, but the exhaustive list is marked with
+#* <code>NOCARE</code> since most of them will never exist.
+#*section internal
+    rule Depends-C {
+        SearchPath = $($(4)-$(5)) $(3) ;
+        Included = $(SearchPath)$/$(>) ;
+        INCLUDES $(<) : $(Included) $(>:G=GeneratedIncludable) ;
+        NOCARE $(Included) $(>:G=GeneratedIncludable) ;
+    }
+
+
+###########
+# Caching #
+###########
+
+# This single function is the interface between the above dependency
+# implementation rules and the dependency calculation functions below.  It
+# basically calls the appropriate function above and, if possible, stores the
+# line it called in a cache file.  It is only of use during file parsing.
+
+    rule _Cache-Depends {
+        # You cannot invoke a rule by storing the name of the rule in a
+        # variable, and calling it that way.  Instead, we need to switch on a
+        # variable and pick the rule we want.  Boo.
+        switch $(1) {
+            case C : Depends-C $(2) : $(3) : $(4) : $(5) : $(6) ;
+        }
+
+        if $(DoFileParsing) {
+          local file ;
+          for file in $(DependsFile) {
+            if $(CurrentDependsFile) != $(file) {
+                if $(CurrentDependsFile) { FILECLOSE $(CurrentDependsFileHandle) ; }
+                CurrentDependsFile = $(file) ;
+                if $(Started-$(file)) {
+                    FILEOPEN CurrentDependsFileHandle : $(file) : a ;
+                }
+                else {
+                    Started-$(file) = 1 ;
+                    FILEOPEN CurrentDependsFileHandle : $(file) : w ;
+                }
+            }
+            FILEWRITE $(CurrentDependsFileHandle) : Depends-$(1) $(2:X) ":" $(3:X) ":" $(4:X) ":" $(5:X) ":" $(6:X) ";" ;
+          }
+        }
+
+        if $(DoExportSourceTree) {
+          local i ; for i in $(Included) {
+            if $(i:E) {
+              ExportSource $(i) : C : : $(Undefines-$(2)) ;
+            }
+          }
+        }
+    }
+
+    # Rule to ensure that targets get bound (and hence the HDRRULE and HDRSCAN
+    # get looked at)
+    rule _EnsureBinds { DEPENDS depend : $(<) ; DEPENDS exportsrc : $(<) ; }
+    rule _EnsureBinds { DEPENDS depend : $(<) ; DEPENDS wdkbuild : $(<) ; }
+
+
+######################
+# File parsing rules #
+######################
+
+# These "rules" are called after the main rule-parsing is complete, once targets
+# have been bound and variables on targets have been set.  They are all called
+# with the target (parsed) file as the first argument, and the list of
+# _matching_strings_ as the second.  If these happen to be the names of files
+# (as in most cases), then we need to grist them and provide search paths, etc.
+# Since these are rul during the binding phase, we cannot set any more variables
+# on $(<), but it does mean that variables bound to $(<) are visible, which is
+# one way of getting hold of the include paths.
+
+# C-style includes
+    if $(DoExportSourceTree) {
+      # Additionally match <file.h> includes when exporting source
+      # because e.g. openssl uses that syntax for non-system includes
+      C-Depends-Regexp = "^[  ]*#[    ]*include[  ]*[\"<]([^\">]*)[\">].*$" ;
+    } else {
+      C-Depends-Regexp = "^[  ]*#[    ]*include[  ]*\"([^\"]*)\".*$" ;
+    }
+    rule _C-Depends-Rule {
+        _Cache-Depends C : $(<) : $(>) : $(IncludePath) : $(MetaIncludePath) : C-ExportDirectories ;
+
+        local i ; for i in DependsFile HDRRULE HDRSCAN IncludePath MetaIncludePath {
+            $(i) on $(Included) = $($(i)) ;
+        }
+    }
+# Same, but for a change in the name of the meta include directory
+    rule _Resource-Depends-Rule {
+        _Cache-Depends C : $(<) : $(>) : $(IncludePath) : $(MetaIncludePath) : Resource-ExportDirectories ;
+
+        local i ; for i in DependsFile HDRRULE HDRSCAN IncludePath MetaIncludePath {
+            $(i) on $(Included) = $($(i)) ;
+        }
+    }
+# Idl dependencies work almost the same, except that from INCLUDES foo.idl :
+# bar.idl, we can conclude INCLUDES foo.hh : bar.hh.  In fact, we use most of
+# the C parts above, just changing the include path.
+    rule _Idl-Depends-Rule {
+        _C-Depends-Rule $(<:S=.hh) : $(>:S=.hh) ;
+
+        _Cache-Depends C : $(<) : $(>) : $(Idl-IncludePath) : $(MetaIncludePath) : Idl-ExportDirectories ;
+
+        local i ; for i in DependsFile HDRRULE HDRSCAN IncludePath MetaIncludePath Idl-IncludePath {
+            $(i) on $(Included) = $($(i)) ;
+        }
+    }
+
+
+#############
+# Interface #
+#############
+
+#* $(1) gristed targets ...
+#* Mark the $(1) as files that may be included by other source files,
+#* and searched for by the dependency checking rules, but which may
+#* possibly not exist at the time Jam is invoked.  This is necessary so
+#* that Jam can build them the first time around.
+#*eg GeneratedIncludable $(targets:G=$(CurrentPath)) ;
+#*seerule MakeGristed
+#*section rulecons
+    rule GeneratedIncludable {
+        CheckGristed $(1) ;
+        local i ; for i in $(1) {
+            INCLUDES $(i:BSG=GeneratedIncludable) : $(i) ;
+        }
+    }
+
+# These are the rules called from compilation rules.  They set up one of the
+# above file parsing rules on their targets, and ensure that the filenames get
+# bound at some point so that the parsing takes place.
+
+    # Much of the technique is the same for groups of file types.  Here is part
+    # for those which look like C-style includes.
+    rule _C-Depends-Style {
+        if $(DoFileParsing) || $(DoExportSourceTree) {
+            _EnsureBinds $(<) ;
+            HDRSCAN         on $(<) = $(C-Depends-Regexp) ;
+            MetaIncludePath on $(<) = $(Meta-IncludedExportDirectories) ;
+            if $(DoExportSourceTree) {
+              local i ; for i in $(<) {
+                Undefines-$(i) = $(C-Undefines) ;
+                ExportSource $(i) : C : : $(Undefines-$(i)) ;
+              }
+            }
+        }
+        local DependsFile ; _DepFileIs DependsFile ;
+        DependsFile     on $(<) += $(DependsFile) ;
+    }
+
+#* $(1) gristed targets ...
+#* Engage the dependency checking rules on $(1).  This is typically used
+#* inside other rules concerned with compilation, and is normally done
+#* for you within the jambits.
+#*section rulecons
+#*seerule Idl-Dependencies Resource-Dependencies
+    rule C-Dependencies {
+        IncludePath on $(<) = $(C-IncludeDirectories) ;
+        if $(DoFileParsing) || $(DoExportSourceTree) { HDRRULE on $(<) = _C-Depends-Rule ; }
+        _C-Depends-Style $(<) ;
+    }
+#* $(1) gristed targets ...
+#* Engage the dependency checking rules on $(1).  This is typically used
+#* inside other rules concerned with compilation, and is normally done
+#* for you within the jambits.
+#*section rulecons
+#*seerule C-Dependencies Idl-Dependencies
+    rule Resource-Dependencies {
+        IncludePath on $(<) = $(2) ;
+        if $(DoFileParsing) || $(DoExportSourceTree) { HDRRULE on $(<) = _Resource-Depends-Rule ; }
+        _C-Depends-Style $(<) ;
+    }
+#* $(1) gristed targets ...
+#* Engage the dependency checking rules on $(1).  This is typically used
+#* inside other rules concerned with compilation, and is normally done
+#* for you within the jambits.
+#*section rulecons
+#*seerule C-Dependencies Resource-Dependencies
+    rule Idl-Dependencies {
+        IncludePath     on $(<) = $(C-IncludeDirectories) ;
+        Idl-IncludePath on $(<) = $(Idl-IncludeDirectories) ;
+        if $(DoFileParsing) || $(DoExportSourceTree) { HDRRULE on $(<) = _Idl-Depends-Rule ; }
+        _C-Depends-Style $(<) ;
+    }
+
+
+# Log stripped

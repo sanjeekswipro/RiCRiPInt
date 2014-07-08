@@ -1,0 +1,35 @@
+# Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core RIP Recombine DL merging "filter"
+#
+# $HopeName: CORErecombine!merge:make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : merge ;
+
+    # Allow access to these compounds from merge
+    IncludeExportDirectories Inherited Local :
+#        none yet...
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        rcbcntrl.c
+        rcbcomp.c
+        rcbdl.c
+        rcbsplit.c
+        rcbtrap.c
+        rcbvigko.c
+        rcbvmerg.c
+        recomb.c
+    ;
+
+    Library merge : $(CFILES) ;
+
+# Log stripped

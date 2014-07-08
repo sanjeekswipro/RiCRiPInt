@@ -1,0 +1,16 @@
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: CORErecombine!src:names.nam(EBDSDK_P.1) $
+
+/* Names table for CORErecombine. See SWv20!src/names.nam for documentation on
+   the file format. Most names in this file should be plain names, with no
+   attribute information. Nametool will merge multiple definitions, checking
+   that they do not conflict. */
+
+Black
+Composite
+DeviceGray
+Gray
+Separation
+
+% Log stripped

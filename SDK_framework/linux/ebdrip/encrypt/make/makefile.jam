@@ -1,0 +1,49 @@
+# =============================================================================
+# $HopeName: HQNencrypt!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.10.4.1.1.1 2013/12/19 11:24:15 anon Exp $
+# 
+# Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for encryption library. Now includes a lite HQN interface above
+# some of the OpenSSL crypt algorithms - enough for PDF and Metro decryption.
+#
+# We do not use OpenSSL directly for two reasons:
+#  - there are type conflicts between the core and OpenSSL
+#  - this gives us the ability to plug in different security handlers, which
+#    may be a requirement one day.
+#
+# Modification history at end of file.
+# ============================================================================
+
+    # Build cryptify as MPW tool on the mac.
+    RequiresVariant link_mpw_tool ;
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant pdls ;
+
+    DependsOn all : encrypt cryptify ;
+
+    C-IncludeExportDirectories
+        standard
+        openssl
+    : .. ;
+
+    Library encrypt :
+        hqcrypt.c
+    ;
+
+    if pdf in $(Variant_pdls) || $(Variant_pdls) = all {
+       Library encrypt : hqpki.c ; 
+       AddToVar Inherited Local : Suffix : pdf ;
+    }  
+
+    if ! $(MAC) {
+       Library encrypt : oemcrypt.c ; 
+    }
+
+    Executable cryptify : cryptify.c hqcrypt.c ;
+
+# =============================================================================
+# Log stripped

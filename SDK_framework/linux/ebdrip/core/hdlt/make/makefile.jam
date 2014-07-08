@@ -1,0 +1,50 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP HDLT callbacks
+#
+# $HopeName: COREhdlt!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant hdlt ;
+
+# Compilation rules
+
+    DependsOn all : hdlt ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        fonts
+        gstate
+        images
+        mm
+        objects
+        tables
+        v20
+    : .. ;
+
+    ReplaceVar Local : LIB_CFILES :
+        idlomapi.c
+        idlomcrc.c
+        idlomim.c
+        idlompss.c
+        idlomutl.c
+    : Variant hdlt=yes ;
+
+    Pss2C idlompss ;
+
+    AddToVar Local : LIB_CFILES : nohdlt.c : Variant hdlt=no ;
+
+    Library hdlt : $(LIB_CFILES) ;
+
+    if $(Variant_hdlt) = yes {
+        # So that exported source can be built without hdlt if required
+        ExportSource $(CurrentPath)$/src$/nohdlt.c : C ;
+    }
+
+# Log stripped

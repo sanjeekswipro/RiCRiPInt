@@ -1,0 +1,43 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: SWskinkit!make:handshake-EBDEVAL.jam(EBDSDK_P.1) $
+#
+
+    if vxworks in $(TargetOS) {
+      if e500 in $(TargetArch) {
+        Handshake = handshake_ebdeval_vxworks_ppc.c ;
+      }
+    }
+    else if threadx in $(TargetOS) {
+      if arm9 in $(TargetArch) {
+        Handshake = handshake_ebdeval_thrdx_arm9.c ;
+      }
+    }
+    else if $(MACOSX) {
+      Handshake = handshake_ebdeval_mac.c ;
+    }
+    else if $(UNIX) {
+      if arm9 in $(TargetArch) || arm in $(TargetArch) {
+        Handshake = handshake_ebdeval_linux_arm9.c ;
+      }
+      else if ppc in $(TargetArch) {
+        Handshake = handshake_ebdeval_linux_ppc.c ;
+      }
+      else if 603 in $(TargetArch) {
+        Handshake = handshake_ebdeval_linux_ppc.c ;
+      }
+      else if e500 in $(TargetArch) {
+        Handshake = handshake_ebdeval_linux_ppc.c ;
+      }
+      else {
+        Handshake = handshake_ebdeval_linux.c ;
+      }
+    }
+    else if $(C-Compiler-Family) = msvc {
+      Handshake = handshake_ebdeval_win.c ;
+    }
+
+
+#
+# Log stripped

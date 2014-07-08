@@ -1,0 +1,490 @@
+%!PS-Adobe-3.0 Resource-ProcSet
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: COREfonts!testsrc:procsets:HintDebug(EBDSDK_P.1) $
+
+% This procset is for debugging the hinting in Scriptworks. If you set the
+% /debug_hint or RIPvar to true or the /debug_tt flags to 8, ScriptWorks will
+% produce copious amounts of debugging (in the form of PostScript commands)
+% for each character. Extract the PS from the LOGFILE, prepend this procset,
+% put it in a separate file, turn off /debug_hint or /debug_tt and RIP it.
+% This will give a visual representation of what is happening in the hinting,
+% including stem and Blue zones, original points, point shifts, and pixel
+% centre/pixel touch rasterisation.
+
+%%BeginProcSet: HintDebug 1 0
+%
+currentglobal false setglobal
+1 dict begin
+  /globalness exch def
+  50 dict begin
+    /HintDict currentdict def
+    /doblobs true def
+    /dolabels true def
+    /dogrid true def
+    /doraster false def
+    /vstemy -20 def  % position for vstem information
+    /hstemx -20 def  % position for hstem information
+    /started false def % path has points on it
+    /thin 0 def
+    /medium 0.5 def
+    /thick 1 def
+    /stemcolour {0 1 0 0} def
+    /newstemcolour {1 0 1 0} def
+    /cntrstemcolour {1 1 0 0} def
+    /zonecolour {1 0 0 0} def
+    /centrecolour {0 0.25 0 0} def
+    /touchcolour {0.25 0 0 0} def
+    /outlinecolour {0 0 0 1} def
+    /outlinelabelcolour {0 0 0 1} def
+    /outlinewidth 1 def
+    /oldstempos -15 def
+    /newstempos -5 def
+    /cntrstempos 5 def
+    /coordmax 1000 def % Type 1 by default
+    /maxstempos coordmax 5 add def
+    /bluezones 40 array def
+    /numbluezones 0 def
+    /bluezonepos 0 def
+    /bluezonebar 10 def
+    /originalcolour {0 0 1 0} def
+    /originallabelcolour {0 1 1 0} def
+    /labelfont /Times-Roman findfont 5 scalefont def
+    /gridcolour {0 0 1 0} def
+    /pixelpath {
+      0 0 1 1 setbbox 0 0 moveto 0 1 lineto 1 1 lineto 1 0 lineto closepath
+    } bind def
+
+    /fontinfill /infill load def
+
+    /arrow { % x y x y arrow
+      gsave
+	newpath thin setlinewidth 
+	1 index 4 index sub 1 index 4 index sub exch
+	2 copy 0 eq exch 0 eq and {pop}{atan} ifelse
+	5 1 roll 4 2 roll
+	moveto lineto
+	rotate % rotate arrowhead
+	-5 -2 rlineto 0 4 rlineto 5 -2 rlineto
+	stroke
+      grestore
+    } bind def
+
+    /labelyc -1000 def
+    /labelstr 20 string def
+    /label { % x y label
+      gsave newpath 2 copy moveto
+	doblobs {
+	  gsave
+	    1 setlinecap
+	    0.2 setlinewidth
+	    0 0 rlineto stroke 
+	  grestore
+	} if
+	dolabels {
+	  currentpoint labelyc eq { 0 -5 rmoveto } if
+	  currentpoint /labelyc exch def
+	  pop pop
+	  exch cvi labelstr cvs show (,) show cvi labelstr cvs show
+	} {
+	  pop pop
+	} ifelse
+      grestore
+    } bind def
+
+    /labelx { % x y labelx
+      gsave newpath 2 copy moveto
+	dolabels {
+	  currentpoint labelyc eq { 0 -5 rmoveto } if
+	  currentpoint /labelyc exch def
+	  pop pop
+	  pop cvi labelstr cvs show
+	} {
+	  pop pop
+	} ifelse
+      grestore
+    } bind def
+
+    /labely { % x y labely
+      gsave newpath 2 copy moveto
+	dolabels {
+	  currentpoint labelyc eq { 0 -5 rmoveto } if
+	  currentpoint /labelyc exch def
+	  pop pop
+	  cvi labelstr cvs show pop
+	} {
+	  pop pop
+	} ifelse
+      grestore
+    } bind def
+
+    userdict begin
+      /Init { % Init
+	true setoverprint
+	//HintDict begin
+	  % Put coordmax square in centre of area
+	  gsave initclip clippath pathbbox grestore
+	  2 index sub /pageheight exch def
+	  2 index sub /pagewidth exch def
+	  translate
+	  pagewidth 2 div pageheight 2 div translate
+
+	  pagewidth coordmax 200 add div pageheight coordmax 200 add div
+	  2 copy gt { exch } if pop dup scale
+	  coordmax -2 div dup translate
+
+	  newpath
+	  gsave % mark origin
+	    thin setlinewidth
+	    -3 -3 moveto 3 3 lineto -3 3 moveto 3 -3 lineto stroke
+	  grestore
+	  gsave % show alignment zones
+	    newpath medium setlinewidth zonecolour setcmykcolor labelfont setfont
+	    0 2 numbluezones 1 sub {
+	      bluezonepos bluezones 2 index get dup bluezonepos exch labely
+	      bluezonepos bluezones 4 index 1 add get dup bluezonepos exch labely
+	      4 copy arrow
+	      exch pop dup bluezonebar exch moveto maxstempos exch lineto
+	      exch pop dup maxstempos exch lineto bluezonebar exch lineto
+	      closepath fill
+	      pop
+	    } for
+	  grestore
+	  /started false def
+	  /labelyc -1000 def
+	  /numbluezones 0 def
+	end
+      } bind def
+
+      /CoordSpace { % num CoordSpace
+	//HintDict begin
+	 /coordmax exch def
+	 /maxstempos coordmax 5 add def
+         /labelfont /Times-Roman findfont coordmax 200 div scalefont def
+	end
+      } bind def
+
+      /OnePixelX { % num OnePixelX
+	//HintDict exch /onepixelx exch put
+      } bind def
+
+      /OnePixelY { % num OnePixelY
+	//HintDict exch /onepixely exch put
+      } bind def
+
+      /UnitPixelsX { % num UnitpixelsX
+	//HintDict exch /unitpixelsx exch put
+      } bind def
+
+      /UnitPixelsY { % num UnitpixelsY
+	//HintDict exch /unitpixelsy exch put
+      } bind def
+
+      /BlueShift { % num BlueShift
+	//HintDict exch /blueshift exch put
+      } bind def
+
+      /BlueFuzz { % num BlueFuzz
+	//HintDict exch /bluefuzz exch put
+      } bind def
+
+      /BlueScale { % num BlueScale
+	//HintDict exch /bluescale exch put
+      } bind def
+
+      /ForceBold { % num ForceBold
+	//HintDict exch /forcebold exch put
+      } bind def
+
+      /FillRule { % name FillRule
+	//HintDict exch /fontinfill exch
+	  /fill eq { /infill } { /ineofill } ifelse load put
+      } bind def
+
+      /InitDone { % InitDone
+	//HintDict begin
+	  gsave
+	    dogrid {
+	      newpath thin setlinewidth gridcolour setcmykcolor
+	      0 onepixelx coordmax {
+		0 moveto 0 coordmax rlineto
+	      } for
+	      0 onepixely coordmax {
+		0 exch moveto coordmax 0 rlineto
+	      } for
+	      stroke
+	    } if
+	  grestore
+	end
+      } bind def
+
+      /SideBearingX { % num SideBearingX
+	//HintDict exch /sidebearingx exch put
+      } bind def
+
+      /SideBearingY { % num SideBearingY
+	//HintDict exch /sidebearingy exch put
+      } bind def
+
+      /BaselineShift { % num BaselineShift
+	//HintDict exch /baselinedy exch put
+      } bind def
+
+      /VStem { % cntr? lox hix newlox newhix VStem
+	//HintDict begin
+	  /whichstempos 5 index { cntrstempos } { newstempos } ifelse def
+	  /whichstemcolour 5 index { /cntrstemcolour } { /newstemcolour } ifelse load def
+	  gsave
+	    newpath medium setlinewidth labelfont setfont
+	    4 copy
+	      whichstemcolour setcmykcolor
+	      whichstempos moveto whichstempos lineto stroke
+	      stemcolour setcmykcolor
+	      oldstempos moveto oldstempos lineto stroke
+	    4 copy
+	      add 2 div whichstempos 4 2 roll
+	      add 2 div oldstempos 4 2 roll arrow
+	    whichstemcolour setcmykcolor
+	    2 {
+	      gsave
+		dup whichstempos labelx
+		newpath
+		dup whichstempos moveto maxstempos lineto stroke
+	      grestore
+	    } repeat
+	    2 index not {
+	      stemcolour setcmykcolor
+	      2 {
+		gsave
+		  dup oldstempos labelx
+		  newpath
+		  dup oldstempos moveto maxstempos lineto stroke
+		grestore
+	      } repeat
+	    } if
+	  grestore
+	end
+      } bind def
+
+      /HStem { % cntr? loy hiy newloy newhiy HStem
+	//HintDict begin
+	  /whichstempos 5 index { cntrstempos } { newstempos } ifelse def
+	  /whichstemcolour 5 index { /cntrstemcolour } { /newstemcolour } ifelse load def
+	  gsave
+	    newpath medium setlinewidth labelfont setfont
+	    4 copy
+	      whichstemcolour setcmykcolor
+	      whichstempos exch moveto whichstempos exch lineto stroke
+	      stemcolour setcmykcolor
+	      oldstempos exch moveto oldstempos exch lineto stroke
+	    4 copy
+	      add 2 div whichstempos exch 4 2 roll
+	      add 2 div oldstempos exch 4 2 roll arrow
+	    whichstemcolour setcmykcolor
+	    2 {
+	      gsave
+		newpath
+		dup whichstempos exch labely
+		dup whichstempos exch moveto maxstempos exch lineto stroke
+	      grestore
+	    } repeat
+	    2 index not {
+	      stemcolour setcmykcolor
+	      2 {
+		gsave
+		  newpath
+		  dup oldstempos exch labely
+		  dup oldstempos exch moveto maxstempos exch lineto stroke
+		grestore
+	      } repeat
+	    } if
+	  grestore
+	end
+      } bind def
+
+      /OrigPoint { % x y OrigPoint
+	//HintDict begin
+	  gsave
+	    originallabelcolour setcmykcolor labelfont setfont
+	    label
+	  grestore
+	end
+      } bind def
+
+      /Point { % x y Point
+	//HintDict begin
+          started {
+	    lineto
+	  } {
+	    moveto
+	    gsave
+	      outlinecolour setcmykcolor outlinewidth setlinewidth
+	      currentpoint newpath
+	      5 0 360 arc stroke
+	    grestore
+	    /started true def
+	  } ifelse
+	end
+      } bind def
+
+      /OrigCurve { % x y x y x y OrigCurve
+	//HintDict begin
+	  gsave
+	    originallabelcolour setcmykcolor labelfont setfont
+	    6 -2 roll label 4 -2 roll label label
+	  grestore
+	end
+      } bind def
+
+      /Curve { % x y x y x y Curve
+	curveto
+      } bind def
+
+      /ClosePath { % ClosePath
+	closepath
+	//HintDict /started false put
+      } bind def
+
+      /ChangeHints {
+	//HintDict begin
+	  /vstemy vstemy 5 sub def
+	  /hstemx hstemx 5 sub def
+	  /oldstempos oldstempos 5 sub def
+	  /newstempos newstempos 5 sub def
+	  /cntrstempos cntrstempos 5 sub def
+	  gsave {
+	    currentpoint
+	    newpath medium setlinewidth
+	    originallabelcolour setcmykcolor
+	    5 45 -45 arc stroke
+	  } stopped pop grestore
+	end
+      } bind def
+
+      /EndChar { % EndChar
+	//HintDict begin
+	  doraster { % Pixel-centre based rasterisation
+	    gsave
+	      pathbbox
+	      exch 4 2 roll
+	      onepixely div floor onepixely mul 4 1 roll
+	      onepixelx div floor onepixelx mul
+	      exch onepixelx exch {
+		3 copy pop onepixely exch {
+		  gsave
+		    2 copy translate onepixelx onepixely scale
+		    /pixelpath load fontinfill {
+		      touchcolour setcmykcolor
+		      .05 .05 .9 .9 rectfill
+		    } if
+		    .5 .5 fontinfill {
+		      centrecolour setcmykcolor
+		      .1 .1 .8 .8 rectfill
+		    } if
+		  grestore
+		  pop
+		} for
+		pop
+	      } for
+	      pop pop
+	    grestore
+	  } if
+	  outlinelabelcolour setcmykcolor labelfont setfont
+	  { label }
+	  { label }
+	  { 6 -2 roll label 4 -2 roll label label }
+	  {}
+	  pathforall
+	  outlinecolour setcmykcolor
+	  outlinewidth setlinewidth
+	  outlinecolour setcmykcolor
+	  stroke
+	end
+	showpage
+      } bind def
+
+      /BottomZone { % y y BottomZone
+	//HintDict begin
+	  bluezones numbluezones 3 -1 roll put
+	  bluezones numbluezones 1 add 3 -1 roll put
+	  /numbluezones numbluezones 2 add def
+	end
+      } bind def
+
+      /TopZone { % y y TopZone
+	//HintDict begin
+	  bluezones numbluezones 1 add 3 -1 roll put
+	  bluezones numbluezones 3 -1 roll put
+	  /numbluezones numbluezones 2 add def
+	end
+      } bind def
+
+      /Font { % /name Font
+	//HintDict begin
+	  findfont coordmax scalefont /thisfont exch def
+	end
+      } bind def
+
+      /CIDFont { % /name CIDFont
+	//HintDict begin
+	  /CIDFont findresource coordmax scalefont /thisfont exch def
+	end
+      } bind def
+
+      /Char { % num Char
+	//HintDict begin
+	  gsave
+	    << /HintedFonts false /Password 0 >> setsystemparams
+	    newpath thick setlinewidth originalcolour setcmykcolor
+	    thisfont setfont
+	    dup type /nametype eq { % Re-encode font for this character
+	      currentfont dup length dict copy begin
+	        currentdict /FID undef
+		/Encoding 256 array 0 1 255 {
+		  2 copy /.notdef put pop
+		} for
+	        % /name /Encoding [...]
+		dup 32 5 -1 roll put def
+		/Temporary currentdict
+	      end definefont setfont ( )
+	    } if
+	    dup type /integertype eq { % CID font; create Type 3 intermediary
+	      10 dict begin
+		/basechar exch def
+		/FontType 3 def
+		/FontName (Temporary) def
+		/FontMatrix [1 0 0 1 0 0] def
+		/FontBBox [ 0 0 0 0 ] def
+		/basefont thisfont def
+		/Encoding [ 256 { /basechar } repeat ] def
+		/BuildChar {
+		  1 index /Encoding get exch get
+		  1 index /BuildGlyph get exec
+		} bind def
+		/BuildGlyph {
+		  exch begin
+		    basefont setfont
+		    load % get char number
+		    gsave
+% There is a bug in this; the nulldevice glyphshow shows up in the charpath
+%		      1183615869 internaldict /breakpoint get exec
+		      nulldevice 0 0 moveto dup glyphshow currentpoint newpath
+		    grestore newpath
+		    setcharwidth
+		    0 0 moveto glyphshow
+		  end
+		} bind def
+		/Temporary currentdict
+	      end definefont setfont ( )
+	    } if
+	    0 0 moveto false charpath stroke
+	    << /HintedFonts true /Password 0 >> setsystemparams
+	  grestore
+	end
+      } bind def
+    end % userdict
+  end
+  currentdict
+end
+/HintDebug exch /ProcSet defineresource /globalness get setglobal
+%%EndProcSet

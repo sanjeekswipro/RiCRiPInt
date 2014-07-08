@@ -1,0 +1,25 @@
+# Mac MPW build script for jam
+
+set CC "{MPWCommands97}MrC3.0.1"
+set LD "{MPWCommands97}PPCLink1.5"
+set GUSIDIR ":GUSI:"
+set CFLAGS "-opt speed -i {CIncludes96} -i {GUSIDIR}include -d MPW -w off"
+
+set LINKLIBS "{GUSIDIR}Lib:GUSI"
+set LINKLIBS "{LINKLIBS} {PPCLibraries96}PPCCRuntime.o {PPCLibraries96}StdCRuntime.o"
+set LINKLIBS "{LINKLIBS} {SharedLibraries96}InterfaceLib"
+set LINKLIBS "{LINKLIBS} {SharedLibraries96}StdCLib"
+set LINKLIBS "{LINKLIBS} {PPCLibraries96}PPCToolLibs.o"
+
+set SOURCES "command compile execmac filemac pathmac jamgram expand"
+set SOURCES "{SOURCES} glob hash headers jam lists make make1 newstr"
+set SOURCES "{SOURCES} option parse regexp rules scan search timestamp"
+set SOURCES "{SOURCES} variable"
+set SOURCES "{SOURCES} harlequin"
+
+set OBJECTS ""
+for source in {SOURCES}
+  {CC} -o :{source}.o {CFLAGS} :{source}.c
+  set OBJECTS "{OBJECTS} :{source}.o"
+end
+{LD} -t MPST -c 'MPS ' -d -o :jam {OBJECTS} {LINKLIBS}

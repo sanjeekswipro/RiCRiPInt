@@ -1,0 +1,421 @@
+% Copyright (C) 2008-2009 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWebd_OIL_example_gg!swf:procsets:hqnebdpcl(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+
+%%BeginResource: procset HqnEmbeddedPCL 1 0
+
+currentglobal false setglobal
+
+30 dict dup begin
+
+  % Get the entry from /GGEBDPCLPageSizes for the named page size
+  /GGEBDGetPageSizesEntry
+  {
+    % Check if we need to select wide A4
+    currentpagedevice /PCLWideA4 get
+    {
+      dup /A4 eq
+      {
+        pop
+        /WideA4
+      } if
+    } if
+
+  %  //GGEBDPCLPageSizes exch get
+    statusdict /GGEBDPCLPageSizes get exch get
+  } def
+
+  % Put appropriate key value pairs from /GGEBDPCLPageSizes
+  % on stack for paper size
+  /GGEBDPushPageSizeValues
+  {
+    //GGEBDGetPageSizesEntry exec
+    {
+      % For /PCL5LogicalPage use /PCLOrientation to index required offsets
+      1 index /PCL5LogicalPage eq
+      {
+        currentpagedevice /PCLOrientation get get
+      } if
+      1 index /PageSize eq
+      {
+      	currentpagedevice dup /PCL5PageSize get 101 eq {
+        % for PCL 5 custom page size set width and height from command values held in the page device
+          exch pop                                % remove the current /PageSize array value
+          dup /PCL5CustomPageWidth get 0.1 mul    % scale from decipoints
+          exch /PCL5CustomPageHeight get 0.1 mul  % scale from decipoints
+          2 array astore
+        }{
+          pop % remove currentpagedevice dictionary from stack
+        }ifelse
+        aload 3 1 roll
+        (%embedded%) <<
+          /PageHeightFromJob /PageWidthFromJob 6 -2 roll 3 1 roll 
+        >> setdevparams
+        (%embedded%) <<
+          /MediaChangeNotify true
+        >> setdevparams
+	  }if
+    } forall
+
+  } def
+
+  % Install SensePageDevice procedure for PCL5 and PCLXL jobs
+  /GGEBDInstallPCLSensePageDevice
+  {
+    <<
+      /SensePageDevice [
+        currentpagedevice /SensePageDevice get
+        dup null eq { pop } { /exec load } ifelse
+        {
+          % Look up /PageSize for /PCL5PageSize
+          currentpagedevice /PCL5PageSize known
+          {
+            currentpagedevice /PCL5PageSize get -1 ne
+            {
+              % Get name of page size
+              statusdict /GGEBDPCL5PageSizeValues get dup currentpagedevice /PCL5PageSize get known
+              {
+                currentpagedevice /PCL5PageSize get get
+              } {
+                % Unknown size, use default
+                currentpagedevice /PCL5DefaultPageSize get get
+              } ifelse
+
+              % Put values for page size on the stack
+              //GGEBDPushPageSizeValues exec
+
+              % The normal idiom in this procedure is to set to -1 so as not to
+              % compare again next time. In this case, we aren't going to do
+              % that because it would avoid an optimisation in the core and
+              % force a setpagedevice call per page for PCL.
+              %% /PCL5PageSize -1
+            } if
+          } if
+
+          % Look up /PageSize for /PCL5PageLength
+          currentpagedevice /PCL5PageLength known
+          {
+            currentpagedevice /PCL5PageLength get -1 ne
+            {
+              currentpagedevice /PCL5VMI get 0 gt        % keep current page size if VMI is 0
+              {
+                currentpagedevice /PCL5PageLength get    % lines
+                48 currentpagedevice /PCL5VMI get div    % VMI -> lines per inch
+                div                                      % length in inches
+                1 add                                    % allow 1 inch for margins
+                72 mul                                   % convert to points
+                false
+
+                % Find first page size which is tall enough
+                statusdict /GGEBDPCL5PageLengthSizes get
+                {
+                  dup
+                  statusdict /GGEBDPCLPageSizes get exch get /PageSize get
+                  aload pop
+                  4 index ge
+                  {
+                    pop
+                    exch pop
+                    exch pop
+                    //GGEBDPushPageSizeValues exec
+                    true
+                    exit
+                  } {
+                    pop pop
+                  } ifelse
+                } forall
+
+                not
+                {
+                  % No page size is tall enough, so use the tallest we've got
+                  pop
+                  statusdict /GGEBDPCL5PageLengthSizes get dup length 1 sub get
+                  //GGEBDPushPageSizeValues exec
+                } if
+              } if
+
+              % Set to -1 so as not to compare again next time
+              /PCL5PageLength -1
+            } if
+          } if
+
+          % Map any string /PCL5MediaType to numeric value
+          currentpagedevice /PCL5MediaType known
+          {
+            currentpagedevice /PCL5MediaType get dup  type /stringtype eq
+            {
+              cvn dup
+              statusdict /GGEBDPCL5MediaTypeValues get dup 3 -1 roll known
+              {
+                exch get
+                /PCL5MediaType exch dup
+                %convert the media type to a the PS string and add to the stack i.e /MediaType (Plain)
+                statusdict /GGEBDPCL5MediaTypeStrings get exch get          
+              } {
+                % Unknown value - set to null
+                pop pop
+                /PCL5MediaType -1 null
+              } ifelse
+            } {
+              dup -1 ne{
+              %convert the media type to a the PS string and add to the stack i.e /MediaType (Plain)
+              statusdict /GGEBDPCL5MediaTypeStrings get exch get
+              } {
+                pop null
+              }ifelse
+            }ifelse
+            /MediaType exch
+            (%embedded%) << /MediaTypeFromJob 3 index dup null eq{pop ()}if >> setdevparams
+            (%embedded%) << /MediaChangeNotify true >> setdevparams
+          } if
+
+          % Map /PCL5PaperSource to PS /MediaPosition value
+          currentpagedevice /PCL5PaperSource known
+          {
+            currentpagedevice /PCL5PaperSource get dup
+            -1 ne
+            {
+              dup
+              statusdict /GGEBDPCL5MediaSourceValues get exch known
+              {
+                %convert the PCL media source to a the PS value 
+                statusdict /GGEBDPCL5MediaSourceValues get exch get
+              } {
+                % Unknown value - set to Auto
+                pop	0
+              } ifelse
+              % add to the stack as a ps value i.e /MediaPosition 1
+              /MediaPosition exch
+              (%embedded%) << /MediaSourceFromJob 3 index  >> setdevparams
+              (%embedded%) << /MediaChangeNotify true >> setdevparams
+			  % if the media position is 0, make it null as ps media selection fails with 0 for auto
+ 			  dup 0 eq {pop null}if
+              /PCL5PaperSource -1
+            }{
+              pop
+            } ifelse
+          } if
+
+          % Map any string /PCL5OutputBin to PS /OutputType string 
+          currentpagedevice /PCL5OutputBin known
+          {
+            currentpagedevice /PCL5OutputBin get dup -1 ne
+            {
+              dup
+              statusdict /GGEBDPCL5MediaDestStrings get dup 3 -1 roll known
+              {
+                exch get
+                /OutputType exch
+                /PCL5OutputBin -1
+              } {
+                pop pop
+              } ifelse
+            } {
+              pop
+            } ifelse
+          } if
+
+          % Set /PCLDefaultPageSize, /PCL5DefaultLogicalPage, /PCL5DefaultPrintableArea
+          % to correspond to /PCL5DefaultPageSize
+          currentpagedevice /PCLDefaultPageSize known
+          {
+            currentpagedevice /PCLDefaultPageSize get null eq
+            {
+              statusdict /GGEBDPCL5PageSizeValues get currentpagedevice /PCL5DefaultPageSize get get  % Page size name
+              //GGEBDGetPageSizesEntry exec    % Get dict for page size
+
+              dup /PageSize get /PCLDefaultPageSize exch
+              2 index /PCL5LogicalPage get currentpagedevice /PCLDefaultOrientation get get /PCL5DefaultLogicalPage exch
+              4 index /PCL5PrintableArea get /PCL5DefaultPrintableArea exch
+
+              7 -1 roll pop                    % Discard dict
+            } if
+          } if
+
+          % Map any string /PCL5DefaultMediaType to numeric value
+          currentpagedevice /PCL5DefaultMediaType known
+          {
+            currentpagedevice /PCL5DefaultMediaType get type /stringtype eq
+            {
+              currentpagedevice /PCL5DefaultMediaType get cvn dup
+              statusdict /GGEBDPCL5MediaTypeValues get dup 3 -1 roll known
+              {
+                exch get
+                /PCL5DefaultMediaType exch
+              } {
+                % Unknown value - set to plain
+                pop pop
+                /PCL5DefaultMediaType 0
+              } ifelse
+            } if
+          } if
+
+          % Look up /PageSize for /PCLXLPageSize
+          currentpagedevice /PCLXLPageSize known
+          {
+            currentpagedevice /PCLXLPageSize get dup type /stringtype eq
+            {
+              % String value for /PCLXLPageSize
+              dup
+              statusdict /GGEBDPCLXLPageSizeStrings get dup 3 -1 roll known
+              {
+                exch get
+                true   % Have paper name
+              } {
+                pop pop
+                false  % No paper name
+              } ifelse
+              true     % Reset /PCLXLPageSize
+            } {
+              dup type /arraytype eq
+              {
+	        % Array value for /PCLXLPageSize
+                % Numeric custom size [ x y ] in points *100
+                % Unpack
+		aload pop
+		% Convert PCLXL points *100 to points
+ 		100 div exch 100 div  exch
+		% Update the Custom size in the GGEBDPCLPageSizes dictionary
+		statusdict /GGEBDPCLPageSizes get 
+		/Custom get
+		/PageSize get  astore pop
+		% Set the custom paper value so the updated paper size is then selected
+		/Custom
+		true
+                true       % Reset /PCLXLPageSize
+              } {
+                % Numeric value for /PCLXLPageSize
+                -1 ne
+                {
+                  currentpagedevice /PCLXLPageSize get dup
+                  statusdict /GGEBDPCLXLPageSizeValues get dup 3 -1 roll known
+                  {
+                    exch get
+                    true   % Have paper name
+                  } {
+                    pop pop
+                    false  % No paper name
+                  } ifelse
+                  true     % Reset /PCLXLPageSize
+                } {
+                  false    % Don't reset /PCLXLPageSize (and don't have paper name)
+                } ifelse
+              } ifelse
+            } ifelse
+
+            % Will now have one of these three:
+            % |- false              if don't need to reset /PCLXLPageSize
+            % |- false true         if no paper name, but do need to reset /PCLXLPageSize
+            % |- name true true     if have paper name, and need to reset /PCLXLPageSize
+            {
+              not
+              {
+                % Unknown size, use default
+                statusdict /GGEBDPCLXLPageSizeValues get currentpagedevice /PCLXLDefaultPageSize get get
+              } if
+
+              % Put values for paper name on the stack
+              //GGEBDPushPageSizeValues exec
+
+              % Set to -1 so as not to compare again next time
+              /PCLXLPageSize -1
+            } if
+          } if
+
+          % Map any string /PCLXLMediaType to PS /MediaType string 
+          currentpagedevice /PCLXLMediaType known
+          {
+            currentpagedevice /PCLXLMediaType get dup type /stringtype eq
+            {
+              cvn dup
+              statusdict /GGEBDPCLXMediaTypeStrings get dup 3 -1 roll known
+              {
+                exch get
+                /MediaType exch
+                (%embedded%) << /MediaTypeFromJob 3 index >> setdevparams
+        				(%embedded%) << /MediaChangeNotify true >> setdevparams
+                /PCLXLMediaType -1
+              } {
+                pop pop
+              } ifelse
+            } {
+              pop
+              } ifelse
+          } if
+
+          % Map /PCLXLMediaSource to PS /MediaPosition value
+          currentpagedevice /PCLXLMediaSource known
+          {
+            currentpagedevice /PCLXLMediaSource get dup
+            -1 ne
+            {
+              dup
+              statusdict /GGEBDPCLXMediaSourceValues get exch known
+              {
+                  %convert the PCL media source to a the PS value 
+                  statusdict /GGEBDPCLXMediaSourceValues get exch get
+              } {
+                % Unknown value - set to Auto
+                pop 0
+              } ifelse
+              % add to the stack as a ps value i.e /MediaPosition 1
+              /MediaPosition exch
+              (%embedded%) << /MediaSourceFromJob 3 index  >> setdevparams
+              (%embedded%) << /MediaChangeNotify true >> setdevparams
+			  % if the media position is 0, make it null as ps media selection fails with 0 for auto
+ 			  dup 0 eq {pop null}if
+              /PCLXLMediaSource -1				
+            }{
+              pop
+            } ifelse	
+          } if
+          
+          % Map any string /PCLXLMediaDestination to PS /OutputType string 
+          currentpagedevice /PCLXLMediaDestination known
+          {
+            currentpagedevice /PCLXLMediaDestination get dup -1 ne
+            {
+              dup
+              statusdict /GGEBDPCLXMediaDestStrings get dup 3 -1 roll known
+              {
+                exch get
+                /OutputType exch
+                /PCLXLMediaDestination -1
+              } {
+                pop pop
+              } ifelse
+            }{
+              pop
+            } ifelse
+          } if
+        } bind
+        /exec load
+      ] cvx
+
+      /Install [
+        currentpagedevice /Install get
+        /exec load
+        {
+          % Move page origin up the page and scale/invert the CTM
+          0 currentpagedevice /PageSize get 1 get translate
+          .01 -.01 scale
+        } bind
+        /exec load
+      ] cvx
+    >> setpagedevice
+
+  } bind def
+
+end
+
+/HqnEmbeddedPCL exch /ProcSet defineresource pop
+
+setglobal
+
+%%EndResource

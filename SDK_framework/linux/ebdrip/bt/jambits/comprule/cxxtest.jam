@@ -1,0 +1,62 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# CxxTest compilation rules.
+#
+# $HopeName: HQNjambits!comprule:cxxtest.jam(EBDSDK_P.1) $
+
+actions quietly together _CxxTestGen
+{
+  echo ... Generating CxxTest runner from $(>:BS) ...
+  $(Perl) -w $(CxxTest)$/cxxtestgen.pl --template $(CxxTest)$/sample$/aborter.tpl --error-printer --output=$(<) $(>)
+}
+
+# Rule for generating C++ source for a CxxTest test runner
+# $(1) input test definition header file(s)
+# $(2) output test runner source file name
+rule CxxTestGen
+{
+  MakeGristed Source : $(1) : $(CurrentPath) ;
+  MakeGristed Target : $(2) : $(CurrentPath) ;
+  SEARCH on $(Source) += $(CurrentPath) ;
+  DirectoryFor $(Target) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+  DEPENDS $(Target) : $(Source) ;
+  FloatingDepends $(Target) : ;
+  CleanFile $(Target) : ;
+  CxxTest on $(Target) = $(CxxTest) ;
+
+  _CxxTestGen $(Target) : $(Source) ;
+
+  AddToVar Local : C-IncludeDirectories : $(CxxTest) $(BUILDROOT) : : Unique ;
+}
+
+# Rule for generating an executable CxxTest test runner. The ungristed target
+# "UnitTests" is made to depend on this executable.
+#
+# $(1) output executable gristed target
+# $(2) input test definition header file(s)
+rule CxxTestExecutable
+{
+  local CppFile =  $(1:B).cpp ;
+  DEPENDS UnitTests : $(1) ;
+  CxxTestGen $(2) : $(CppFile) ;
+  Executable $(1) : $(CppFile) : : ;
+  FloatingDepends $(1) : ;
+  CleanFile $(1) : ;
+
+  local fh ;
+  if $(WritingCxxTestList)
+  {
+    FILEOPEN fh : CxxTests.txt : a ; # append
+  }
+  else
+  {
+    WritingCxxTestList = "YES" ;
+    FILEOPEN fh : CxxTests.txt : w ; # new
+  }
+
+  FILEWRITE $(fh) : $(CurrentPath)$/$(C++-Exec-Directory)$/$(1:B)$(C++-Exec-Suffix) ;
+  FILECLOSE $(fh) ;
+}
+
+# Log stripped

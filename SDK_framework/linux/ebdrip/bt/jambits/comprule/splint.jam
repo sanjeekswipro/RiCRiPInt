@@ -1,0 +1,16 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Splint compilation rules.
+#
+# $HopeName: HQNjambits!comprule:splint.jam(EBDSDK_P.1) $
+# $Id: comprule:splint.jam,v 1.3.25.1.1.1 2013/12/19 11:24:11 anon Exp $
+#
+
+    NOTFILE splint ;
+    if splint in $(JAM_ARGUMENTS) || ! $(SPLINT) in 0 {
+        EnableSplint = 1 ;
+    }
+
+
+# Log stripped

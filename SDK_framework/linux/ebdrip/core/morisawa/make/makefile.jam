@@ -1,0 +1,65 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Morisawa font decryption
+#
+# $HopeName: SWmorisawa!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant custiface morisawa thirdparty ;
+
+if $(Variant_custiface) in 0 {
+  ImplementsVariant customised ;
+}
+
+# Compilation rules
+
+    if $(Variant_morisawa) = nm
+    {
+        Library morisawa : nomsawa.c ;
+    }
+    else
+    {
+        if $(Variant_thirdparty)
+        {
+             Library morisawa ;
+             Search morisawa$(C-Lib-Suffix) : $(CurrentPath)$/$(C-TPB-Directory) ;
+        }
+        else
+        {
+            DependsOn all : morisawa ;
+
+            C-IncludeExportDirectories
+                v20
+            : .. ;
+
+            C-IncludeExportDirectories
+                $(CustIface)
+            : .. .. ;
+
+            local SourceFiles =
+                morisawa.c
+            ;
+
+            Library morisawa : $(SourceFiles) ;
+
+            ExportSource morisawa : ThirdPartyBinary ;
+
+            local s ; for s in $(SourceFiles)
+            {
+                local T ; MakeGristed T : $(s) : $(CurrentPath) ;
+                DontExportSource $(T) ;
+            }
+
+            # So that exported source can be built without morisawa if required
+            ExportSource $(CurrentPath)$/src$/nomsawa.c : C ;
+        }
+    }
+
+
+# Log stripped

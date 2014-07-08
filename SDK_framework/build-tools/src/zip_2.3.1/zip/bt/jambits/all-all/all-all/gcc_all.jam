@@ -1,0 +1,116 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:all-all:gcc_all.jam(trunk.29) $
+#
+
+# Compiler
+    # Many of the options are the same for C and C++.
+    local Com = C C++ mixedC ;
+    CompilerVar $(Com)-Compiler_Arguments          : -c ;
+    CompilerVar $(Com)-Compiler_OutputFile=        : "-o " ;
+    CompilerVar $(Com)-Compiler_HashDefine         : -D ;
+    CompilerVar $(Com)-Compiler_AddIncludeDir      : -I ;
+
+    CompilerVar $(Com)-Compiler_Arguments          : -g : Build DEBUG ;
+    CompilerVar $(Com)-Compiler_Arguments          : -g : Build TIMING ;
+
+    CompilerVar $(Com)-Compiler_Arguments          : -fprofile-arcs -ftest-coverage : Build COVERAGE ;
+
+    # In order to be able to switch off the -ansi flag:
+    ImplementsVariant ansi : Inherited Local ;
+    RequiresVariant ansi ;
+    CompilerVar $(Com)-Compiler_Arguments          : -ansi : Variant ansi ;
+
+    #
+    # Warnings
+    #
+
+    # -Wimplicit => -Wimplicit-int -Wimplicit-function-declaration
+    # -Wall      => -W -Wimplicit -Wreturn-type -Wunused -Wswitch -Wcomment -Wtrigraphs -Wformat -Wchar-subscripts -Wparentheses
+    #
+    # Not used
+    # ~~~~~~~~
+    # -pedantic            -- Be pedantic (and give warnings in the Mac OS X
+    #                         system headers which stop HQN-standard compiling
+    #                         (no ANSI C support of long long))
+    # -W                   -- warns about missing initializers for agreg
+    # -Wid-clash-<num>     -- arbitary length limits on identifiers isn't
+    #                         useful.
+    # -Wcast-qual          -- warn about discarding "const".  Const is hard to
+    #                         use.
+    # -Wconversion         -- warn when prototypes cause type conversions that
+    #                         are different to what would happen without the
+    #                         prototype.  (Isn't that the whole point of
+    #                         prototypes?!?)
+    # -Wmissing-prototypes -- warn when a global function definition is
+    #                         enountered without a prototype.
+    # -Wshadow             -- warn when a local variable shadows another local
+    #                         variable (as happens many times in Mac OS X system
+    #                         headers)
+    # -Wstrict-prototypes  -- warn if a function is declared or defined without
+    #                         specifying the argument types (such prototypes
+    #                         exists in Mac OS X system headers, e.g. cabs()
+    #                         in math.h)
+    # -Wredundant-decls    -- warn about redundant declarations.  As long as
+    #                         the declarations are compatible; which is
+    #                         otherwise an error; this is harmless.  This
+    #                         warning is generated mostly by system headers.
+    # -Wtraditional        -- warn about certain constructs that behave differently
+    #                         in traditional and ANSI C (Mac OS X system headers ...)
+    # -Wtrigraphs          -- warn about trigraphs, but cpp on Mac OS X RC issues
+    #                         bogus warnings
+    # -Wwrite-strings      -- give string constants the type const char[length]
+    #                         to generate warnings when copied into a a non-
+    #                         const char *.  Unfortunately, we are rather lax
+    #                         with our use of const, since some compilers are
+    #                         pretty poor at dealing with it.
+    # -Waggregate-return   -- omniORB header files and the Hq32x2
+    #                         implementation use a structure return type.
+
+    # Separate variables for all compilers and C compiler because use
+    # of -Wnested-externs with GCC 3.3 on Mac OS X provokes a warning
+    # with C++
+    local low      = -Wchar-subscripts -Wcomment -Wformat -Wpointer-arith -Wreturn-type -Wswitch ;
+    local low_C    = -Wnested-externs ;
+    local medium   = $(low) -Wimplicit ;
+    local medium_C = $(low_C) ;
+    local high     = $(medium) -Wall -Wno-missing-braces -Wno-trigraphs ;
+    local high_C   = $(medium_C) ;
+
+    ImplementsVariant warning_level warnings_are_fatal : Inherited Local ;
+
+    CompilerVar C-Compiler_Arguments      : $(low_C)    : Variant warning_level=low ;
+    CompilerVar C-Compiler_Arguments      : $(medium_C) : Variant warning_level=medium ;
+    CompilerVar C-Compiler_Arguments      : $(high_C)   : Variant warning_level=high ;
+    CompilerVar $(Com)-Compiler_Arguments : $(low)      : Variant warning_level=low ;
+    CompilerVar $(Com)-Compiler_Arguments : $(medium)   : Variant warning_level=medium ;
+    CompilerVar $(Com)-Compiler_Arguments : $(high)     : Variant warning_level=high ;
+
+    CompilerVar C-Compiler_Arguments      : $(high_C)   : Variant Non_warning_level ; # Default
+    CompilerVar $(Com)-Compiler_Arguments : $(high)     : Variant Non_warning_level ; # Default
+
+    CompilerVar C++-Compiler_Arguments    : -Woverloaded-virtual : Variant warning_level=high ;
+
+    CompilerVar $(Com)-Compiler_Arguments : -Werror     : Variant warnings_are_fatal ;
+
+
+# Preprocessor
+    CompilerVar C-Preprocessor_Arguments           : -P ;
+
+# Executable linker
+    CompilerVar $(Com)-Exec-Linker_Libraries       : -lgcov : Build COVERAGE ;
+    CompilerVar $(Com)-Exec-Linker_Arguments       : -fprofile-arcs -ftest-coverage : Build COVERAGE ;
+    CompilerVar $(Com)-Exec-Linker_OutputFile=     : "-o " ;
+
+# Library linker
+    CompilerVar $(Com)-Lib-Linker_Arguments        : -r ;
+    CompilerVar $(Com)-Lib-Linker_OutputFile=      : "-o " ;
+
+# DynamicLibrary linker
+    CompilerVar $(Com)-Dll-Linker_OutputFile=      : "-o " ;
+    CompilerVar $(Com)-Dll-Linker_Libraries        : -lgcov : Build COVERAGE ;
+    CompilerVar $(Com)-Dll-Linker_Arguments        : -fprofile-arcs -ftest-coverage : Build COVERAGE ;
+
+
+# Log stripped

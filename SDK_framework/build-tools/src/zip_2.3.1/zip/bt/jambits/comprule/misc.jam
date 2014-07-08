@@ -1,0 +1,1172 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Miscellaneous compilation rules.
+#
+# $HopeName: HQNjambits!comprule:misc.jam(trunk.92) $
+#
+
+#* A rule that takes a directory containing a script template and prepends some
+#* variables definitions to create a script with a given suffix.
+#*
+#* $(1) target
+#* $(2) suffix ...
+#* $(3) environment ...
+#* $(4) destination
+#* [$(5)] ALWAYS | CHECKENV ...
+#*
+#*eg.   GeneralScriptFromTemplate <target> : <suffix> ... : <environment> ... [ : <destination> ] [ : [ALWAYS|CHECKENV]... ] ;
+#*
+#* ALWAYS means always regenerate the script in every build
+#*
+#* CHECKENV means fail if any entry in the environment is undefined.
+#* Failure will only occur if an attempt is made to build the script.
+#*section rulecons
+
+if $(NT) { actions quietly together _ScriptFromTemplate {
+echo ...MAKING $(<)...
+if $(HasEnvError)==0 goto envOK
+  echo $(EnvError)
+  exit 1
+:envOK
+echo @echo off > $(<)
+$(Environment)$(<)$(NewLine)
+type $(>) >> $(<)
+} }
+if $(UNIX) || $(MACOSX) { actions quietly together _ScriptFromTemplate {
+echo ...MAKING $(<)...
+if [ $(HasEnvError) -eq 1 ] ; then
+  echo $(EnvError)
+  exit 1 ;
+fi
+echo '#!/bin/sh' > $(<)
+$(Environment)$(<)$(NewLine)
+cat $(>) >> $(<)
+chmod +x $(<)
+} }
+    rule GeneralScriptFromTemplate {
+        local Environment i EnvError ;
+        for i in $(3) {
+            local Value ; Join Value : " " : $($(i)) ;
+            if CHECKENV in $(5) {
+              if ! $(Value) {
+                EnvError = $(i) is not defined ;
+              }
+            }
+            if $(NT)   { Environment += "echo set "$(i)=$(Value)" |"$(Perl)" "$(HQNbuildtools)$/"eecho.pl >>" ; }
+            if $(UNIX) || $(MACOSX) { Environment += $(Perl)" "$(HQNbuildtools)$/"eecho.pl "$(i)=\\\"$(Value)"\\\" >> " ; }
+        }
+        for i in $(1) {
+            local Target ; MakeGristed Target : $(i) : $(CurrentPath) ;
+            local TargetFile ; Join TargetFile : - : $(Target) $(2) ;
+            TargetFile = $(TargetFile)$(Script-Suffix) ;
+            TargetFile-$(Target) = $(TargetFile) ; # For distributing, etc...
+
+            # These scripts are only specific to mac, pc or unix, usually:
+# if $(MAC) needs to change:
+            if $(MAC)    { TargetPlatform-$(Target) = mac all     ; TargetPlatform-$(TargetFile) = mac all     ; }
+            if $(NT)     { TargetPlatform-$(Target) = win_32 all  ; TargetPlatform-$(TargetFile) = win_32 all  ; }
+            if $(UNIX)   { TargetPlatform-$(Target) = unix all    ; TargetPlatform-$(TargetFile) = unix all    ; }
+            if $(MACOSX) { TargetPlatform-$(Target) = macos_x all ; TargetPlatform-$(TargetFile) = macos_x all ; }
+
+            if $(Target) != $(TargetFile) {
+                DEPENDS $(Target) : $(TargetFile) ; NOTFILE $(Target) ;
+            }
+            DirectoryFor $(TargetFile) : $(CurrentPath) $(4) ;
+            CleanFile $(TargetFile) ;
+
+            local Source ; MakeGristed Source : $(i)$(Script-Suffix) : ScriptTemplate-$(CurrentPath) ;
+            if $(SWIGVERSION) = 2.2.5.1 {
+                SEARCH on $(Source) += $(CurrentPath)$(FS)script_templates ;
+            }
+            else {
+                SEARCH on $(Source) += $(CurrentPath)$/script_templates ;
+            }
+
+            Environment on $(TargetFile) = $(Environment) ;
+
+            # Defer any error about environment until actually running the action. If the
+            # script is not built, build will not fail, even if environment check failed.
+            if $(EnvError) {
+              HasEnvError on $(TargetFile) = 1 ;
+              EnvError on $(TargetFile) = Cannot build \"$(TargetFile)\" - $(EnvError) ;
+            } else {
+              HasEnvError on $(TargetFile) = 0 ;
+            }
+
+            DEPENDS $(TargetFile) : $(Source) ;
+            if ALWAYS in $(5) {
+              ALWAYS $(TargetFile) ;
+            }
+            _ScriptFromTemplate $(TargetFile) : $(Source) ;
+        }
+    }
+
+#* $(1) target
+#* $(2) environment ...
+#* $(3) destination
+#* [$(4)] ALWAYS | CHECKENV ...
+#*
+#*eg. FlavouredScriptFromTemplate <target> : <environment> ... [ : <destination> ] [ : [ALWAYS|CHECKENV]... ] ;
+#*section rulecons
+    rule FlavouredScriptFromTemplate {
+        GeneralScriptFromTemplate $(1) : $(Suffix) : $(2) : $(3) : $(4) ;
+    }
+
+#* $(1) target
+#* $(2) environment ...
+#* $(3) destination
+#* [$(4)] ALWAYS | CHECKENV ...
+#*
+#*eg. PlainScriptFromTemplate <target> : <environment> ... [ : <destination> ] [ : [ALWAYS|CHECKENV]... ] ;
+#*section rulecons
+    rule PlainScriptFromTemplate {
+        GeneralScriptFromTemplate $(1) : : $(2) : $(3) : $(4) ;
+    }
+
+#* Arbitary file generation rule.
+#*
+#* $(1) target
+#* $(2) command ...
+#* $(3) path ...
+#*
+#*eg.   GenerateFile <target> : <command> ... [ : <path> ... ] ;
+#*
+#* line executed will be
+#*   <command> ... <gristedtarget>
+#*
+    actions together quietly _GenerateFile {
+$(Execute) $(<)
+$(Touch) $(<)
+    }
+    rule GenerateFile {
+        local Target ; MakeGristed Target : $(<) : $(CurrentPath) $(3) ;
+        local PathStub = $(4) ; PathStub ?= $(GeneratedC-Directory) ;
+        DirectoryFor $(Target) : $(CurrentPath) $(PathStub) ;
+        Execute on $(Target) += $(2) ;
+        _GenerateFile $(Target) ;
+        GeneratedIncludable $(Target) ;
+        CleanFile $(Target) ;
+    }
+
+#* Arbitrary target rule.
+#*
+#* $(1) target
+#* $(2) sources ...
+#* $(3) action ...
+#*
+#*eg.   GenericTarget <target> : <sources> : <action> ;
+#*
+#* (The strings $< and $> are looked for, and replaced with the gristed targets
+#* and sources, respectively.)
+#*
+#* How it works and why:
+#*  It isn't possible to use my lazy evaluation variables in actions, and so
+#*  specifying, as an argument to a rule, the $(<) and $(>) variables, is
+#*  problematic.  Therefore, it isn't possible to construct an updating action
+#*  that contains targets without writing the actions yourself.  Unfortunately,
+#*  this means that the user will have to grist their targets, and set up the
+#*  appropriate dependencies, etc., which will be open to criticism and bugs.
+#*
+#*  This rule works by observing that there are few actions that contain either
+#*  the $(<) or $(>) variable more than once or twice.  Therefore, (letting $(^)
+#*  represent either $(<) or $(>), nearly all targets can be represented by
+#*
+#*    $(a) $(^) $(b) $(^) $(c) $(^)
+#*
+#*  where any element of this list may be missing.  The $(a), $(b) and $(c)
+#*  strings can be set on a target as normal, and the $(^) elements can be
+#*  produced using $(aT)$(<) $(aS)$(>), where one of $(aT), $(aS) is the empty
+#*  list (and so the product collapses), and the other is "", leaving the target
+#*  list unaffected.  Hence the _GenericTarget actions below.
+#*
+#*  Now, it isn't possible to perform numeric operations, such as incrementing a
+#*  counter (at least not in the current version of Jam :-), and so we can only
+#*  do this by having a list of the variables a, b and c, and step across them
+#*  when we have filled that part of the actions.  Consequently, the list may be
+#*  too short for some unusual targets, and may be fixed simply by adding another
+#*  variable to the list $(Letters) to cope with that.
+#*
+#*  It works by looking through the third argument for $< or $>, which shift the
+#*  first element off the $(Vars) list, and set one of the $(aT) or $(aS)
+#*  variables appropriately.  Otherwise, the string is just appended to the
+#*  variable named by the top element of $(Vars).
+#*
+#*  This rule may be called multiple times for the same target, using a different
+#*  actions template.  We can't reuse the variables we have assigned to the
+#*  target for this new action, and so need to have a separate target for each
+#*  action format.  This is acheived by creating <em>MagicTarget</em>s, which are simply
+#*  the gristed targets with a $(Rune) appended to the beginning (a
+#*  representation of the action format, which is hopefully unique for that
+#*  format).  We then do the INCLUDES a : b ; DEPENDS b : a ; trick to ensure
+#*  that our magic targets get updated whenever we need to update the real
+#*  target, but also that anything that depends on the real target also depends
+#*  on our magic target.
+#
+    actions quietly _GenericTarget bind Target {
+echo ...BUILDING TARGET "$(Target)"...
+$(a) $(aS)$(>) $(aT)$(Target) $(b) $(bS)$(>) $(bT)$(Target) $(c) $(cS)$(>) $(cT)$(Target)
+    }
+    rule GenericTarget {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+        local Source ; MakeGristed Source : $(2) : $(CurrentPath) ;
+        FloatingDepends $(Target) ;
+
+        local Letters = a b c ;
+        local Vars = $(Letters) ;
+        local $(Vars) $(Vars)S $(Vars)T ;
+
+        local i ; for i in $(3) {
+            if ! $(Vars) { Error Too many occurances of target specifiers in GenericTarget ; }
+            switch $(i) {
+                case $< : $(Vars[1])T = "" ; Vars = $(Vars[2-]) ;
+                case $> : $(Vars[1])S = "" ; Vars = $(Vars[2-]) ;
+                case *  : $(Vars[1]) += $(i) ;
+            }
+        }
+
+        local Rune = $(3:/) ;
+        local MagicTarget = $(Rune)$/$(Target) ;
+        for i in Target $(Letters) $(Letters)S $(Letters)T { $(i) on $(MagicTarget) = $($(i)) ; }
+
+        NOTFILE $(MagicTarget) ;
+        for i in $(Target) {
+            local RT = $(Rune)$/$(i) ;
+
+            After $(i) : $(RT) ;
+            if $(PreviousRT-$(i)) != $(RT) {
+                if $(PreviousRT-$(i)) {
+                    DEPENDS $(RT) : $(PreviousRT-$(i)) ;
+                }
+                PreviousRT-$(i) = $(RT) ;
+            }
+        }
+        DEPENDS $(Target) : $(Source) ;
+        _GenericTarget $(MagicTarget) : $(Source) ;
+    }
+
+#* A rule for copying a file.
+#*
+#* $(1) Gristed-target
+#* $(2) Gristed-source
+#*
+#* Copy file $(2) to file $(1).
+#*
+#*seerule CopyTreeLink CopyLibraryDir
+#*eg. CopyFile <gristedtarget> : <gristedsource> ;
+#
+    rule CopyFile {
+        CheckGristed $(>) ; CleanFile $(<) ; DEPENDS $(<) : $(>) ;
+    }
+    actions quietly CopyFile {
+$(CopyFile) "$(>)" "$(<)"
+    }
+
+#* A rule for copying a tree.
+#*
+#* $(1) Target-dir
+#* $(2) Source-dir
+#*
+#* Copy directory $(2) to directory $(1).
+#*
+#*seerule CopyFile CopyTreeLink CopyLibraryDir
+#*eg.  CopyTree <gristedtarget> : <source> : <actual destination directory> ;
+#
+    rule CopyTree {
+        CheckGristed $(<) ; NOTFILE $(<) ; ALWAYS $(<) ; DEPENDS $(<) : $(>) ;
+        DestDirectory on $(<) = $(3) ;
+    }
+    actions quietly CopyTree {
+$(Copy) "$(>)" "$(DestDirectory)"
+    }
+
+
+#* This rule copies a directory containing libraries to a destination directory
+#* and then rebuilds the symbolic links for the libraries contained therein.
+#*
+#* $(1) Target-dir
+#* $(2) Source-dir
+#*
+#* Copy directory $(2) to directory $(1).
+#*
+#*seerule CopyFile CopyTree CopyTreeLink
+#*eg.   CopyLibraryDir <relativetargetdir> : <sourcedir> ;
+#
+if $(UNIX) || $(MACOSX) {
+        actions quietly _CopyLibraryDir {
+echo ...COPYING libraries...
+rm -rf $(<)
+cp -Rp $(>) $(<)
+cd $(<)
+find . -type l -exec rm {} \;
+bash -noprofile -norc -c 'for i in `find . -name "*.so.?.*" -print`; do l1=`echo $i | sed "s/\.so\.\([^\.]*\)\..*$/.so.\1/"`; if [ ! -e $l1 ]; then ln -sf $i $l1; l2=`echo $l1 | sed "s/\.so\..*$/.so/"`; if [ ! -e $l2 ]; then ln -sf $l1 $l2; fi; fi; done'
+cd $(BUILDROOT)
+        }
+}
+    rule CopyLibraryDir {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+        LOCATE on $(Target) = $(CurrentPath) ;
+
+        DEPENDS $(Target) : $(2) ;
+
+        CleanDir $(Target) ;
+        _CopyLibraryDir $(Target) : $(2) ;
+    }
+
+#* This rule copies a directory containing links. Typical example is
+#* the JRE 1.4 in SGI is a symbolic link to the JDK. Normal copy will
+#* end up recursion.
+#*
+#* $(1) Target-dir
+#* $(2) Source-dir
+#*
+#* Copy directory $(2) to directory $(1).
+#*seerule CopyFile CopyTree CopyLibraryDir
+#*eg.   CopyTreeLink <relativetargetdir> : <sourcedir> ;
+#
+if $(UNIX) || $(MACOSX) {
+        actions quietly _CopyTreeLink {
+echo ...COPYING libraries...
+rm -rf $(<)
+cp -R $(>) $(<)
+cd $(<)
+find . -type l -exec rm {} \;
+bash -noprofile -norc -c 'for i in `find . -name "*.so.?.*" -print`; do l1=`echo $i | sed "s/\.so\.\([^\.]*\)\..*$/.so.\1/"`; if [ ! -e $l1 ]; then ln -sf $i $l1; l2=`echo $l1 | sed "s/\.so\..*$/.so/"`; if [ ! -e $l2 ]; then ln -sf $l1 $l2; fi; fi; done'
+cd $(BUILDROOT)
+        }
+}
+    rule CopyTreeLink {
+        local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+        LOCATE on $(Target) = $(CurrentPath) ;
+
+        DEPENDS $(Target) : $(2) ;
+
+        CleanDir $(Target) ;
+        _CopyTreeLink $(Target) : $(2) ;
+    }
+
+#* Touch files
+#*
+#* $(1) Targets ...
+#*
+#* Touch the files associated with $(1) to update their timestamps. The files
+#* will be created if they do not exist.
+    actions quietly together TouchFile {
+        $(Touch) $(<)
+    }
+    rule TouchFile {
+        CheckGristed $(1) ;
+    }
+
+#* Sign files
+#*
+#* $(1) Targets ...
+#* $(2) Grist
+#* $(3) [ dependency ]
+#*
+#* Sign files associated with targets $(1), applying $(2) as grist to any
+#* ungristed targets. If $(3) is specified this rule will be made dependent
+#* on it.
+#
+#   We should be able to use the DEPENDS a : b ; INCLUDES b : a ; trick or a
+#   variant thereof to do this cleanly, but up to version 2.2.5.2,
+#   the behaviour of INCLUDES is broken.  Instead, we will use the _same_ target
+#   name as used for the sign (c.jam), which has been hacked to include an extra
+#   line, that collapses if the Sign doesn't need to happen.
+#
+#   Sign <target> ... [ : <compound> ... ] [ : <dependency> ] ;
+#
+    rule Sign {
+        if Sign in $(EnabledCompilers) {
+            local Target ; MakeGristed Target : $(1) : $(CurrentPath) $(2) ;
+            local i ; for i in $(Target) {
+                if $(TargetFile-$(i)) { i = $(TargetFile-$(i)) ; }
+
+                local LinkTarget = Sign-$(i) ;
+                local sign ; Join sign : " " : $(Sign) "" ;
+
+                Sign_  on $(LinkTarget) = $(sign) ;
+                Target on $(LinkTarget) = $(i) ;
+
+                After $(i) : $(LinkTarget) ;
+
+                if $(3) {
+                  DEPENDS $(LinkTarget) : $(3) ;
+                }
+
+                C-Link-Sign $(LinkTarget) ;
+            }
+        }
+    }
+
+###
+#* Unzip the prepared documentation, ready for copying to the
+#* distribution.
+#*
+#* $(1) Timestamp-file
+#* $(2) Source-zip
+#* $(3) Dest-directory
+#*
+#* Unzip source ZIP file $(2) into destination directory $(3), creating
+#* a timestamp file $(1) which can be used for dependents to test.
+    actions quietly _Unzip {
+      echo ...Unzipping $(>)...
+      unzip -qqou $(>) -d $(dir)
+      echo timestamp file > $(<)
+    }
+    rule Unzip {
+      local Target    ; MakeGristed Target    : $(1) : $(CurrentPath) ;
+      local Source    ; MakeGristed Source    : $(2) : $(CurrentPath) ;
+      local UnzipDir  ; MakePath UnzipDir : $(CurrentPath) $(3) ;
+      DirectoryFor $(Target) : $(CurrentPath)$/obj ;
+
+      MakeDirectory $(UnzipDir) ;
+
+      dir on $(Target) = $(UnzipDir) ;
+      _Unzip $(Target) : $(Source) ;
+
+      DEPENDS $(Target) : $(Source) $(UnzipDir) ;
+      FloatingDepends $(Target) ;
+      CleanDir $(UnzipDir) ;
+    }
+
+###
+#* Zip a directory or target $(2) and create a named ZIP file or target $(1).
+#* Zip directory segment will not be included in the path of the files
+#* added as Zip units.
+#*
+#* $(1) destination file
+#* $(2) source directory
+#* [$(3)] timestamp file
+#*
+#* If specified, $(3) will be used as a dependency for $(1). Otherwise, the
+#* source target will always be rebuilt.
+    actions quietly _Zip {
+      echo ...Zipping dir $(2) into $(1)...
+      $(ChDir) $(2)
+      $(ZipCommand) -rq9D $(BUILDROOT)$/$(1) *
+    }
+    rule Zip {
+      CheckGristed $(1) $(2) ;
+
+      # Caller must ensure the directory is cleaned if necessary.
+      local Dest = $(1) ;
+      FloatingDepends $(Dest) ;
+      CleanFile $(Dest) ;
+
+      local Source = $(2) ;
+
+      # If a timestamp file exist, use it as a dependency for destination.
+      # Otherwise, don't trust the timestamp on the source directory.
+      if $(3) {
+          local Timestamp ; MakeLeafTarget Timestamp : $(3) ;
+          DEPENDS $(Dest) : $(Timestamp) ;
+      } else {
+          ALWAYS $(Source) ;
+      }
+
+      DEPENDS $(Dest) : $(Source) ;
+
+      # The destination will be rooted in the _Zip rule, because it is
+      # performed within a chdir.
+      ZipCommand on $(Dest) = $(ZipCommand) ;
+      _Zip $(Dest) : $(Source) ;
+    }
+
+if $(MACOSX) {
+#*
+#* Convert a Mach-O application in to an application bundle
+#*
+#* $(1) bundle
+#* $(2) app
+#* $(3) plist
+#* $(4) icons
+#* $(5) resources
+#* $(6) frameworks
+#* $(7) languages
+#*
+#*eg. ConvertToBundle <bundle> : <app> : <plist> : <icns> : <resources> : <frameworks> : <languages> ;
+#*
+#*section MacOS
+    actions quietly _bundleExe {
+      echo ...BUNDLING $(>)...
+      mkdir -p $(<)$/Contents$/MacOS
+      mv $(>) $(<)$/Contents$/MacOS
+      mkdir -p $(<)$/Contents$/Resources
+      touch $(>).rsrc
+      mv $(>).rsrc $(<)$/Contents$/Resources
+    }
+    actions quietly _bundlePlist {
+      mkdir -p $(<)$/Contents
+      cp $(>) $(<)$/Contents$/Info.plist
+      chflags nouchg $(<)$/Contents$/Info.plist
+      chmod u+w $(<)$/Contents$/Info.plist
+    }
+    actions quietly _bundlePkgInfo {
+      mkdir -p $(<)$/Contents
+      echo $(TypeCreator) > $(<)$/Contents$/PkgInfo
+    }
+    actions quietly _bundleIcns {
+      mkdir -p $(<)$/Contents$/Resources
+      cp -f $(IcnsFile) $(<)$/Contents$/Resources
+    }
+    actions quietly _bundleResource {
+      mkdir -p $(<)$/Contents$/Resources
+      $(CpMac) -r $(>) $(<)$/Contents$/Resources
+      chflags -R nouchg $(<)$/Contents$/Resources
+    }
+    actions quietly _bundleFramework {
+      mkdir -p $(<)$/Contents$/Frameworks
+      $(CpMac) -r $(>) $(<)$/Contents$/Frameworks
+      chflags -R nouchg $(<)$/Contents$/Frameworks
+    }
+
+    rule ConvertToBundle {
+      local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+      local Source ; MakeGristed Source : $(2) : $(CurrentPath) ;
+
+      local CpMac ;
+      CpMac = /usr/bin/CpMac ;
+      if ! $(CpMac:E) {
+        CpMac = /Developer/Tools/CpMac ;
+        if ! $(CpMac:E) {
+          Error Unable to locate CpMac in HQNjambits!comprule:misc.jam ;
+        }
+      }
+
+      DirectoryFor $(Target) : $(CurrentPath) $(C-Exec-Directory) ;
+
+      # So that distrib can find the bundle
+      TargetFile-$(CurrentPath)$/$(C-Exec-Directory)$/$(1) = $(Target) ;
+
+      # Check required variables have been set
+      if ! $(C-Exec-Type) { Error ConvertToBundle requires C-Exec-Type to have been set ; }
+      if ! $(C-Exec-Creator) { Error ConvertToBundle requires C-Exec-Creator to have been set ; }
+
+      # Must generate separate resources for app during compilation
+      SeparateRsrc $(2) ;
+
+      # Move application and resources in to bundle
+      _bundleExe $(Target) : $(Source) ;
+
+      # Copy provided Info.plist file in to bundle
+      local Plist ; MakeGristed Plist : $(3) : $(CurrentPath) ;
+      SEARCH on $(Plist) += $(CurrentPath) ;
+      DEPENDS $(Target) : $(Plist) ;
+      _bundlePlist $(Target) : $(Plist) ;
+
+      # Add PkgInfo file
+      TypeCreator on $(Target) = $(C-Exec-Type)$(C-Exec-Creator) ;
+      _bundlePkgInfo $(Target) ;
+
+      # Copy any .icns file in to bundle
+      if $(4) {
+        IcnsFile on $(Target) = $(4) ;
+        _bundleIcns $(Target) ;
+      }
+
+      # Copy any resources in to bundle
+      for i in $(5) {
+        local Resource ; MakeGristed Resource : $(i) : $(CurrentPath) ;
+        DEPENDS $(Target) : $(Resource) ;
+        CpMac on $(Target) = $(CpMac) ;
+        _bundleResource $(Target) : $(Resource) ;
+      }
+
+      # Copy any libraries & frameworks in to bundle
+      for i in $(6) {
+        local Framework ; MakeGristed Framework : $(i) : $(CurrentPath) ;
+        DEPENDS $(Target) : $(Framework) ;
+        CpMac on $(Target) = $(CpMac) ;
+        _bundleFramework $(Target) : $(Framework) ;
+      }
+
+      # Add empty .lproj directories to bundle for each language
+      for i in $(7) {
+        local langDir ;
+        MakePath langDir : $(CurrentPath) $(C-Exec-Directory) $(1) Contents Resources $(i).lproj ;
+        MakeDirectory $(langDir) ;
+        DEPENDS $(Target) : $(langDir) ;
+      }
+
+      DEPENDS $(Target) : $(Source) ;
+      FloatingDepends $(Target) ;
+      CleanDir $(Target) ;
+    }
+
+#* Create an Info.plist file
+#*
+#* $(1) plist
+#* $(2) app
+#* $(3) bundlename
+#* [$(4)] bundle-ID
+#* $(5) short version
+#* [$(6)] icons
+#* [$(7)] copyright
+#*
+#*eg. CreatePlist <plist> : <app> : bundleName : bundleID : shortVer : icns    : copyright ;
+#*
+#* bundleID $(2) defaults to com.globalgraphics.<appname>
+#* icns $(6) defaults to 128
+#* copyright $(7) defaults to <code>Copyright 2006 Global Graphics Software Ltd</code>
+#*
+#*section MacOS
+    actions quietly _writePlist {
+      echo ...MAKING $(<)...
+      echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $(<)
+      echo "<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">" >> $(<)
+      echo "<plist version=\"0.9\">" >> $(<)
+      echo "<dict>" >> $(<)
+      echo "    <key>CFBundleInfoDictionaryVersion</key>" >> $(<)
+      echo "    <string>6.0</string>" >> $(<)
+      echo "    <key>CFBundleName</key>" >> $(<)
+      echo "    <string>"$(bundleName)"</string>" >> $(<)
+      echo "    <key>CFBundleExecutable</key>" >> $(<)
+      echo "    <string>"$(bundleExec)"</string>" >> $(<)
+      echo "    <key>CFBundleIdentifier</key>" >> $(<)
+      echo "    <string>"$(bundleID)"</string>" >> $(<)
+      echo "    <key>CFBundlePackageType</key>" >> $(<)
+      echo "    <string>"$(packageType)"</string>" >> $(<)
+      echo "    <key>CFBundleSignature</key>" >> $(<)
+      echo "    <string>"$(signature)"</string>" >> $(<)
+      echo "    <key>CFBundleDevelopmentRegion</key>" >> $(<)
+      echo "    <string>English</string>" >> $(<)
+      echo "    <key>LSRequiresCarbon</key>" >> $(<)
+      echo "    <true/>" >> $(<)
+      echo "    <key>CFBundleShortVersionString</key>" >> $(<)
+      echo "    <string>"$(shortVersion)"</string>" >> $(<)
+      if test "$(icns)" != ""
+      then
+        echo "    <key>CFBundleIconFile</key>" >> $(<)
+        echo "    <string>"$(icns)"</string>" >> $(<)
+      fi
+      echo "    <key>NSAppleScriptEnabled</key>" >> $(<)
+      echo "    <string>YES</string>" >> $(<)
+      echo "    <key>NSHumanReadableCopyright</key>" >> $(<)
+      echo "    <string>"$(copyright)"</string>" >> $(<)
+      echo "</dict>" >> $(<)
+      echo "</plist>" >> $(<)
+    }
+
+    rule CreatePlist {
+      local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+      local Source ; MakeGristed Source : $(2) : $(CurrentPath) ;
+
+      # Check required params / variables have been set
+      if ! $(C-Exec-Type) { Error CreatePlist requires C-Exec-Type to have been set ; }
+      if ! $(C-Exec-Creator) { Error CreatePlist requires C-Exec-Creator to have been set ; }
+      if ! $(3) { Error CreatePlist requires the bundle name to be specified (param 3) ; }
+      if ! $(5) { Error CreatePlist requires the short version to be specified (param 5) ; }
+
+      bundleName  on $(Target) = $(3) ;
+      bundleExec  on $(Target) = $(2:BS) ;
+
+      if $(4) {
+        bundleID on $(Target) = $(4) ;
+      } else {
+        bundleID on $(Target) = "com.globalgraphics."$(2:BS) ;
+      }
+
+      packageType on $(Target) = $(C-Exec-Type) ;
+      signature on $(Target) = $(C-Exec-Creator) ;
+
+      shortVersion on $(Target) = $(5) ;
+
+      if $(6) {
+        icns on $(Target) = $(6:B) ;
+      } else {
+        icns on $(Target) = "" ;
+      }
+
+      if $(7) {
+        copyright on $(Target) = $(7) ;
+      } else {
+        copyright on $(Target) = "Copyright © 2007 Global Graphics Software Ltd" ;
+      }
+
+      _writePlist $(Target) ;
+
+      DEPENDS $(Target) : $(Source) ;
+      FloatingDepends $(Target) ;
+      CleanFile $(Target) ;
+    }
+
+#
+#* Create an Info.plist and use it when bundling app
+#* Convenience wrapper for @CreatePlist and @ConvertToBundle.
+#*
+#* $(1) bundle
+#* $(2) app
+#* $(3) version
+#* [$(4)] bundle-ID
+#* [$(5)] icons
+#* [$(6)] copyright
+#* [$(7)] resources
+#* [$(8)] frameworks
+#* [$(9)] languages
+#*
+#*eg. CreatePlistAndBundle <bundle> : <app> : version : bundleID : icns   : copyright : resources : frameworks : languages ;
+#*
+#*section MacOS
+    rule CreatePlistAndBundle {
+      Plist = Info.plist ;
+      DirectoryFor $(Plist) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+      CreatePlist $(Plist) : $(2) : $(1:B) : $(4) : $(3) : $(5) : $(6) ;
+
+      ConvertToBundle $(1) : $(2) : $(Plist) : $(5) : $(7) : $(8) : $(9) ;
+    }
+}
+
+
+#
+#* Produce a TAGS file from Java source code
+#*
+#* $(1) tags-basename
+#* $(2) response-file
+#*
+#* Create tags file from basename $(1), using response file $(2) to hold
+#* arguments.
+#*
+#*section Java
+    Emacs-Directory = $(emacs_dir:E) ;
+    if tags in $(JAM_ARGUMENTS) && $(Emacs-Directory) {
+        EnableTags = 1 ;
+        Emacs-Tags = $(Emacs-Directory)$/bin$/etags ;
+
+        Tags-File = <.>TAGS ;
+        DirectoryFor $(Tags-File) : $(CurrentPath) ;
+        DEPENDS tags : $(Tags-File) ;
+        FileStartsEmpty $(Tags-File) ;
+        -i_ on $(Tags-File) = "-i " ;
+    }
+    actions quietly piecemeal together _Tags-Together {
+echo ...PRODUCING TOP-LEVEL TAGS FILE...
+$(Emacs-Tags) -a $(-i_)$(>) -o $(<)
+    }
+    actions quietly together _Tags-Java {
+echo ...PRODUCING TAGS FILE $(<)...
+$(Emacs-Tags) -a -l java -o $(<) - < $(>)
+    }
+    rule Tags-Java {
+        if $(EnableTags) {
+            local Tags ; MakeGristed Tags : $(1).tags : $(CurrentPath) ;
+            DirectoryFor $(Tags) : $(CurrentPath) $(JavacOutput-Directory) ;
+            local ResponseFile = $(2) ;
+
+            FileStartsEmpty $(Tags) ;
+            _Tags-Java $(Tags) : $(ResponseFile) ;
+            _Tags-Together $(Tags-File) : $(Tags) ;
+
+            FloatingDepends $(Tags) ;
+            DEPENDS $(Tags) : $(ResponseFile) ;
+            DEPENDS $(Tags-File) : $(Tags) ;
+        }
+    }
+
+
+#
+#* Saves a JDE project file with the given settings
+#*
+#* $(1) Application class
+#* $(2) VM arguments
+#* $(3) Classpath
+#*
+#*section Java
+    rule jde-project {
+        FILEOPEN elisp-fh : $(BUILDROOT)$/prj.el : w ;
+        local classpath ; Join classpath : " " : \"$(3:X)\" ;
+        if ! $(classpath) { classpath = ; } # Don't set the variable if no classpath supplied
+
+        local jdebug jpda ;
+        switch $(CompilerVersion-Java) {
+        case jdk_1_1* :
+            jdebug = nil ;
+            jpda = nil ;
+        case jdk_1_2* :
+            jdebug = t ;
+            jpda = nil ;
+        case *        :
+            jdebug = t ;
+            jpda = t ;
+        }
+
+        local java = $(Jdk-Directory)$/bin$/java ;
+        local javavmvar = jde-run-java-vm ;
+        if $(NT) { java = $(java)w ; javavmvar = $(javavmvar)-w ; }
+
+        local srcdirs = $(BUILDROOT)$/$(jde-source-directories) $(Jdk-Source-Directory) ;
+
+        local tags = $(BUILDROOT)$/TAGS ;
+
+        FILEWRITE $(elisp-fh) :
+"
+(jde-set-project-name \""$(BUILDROOT:B)"\")
+(jde-set-variables"$(NewLine)
+"'(jde-bug-jdk-directory \""$(Jdk-Directory:X)"\")"$(NewLine)
+# A lockup bug requires this hack:
+"'(jde-bug-raise-frame-p nil)"$(NewLine)
+"'(jde-bug-vm-includes-jpda-p "$(jpda)")"$(NewLine)
+"'(jde-compiler \""$(Java-Compiler:X)"\")"$(NewLine)
+"'(jde-db-debugger (let ((jdb \""$(Java-Jdb:X)"\")
+                         (use-jdb (and (boundp 'jde-use-jdb) jde-use-jdb)))
+                     (if (not (consp (cdr jde-db-debugger)))
+                         `(,jdb . \"Executable\")
+                       (if (and "$(jdebug)" (not use-jdb))
+                           '(\"JDEbug\" \"\" . \"Executable\")
+                         `(\"Other\" ,jdb . \"Executable\")))))"$(NewLine)
+"'(jde-db-option-vm-args '(" \"$(2:X)\" "))"$(NewLine)
+"'(jde-db-source-directories '(" \"$(srcdirs:X)\" "))"$(NewLine)
+"'(jde-global-classpath '("$(classpath)"))"$(NewLine)
+"'(jde-make-program \"bt/hqmake\")"$(NewLine)
+"'(jde-run-application-class \""$(1:X)"\")"$(NewLine)
+# Can't use hotspot when debugging:
+"'(jde-run-classic-mode-vm t)"$(NewLine)
+# If we define jde-run-java-vm on windows, it will use it instead of
+# jde-run-java-vm-w.  Therefore, we need to make sure we use the right
+# variable.
+"'("$(javavmvar)" \""$(java:X)"\")"$(NewLine)
+"'(jde-run-working-directory \""$(BUILDROOT:X)"\")"$(NewLine)
+")
+
+(add-to-list 'tags-table-list \""$(tags:X)"\")
+"
+        ;
+        FILECLOSE $(elisp-fh) ;
+    }
+
+#
+#* Saves a JBuilder project file with the given settings
+#*
+#* $(1) Application class
+#* $(2) VM parameters
+#* $(3) Class path
+    rule jbuilder-project {
+        FILEOPEN jbuilder-fh : $(BUILDROOT)$/project.jpx : w ;
+        local classpath ; Join classpath : ";" : $(3:X) ;
+        if ! $(classpath) { classpath = "" ; } # Don't set the variable if no classpath supplied
+        local sources ; Join sources : ";" : $(BUILDROOT)$/$(jde-source-directories) $(Jdk-Source-Directory) ;
+
+        FILEWRITE $(jbuilder-fh) :
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"$(NewLine)
+$(NewLine)
+"<!--JBuilder XML Project-->"$(NewLine)
+"<project>"$(NewLine)
+"  <property category=\"debug.0\" name=\"ShowBreakpointInNoTracingClass\" value=\"0\" />"$(NewLine)
+"  <property category=\"debug.0\" name=\"SmartStepSkipStaticInitializers\" value=\"0\" />"$(NewLine)
+"  <property category=\"debug.0\" name=\"SmartStepSkipSynthetics\" value=\"0\" />"$(NewLine)
+"  <property category=\"jbuilder.debug\" name=\"ShowBreakpointInNoTracingClass\" value=\"0\" />"$(NewLine)
+"  <property category=\"jbuilder.debug\" name=\"SmartStepSkipStaticInitializers\" value=\"0\" />"$(NewLine)
+"  <property category=\"jbuilder.debug\" name=\"SmartStepSkipSynthetics\" value=\"0\" />"$(NewLine)
+"  <property category=\"runtime.0\" name=\"RunnableType\" value=\"com.borland.jbuilder.runtime.ApplicationRunner\" />"$(NewLine)
+"  <property category=\"runtime.0\" name=\"application.class\" value=\""$(1:X)"\" />"$(NewLine)
+"  <property category=\"runtime.0\" name=\"application.vmparameters\" value=\"-classpath "$(classpath) $(2:X) "\" />"$(NewLine)
+"  <property category=\"sys\" name=\"BraceStyle\" value=\"1\" />"$(NewLine)
+"  <property category=\"sys\" name=\"CompileOnDebug\" value=\"0\" />"$(NewLine)
+"  <property category=\"sys\" name=\"CompileOnRun\" value=\"0\" />"$(NewLine)
+"  <property category=\"sys\" name=\"SourcePath\" value=\""$(sources)"\" />"$(NewLine)
+"  <node type=\"Package\" name=\"com.harlequin\" />"$(NewLine)
+"</project>"$(NewLine)
+        ;
+        FILECLOSE $(jbuilder-fh) ;
+    }
+
+
+# Action for using Perl script to remove Hope Log comments within slash-slash
+# or slash-star comments, as used in C, C++, Java and IDL.
+actions quietly _SourceStripHopeLog
+{
+  echo ... Stripping HOPE Log from $(>:BS) ...
+  $(Perl) $(HQNbuildtools)$/SourceStripHopeLog.pl $(>) $(<)
+}
+
+#* Rule for invoking the Perl script to remove Hope Log comments within
+#* slash-slash or slash-star comments, as used in C, C++, Java and IDL, or
+#* comments prefixed by a single or double hash (#), like Jam, Velocity.
+#*
+#* The stripped contents of each given file will be written to a file of the
+#* same name but in a given subdirectory
+#* $(1) source file(s) or gristed targets
+#* $(2) target subdirectory
+#* [$(3)] Temporary
+#* [$(4)] source dir
+#*
+#* The source file name $(1) should be relative to @CurrentPath. $(2) is
+#* the target subdirectory for stripped sources, it defaults to
+#* <code>stripped</code>. If the optional flag $(3) is <code>Temporary</code>,
+#* the stripped files are TEMPORARY (they get deleted after the build, if
+#* they are intermediate targets). $(4) is an optional path where the sources
+#* are to be found.
+#*
+#*section Hope
+rule SourceStripHopeLog
+{
+  local Target Sources i ;
+  local SubDir = $(2) ;
+  SubDir ?= "stripped" ;
+
+  local i ;
+  local path ;
+  MakePath path : $(4) ;
+
+  for i in $(1)
+  {
+    MakeGristed Source : $(i) : $(CurrentPath) $(4) ;
+    MakeGristed Target : $(i:G=) : $(CurrentPath) $(4) $(SubDir) ;
+
+    if $(3) = "Temporary"
+    {
+      TEMPORARY Target ;
+    }
+
+    SEARCH on $(Source) += $(CurrentPath)$/$(path) ;
+    DirectoryFor $(Target) : $(CurrentPath) $(4) $(SubDir) ;
+
+    DEPENDS $(Target) : $(Source) ;
+    FloatingDepends $(Target) : ;
+    CleanFile $(Target) : ;
+
+    _SourceStripHopeLog $(Target) : $(Source) ;
+  }
+}
+
+#* Conditionally embed a manifest file into the specified target. This overrides
+#* any existing manifest resource in the target. Windows-specific at time of 
+#* writing - probably always will be.
+#*
+#* $(1) Target
+#* $(2) Target-dir
+#* $(3) Manifest-file
+#* $(4) [ Out-target ]
+#* $(5) [ Extra dependency ]
+#*
+#* Embed the manifest ($(3)) into the specified target ($(1)), using the
+#* appropriate resource ID.
+#* If $(4) is specified it will be set with the name of the dummy target used
+#* by EmbedManifest.
+#*
+#* eg. EmbedManifest corelib : $(C-Exec-Directory) : mytarget.dll.manifest ;
+#
+rule EmbedManifest {
+  EmbedManifestLocal $(1) : $(2) : $(3) : Embed : $(4) : $(5) ;
+}
+
+#* Conditionally append a manifest file into the specified target. The target
+#* must already has manifest resource in it. Windows-specific at time of writing
+#* - probably always will be.
+#*
+#* $(1) Target
+#* $(2) Target-dir
+#* $(3) Manifest-file
+#* $(4) [ Out-target ]
+#* $(5) [ Extra dependency ]
+#*
+#* Append the manifest ($(3)) into the specified target ($(1)), using the
+#* appropriate resource ID.
+#* If $(4) is specified it will be set with the name of the dummy target used
+#* by AppendManifest.
+#*
+#* eg. AppendManifest corelib : $(C-Exec-Directory) : mytarget.dll.manifest ;
+#
+rule AppendManifest {
+  EmbedManifestLocal $(1) : $(2) : $(3) : Append : $(4) : $(5) ;
+}
+
+actions quietly _EmbedManifestLocal {
+  $(SetEnv)$(ENV)$(NewLine)
+  echo ...Embedding manifest $(ManifestFile)
+  $(ManifestTool) $(ManifestToolArgs) $(ManifestCmd):"$(TargetFileName)";$(ResourceID) -manifest "$(ManifestFile)"
+}
+
+#* Conditionally embed/append a manifest file into the specified target. 
+#* Windows-specific at time of writing - probably always will be.
+#*
+#* $(1) Target
+#* $(2) Target-dir
+#* $(3) Manifest-file
+#* $(4) Embed or Append
+#* $(5) [ Out-target ]
+#* $(6) [ Extra dependency ]
+#*
+#* Embed the manifest ($(3)) into the specified target ($(1)), using the
+#* appropriate resource ID.
+#* If $(4) is specified it will be set with the name of the dummy target used
+#* by EmbedManifest.
+#*
+#* eg. EmbedManifestLocal corelib : $(C-Exec-Directory) : mytarget.dll.manifest : 0 ;
+#
+rule EmbedManifestLocal
+{
+  if $(Manifest-Tool) && $(3) {
+    # Find name of the target file
+    local Target ; MakeGristed Target : $(1) : $(CurrentPath) ;
+    local i ;
+    i = $(Target) ;
+    if $(TargetFile-$(i)) {
+      i = $(TargetFile-$(i)) ;
+    }
+
+    # Call the _EmbedManifest rule
+    local EmbedTarget ; MakeGristed EmbedTarget : Embed-$(i) ;
+
+    if $(5) {
+      $(5) = $(EmbedTarget) ;
+    }
+
+    ENV              on $(EmbedTarget) = $(C++-Compiler_Environment) ;
+    ManifestTool     on $(EmbedTarget) = $(Manifest-Tool) ;
+    ManifestToolArgs on $(EmbedTarget) = $(Manifest-Tool_Arguments) ;
+    if $(4) = Append {
+      ManifestCmd    on $(EmbedTarget) = -updateresource ;
+    } else {
+      ManifestCmd    on $(EmbedTarget) = -outputresource ;
+    }
+    
+    ManifestFile     on $(EmbedTarget) = $(3) ;
+    TargetFileName   on $(EmbedTarget) = $(2)$(FS)$(i:BS) ;
+
+    if $(i:S) = $(C-Dll-Suffix) {
+      ResourceID on $(EmbedTarget) = 2 ;
+    } else {
+      ResourceID on $(EmbedTarget) = 1 ;
+    }
+
+    # Establish dependencies
+    if $(6) {
+      DEPENDS $(EmbedTarget) : $(i) ;
+      DEPENDS $(6) : $(EmbedTarget) ;
+    } else {
+      After $(i) : $(EmbedTarget) ;
+    }
+
+    _EmbedManifestLocal $(EmbedTarget) ;
+  }
+}
+
+#* Substitute one string with another - for example substitute "varaibles" with
+#* their values.
+#*
+#* $(1) gristed target file
+#* $(2) gristed source file
+#* $(3) string to search for
+#* $(4) string to replace with
+#* [$(5)] message
+#*
+#* Files $(1) and $(2) are absolute paths. The strings are processed by the Perl
+#* operator s/// using a single quote (i.e. s'''), so REs are not supported.
+#*
+#*seerule Anonymise
+actions quietly _Substitute {
+  echo ...SUBSTITUTE $(>) $(Message)
+  $(Perl) $(BUILDROOT)$/bt$/subst.pl -s$(ShellQuote)$(ToSearchFor)$(ShellQuote) -r$(ShellQuote)$(ReplaceWith)$(ShellQuote) $(>) $(<)
+}
+
+
+rule Substitute {
+  #if $(1:G) = "" { Warning "Ungristed target passed to rule Substitute" ; }
+  #if $(2:G) = "" { Warning "Ungristed source passed to rule Substitute" ; }
+
+  local Target = $(1) ;  #SEARCH on $(Target) = $(CurrentPath) ;
+  local Source = $(2) ;  #SEARCH on $(Source) = $(CurrentPath) ;
+
+  local ToSearchFor = $(3) ;
+  local ReplaceWith = $(4) ;
+
+  local Message = $(5) ; Message on $(Target) = $(Message) ;
+
+  DEPENDS $(Target) : $(Source) ;
+  CleanFile $(Target) ;
+
+  # ECHO  _Substitute $(Target) : $(Source) ;
+
+  ToSearchFor on $(Target) = $(ToSearchFor) ;
+  ReplaceWith on $(Target) = $(ReplaceWith) ;
+  _Substitute $(Target) : $(Source) ;
+}
+
+
+#* Helper rule to unifdef files. Target file $(1) is created by running
+#* unifdef with $(2) as input, and arguments $(3).
+#*
+#* $(1) Target-file
+#* $(2) Source-file
+#* $(3) Additional options to be supplied to unifdef
+#* [$(4)] Message
+#* [$(5)] Required symbols
+#* [$(6)] Conditions
+#*
+#* The target file $(1) and source file $(2) are fully specified.
+#*
+#* Multiple Unifdef rules may be used with the same target. If more than one
+#* rule is specified, the target will be the concatenation of the Unifdef
+#* output, in the order specified.
+#*
+#* The optional message $(4) will be printed when the unifdef action
+#* is executed.
+#*
+#* Unifdef will ensure that all of the required symbols in $(5) have a -D or
+#* -U argument supplied, and will add -U arguments for any which don't.
+#*
+#* The target is gristed in two ways for dependencies, using the basename
+#* of the target file with the target directory used
+#* as grist, and also as the target path with the current path as grist.
+#*
+#*eg Unifdef output file : input file : -Ddefine -Uundefine : : ...Preprocessing file ;
+actions quietly _UnifdefMessage {
+    echo $(message)
+}
+
+actions quietly _UnifdefErase {
+    $(Erase) $(<)
+}
+
+actions quietly _Unifdef bind unifdef {
+    $(unifdef) $(args) $(>) >> $(<)
+}
+
+rule Unifdef {
+    if $(1:G) { Error "Using gristed target with ungristed rule Unifdef" ; }
+    if $(2:G) { Error "Using gristed source with ungristed rule Unifdef" ; }
+
+    local Conditions ; TestConditions Conditions : $(6) ;
+    if $(Conditions) = yes {
+        local TargetPath = $(1:/) ;
+        local Target ; MakeLeafTarget Target : $(TargetPath) : : DirectoryFor ;
+        # Add a direct dependency from the file name to the unifdef target
+        DEPENDS $(TargetPath) : $(Target) ;
+
+        local SourcePath = $(2:/) ;
+        local Source ; MakeLeafTarget Source : $(SourcePath) : : Search ;
+
+        DEPENDS $(Target) : $(Source) $(Build-Tools-unifdef) ;
+        FloatingDepends $(Target) ;
+        CleanFile $(Target) ;
+
+        args on $(Target) = $(3) ;
+
+        # These symbols must exist. Default them to undefined
+        local symbol ;
+        for symbol in $(5) {
+            if ! -D$(symbol) in $(3) && ! -U$(symbol) in $(3) {
+                args on $(Target) += -U$(symbol) ;
+            }
+        }
+
+        if $(4) {
+            message on $(Target) = $(4) ;
+            _UnifdefMessage $(Target) : $(Source) ;
+        }
+
+        # First time for this target, add an erase updating action
+        if ! $(_Unifdef_$(Target)) {
+            _UnifdefErase $(Target) ;
+            _Unifdef_$(Target) = 1 ;
+        }
+
+        unifdef on $(Target) = $(Build-Tools-unifdef) ;
+        _Unifdef $(Target) : $(Source) ;
+    }
+}
+
+
+# Log stripped

@@ -1,0 +1,74 @@
+#
+# Makefile for Core rip ZIP device
+#
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: COREzipdev!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+ImplementsVariant xps zip ;
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+AddToVar Local : SplintOptions :
+  +checks                 # The highest useful level of checking, probably
+  +partial                # Only part of the source code - i.e. just 1 file
+
+  -no-effect              # Don't complain about EMPTY_STATEMENT etc.
+
+  -name-checks            # SW uses reserved namespace :(
+  +bool-int               # SW uses various int types as bool type
+  +charindex              # swctype functions use char to index an array
+;
+
+# Compilation rules
+
+    DependsOn all : zipdev ;
+
+    IncludeExportDirectories Local :
+        devices
+        xps
+        fileio
+        mm
+        objects
+        tables
+        v20
+    : .. ;
+
+    ReplaceVar Local : CFILES :
+        file_devices.c
+        writeonly_zipdev.c
+        zip_archive.c
+        zip_file.c
+        zip_file_stream.c
+        zip_sw.c # Move to variant only build as and when.
+        zip_util.c
+        zipdev.c
+    : Variant zip=yes ;
+
+    AddToVar Local : CFILES : nozip.c : Variant zip=no ;
+
+    Library zipdev : $(CFILES) ;
+
+    SWF swf : procsets : procsets : : zip ;
+    SWF swf : procsets hqnzip : HqnZIP : : zip ;
+
+# N.B. Don't use AddToVar with conditions, because we want this to propagate
+# to the SW folder without having to make the product implement the zip
+# variant.
+if $(Variant_zip) = yes {
+    AddUnique SW-Folder-Variants : zip ;
+}
+
+    if $(Variant_zip) = yes {
+      # So that exported source can be built without zip if required
+      ExportSource $(CurrentPath)$/src$/nozip.c : C ;
+    }
+
+# Log stripped
+
+# EOF makefile.jam

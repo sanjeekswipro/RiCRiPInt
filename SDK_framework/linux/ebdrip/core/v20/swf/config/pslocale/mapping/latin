@@ -1,0 +1,45 @@
+%!PS-Adobe-3.0
+%%Title: Latin
+%%CreationDate: Dec 2003
+% Copyright (C) Global Graphics Software Limited, 2003. All Rights Reserved.
+% $Revision: 1.3.4.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:mapping:latin(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Encoding map for Latin text
+% This is the default map to identify input string encodings used in
+% print marginalia in Latin installations
+
+% Encoding map for Latin text
+
+/EncodingMap <<
+
+	% File names - assumed to match the encoding used by
+	% the platform on which the RIP is running.
+	/FileNameEncoding	<<
+		/Mac		/macos-0_2-10.2
+		/MacX		/UTF-8
+		/Win		/ibm-5348_P100-1997
+		/Unix		/ISO-8859-1
+	>>
+	
+	% Job names inside PostScript and EPS files. 
+	% Attempt to determine whether they were made on Mac or Windows.
+	/PSNameEncoding <<
+		/Mac	/macos-0_2-10.2
+		/MacX	/UTF-8
+		/Win	/ibm-5348_P100-1997
+		/Unix	/ISO-8859-1
+		/Unknown	/ibm-5348_P100-1997
+	>>
+	
+	% Job names inside files in other formats
+	/OtherNameEncoding	/ibm-5348_P100-1997
+		
+>>
+
+%%EOF

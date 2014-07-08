@@ -1,0 +1,71 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%DocumentNeededResources: CMap (90pv-RKSJ-UCS2C)
+%%IncludeResource: ProcSet (CIDInit)
+%%IncludeResource: CMap (90pv-RKSJ-UCS2C)
+%%BeginResource: CMap (90pv-RKSJ-UCS2)
+%%Title: (90pv-RKSJ-UCS2)
+%%Version: 4.002
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
+%%Copyright: All Rights Reserved.
+%%Copyright:
+%%Copyright: Patents Pending
+%%Copyright:
+%%Copyright: NOTICE: All information contained herein is the property
+%%Copyright: of Adobe Systems Incorporated.
+%%Copyright:
+%%Copyright: Permission is granted for redistribution of this file
+%%Copyright: provided this copyright notice is maintained intact and
+%%Copyright: that the contents of this file are not altered in any
+%%Copyright: way from its original form.
+%%Copyright:
+%%Copyright: PostScript and Display PostScript are trademarks of
+%%Copyright: Adobe Systems Incorporated which may be registered in
+%%Copyright: certain jurisdictions.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/90pv-RKSJ-UCS2C usecmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (Japan1) def
+  /Supplement 2 def
+end def
+
+/CMapName /90pv-RKSJ-UCS2 def
+/CMapVersion 4.002 def
+/CMapType 1 def
+/WMode 0 def
+
+15 beginbfrange
+<8591>	<8591>	<0030002e>
+<85ab>	<85ab>	<0058004900490049>
+<85ac>	<85ac>	<005800490056>
+<85ad>	<85ad>	<00580056>
+<85bf>	<85bf>	<0078006900690069>
+<85c0>	<85c0>	<007800690076>
+<85c1>	<85c1>	<00780076>
+<865d>	<865d>	<00540042>
+<869e>	<869e>	<004600410058>
+<86ce>	<86ce>	<21932191>
+<8791>	<8791>	<592720dd>
+<8792>	<8792>	<5c0f20dd>
+<879d>	<879d>	<63a720dd>
+<87fb>	<87fb>	<670996504f1a793e>
+<87fc>	<87fc>	<8ca156e36cd54eba>
+endbfrange
+
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+%%EndResource
+%%EOF

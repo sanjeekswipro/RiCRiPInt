@@ -1,0 +1,22 @@
+#
+# Script to rename the files that originally contained slashes
+#
+# $HopeName: HQNthirdparty_GUSI!FixSlashes.mpw(trunk.2) $
+#
+
+for orig in `Files -f -o -t TEXT :etc :include:machine :include:netinet :include:sys`
+  if ("{orig}" =~ /(Å)¨1:(Å)¨2/)
+    set new "{¨1}/{¨2}"
+  end
+  duplicate "{orig}" "{new}"
+end
+
+
+# $Log: FixSlashes.mpw,v $
+# Revision 1.2  1999/05/07  09:09:04  build
+# Fix quoting
+#
+# Revision 1.1  1999/04/23  10:01:12  build
+# new unit
+# Run this before trying to compile or install GUSI
+#

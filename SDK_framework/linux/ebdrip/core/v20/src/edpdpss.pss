@@ -1,0 +1,464 @@
+% $HopeName: SWv20!src:edpdpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+systemdict /execdict 16 $ldict put
+execdict begin
+  /execdepth 0 def
+  /stmtfile null def
+  /quitflag false def
+  /serviceinterrupt 10 $ldict def
+
+  % Execute a procedure provided as an operand, restoring the state of
+  % the RIP afterwards.
+  %
+  /execembedded
+    {
+    % Save current state of VM, and the current graphics state.
+    %
+    save //userdict /execembeddedsave 3 -1 roll put
+
+    % Save the contents of the dictionary stack, the operand stack, and
+    % the procedure which we are to execute.
+    %
+    //userdict /execembeddeddictstack countdictstack array dictstack put
+    cleardictstack
+
+    /execembeddedprocedure exch def
+
+    count array astore /execembeddedopstack exch def
+
+    % execembedded is used to run Background jobs, so set the appropriate
+    % user parameter.
+    %
+    << /Background true >> setuserparams
+
+    % Background jobs should not include a showpage, but just in case...
+    %
+    /showpage {} def
+
+    % Execute the procedure and remove anything it leaves on the operand
+    % or dictionary stack
+    %
+    initgraphics erasepage
+    execembeddedprocedure 
+    clear cleardictstack
+
+    % Restore the state of the RIP from the information saved on entry.
+    %
+    execembeddedopstack aload pop
+    execembeddeddictstack 3 1 index length 3 sub getinterval { begin } forall
+    execembeddedsave restore
+
+    } bind def
+
+end % execdict
+
+userdict begin
+  /quit {
+    //execdict /quitflag true put stop
+  } def
+end
+
+
+1183615869 internaldict begin
+  /sil2 << /LanguageLevel 2 /Password 0 >> def
+  /serviceinterrupt {
+    % do all literal objects in serviceinterrupt, turning them back 
+    % to executable as we go 
+    //execdict /serviceinterrupt get {
+      dup xcheck not {
+        { //sil2 setsystemparams } stopped pop
+        save
+          countdictstack
+          /markmarkmark
+          3 index cvx stopped pop
+          { /markmarkmark eq { exit } if } loop
+          countdictstack sub neg { end } repeat
+        restore
+      } if
+      pop pop
+    } forall
+  } bind def
+
+  currentglobal false setglobal
+    /shadowproc 32 dict def
+    /defineproc 16 dict def
+  setglobal
+
+end
+
+% ----------------------------------------------------------------------
+$printerdict begin
+
+  % this is accessed from Install and from C; switchscreens has now been converted to a 
+  % dictionary to make the magic number indexes more meaningful
+
+  /cp       0 def
+  /NL    (\n) def
+  /rmargin 72 def
+  currentglobal true setglobal
+    /new_sf_defined 1 dict def
+  setglobal
+  /new_sf_file_name (Screens/newsf.ps) def
+  /sf_file_name (Screens/sf.ps) def
+
+  /sfprint { % print to sfile, called from sfprintprocs
+    //dup //length cp //add rmargin //gt {
+      sfile NL writestring
+      /cp 0 //def
+    } //if
+    //dup //length cp //add 
+    /cp //exch //def
+    sfile exch writestring
+  } readonly def
+
+
+  /switchscreens <<
+
+     % 0 - round
+     /Round { dup mul exch dup mul add 1 exch sub } bind
+
+     % 1 - euclidean
+     /Euclidean { abs exch abs 2 copy add 1 gt {
+         1 sub dup mul exch 1 sub dup mul add 1 sub
+       }{ 
+         dup mul exch dup mul add 1 exch sub
+       } ifelse
+     } bind
+
+     % 2 - elliptical (1)
+     /Elliptical1 {
+       abs exch abs 2 copy add 1 gt {
+         1 sub dup mul 0.524377 mul exch 1 sub dup mul add 1 sub
+       }{
+         dup mul 0.524377 mul exch dup mul add 1 exch sub
+       } ifelse
+     } bind
+
+     % 3 - elliptical (2)
+     /Elliptical2 { dup mul exch dup mul 0.524377 mul add 1 exch sub } bind
+
+     % 4 - line
+     /Line { pop abs 1 exch sub } bind
+
+     % 5 - line90
+     /Line90 { exch pop abs 1 exch sub } bind
+
+     % 6 - square1
+     /Square1 { 
+       2 copy abs exch abs add exch
+       0.00011 mul add exch .0001 mul add
+       0.33 mul 1 exch sub
+     } bind
+
+     % 7 - square2
+     /Square2 { abs exch abs 2 copy gt { exch } if pop } bind
+	 
+     % 8 - elliptical (Quark 1)
+     /EllipticalQ1 {
+       abs exch abs 2 copy 1.16 mul add 1 gt {
+         1 sub dup mul 3 div exch 1 sub dup mul add 1 exch sub
+       }{
+         dup mul 3 div exch dup mul add 1 sub
+       } ifelse
+     } bind
+
+     % 9 - elliptical (Quark 2)
+     /EllipticalQ2 { dup mul exch dup mul 0.4 mul add 1 exch sub }  bind
+
+     % 10 - Purup elliptical
+     /EllipticalP { 
+       abs exch abs 2 copy 4 mul exch 3 mul add 3 sub dup 0 lt {
+         pop dup mul exch .75 div dup mul add 4 div 1 exch sub
+       }{
+         dup 1 gt {
+           pop 1 exch sub dup mul exch 1 exch sub .75 div dup mul add 4 div 1 sub
+         }{
+           .5 exch sub exch pop exch pop
+         } ifelse
+       } ifelse
+     } bind
+
+     % 11 - Rhomboid
+     /Rhomboid { exch .93 mul abs exch 1.07 mul abs add 1 exch sub }  bind
+
+     % Additional Adobe Spot Functions
+     % Conflicting names are resloved by appending 'Adobe'
+
+     % 12 - InvertedSimpleDot
+     /InvertedSimpleDot { dup mul exch dup mul add 1 sub } bind
+
+     % 13 - Diamond
+     /Diamond { abs exch abs 2 copy add .75 le
+         { dup mul exch dup mul add 1 exch sub }
+         { 2 copy add 1.23 le 
+             { .85 mul add 1 exch sub }
+             { 1 sub dup mul exch 1 sub dup mul add 1 sub }
+             ifelse }
+         ifelse } bind
+
+     % 14 - Ellipse
+     /Ellipse { abs exch abs 2 copy 3 mul exch 4 mul add 3 sub dup 0 lt
+         { pop dup mul exch .75 div dup mul add 4 div 1 exch sub }
+         { dup 1 gt
+              { pop 1 exch sub dup mul exch 1 exch sub
+                   .75 div dup mul add 4 div 1 sub }
+              { .5 exch sub exch pop exch pop }
+              ifelse }
+         ifelse } bind
+
+     % 15 - EllipseA
+     /EllipseA { dup mul .9 mul exch dup mul add 1 exch sub } bind
+
+     % 16 - InvertedEllipseA
+     /InvertedEllipseA { dup mul .9 mul exch dup mul add 1 sub } bind
+
+     % 17 - EllipseB
+     /EllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 exch sub } bind
+
+     % 18 - InvertedEllipseB
+     /InvertedEllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 sub } bind
+
+     % 19 - EllipseB2 (same as EllipseB, except without unnecessary exch)
+     /EllipseB2 { dup 5 mul 8 div mul exch dup mul add sqrt 1 exch sub } bind
+
+     % 20 - InvertedEllipseB2 (same as InvertedEllipseB, except without unnecessary exch)
+     /InvertedEllipseB2 { dup 5 mul 8 div mul exch dup mul add sqrt 1 sub } bind
+
+     % 21 - EllipseC
+     /EllipseC { dup mul exch dup mul .9 mul add 1 exch sub } bind
+
+     % 21 - EllipseCAdobe (EllipseC as implemented by Acrobat Reader)
+     /EllipseCAdobe { dup .5 gt { 1 exch sub } if
+	dup .25 ge
+	{ .5 exch sub 4 mul dup mul 1 sub }
+	{ 4 mul dup mul 1 exch sub }
+	ifelse
+	exch
+	dup .5 gt { 1 exch sub } if
+	dup .25 ge
+	{ .5 exch sub 4 mul dup mul 1 sub }
+	{ 4 mul dup mul 1 exch sub }
+	ifelse
+	add -2 div } bind
+
+     % 22 - InvertedEllipseC
+     /InvertedEllipseC { dup mul exch dup mul .9 mul add 1 sub } bind
+
+     % 23 - LineAdobe
+     /LineAdobe { exch pop abs neg }
+
+     % 24 - LineX
+     /LineX { pop } bind
+
+     % 25 - LineY
+     /LineY { exch pop } bind
+
+     % 26 - Square
+     /Square { abs exch abs 2 copy lt { exch } if pop neg } bind
+
+     % 27 - Cross
+     /Cross { abs exch abs 2 copy gt { exch } if pop neg } bind
+
+     % 28 - RhomboidAdobe
+     /RhomboidAdobe { abs exch abs 0.9 mul add 2 div } bind
+
+     % 29 - DoubleDot
+     /DoubleDot { 2 { 360 mul sin 2 div exch } repeat add } bind
+
+     % 30 - InvertedDoubleDot
+     /InvertedDoubleDot { 2 { 360 mul sin 2 div exch } repeat add neg } bind
+
+     % 31 - CosineDot
+     /CosineDot { 180 mul cos exch 180 mul cos add 2 div }
+
+     % 32 - Double
+     /Double { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add } bind
+
+     % 33 - InvertedDouble
+     /InvertedDouble { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add neg } bind
+
+     % 34 - EuclideanAdobe
+     /EuclideanAdobe { abs exch abs 2 copy add 1 le {
+         dup mul exch dup mul add 1 exch sub
+       }{ 
+         1 sub dup mul exch 1 sub dup mul add 1 sub
+       } ifelse
+     } bind
+
+  >> def % switchscreens in $printerdict
+
+  /makesfname { % create a new name sfXXXXX where XXXXX is a random number
+    (sf00000) dup 2 5 getinterval rand 100000 mod exch cvs pop cvn
+  } bind def
+
+  /newsfname { % call makesfname until a unique new name is generated
+    { makesfname dup //switchscreens exch known 
+      { pop } { exit } ifelse
+    } loop
+  } bind def
+
+  /sfcopyproc { % create a copy of a proc - limited to types in sfprocdict
+    [
+      exch dup xcheck
+      {
+        {
+          //$printerdict /sfprocdict get 1 index type
+          2 copy known { get exec } { stop } ifelse
+        } forall
+      }
+      { stop } ifelse
+    ] cvx
+  } bind def
+
+  /sfprocdict << % dictonary of allowable types for sfcopyproc
+
+    /arraytype /sfcopyproc load
+
+    /packedarraytype /sfcopyproc load
+
+    /nametype {
+       dup load type /operatortype ne { stop } if
+    } bind
+
+    /integertype {} bind
+
+    /realtype {} bind
+
+    /operatortype {} bind
+
+  >> def
+
+  /sfprintproc { % print a proc definition to sfile ( called from savesf )
+    ({ ) sfprint
+    {
+      //$printerdict /sfprintdict get 1 index type get exec
+      ( ) sfprint
+    } forall
+    (}) sfprint
+  } bind def
+
+  /savesf { % save new sf definition to disk: {} name savesf -
+    /markmarkmark 3 1 roll {
+      new_sf_file_name (a+) file /sfile exch def
+      /cp 0 //def 
+      (/) sfprint =string cvs sfprint ( ) sfprint 
+      sfprintproc % print the procedure definition to sfile
+      ( bind def\n\n) sfprint
+      sfile closefile
+      $printerdict /new_sf_defined get /new_sf_defined true put 
+        % flag success in global dict in $printerdict
+    } stopped pop % do not really care if this worked or not
+    { /markmarkmark eq {exit} if } loop % remove any garbage
+  } bind def
+
+  /sfprintdict << % dictonary of print procs for sfprintproc
+
+    /arraytype /sfprintproc load
+
+    /packedarraytype /sfprintproc load
+
+    /nametype {
+      dup xcheck not { (/) sfprint } if =string cvs sfprint
+    } bind
+
+    /integertype {
+      =string cvs sfprint
+    } bind
+
+    /realtype {
+      =string cvs sfprint
+    } bind
+
+    /operatortype {
+      =string cvs sfprint
+    } bind
+
+  >> def
+
+  /newsf { % add new proc to the /switchscreens dictionary
+    $printerdict begin
+    currentglobal
+    true setglobal
+    /markmarkmark
+    newsfname dup
+    //switchscreens exch
+    6 -1 roll % get proc to the top
+    //sfcopyproc stopped {
+      { /markmarkmark eq {exit} if } loop
+      false
+      exch
+    }{
+      dup 5 1 roll             % stack: gstate mark {} name dict name {}
+      bind put                 % stack: gstate mark {} name
+      dup 3 1 roll             % stack: gstate mark name {} name
+      savesf
+      3 1 roll pop true exch
+    } ifelse
+    setglobal
+    end % printerdict
+  } bind def
+
+  /add_sfdefs { % filename add_sfdefs --
+    10 dict begin
+      { run } stopped not {
+        currentdict {
+          switchscreens 3 1 roll put
+        } forall
+      } if
+    end
+  } bind def
+
+  /append_file { % newfile oldfile appendfile bool
+	{ (a+) file } stopped not {
+      /dst exch def
+      { (r) file } stopped not {
+        /src exch def {
+          { src =string readstring not dst 3 -1 roll writestring { exit } if } loop
+        } stopped not % return state of inner loop success
+        src closefile
+      }{
+        false % failed to open src, return false
+      } ifelse
+      dst closefile
+    }{
+      false % failed to create/open dst, return false
+    } ifelse
+  } bind def
+
+  /rebuild_switchscreens { % add contents of newsf.ps to switchscreens
+    currentglobal
+	true setglobal
+    $printerdict begin
+      /markmarkmark
+      new_sf_file_name  add_sfdefs                % add new defs to switchscreens
+      new_sf_file_name sf_file_name append_file   % append new defs to sf.ps
+      						  % remove tempoary file newsf.ps
+      { new_sf_file_name status { new_sf_file_name deletefile } if } if
+      { /markmarkmark eq {exit} if } loop         % remove garbage
+    end
+      setglobal
+  } bind def
+
+  % ensure that the file Screens/sf.ps exists
+
+  mark { sf_file_name (a+) file closefile } stopped cleartomark
+
+  % and that Screens/newsf.ps does not
+
+  mark { new_sf_file_name status { new_sf_file_name deletefile } if } stopped cleartomark
+
+  % include any saved spot function mappings
+
+  mark { sf_file_name add_sfdefs } stopped cleartomark
+  
+  false setglobal	% Need to do this since the deletefile used to fail and do this
+
+end % $printerdict
+
+% end of edpdpss

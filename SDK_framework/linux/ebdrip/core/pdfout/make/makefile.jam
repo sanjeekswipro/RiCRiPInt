@@ -1,0 +1,99 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for PDF output
+#
+# $HopeName: SWpdf_out!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# This required to get defines right:
+ImplementsVariant pdfout ;
+
+ImplementsVariant custiface ;
+if $(Variant_custiface) in 0 {
+  ImplementsVariant customised ;
+}
+
+# Compilation rules
+
+    DependsOn all : pdfout ;
+
+    IncludeExportDirectories Inherited Local :
+        devices
+        errors
+        fonts
+        fileio
+        functions
+        gstate
+        images
+        mm
+        objects
+        pdf
+        pdfin
+        tables
+        v20
+    : .. ;
+
+    IncludeExportDirectories Local :
+        $(CustIface)
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        pdfefont.c
+        pdfemcnt.c
+        pdfemit.c
+        pdfempdf.c
+        pdfequal.c
+        pdfextgs.c
+        pdffunc.c
+        pdfhtone.c
+        pdfmcol.c
+        pdfncol.c
+        pdfoctab.c
+        pdfodb.c
+        pdfofont.c
+        pdfoimg.c
+        pdfopas.c
+        pdfopgen.c
+        pdfotext.c
+        pdfout.c
+        pdfpcol.c
+        pdfrsrc.c
+        pdfsfill.c
+        pdfsfunc.c
+        pdftcol.c
+        pdfutil.c
+        streame.c
+    : Variant pdfout=yes ;
+
+    AddToVar Local : CFILES : nopdfout.c : Variant pdfout=no ;
+
+    Library pdfout : $(CFILES) ;
+
+    SWF testsrc : pagefeat : "Page Features" : : pdfout : Build DEBUG ;
+    SWF testsrc : pagefeat pdfout : "PDF Out" : : pdfout : Build DEBUG ;
+
+    if $(DEBUG) = 1 {
+        # Export debug aids to source list for shipping to third party - have to be added explicitly
+        ExportSource $(CurrentPath)$/testsrc$/pagefeat$/pdfout : Swf ;
+    }
+
+# N.B. Don't use AddToVar with conditions, because we want this to propagate
+# to the SW folder without having to make the product implement the pdfout
+# variant.
+if $(Variant_pdfout) = yes {
+    AddUnique SW-Folder-Variants : pdfout ;
+}
+
+    if $(Variant_pdfout) = yes {
+        # So that exported source can be built without pdfout if required
+        ExportSource $(CurrentPath)$/src$/nopdfout.c : C ;
+    }
+
+
+# Log stripped

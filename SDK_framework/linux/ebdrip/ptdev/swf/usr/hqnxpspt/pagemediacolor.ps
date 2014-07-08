@@ -1,0 +1,82 @@
+%!PS
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:usr:hqnxpspt:pagemediacolor.ps(EBDSDK_P.1) $
+%%EndComments
+
+1 dict begin
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Extension for the PrintTicket procset.
+%
+% This code handles support for PageMediaColor by setting MediaColor in
+% the page device.
+%
+% Each callback function is called with arguments of the form:
+%   setup_dict CallBackProc -
+% where setup_dict contains the following entries:
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+
+/DoPageMediaColor {
+  begin
+    % Map of Print Schema defined colors to their sRGB equivalents
+    <<
+      /Black      (#FF000000)
+      /Blue       (#FF0000FF)
+      /Brown      (#FFA52A2A)
+      /Gold       (#FFFFD700)
+      /GoldenRod  (#FFDAA520)
+      /Gray       (#FF808080)
+      /Green      (#FF008000)
+      /Ivory      (#FFFFFFF0)
+      /Orange     (#FFFFA500)
+      /Pink       (#FFFFC0CB)
+      /Red        (#FFFF0000)
+      /Silver     (#FFC0C0C0)
+      /Turquoise  (#FF40E0D0)
+      /Violet     (#FFEE82EE)
+      /White      (#FFFFFFFF)
+      /Yellow     (#FFFFFF00)
+
+      /NoColor    null
+    >>
+    pt_value [/Value] /NoColor GetPTValueWithDefault exch pop
+
+    % Map schema color to sRGB using...
+    2 copy known {
+      % ...the table
+      get
+    }{
+      % ...psk:MediaColorsRGB
+      pop pop
+      pt_value [/MediaColorsRGB /Value] (#FFFFFFFF) GetPTValueWithDefault exch pop
+    }ifelse
+
+    % Update device param
+    DeviceDict /MediaColor 3 -1 roll put
+  end
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Register this code with the PrintTicket procset
+<<
+  /PageMediaColor <<
+    /Action //DoPageMediaColor
+    /Default << /Value /NoColor >>
+  >>
+>>
+
+end

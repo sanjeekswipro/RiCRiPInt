@@ -1,0 +1,32 @@
+%!PS-Adobe-3.0
+%%Title: Office Graphics RGB
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Wed Apr 30 15:59:00 1997
+%%Copyright (C) 1997-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colspace:devrgb:ogrgb(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+[
+  /CIEBasedABC
+  <<
+    /XUID [124 0 0 19970430 15590]
+    /DecodeLMN [{dup 0.04045 le {12.92 div}{0.055 add 1.055 div 2.4 exp} ifelse} bind dup dup]
+    /MatrixLMN [
+        0.4297	0.2200	0.0378
+        0.2825	0.6800	0.0837
+        0.1250	0.1000	1.0250]
+    /WhitePoint [0.8371	1.00	1.1465]
+  >>
+]
+
+(DeviceRGB/Office Graphics RGB) cvn exch /ColorSpace defineresource pop
+
+setglobal
+
+%%EndResource

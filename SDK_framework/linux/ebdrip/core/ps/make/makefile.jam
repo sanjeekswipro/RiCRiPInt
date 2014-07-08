@@ -1,0 +1,88 @@
+# Copyright (C) 2005-2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP PostScript interpreter
+#
+# $HopeName: COREps!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# The PostScript variant determines whether PostScript can be used as a PDL.
+# If it is not implemented, then the interpreter is still usable as a
+# configuration language. There is an even smaller subset which we might want
+# to make variant, which is a pure language with no graphics state changing
+# ability.
+    ImplementsVariant ps : Inherited Local ;
+
+# Variant details come before compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant ps ;
+
+# Compilation rules
+
+    DependsOn all : ps ;
+
+    ReplaceVar Local : Libraries :
+        marking
+    ;
+
+    # Allow access to these compounds for all sub-libraries
+    IncludeExportDirectories Inherited Local :
+        fonts
+        fileio
+        mm
+        objects
+        tables
+        v20
+    : .. ;
+
+    # Allow access to all PS libraries from each other
+    IncludeExportDirectories Inherited Local :
+        $(Libraries)
+    ;
+
+    # Propagate export directories from sub-directories to parent
+    AddExportDirectories $(Libraries) ;
+
+    # Add PS private includes to path; this is for headers shared within
+    # the PS compound that are not exported to the rest of the world
+    AddToVar Inherited Local : C-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    ReplaceVar Local : CFILES :
+        psinit.c
+    ;
+
+    Library ps : $(CFILES) ;
+
+    Makefile $(Libraries) ;
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries ps : $(i) : $(i) ;
+    }
+
+    # N.B. Don't use AddToVar with conditions, because we want this to propogate
+    # to the SW folder without having to make the product implement the ps
+    # variant.
+    if $(Variant_ps) = yes {
+        AddUnique SW-Folder-Variants : ps ; 
+        if ! $(Variant_minimal) {
+            AddUnique SW-Folder-Variants : psnonminimal ;
+        }
+        if $(ProductName) = ebd {
+            AddUnique SW-Folder-Variants : psebd ;
+        } else {
+            AddUnique SW-Folder-Variants : pshost ;
+        }
+        if $(Variant_fontemul) = yes {
+            if $(ProductName) = gui
+              || $(ProductName) = mac || $(ProductName) = motif || $(ProductName) = pc {
+                AddUnique SW-Folder-Variants : fontemulgui ;
+            } else {
+                AddUnique SW-Folder-Variants : fontemulclebd ;
+            }
+            AddUnique SW-Folder-Variants : fontemul ;
+        }
+    }
+
+# Log stripped

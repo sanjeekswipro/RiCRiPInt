@@ -1,0 +1,2907 @@
+# Copyright (C) 2012-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Master Makefile for Harlequin RIP
+#
+# $HopeName: SWprod_hqnrip!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+ImplementsVariant C++_ORB dll ldkvendor security ICU ;
+if $(NT) {
+  ImplementsVariant freetype platform ;
+}
+if $(ProductName) = gui {
+  ImplementsVariant morisawa cms executable ;
+  if $(NT) {
+    ImplementsVariant llv ;
+  }
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+  ImplementsVariant customised freetype skin sw skin_debug thirdparty fontlib profiler xpsdrv framebuffer valgrind hds ;
+}
+
+# These variants are required to get linkage for libpng and libgenxml right
+ImplementsVariant openssl jpeg png wcs xml xps ;
+
+ImplementsVariant cpp_compiler ; # to get the correct pthreads lib
+RequiresVariant source_date ;
+
+# The ebd_ufst5 variant should NOT be used. This is purely for backward
+# compatibility. Instead, use the variant ebd_ufst instead. This variant
+# will eventually be removed.
+if $(Variant_ebd_ufst5) {
+  RequiresVariant ebd_ufst : $(Variant_ebd_ufst5) ;
+}
+# The ebd_ufst5_fontset variant should NOT be used. This is purely for backward
+# compatibility. Instead, use the variant ebd_ufst_fontset instead. This variant
+# will eventually be removed.
+if $(Variant_ebd_ufst5_fontset) {
+  RequiresVariant ebd_ufst_fontset : $(Variant_ebd_ufst5_fontset) ;
+}
+
+# set flag if we need to copy over PDBs to allow access to symbolic info
+local extnlpdb = 0 ;
+if $(C-Compiler-Family) = msvc {
+  if $(RELEASE) = 1 {
+    extnlpdb = 1 ;
+  } else if $(DEBUG) = 1 {
+    extnlpdb = 2 ;
+  }
+}
+
+# Compilation rules
+local Com = C C++ mixedC ;
+
+# Source directory within distrib structure
+local DistribSrcTo = lib ;
+
+# Target folder for skin source is now architecture specific. Old SkinPlat
+# left in place in case install structure is ever changed, and we want to
+# use a generic location.
+local SkinPlat ;
+
+if $(ProductName) = gui {
+  DependsOn guirip : gui hdscheck ;
+
+  DependsOn guirip : hqcrypt : core ; # Automatically build hqcrypt
+} else if $(ProductName) = le {
+  DependsOn $(ProductTarget) minrip : corelib ;
+
+  # hqcrypt tool is built from SWcore
+  DependsOn hqcrypt : hqcrypt : core ;
+} else if $(ProductName) = ebd {
+  DependsOn $(ProductTarget) : corelib ;
+
+  # hqcrypt tool is built from SWcore
+  DependsOn hqcrypt : hqcrypt : core ;
+}
+
+if $(NT) {
+  if $(ProductName) = gui {
+    if $(Variant_cpp_compiler) != gcc_3_4_2 {
+      AddToVar Local : $(Com)-Exec-Linker_Arguments :
+          -entry:WinMainCRTStartup
+      ;
+    }
+  }
+} else if $(UNIX) {
+  # Profiling glue: Define symbols to allow gprof API to be used
+  # for fine-grain control of profiling.
+  if $(TIMING) = 1 {
+    # gprof API glue: for Unix platforms compiled with gcc.
+    AddToVar Inherited Local : $(Com)-Defines : GPROF_BUILD ;
+    RequiresVariant dll : nd ;
+  }
+}
+
+local rip ;
+
+if $(ProductName) = gui {
+  if $(Variant_dll) = nd {
+    # Building monolithic app
+    rip = gui ;
+    Executable gui ;
+
+    if $(MACOSX) {
+      if $(Variant_C++_ORB) = OMNI {
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+          $(Omni-Dynamic-Libs)
+          ;
+      }
+
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        # Licence server variant uses IOKit
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+          -framework IOKit
+          ;
+      } else if $(Variant_security) = dng || $(Variant_security) = wm {
+        # Frameworks for SuperPro dongle
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+          -framework IOKit
+          -framework$(Space)$(SentinelFrameworkNames)
+          -F$(SentinelFrameworkDir)
+          ;
+      }
+
+    } else if $(NT) {
+      if $(Variant_cpp_compiler) != gcc_3_4_2
+      {
+        AddToVar Local : $(Com)-Exec-Linker_Libraries :
+          advapi32.lib
+          comctl32.lib
+          comdlg32.lib
+          DbgHelp.lib
+          gdi32.lib
+          kernel32.lib
+          mpr.lib
+          netapi32.lib
+          ole32.lib
+          shell32.lib
+          shlwapi.lib
+          user32.lib
+          version.lib
+          wsock32.lib
+        ;
+
+        if $(Variant_security) = ldklic || $(Variant_security) = lic {
+          AddToVar Local : $(Com)-Exec-Linker_Libraries :
+            iphlpapi.lib
+          ;
+        }
+      }
+    }
+  } else {
+    # Building small executable/large dll pair
+    rip = $(ScriptworksDll) ;
+    ripdir = $(C-Exec-Directory) ;
+    DynamicLibrary $(rip) : makedate.c ;
+
+    if ! $(ScriptworksDll) = $(ScriptworksDll)$(C-Dll-Suffix) {
+      DependsOn $(rip) : $(ScriptworksDll)$(C-Dll-Suffix) ;
+    }
+
+    if $(MACOSX) {
+      # Defines to find DLL from app
+      AddToVar Inherited : C-Defines : DLLPATH="\\\"$(FS)..$(FS)..$(FS)$(Suffix)$(FS)$(CompilerVersion-C)$(FS)$(ScriptworksDll)\\\"" ;
+      AddToVar Inherited : C-Defines : DLLPATH_DISTRIB="\\\"$(FS)..$(FS)$(Suffix)$(FS)$(ScriptworksDll)\\\"" ;
+
+      # Additional linker option for DLL app
+      # Seems to fix a dyld / static initialiser problem
+      # If missing get a crash in omniORB static initialisation code
+      # See DTS incident 1934844
+      AddToVar Local : $(Com)-Exec-Linker_Arguments : -Wl,-bind_at_load ;
+
+      if $(Variant_C++_ORB) = OMNI {
+        AddToVar Local : $(Com)-Dll-Linker_Libraries :
+          $(Omni-Dynamic-Libs)
+        ;
+      }
+
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        # Licence server variant uses IOKit
+        AddToVar Local : $(Com)-Dll-Linker_Libraries :
+          -framework IOKit
+          ;
+      } else if $(Variant_security) = dng || $(Variant_security) = wm {
+        # Frameworks for SuperPro dongle
+        AddToVar Local : $(Com)-Dll-Linker_Libraries :
+          -framework IOKit
+          -framework$(Space)$(SentinelFrameworkNames)
+          -F$(SentinelFrameworkDir)
+          ;
+      }
+
+      # GCC 4.0 fails to strip the DLL for some reason.  It appears
+      # to have problems with the C++ symbols.  However it is possible
+      # to get the linker to strip the DLL, so that's what we do.  It's
+      # probably a better thing to do anyway.
+      # Problem with strip logged with Apple as rdar://4467644
+      ReplaceVar Local : ScriptworksExports : _GetDllSpec _LaunchScriptWorks ;
+      AddToVar Local : ScriptworksExports : _GetHqAssertHandlers : Build ASSERT ;
+
+      DynamicLibraryExports $(rip) : $(ScriptworksExports) : Link ;
+    } else if $(NT) {
+      # Defines to find DLL from app
+      AddToVar Inherited : C-Defines : DLLPATH=\"\\\"$(Suffix)\\\\$/$(CompilerVersion-C)\\\"\" ;
+
+      # Make sure we call the SWdllfuncs initialiser:
+      # This rule will affect all DynamicLibrary rules in this makefile.
+      AddToVar Local : $(Com)-Dll-Linker_Arguments : $(C-Dll-Linker_InitFn=)DllInitFn ;
+
+      AddToVar Local : $(Com)-Dll-Linker_Libraries :
+        advapi32.lib
+        comctl32.lib
+        comdlg32.lib
+        DbgHelp.lib
+        gdi32.lib
+        kernel32.lib
+        mpr.lib
+        netapi32.lib
+        ole32.lib
+        shell32.lib
+        shlwapi.lib
+        user32.lib
+        wsock32.lib
+      ;
+
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        AddToVar Local : $(Com)-Dll-Linker_Libraries :
+          iphlpapi.lib
+        ;
+      }
+
+      ReplaceVar Local : ScriptworksExports : DllInitFn LaunchScriptWorks ;
+      AddToVar Local : ScriptworksExports : GetHqAssertHandlers : Build ASSERT ;
+
+      DynamicLibraryExports $(rip) : $(ScriptworksExports) ;
+    } else if $(UNIX) {
+      # Defines to find DLL from app
+      AddToVar Inherited : C-Defines : DLLPATH=\"\\\"$(Suffix)$/$(CompilerVersion-C)\\\"\" ;
+
+      ReplaceVar Local : ScriptworksExports : LaunchScriptWorks ;
+      AddToVar Local : ScriptworksExports : GetHqAssertHandlers : Build ASSERT ;
+
+      DynamicLibraryExports $(rip) : $(ScriptworksExports) ;
+    }
+
+    Executable gui ;
+    DependsOn gui : $(rip) ;
+
+    local RipManifestTarget ;
+    if $(NT) {
+      EmbedManifest $(rip) : $(C-Exec-Directory) : $(C-Exec-Directory)$/$(rip).dll.manifest : RipManifestTarget ;
+    }
+    if $(RELEASE) = 1 {
+      Sign $(rip) : : $(RipManifestTarget) ;
+    }
+  }
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+
+  rip = corelib ;
+
+  if $(Variant_dll) = nd {
+    Library corelib : makedate.c variants.c ;
+  } else {
+    if $(MACOSX) {
+      # Use a dylib rather than a bundle
+      AddToVar Local : $(Com)-Dylib-Linker_Arguments : -install_name @executable_path/../Frameworks/corelib$(C-Dylib-Suffix) ;
+
+      DynamicLibrary corelib : makedate.c variants.c : : : Dylib ;
+    } else {
+      DynamicLibrary corelib : makedate.c variants.c ;
+    }
+  }
+
+  if $(MACOSX) {
+    if $(Variant_security) = ldklic || $(Variant_security) = lic {
+      # Licence server variant uses IOKit
+      AddToVar Local : $(Com)-Dylib-Linker_Libraries $(Com)-Exec-Linker_Libraries :
+        -framework IOKit
+        $(Omni-Dynamic-Libs)
+      ;
+    } else if $(Variant_security) = dng || $(Variant_security) = wm {
+      # Frameworks for SuperPro dongle
+      AddToVar Local : $(Com)-Dylib-Linker_Libraries $(Com)-Exec-Linker_Libraries :
+        -framework IOKit
+        -framework$(Space)$(SentinelFrameworkNames)
+        -F$(SentinelFrameworkDir)
+      ;
+    }
+
+  } else {
+    if $(C-Compiler-Family) = msvc {
+      AddToVar Local : $(Com)-Dll-Linker_Libraries $(Com)-Exec-Linker_Libraries :
+        advapi32.lib
+        kernel32.lib
+        mpr.lib
+        netapi32.lib
+        user32.lib
+        wsock32.lib
+        winspool.lib
+        gdi32.lib
+        DbgHelp.lib
+        psapi.lib
+      ;
+
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        AddToVar Local : $(Com)-Dll-Linker_Libraries $(Com)-Exec-Linker_Libraries :
+          iphlpapi.lib
+          shell32.lib
+        ;
+      }
+    }
+  }
+
+  # Export the full LE API. PLEASE be careful when editing this
+  # list. It's a public API which is used by our OEMs.
+  ReplaceVar Local : Exports :
+    SwDllInit
+    SwDllStart
+    SwDllShutdown
+    SwTimer
+    SetSwTimer
+    SetSkinTimerExpiredFn
+    SwOftenActivateSafe
+    SwOftenActivateUnsafe
+    SwOftenCore
+    SwFindDevice
+    SwAlloc
+    SwRealloc
+    SwFree
+    SwPatternMatch
+    SwLengthPatternMatch
+    SwReadFilterBytes
+    SwReplaceFilterBytes
+    SwWriteFilterBytes
+    SwSeekFilterBytes
+    SwRegisterCMM
+    SwRegisterFLT
+    SwRegisterHTM
+    SwRegisterPFIN
+    swcopyf
+    swncopyf
+    vswcopyf
+    vswncopyf
+    # MPS:
+    mps_arena_create
+    mps_arena_abort
+    mps_arena_destroy
+    mps_arena_class_cl
+    mps_arena_class_sh
+    mps_arena_class_vmnz
+    mps_pool_create
+    mps_pool_destroy
+    mps_pool_size
+    mps_pool_debug_walk
+    mps_class_mvff
+    mps_class_mvff_debug
+    mps_free
+    mps_alloc
+    mps_alloc_debug
+    mps_arena_reserved
+    mps_lib_telemetry_defaults
+    mps_telemetry_label
+    mps_telemetry_intern
+    # HQNc-standard:
+    Hq32x2ToInt32
+    HqU32x2ToInt32
+    Hq32x2ToUint32
+    HqU32x2ToUint32
+    Hq32x2BoundToInt32
+    HqU32x2BoundToInt32
+    Hq32x2BoundToUint32
+    HqU32x2BoundToUint32
+    Hq32x2AssertToInt32
+    HqU32x2AssertToInt32
+    Hq32x2AssertToUint32
+    HqU32x2AssertToUint32
+    Hq32x2FromPtrdiff_t
+    Hq32x2FromSize_t
+    Hq32x2ToSize_t
+    HqU32x2FromSize_t
+    HqU32x2ToSize_t
+    Hq32x2FromDouble
+    HqU32x2FromDouble
+    Hq32x2Sign
+    HqU32x2Sign
+    Hq32x2Add
+    HqU32x2Add
+    Hq32x2Subtract
+    HqU32x2Subtract
+    Hq32x2Compare
+    HqU32x2Compare
+    Hq32x2AddUint32
+    HqU32x2AddUint32
+    Hq32x2SubtractUint32
+    HqU32x2SubtractUint32
+    Hq32x2CompareUint32
+    HqU32x2CompareUint32
+    Hq32x2AddInt32
+    Hq32x2SubtractInt32
+    Hq32x2CompareInt32
+    HqCatchExceptions
+    HqCStacks
+    HqMemCmp
+    HqMemSet8_f
+    HqMemSet16_f
+    HqMemSet32_f
+    HqMemSet64_f
+    HqStrCopy
+    HqStrCopyTrunc
+    # Assertion support. This will be a no-op in non-assert builds
+    SetHqAssertHandlers
+  ;
+
+  AddToVar Local : Exports :
+    # These are for QA checksumming in the PGB device
+    HQCRCchecksum
+    HQCRCchecksumreverse
+    # Assertion support
+    HqAssertFalse
+    HqAssert
+    HqAssertPhonyExit
+    HqAssertDepth
+    HqTraceSetFileAndLine
+    HqTrace
+    bcopy_safe
+    HqMemCpy_Assert
+  : Build ASSERT ;
+
+  # These are for LE security interface
+  AddToVar Local : Exports :
+    SwSecGetConfig
+    SwSecInit
+    SwSecShutdown
+  : Variant security=le ;
+
+  if $(MACOSX) {
+    # So that DLL can find itself
+    AddToVar Local : Exports :
+      GetDllSpec
+    ;
+  }
+
+  if $(C-Compiler-Family) = msvc {
+    AddToVar Local : Exports :
+      DllInitFn
+    ;
+  }
+
+
+  # Associate this list of symbols to export with the corelib dynamic library
+  if $(Variant_dll) = d {
+    if $(MACOSX) {
+      DynamicLibraryExports corelib : _$(Exports) : Link ;
+    } else {
+      DynamicLibraryExports corelib : $(Exports) ;
+    }
+  }
+  
+
+  #* CreateLibraryDefs
+  #* This rule create a def file that includes all Exports from corelib.dll
+  #*
+  #* $(1) def file
+  #* $(2) def directory
+  #* $(3) symbols ...
+  #*
+  #* Note FILEOPEN requires that the path specified by $(2) and $(1)
+  #* needs to exist at the parsing stage.
+  #* Parameter $(3) is the list of all symbols to include.
+  #*
+  #*section LE
+  rule CreateLibraryDefs
+  {
+    local Target ;  MakeGristed Target : $(1) : $(2) ;
+    FloatingDepends $(Target) ;
+    ALWAYS $(Target) ;
+    DEPENDS corelib : $(Target) ;
+
+    local fh ; FILEOPEN fh : $(2)$/$(1) : w ;
+
+    FILEWRITE $(fh) : "LIBRARY corelib" ;
+    FILEWRITE $(fh) : "EXPORTS" ;
+    local i ; for i in $(3) {
+      FILEWRITE $(fh) : $(i) ;
+    }
+    FILECLOSE $(fh) ;
+  }
+
+
+# If "distrib" target is specified, just the external documentation
+# is created.  This is what we distribute to customers.
+  if $(C-Compiler-Family) = msvc
+  {
+    if $(CV_HTMLHELP_1_3) {
+      # If on Windows, we only need distribute the compiled HTML Help file
+      MakeGristed lekitdocchm : clrip$/hqnripsdkdox$/html$/HqnRIP_SDK_InterfaceRef.chm : $(CurrentPath) ;
+    } else {
+      Warning "Unable to generate .chm files, CV_HTMLHELP_1_3 is not set" ;
+    }
+  }
+
+
+### Tools executables (early enough to avoid most RIP configuration)
+
+  # pdfdiff - legacy pdf differencing tool
+  DirectoryFor pdfdiff.c : $(CurrentPath)$/testsrc ;
+  IncludeExportDirectories Local : zlib ;
+  Executable pdfdiff : pdfdiff.c ;
+  C-LinkWithLibraries pdfdiff : zlib : zlib ;
+
+  # pdfdiff2 - used by the Regression system
+  ReplaceVar Local : pdfdiff2_files :
+    pdfdiff2.c
+    pdfImage.c
+    pdfImageWriter.c
+    pdfImageComparer.c
+    pdfUtil.c
+  ;
+
+  DirectoryFor $(pdfdiff2_files) : $(CurrentPath)$/testsrc ;
+  DeclareExport C-ExportDirectories : $(CurrentPath)$/testsrc ;
+  IncludeExportDirectories Local : zlib ;
+  Executable pdfdiff2 : $(pdfdiff2_files) ;
+  C-LinkWithLibraries pdfdiff2 : zlib : zlib ;
+
+  if $(Variant_skin) = regression || $(DEBUG) = 1 {
+    DependsOn $(ProductTarget) : pdfdiff pdfdiff2 ;
+  }
+
+  if $(DEBUG) = 1 {
+    if ! wdkbuild in $(JAM_ARGUMENTS) && ! vxworks in $(TargetOS) && $(TargetPlat) != linux-arm9 {
+      # platform.c is used for diagnosing machine settings
+      DependsOn clrip : platform ;
+      DirectoryFor platform.c : $(CurrentPath)$/standard$/testsrc ;
+      IncludeExportDirectories Local : standard ;
+      Executable platform : platform.c ;
+    }
+  }
+}
+
+
+# Sub-compounds
+
+ReplaceVar Local : LibrariesCommon :
+  calibration
+  checksum
+  core
+  encrypt
+  md5
+  mps
+  standard
+  unicode
+  zlib
+  $(VariantLibs)
+;
+
+ReplaceVar Local : LibrariesGuiRip :
+  caldev
+  cfiledev
+  cmpdev
+  coreskin
+  coreutil
+  cpgbdev
+  custiface
+  flatout
+  fwgui
+  fwos
+  icolor
+  libjpeg
+  libjpeg-turbo
+  orangbox
+  pagepipe
+  pgbrdwr
+  $(ProductSkin)
+  profile
+  psio
+  rdrevent
+  sign
+  target
+  threads
+  timeline
+  timer
+;
+
+if $(UNIX) {
+  if $(TargetOS) != netbsd {
+    AddToVar Local : LibrariesGuiRip : roamwidg Wcl ;
+  }
+}
+
+ReplaceVar Local : LibrariesCoreLib :
+  customer
+  dllskin
+;
+
+# Assume that all HHR variants will include the fwos library, but not
+# Embedded Rip variants. This could be under Variant has_fwos conditions, but
+# that would need implementing has_fwos in this makefile, and would change the
+# suffixes.
+if $(ProductName) = le {
+  AddToVar Local : LibrariesCoreLib :
+    fwos
+  ;
+}
+
+AddToVar Local : LibrariesCoreLib :
+  sign
+  skinapis
+: Variant dll=d ;
+
+ReplaceVar Local : LibrariesEbdRip :
+  libjpeg
+  libjpeg-turbo
+  pdfparse
+;
+
+ReplaceVar Local : Libraries :
+  $(LibrariesCommon)
+  $(VariantLibs)
+;
+
+if $(ProductName) = gui {
+  AddToVar Local : Libraries :
+    $(LibrariesGuiRip)
+  ;
+
+} else if $(ProductName) = ebd {
+  AddToVar Local : Libraries :
+    $(LibrariesEbdRip)
+  ;
+  AddToVar Local : Suffix : ebd ;
+}
+
+# We only compile up libjpeg-turbo for Windows
+local libjpegturbo-dest ;
+if $(C-Compiler-Family) = msvc && $(ProductName) != gui
+{
+  local OOPLATFORM ;
+
+  if win_32-x86     in $(JamTargetPlat) { OOPLATFORM = win_32-x86 ; }
+  if win_64-amd64   in $(JamTargetPlat) { OOPLATFORM = win_64-amd64 ; }
+  local OODIR = $(CurrentPath)$(FS)libjpeg-turbo$(FS)lib$(FS)$(OOPLATFORM) ;
+
+  local libjpegturbo-src ;
+  MakeLeafTarget libjpegturbo-src : turbojpeg-static$(C-Lib-Suffix) : $(OODIR) : Search ;
+  MakeLeafTarget libjpegturbo-dest : turbojpeg-static$(C-Lib-Suffix) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+  DependsOn $(ProductTarget) : $(libjpegturbo-dest) ;
+  CopyFile $(libjpegturbo-dest) : $(libjpegturbo-src) ;
+}
+
+if $(ProductSDK) = skinkit {
+  AddToVar Local : Libraries :
+    $(LibrariesCoreLib)
+  ;
+
+  if $(Variant_security) = le
+  {
+    local CurrentPath = $(CurrentPath)$/skinkit ;
+    Include $(BUILDROOT)$/skinkit$/make$/handshake.jam ;
+  }
+}
+
+if $(NT) {
+  if $(Variant_security) = dng || $(Variant_security) = wm {
+    AddToVar Local : Libraries : dongles ;
+  } else if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+    if $(ProductName) != clean {
+      C-LinkWithLibraries $(rip) : ldk : dongles ;
+    }
+  }
+}
+if $(UNIX) {
+  if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+    if $(ProductName) != clean {
+      C-LinkWithLibraries $(rip) : ldk : dongles ;
+    }
+  }
+}
+
+AddToVar Local : Libraries : dllfuncs : Variant dll=d ;
+
+if $(Variant_security) = ns {
+  AddToVar Local : Libraries : no-security ;
+} else if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+  AddToVar Local : Libraries : pwdinfo security ;
+} else if $(Variant_security) = le {
+  AddToVar Local : Libraries : le-security security ;
+} else {
+  AddToVar Local : Libraries : security ;
+}
+
+# Read in all the makefiles, including those for unselected
+# variants, so that 'clean' removes all obj directories
+#
+# NB: we need to be selective about which makefiles to add here when exporting source code,
+#     otherwise we will include source for RIP variants that we are not actually building
+#
+# (Exp)VariantMakefiles is the list of makefiles which are not
+# in $(LibrariesCommon), $(LibrariesCoreLib), $(LibrariesEbdRip)
+# or $(LibrariesGuiRip)
+
+if exportsrc in $(JAM_ARGUMENTS) || $(Variant_thirdparty) {
+  ReplaceVar Local : ExpVariantMakefiles :
+    icolor
+    irs
+    ufst
+    ufst7
+  ;
+
+  if $(Variant_security) = ns {
+    AddToVar Local : ExpVariantMakefiles :
+      no-security
+    ;
+  } else if $(Variant_security) = ldk || $(Variant_security) = ldklic {
+    AddToVar Local : ExpVariantMakefiles :
+      pwdinfo
+      security
+    ;
+  } else if $(Variant_security) = le {
+    AddToVar Local : ExpVariantMakefiles :
+      le-security
+      security
+    ;
+  } else {
+    AddToVar Local : ExpVariantMakefiles :
+      security
+    ;
+    if $(NT) || $(UNIX) {
+      AddToVar Local : ExpVariantMakefiles :
+        dongles
+      ;
+    }
+  }
+}
+else
+{
+  # not exporting source code
+  ReplaceVar Local : VariantMakefiles :
+    cdfidl
+    cdfiimpl
+    coregui
+    dllfuncs
+    dllskin
+    ff
+    hostifac
+    HQN_CPP_CORBA
+    icu
+    irs
+    le-security
+    libgenxml
+    libpng
+    libwcs
+    licence
+    no-security
+    omg_idl
+    openssl
+    pwdinfo
+    ripiface
+    ripiimpl
+    security
+    skinapis
+    soar_idl
+    uri
+  ;
+
+  if $(Variant_ebd_ufst) = eufst7y || $(Variant_ebd_ufst) = eufst7o || exportsrc in $(JAM_ARGUMENTS) {
+    AddToVar Local : VariantMakefiles :
+      ufst7
+    ;
+  }
+  
+  if $(Variant_ebd_ufst) = eufst5y || $(Variant_ebd_ufst) = eufst5o || exportsrc in $(JAM_ARGUMENTS) {
+    AddToVar Local : VariantMakefiles :
+      ufst
+    ;
+  }
+
+  if $(MACOSX) {
+    AddToVar Local : VariantMakefiles :
+      mac3
+    ;
+  } else if $(NT) {
+    AddToVar Local : VariantMakefiles :
+      dongles
+      gui
+      quantify
+    ;
+  } else if $(UNIX) {
+    if $(TargetOS) != netbsd {
+      AddToVar Local : VariantMakefiles :
+        dongles
+        motifpart
+        roamwidg
+        Wcl
+      ;
+    }
+  }
+}
+
+ReplaceVar Local : Makefiles :
+  bt
+  customer
+  tools          # needs to be before core (for Nametool) but after customer (for echoplist)
+  fonts
+  hds-screens
+;
+
+
+if exportsrc in $(JAM_ARGUMENTS) || $(Variant_thirdparty) {
+  AddToVar Local : Makefiles :
+    $(LibrariesCommon)
+    $(LibrariesCoreLib)
+    $(LibrariesEbdRip)
+    $(ExpVariantMakefiles)
+  : : Unique ;
+} else {
+  AddToVar Local : Makefiles :
+    $(LibrariesCommon)
+    $(LibrariesCoreLib)
+    $(LibrariesEbdRip)
+    $(LibrariesGuiRip)
+    $(VariantMakefiles)
+  : : Unique ;
+}
+
+Makefile $(Makefiles) ;
+
+if $(ProductSDK) = skinkit {
+  # a list of the source files shipped with the sdk
+  Include $(BUILDROOT)$/clrip$/make$/skinsources.jam ;
+}
+# Quantify API glue: currently only included in SWprod_pc because
+# we only have licenses for Quantify on NT. Define the environment
+# variable QUANTIFY_BUILD to 1 and make sure the export directory
+# of the quantify compound is pulled in, then include "pure.h" and
+# you can call the API functions QuantifyStartRecordingData() etc.:
+# see the Quantify help for details.
+
+if ( $(TIMING) = 1 ) && ( $(QUANTIFY_BUILD) = 1 ) {
+  C-LinkWithLibraries $(rip) : quantify : quantify ;
+  AddToVar Inherited Local : C-Defines : QUANTIFY_BUILD ;
+}
+
+
+local CallingConvention ;
+
+if $(C-Compiler-Family) = msvc
+{
+  CallingConvention = __cdecl ;
+}
+
+AddToVar Inherited Local : C-Defines
+  : MPS_CALL=$(CallingConvention) ZEXPORT=$(CallingConvention) ;
+
+
+if $(ProductName) = gui || $(ProductName) = le {
+  if ! $(Variant_C++_ORB) in 0 { # ie if C++ ORB
+    C-LinkWithLibraries $(rip) :
+      corba_attributes
+      corba_identity
+      corba_lifecycle
+      corba_observe
+      corba_transactions
+      corba_log
+      corba_feedback
+    : omg_idl ;
+
+    if $(ProductName) = gui {
+      C-LinkWithLibraries $(rip) : cdfiimpl : cdfiimpl ;
+    }
+  }
+
+  if $(Variant_security) = ldklic || $(Variant_security) = lic {
+    C-LinkWithLibraries $(rip) : liccliadm : licence ;
+  }
+}
+
+if $(ProductName) = gui || $(ProductName) = le || $(ProductName) = ebd {
+  local i ; for i in $(Libraries) {
+    C-LinkWithLibraries $(rip) : $(i) : $(i) ;
+  }
+}
+
+if $(ProductName) = gui {
+  if $(MACOSX) {
+    # Make the symbols appear so dlopen(NULL, ...) allows introspection on
+    # symbols.
+    # This rule will affect all Executables in this makefile, unfortunately.
+    AddToVar Local : $(Com)-Exec-Linker_Arguments : -rdynamic : Build ASSERT ;
+
+  } else if $(NT) {
+    # There is no C-Exec-Linker_Exports= variable, so use the same as making
+    # a DLL. It's the same for MSVC, other compilers may suffer for the moment.
+    # This rule will affect all Executables in this makefile, unfortunately.
+    AddToVar Local : $(Com)-Exec-Linker_Arguments : $(C-Dll-Linker_Exports=)GetHqAssertHandlers : Build ASSERT ;
+
+  } else if $(UNIX) {
+    # Make the symbols appear so dlopen(NULL, ...) allows introspection on
+    # symbols.
+    # This rule will affect all Executables in this makefile, unfortunately.
+    AddToVar Local : $(Com)-Exec-Linker_Arguments : -rdynamic : Build ASSERT ;
+  }
+
+  C-LinkWithLibraries gui : caller : custiface ;
+  C-LinkWithLibraries gui : standard : standard ;
+
+  # Include the dialog resources for the DLL
+  if $(NT) {
+    IncludeExportDirectories Local : coreskin core ;
+    if $(Variant_dll) = d
+    {
+      DynamicLibrary $(rip) : gui.rc : gui ;
+    }
+  }
+
+  if $(MACOSX) || $(UNIX) {
+    # This cannot be moved earlier, or we get warnings about SetFile-<.>gui and
+    # Sign-<.>gui depending on themselves. I have no idea why - AJCD 2006/10/14
+    if $(RELEASE) = 1 { Sign gui ; }
+  }
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+  if $(Variant_dll) = nd {
+    Library corelib : makedate.c variants.c ;
+  } else {
+    # Normally create a dynamic library
+    local CorelibManifestTarget ;
+
+    if $(NT) || $(UNIX) {
+      AddToVar Local : $(Com)-Dll-Linker_Arguments :
+          $(C-Dll-Linker_InitFn=)DllInitFn ;
+
+      NoteWDKDllEntryPoint corelib : DllInitFn ;
+
+      if $(C-Compiler-Family) = msvc {
+        # Create a def file to assist OEMs to rename the DLL.
+        # Unfortunately we have to create this at top level, because FILEOPEN
+        # requires the path to exist at "parsing" stage.
+        CreateLibraryDefs corelib.def : $(CurrentPath) : $(Exports) ;
+
+        # Add property resource to the DLL
+        IncludeExportDirectories Local : core customer ;
+        DynamicLibrary corelib : version.rc : dllfuncs ;
+
+        if $(extnlpdb) != 0  {
+          # include corelib.pdb for debugging build.
+          MakeGristed corelibpdb : corelib$(C-Pdb-Suffix) : $(CurrentPath) ;
+          DirectoryFor $(corelibpdb) : $(CurrentPath)$/$(C-Dll-Directory) ;
+          DependsOn $(corelibpdb) : corelib ;
+        }
+
+        if $(Variant_rt_libs) = dynamic_multi_threaded {
+          EmbedManifest corelib : $(C-Exec-Directory) : $(C-Exec-Directory)$/corelib.dll.manifest : CorelibManifestTarget ;
+        }
+      }
+    }
+
+    if $(RELEASE) = 1
+    {
+      Sign corelib : : $(CorelibManifestTarget) ;
+    }
+  }
+
+
+  # Force Unifdef to either define or undefine these symbols:
+  AddToVar Local : Unifdef-Needs :
+    # General configuration
+    HQN
+    # Build type
+    DEBUG_BUILD
+    ASSERT_BUILD
+    # RIP type: should be merged with EBD_PRODUCT
+    EMBEDDED
+    # Product type
+    HHR_PRODUCT EBD_PRODUCT
+    # Security
+    DONGLE LDK LESEC LICENSE
+    # Build control
+    DYLIB
+    # Font capabilities
+    USE_UFST5
+    USE_UFST7
+    # Input capabilities
+    METRO
+    # Output capabilities
+    HAS_RLE LIBTIFFSKIN PDFSKIN XPSSKIN
+    # Operating systems
+    MONTAVISTA
+    LINUX_603
+    LINUX_e500
+    VXWORKS_PPC
+    # profiler stuff
+    GPROF_BUILD
+    QUANTIFY_BUILD
+    # Other build flavours
+    COVERAGE
+    # Embedded SDK uses the renamed zlib and expat functions that are present
+    # in the corelib.lib static library. Not all of the functions are exported
+    # from the DLL corelib variant, therefore not all products can reuse the
+    # functions from the corerip DLL variant.
+    # \todo Access skin zlib and expat from core via RDR, remove renaming
+    USE_ZLIB_API USE_EXPAT_API
+  ;
+
+  AddToVar Local : Unifdef-Defines : $(Variant_customised) ;
+  AddToVar Local : Unifdef-Defines : LESDK ;
+  AddToVar Local : Unifdef-Defines : METRO INRIP_PTDEV : Variant xps=yes ;
+
+  if $(Variant_skin) = regression || $(DEBUG) = 1 {
+    AddToVar Local : Unifdef-Defines : PDFSKIN ;
+  }
+  if $(ProductName) = le {
+    AddToVar Local : Unifdef-Defines : LIBTIFFSKIN ;
+    AddToVar Local : Unifdef-Defines : HHR_PRODUCT ;
+    AddToVar Local : Unifdef-Defines : HAS_RLE ;
+    AddToVar Local : Unifdef-Defines : XPSSKIN : Variant xps=yes ;
+    AddToVar Local : Unifdef-Defines : USE_UFST5 : Variant fontlib=ufst5inrip ;
+    AddToVar Local : Unifdef-Defines : USE_UFST7 : Variant fontlib=ufst7inrip ;
+    AddToVar Local : Unifdef-UnDefines : USEPCL45FONTSET : Variant fontlib=ufst5inrip ;
+    AddToVar Local : Unifdef-UnDefines : USEPCL45FONTSET : Variant fontlib=ufst7inrip ;
+    AddToVar Local : Unifdef-Defines : USE_ZLIB_API ;
+    AddToVar Local : Unifdef-Defines : USE_EXPAT_API ;
+  } else if $(ProductName) = ebd {
+    AddToVar Local : Unifdef-Defines : EMBEDDED ;
+    AddToVar Local : Unifdef-Defines : EBD_PRODUCT ;
+  }
+
+  AddToVar Local : Unifdef-Defines : DONGLE      : Variant security=dng ;
+  AddToVar Local : Unifdef-Defines : LDK         : Variant security=ldk ;
+  AddToVar Local : Unifdef-Defines : LDK LICENSE : Variant security=ldklic ;
+  AddToVar Local : Unifdef-Defines : LESEC       : Variant security=le ;
+  AddToVar Local : Unifdef-Defines : LICENSE     : Variant security=lic ;
+
+  AddToVar Local : Unifdef-Defines : DYLIB    : Variant dll=d ;
+  AddToVar Local : Unifdef-Defines : DEBUG_BUILD : Build DEBUG ;
+  AddToVar Local : Unifdef-Defines : ASSERT_BUILD : Build ASSERT ;
+  AddToVar Local : Unifdef-Defines : COVERAGE : Build COVERAGE ;
+
+  # OS specific defines
+
+  if $(MACOSX)
+  {
+    AddToVar Local : Unifdef-Needs :
+      BUILD_WITH_GCC40
+      BUILD_WITH_GCC42
+      BUILD_WITH_LLVMGCC42
+      BUILD_WITH_CLANG31
+      CAN_BUILD_FOR_PPC
+    ;
+
+    if $(CompilerVersion-C) = gcc_4_0
+    {
+      AddToVar Local : Unifdef-Defines : BUILD_WITH_GCC40 ;
+      AddToVar Local : Unifdef-Defines : CAN_BUILD_FOR_PPC ;
+    }
+    else if $(CompilerVersion-C) = gcc_4_2
+    {
+      AddToVar Local : Unifdef-Defines : BUILD_WITH_GCC42 ;
+      AddToVar Local : Unifdef-Defines : CAN_BUILD_FOR_PPC ;
+    }
+    else if $(CompilerVersion-C) = llvm_gcc_4_2
+    {
+      AddToVar Local : Unifdef-Defines : BUILD_WITH_LLVMGCC42 ;
+    }
+    else if $(CompilerVersion-C) = clang_3_1
+    {
+      AddToVar Local : Unifdef-Defines : BUILD_WITH_CLANG31 ;
+    }
+    else
+    {
+      Error Unknown compiler for building buildkit ;
+    }
+  }
+
+  if $(NT)
+  {
+    AddToVar Local : Unifdef-Needs : WINPRINTSKIN STATIC_LINK ;
+
+    if $(ProductName) = le {
+      AddToVar Local : Unifdef-Defines : WINPRINTSKIN : Variant xps=yes ;
+    }
+    AddToVar Local : Unifdef-Defines : STATIC_LINK : Variant rt_libs=multi_threaded ;
+  }
+
+  if $(C-Compiler-Family) = msvc
+  {
+    # MINGW_GCC is no longer supported
+    AddToVar Local : Unifdef-UnDefines : MINGW_GCC ;
+    AddToVar Local : Unifdef-Needs : WIN64_BUILD ;
+
+    # May be some command line options that vary between x86 and x64 platforms
+    if amd64 in $(TargetArch) || x64 in $(TargetArch)
+    {
+      AddToVar Local : Unifdef-Defines : WIN64_BUILD ;
+    }
+
+  }
+
+  if $(UNIX)
+  {
+    AddToVar Local : Unifdef-Defines : GPROF_BUILD : Build TIMING ;
+    AddToVar Local : Unifdef-Needs : LINUX64_BUILD LINUX64_BUILD32 ;
+
+    if amd64 in $(TargetArch)
+    {
+      AddToVar Local : Unifdef-Defines : LINUX64_BUILD ;
+    }
+
+    if $(LINUX64_BUILD32) = yes {
+      AddToVar Local : Unifdef-Defines : LINUX64_BUILD32 ;
+    }
+  }
+}
+
+# makedate.c
+if $(RELEASE) = 1 { Force makedate.c ; }
+GenericTarget makedate.c :  $(SW-Tools-gendate) : $> ">" $< ;
+DirectoryFor makedate.c : $(CurrentPath)$/$(GeneratedC-Directory) ;
+CleanFile makedate.c ;
+
+# variants.c
+if $(RELEASE) = 1 { Force variants.c ; }
+VariantsC variants.c ;
+
+# Doxygen materials
+if $(ProductSDK) = skinkit {
+  if $(Variant_thirdparty)
+  {
+    # For third-party builds, only doc the platform we are building for
+    # as we will not have the sources for other platforms.
+    if $(C-Compiler-Family) = msvc
+    {
+      AddToVar Local : HqnRipSDK-Defines   : WINDOWS ;
+      AddToVar Local : HqnRipSDK-UnDefines : UNIX ;
+    }
+    else
+    {
+      AddToVar Local : HqnRipSDK-Defines   : UNIX ;
+      AddToVar Local : HqnRipSDK-UnDefines : WINDOWS ;
+    }
+  }
+  else
+  {
+    # For non-third-party builds doc all platforms
+    AddToVar Local : HqnRipSDK-Defines   : WINDOWS UNIX ;
+  }
+  if $(ProductName) = ebd
+  {
+    # Exclude doc on skintest, etc for Embedded builds
+    AddToVar Local : HqnRipSDK-Defines   : EMBEDDED ;
+  }
+  else # le
+  {
+    AddToVar Local : HqnRipSDK-UnDefines : EMBEDDED ;
+  }
+  if $(Variant_security) = le
+  {
+    # Include doc on LE security
+    AddToVar Local : HqnRipSDK-Defines   : LESEC ;
+  }
+  else
+  {
+    AddToVar Local : HqnRipSDK-UnDefines : LESEC ;
+  }
+  if $(Variant_xps) = yes
+  {
+    # Include doc on XPS interfaces
+    AddToVar Local : HqnRipSDK-Defines   : METRO ;
+  }
+  else
+  {
+    AddToVar Local : HqnRipSDK-UnDefines : METRO ;
+  }
+  Doxygen clrip$/hqnripsdk.dox : distrib $(lekitdocchm)
+    : : clrip$/hqnripsdkdox : $(CurrentPath)
+    : -D$(HqnRipSDK-Defines) -U$(HqnRipSDK-UnDefines) ;
+}
+
+# If "doc" target is specified, the entire product, including internal
+# code will be documented.
+local Doxygen-Defines = -UHAVE_GRAPHVIZ -UDEBUG_BUILD ;
+if $(DEBUG) {
+  if $(GraphvizPath) {
+    Doxygen-Defines = -DHAVE_GRAPHVIZ -DDEBUG_BUILD ;
+  } else {
+    Doxygen-Defines = -DDEBUG_BUILD ;
+  }
+}
+Doxygen clrip$/global.dox : doc : : obj$/dox-$(Suffix) : $(CurrentPath) :
+   -D$(Unifdef-Defines) -U$(Unifdef-UnDefines) $(Doxygen-Defines) ;
+
+
+# Localisation kit
+if $(ProductName) = gui {
+  if $(NT) {
+    # Windows localisation kit is not customised
+    Makefile lkit ;
+    DependsOn localkit : localkit : lkit ;
+    DependsOn ukeng    : ukeng    : lkit ;
+    DependsOn ukeng    : build_messages ;
+    DependsOn distrib  : localkit ukeng ;
+
+    Distribute Tree : LocalisationKit : pc-all : $(BUILDROOT)$/LocalisationKit : : $(TargetPlat) : all : PlatformThenSuffix ;
+    Distribute Tree : LocalisationKit : $(TargetPlat) : $(BUILDROOT)$/LocalisationKit : : $(TargetPlat) : all : PlatformThenSuffix ;
+  }
+}
+
+
+if $(ProductName) = clean {
+  # Clean SW folders for all products
+  local SWdir ;
+  for SWdir in SW-guirip SW-clrip SW-ebdrip {
+    CleanDir $(SWdir) ;
+
+    local Timestamp ;
+    MakeLeafTarget Timestamp : $(SWdir).tim : : Locate ;
+    CleanFile $(Timestamp) ;
+  }
+} else if ! $(Variant_sw) = ram {
+  # SW folder
+  # We can use a dependency on SW for distrib, because distributions are
+  # generated in clean directories. For a distribution, we are not
+  # interested in the combined SW directory, only the contributing SW
+  # subsets.
+  DependsOn $(rip) distrib : $(ProductSW) ;
+
+  NOTFILE $(ProductSW) ;
+}
+
+# Put the SW folder temporary files out of sight...
+local SW-tmpdir = $(CurrentPath)$/$(GeneratedC-NV-Directory) ;
+
+# For debugging, combine the appropriate SW folder subsets for this build
+# into a single SW folder.
+#
+# Note that we keep icuconv separate from SW-Folder-Variants for gui at the
+# moment, because the distrib rule puts it in a different place. This isn't
+# really necessary, since the ICU data file directory has a platform-endian
+# specific name, so collected data files for different builds not conflict.
+AddUnique SW-Folder-Variants : normal ;
+if $(ProductName) = gui {
+  AddUnique SW-Folder-Variants : normalguirip normalhost normalnonminimal ggfonts ggfontsnonminimal hds ;
+
+  if $(Variant_shivafonts) {
+    AddUnique SW-Folder-Variants : shivafonts shivafontDB ;
+  } else {
+    AddUnique SW-Folder-Variants : linofonts pclfonts defaultfontDBgui ;
+  }
+
+  SW-All-Folder-Variants = $(SW-icu) $(SW-Folder-Variants) ;
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+  AddUnique SW-Folder-Variants : normalclebdrip ;
+  if $(ProductName) = le
+  {
+    AddUnique SW-Folder-Variants : normalclrip normalhost ;
+  } else {
+    AddUnique SW-Folder-Variants : normalebdrip ;
+  }
+  if ! $(Variant_minimal) {
+    AddUnique SW-Folder-Variants : normalnonminimal ;
+  }
+
+  if $(Variant_ps) = yes || $(Variant_pdfin) = yes {
+    if $(Variant_fontlib) = none {
+      if $(ProductName) = ebd {
+        if $(Variant_ebd_shiva) = shivay {
+          AddUnique SW-Folder-Variants : shivafonts ;
+        } else {
+          AddUnique SW-Folder-Variants : linofonts defaultfontDB ;
+        }
+      } else {
+        if $(Variant_shivafonts) {
+          AddUnique SW-Folder-Variants : shivafonts shivafontDB ;
+        }
+        else {
+          AddUnique SW-Folder-Variants : linofonts defaultfontDB ;
+        }
+      }
+    }
+    AddUnique SW-Folder-Variants : ggfonts ;
+    if ! $(Variant_minimal) {
+      AddUnique SW-Folder-Variants : ggfontsnonminimal ;
+    }
+  }
+
+  if $(Variant_xps) = yes {
+    AddUnique SW-Folder-Variants : xpsclebdrip ;
+  }
+
+  if $(ProductName) = ebd {
+    # Include the profiles for color management in the embedded product.
+    AddUnique SW-Folder-Variants : ebdcm ;
+
+    if $(Variant_ebd_ufst) = eufst5y || $(Variant_ebd_ufst) = eufst5o {
+      AddUnique SW-Folder-Variants : ebdufst5 ;
+    } else  if $(Variant_ebd_ufst) = eufst7y || $(Variant_ebd_ufst) = eufst7o {
+      AddUnique SW-Folder-Variants : ebdufst7 ;
+    } else if ! exportsrc in $(JAM_ARGUMENTS) {
+      AddUnique SW-Folder-Variants : ebdnonufst ;
+    }
+  }
+
+  if ! $(Variant_ICUbuiltin) {
+      AddUnique SW-Folder-Variants : $(SW-icu) ;
+  }
+
+  if $(Variant_hds) {
+    AddUnique SW-Folder-Variants : hds ;
+  }
+
+  SW-All-Folder-Variants = $(SW-Folder-Variants) ;
+}
+
+# Generate the appropriate subsets. We'll put the subsets in the
+# non-variant generated source directory to keep them out of the way.
+
+for i in $(SW-All-Folder-Variants) {
+  SW-Folder $(SW-tmpdir) SW-$(i) : $(i) ;
+}
+
+for i in $(SW-Folder-Variants) {
+  switch $(i) {
+  case defaultfontDB :
+    Distribute Tree : SW-normalclebdrip : SW-defaultfontDB : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case defaultfontDBgui :
+    Distribute Tree : SW-normalguirip : SW-defaultfontDBgui : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case fontemul :
+    Distribute Tree : SW-pdfin : SW-fontemul : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+    Distribute Tree : SW-ps : SW-fontemul : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case ggfontsnonminimal :
+    Distribute Tree : SW-ggfonts : SW-ggfontsnonminimal : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case normalnonminimal :
+    Distribute Tree : SW-normal : SW-normalnonminimal : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case pdfinnonminimal :
+    Distribute Tree : SW-pdfin : SW-pdfinnonminimal : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case psnonminimal :
+    Distribute Tree : SW-ps : SW-psnonminimal : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case xpsnonminimal :
+    Distribute Tree : SW-xps : SW-xpsnonminimal : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  case * :
+    Distribute Tree : * : SW-$(i) : $(SW-tmpdir) : : $(SupraPlat) : $(SupraPlat) : PlatformThenSuffix ;
+  }
+}
+if $(ProductName) = gui {
+  Distribute Tree : * : SW-$(SW-icu) : $(SW-tmpdir) : : $(TargetPlat) : all : PlatformThenSuffix ;
+}
+
+# Remember the core suffix before adding the skin variant. On windows, this allows
+# clrip.exe to find the DLL in development builds.
+local CoreSuffix = $(Suffix) ;
+
+if $(ProductName) = le || $(ProductName) = ebd {
+  AddToVar Local : Suffix : reg : Variant skin=regression ;
+  AddToVar Local : Suffix : swr : Variant sw=ram ;
+  AddToVar Local : Suffix : swh : Variant sw=hybrid ;
+  AddToVar Local : Suffix : swz : Variant sw=zip ;
+  AddToVar Local : Suffix : swzh : Variant sw=ziphybrid ;
+  AddToVar Local : Suffix : frb : Variant framebuffer=yes ;
+  AddToVar Local : Suffix : vgnd : Variant valgrind ;
+
+  AddToVar Local : Suffix : ufst5inrip : Variant fontlib=ufst5inrip ;
+  AddToVar Local : Suffix : ufst7inrip : Variant fontlib=ufst7inrip ;
+}
+
+
+# SW folder disposition
+if $(Variant_sw) = ram {
+  if $(ProductSDK) != skinkit {
+    Error SW-in-RAM is not supported for $(ProductTarget) ;
+  }
+
+  local SW-ram ;
+  MakeLeafTarget SW-ram : SW-ram : $(SW-tmpdir) : DirectoryFor ;
+
+  local swfolder ;
+  MakeLeafTarget swfolder : swfolder.c : $(CurrentPath) $(GeneratedC-Directory) : DirectoryFor ;
+
+  SW-Combine $(SW-tmpdir) SW-ram : $(SW-tmpdir)$/SW-$(SW-Folder-Variants) ;
+  Import $(swfolder) : $(SW-ram) : "pSWRam" ;
+
+  IncludeExportDirectories Local : refiface skinkit core standard ;
+  Library swfolderlib : $(swfolder) ;
+
+  DependsOn SW : $(swfolder) ;
+  DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) ebdwrapper$(C-Exec-Suffix) : swfolderlib ;
+} else {
+  if $(Variant_sw) = zip || $(Variant_sw) = ziphybrid {
+    # We want to obfuscate the fact that the SW folder is a ZIP file, so
+    # we give it an unusual name. We combine the appropriate variants into
+    # a temporary folder, then ZIP that up, and combine it with files
+    # configs that the skin needs into the final SW directory.
+    local SW-stage ;
+    MakeLeafTarget SW-stage : SW-stage : $(SW-tmpdir) ;
+    SW-Combine $(SW-tmpdir) SW-stage : $(SW-tmpdir)$/SW-$(SW-Folder-Variants) ;
+
+    local ZipTarget ;
+    MakeLeafTarget ZipTarget : BootFile.bin : $(SW-tmpdir) SW-swzip : DirectoryFor ;
+    Zip $(ZipTarget) : $(SW-stage) : $(SW-stage).tim ;
+
+    # The swzip directory is created by the ZipTarget rule
+    local SW-swzip ;
+    MakeLeafTarget SW-swzip : SW-swzip : $(SW-tmpdir) : Locate ;
+    DependsOn $(SW-swzip) : $(ZipTarget) ;
+
+    DependsOn SW : $(SW-swzip) ;
+
+    # Only collect the Zipped copy of our temporary staging directory
+    # into the final SW folder.
+    SW-All-Folder-Variants = swzip ;
+  }
+
+  # Combine the contributing SW folders into the final SW folder
+  SW-Combine $(CurrentPath) $(ProductSW) : $(SW-tmpdir)$/SW-$(SW-All-Folder-Variants) ;
+}
+
+if $(ProductName) = gui {
+  # Motif resources
+  if $(UNIX) {
+    DependsOn guirip : xswc ;
+    DependsOn xswc : XSwc.en_US : lkit ;
+    Distribute File : * : XSwc.en_GB XSwc.en_US : $(CurrentPath) lkit : : $(SupraPlat) : all : PlatformThenSuffix ;
+  }
+
+  # Customisation-independent distribution rules
+  #    local dllPdbTarget ;
+
+  if ! $(Variant_platform) { RequiresVariant platform : $(TargetPlat) ; }
+  if $(Variant_dll) = d
+  {
+    # DLL
+    if $(MACOSX) {
+      Distribute File : * : $(rip) : $(CurrentPath) : : : : PlatformThenSuffix ;
+
+    } else if $(NT) {
+      if $(extnlpdb) != 0 {
+        MakeGristed swdllpdb : $(ScriptworksDll)$(C-Pdb-Suffix) : $(CurrentPath) ;
+        DirectoryFor $(swdllpdb) : $(CurrentPath)$/obj$/$(Variant_platform)$/$(Suffix)$/$(CompilerVersion-C) ;
+        DependsOn $(swdllpdb) : $(rip) ;
+      }
+
+    } else if $(UNIX) {
+      Distribute File : * : $(rip) : $(CurrentPath) : : : : PlatformThenSuffix ;
+    }
+  }
+
+  # omniORB libs
+  if $(NT) {
+    if $(Variant_C++_ORB) = OMNI {
+      Distribute File : * : $(Omni-Dynamic-Libs) : $(omniORB-Bin-Dir) : : $(TargetPlat) : all$/omni-orb : PlatformThenSuffix ;
+    }
+  } else if $(UNIX) {
+    if $(Variant_C++_ORB) = OMNI {
+      if $(Variant_dll) = d && $(OMNI_ARCH)$(omniORB-Lib-Dir) {
+        Distribute File : * : $(OMNI_ARCH) : $(CurrentPath) : : $(TargetPlat) : all : PlatformThenSuffix ;
+      }
+    }
+  }
+
+  ImplementsVariant customised ;
+
+  Executable gui : makedate.c ;
+
+  if ! $(Variant_executable) { RequiresVariant executable : HARLQN ;  }
+  #
+  # escape the spaces - if $(Variant_executable) has spaces, then jam treats it as a list
+  # Join works happily with no spaces in $(Variant_executable)
+  # Ideally, the :X idiom should do this, but to do that, we would have to tackle COREJAM
+  local exename ;
+  Join exename : "\ " : $(Variant_executable) ;
+
+  if $(MACOSX) {
+    # Set creator type
+    ReplaceVar Local : $(Com)-Exec-Creator : $(FILECREATOR) ;
+
+    # Set bundle attribute, clear inited attribute
+    SetFileAttributes gui : "-a Bi" ;
+
+    # Customer-specific resources go in executable (not dll)
+    C-LinkWithLibraries gui : customer : customer ;
+
+    # Bundle application
+    Bundle = gui.app ;
+    BundleDsym = gui.dSYM ;
+    local BundleDistrib = $(exename).app ;
+    DependsOn guirip : $(Bundle) ;
+
+    if $(Variant_C++_ORB) = OMNI {
+      CreateBundle $(Bundle) : gui
+        : $(Omni-Dynamic-Libs)
+          $(SentinelFrameworkDir)$(FS)$(SentinelFrameworkNames).framework
+        ;
+    } else {
+      CreateBundle $(Bundle) : gui
+        : $(SentinelFrameworkDir)$(FS)$(SentinelFrameworkNames).framework
+        ;
+    }
+
+    Distribute Tree : $(BundleDistrib)  : $(Bundle) : $(CurrentPath) $(C-Exec-Directory) : : : : PlatformThenSuffix ;
+
+  } else if $(NT) {
+    # If we are compiling as a DLL, then put the customisation resources in
+    # the executable, other put all of the resources in the executable.
+    if $(Variant_dll) = d
+    {
+      Executable gui : customer.rc : customer ;
+    }
+    else
+    {
+      Executable gui : gui.rc : gui ;
+    }
+
+    if $(C-Compiler-Family) = msvc {
+      if $(extnlpdb) != 0  {
+        # include gui.pdb for debugging build.
+        MakeGristed guipdb : gui$(C-Pdb-Suffix) : $(CurrentPath) ;
+        DirectoryFor $(guipdb) : $(CurrentPath)$/$(C-Exec-Directory) ;
+        DependsOn $(guipdb) : gui ;
+      }
+    }
+
+    local GuiManifestTarget ;
+    EmbedManifest gui : $(C-Exec-Directory) : $(C-Exec-Directory)$/gui.exe.manifest : GuiManifestTarget ;
+
+    if $(RELEASE) = 1 {
+      Sign gui : : $(GuiManifestTarget) ;
+    }
+
+    Distribute File : $(exename)$(C-Exec-Suffix)   : gui$(C-Exec-Suffix) : $(CurrentPath)     : : $(Variant_platform) : $(Suffix) : PlatformThenSuffix ;
+
+    if $(extnlpdb) != 0  {
+      Distribute File : gui$(C-Pdb-Suffix) : $(guipdb) : : : $(Variant_platform) : $(Suffix) : PlatformThenSuffix ;
+    }
+
+    if $(Variant_dll) = d
+    {
+      Distribute File : * : $(ScriptworksDll)$(C-Dll-Suffix) : $(CurrentPath) : : $(Variant_platform) : $(Suffix) : PlatformThenSuffix ;
+      if $(extnlpdb) != 0  {
+        Distribute File : $(ScriptworksDll)$(C-Pdb-Suffix) : $(swdllpdb) : : : $(Variant_platform) : $(Suffix) : PlatformThenSuffix ;
+      }
+    }
+
+  } else if $(UNIX) {
+    Distribute File : $(exename) : gui : $(CurrentPath) : : : : PlatformThenSuffix ;
+
+  }
+
+# Barf. This is a near copy of the EncryptMessages rule in
+# bt/jambits/comprule/localise.jam. It doesn't feel right here, it should be
+# in with the other localisation rules.
+  rule EncryptLLVMessage {
+    local Encrypt ;
+    MakeGristed Encrypt : cryptify$(C-Exec-Suffix) : $(CurrentPath)$/encrypt ;
+
+    local Source Target ;
+    MakeGristed Source : $(2) : $(CurrentPath) ;
+    MakeGristed Target : $(1) : $(CurrentPath) ;
+    DirectoryFor $(Target) : $(CurrentPath)$/gui$/obj$/pc-all$/Messages$/$(Variant_customised) ;
+    DEPENDS $(Target) : $(Source) ;
+    DEPENDS $(Target) : $(Encrypt) ;
+    FloatingDepends $(Target) ;
+    CUSTMR on $(Target) = $(Variant_customised) ;
+    Encrypt on $(Target) = $(Encrypt) ;
+    if $(NT)   { PLAT on $(Target) = WIN32 ; }
+    if $(MAC) || $(MACOSX)  { PLAT on $(Target) = MACINTOSH ; }
+    if $(UNIX) { PLAT on $(Target) = UNIX ; }
+    _EncryptLLVMessages $(Target) : $(Source) ;
+
+    # copy to top level
+    local topTarget  ;
+    MakeGristed topTarget : $(1) : $(CurrentPath)$/Messages$/$(Variant_customised) ;
+    CopyFile $(topTarget) : $(1) ;
+    DirectoryFor $(topTarget) : $(CurrentPath)$/Messages$/$(Variant_customised) ;
+  }
+
+  actions _EncryptLLVMessages bind Encrypt {
+    $(Perl) $(BUILDROOT)$/tools$/encrypt.pl $(PLAT) $(CUSTMR) $(BUILDROOT)$/customer$/export$/customer.h $(Encrypt) $(>) >$(<)
+  }
+
+# we only do llv for NT at the moment.
+  if $(NT) {
+    if $(Variant_llv) != nLLv {
+      local locMsg ;
+      if $(Variant_llv) = LLvSC {
+        locMsg = CHS ;
+      }
+      else  if $(Variant_llv) = LLvTC {
+        locMsg = CHT ;
+      }
+      else  if $(Variant_llv) = LLvINV {
+        locMsg = INV ;
+      }
+      else {
+        Error Unsupported LLv: $(Variant_llv) ;
+      }
+
+      # Encrypt LLV messages before checksuming
+
+      local msgFile ;
+      if $(Variant_customised) = HARLQN || $(Variant_llv) = LLvINV {
+        msgFile = $(CurrentPath)$/gui$/messages$/harlqn.$(locMsg) ;
+      }
+      else {
+        msgFile = $(CurrentPath)$/customer$/pc$/messages$/$(Variant_customised).$(locMsg) ;
+      }
+
+      EncryptLLVMessage $(locMsg) : $(msgFile) ;
+
+      Executable gui : llvchksm.c ;
+      GenericTarget llvchksm.c : $(locMsg) : $(Sign) "-o" $> ">" $< ;
+      DirectoryFor  llvchksm.c : $(CurrentPath)$/$(GeneratedC-Directory) ;
+    }
+  }
+
+# generate gui installer scripts
+  DependsOn scripts : scripts : install ;
+
+
+# Copy omniORB libraries
+  if $(NT) {
+    # Copy omniORB libraries alongside rip executable
+    if $(Variant_C++_ORB) = OMNI && C++ in $(EnabledCompilers) {
+      local i ; for i in $(Omni-Dynamic-Libs) {
+        local omni-src ;
+        MakeLeafTarget omni-src : $(i) : $(omniORB-Bin-Dir) : Search ;
+        local omni-dest ;
+        MakeLeafTarget omni-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+        DependsOn $(ProductTarget) : $(omni-dest) ;
+        CopyFile $(omni-dest) : $(omni-src) ;
+      }
+    }
+  } else if $(UNIX) {
+    # Copy omniORB libraries to top level
+    if $(OMNI_ARCH)$(omniORB-Lib-Dir) {
+      DependsOn guirip : copy-libs ;
+      DependsOn gui $(rip) copy-libs : $(OMNI_ARCH) ;
+      CopyLibraryDir $(OMNI_ARCH) : $(omniORB-Lib-Dir) ;
+    }
+  }
+
+# set flag if we need to copy over DLLs etc. to accompany .exe (for
+# machines without MSVC installed)
+  local msvcdll = 0 ;
+  if $(Variant_rt_libs) = dynamic_multi_threaded {
+    if $(Variant_cpp_compiler) = msvc_8_0  ||  $(Variant_cpp_compiler) = msvc_10_0  {
+      msvcdll = VC8PLUS ;
+    }
+  }
+
+  if $(msvcdll) {
+    # copy DLLs into same folder as .exe file
+    local i ; for i in $(MsvcDllSet) {
+      local dll-dest ;
+      MakeLeafTarget dll-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+      DependsOn $(ProductTarget) : $(dll-dest) ;
+      CopyFile $(dll-dest) : $(i) ;
+
+      Distribute File : $(i:B)$(i:S) : $(i) : $(MsvcDllDir) : : $(Variant_platform) : $(Suffix) : PlatformThenSuffix ;
+    }
+  }
+
+# Localisation kit
+  if $(MACOSX) {
+    # Mac localisation kit is customised
+    LocalisationKit-Suffix = $(Suffix) ;
+    Makefile lkit ;
+    DependsOn localkit : localkit : lkit ;
+    DependsOn ukeng    : ukeng    : lkit ;
+    DependsOn ukeng    : build_messages ;
+    DependsOn distrib  : localkit ukeng ;
+
+    Distribute Tree : LocalisationKit : macos-all : $(BUILDROOT)$/LocalisationKit : : macos_x-all : all : PlatformThenSuffix ;
+    Distribute Tree : LocalisationKit : macos_x-all : $(BUILDROOT)$/LocalisationKit : : macos_x-all : all : PlatformThenSuffix ;
+
+  } else if $(UNIX) {
+    LocalisationKit-Suffix = $(Suffix) ;
+    Makefile lkit ;
+    DependsOn localkit : localkit : lkit ;
+    DependsOn ukeng    : ukeng    : lkit ;
+    DependsOn ukeng    : build_messages ;
+    DependsOn distrib  : localkit ukeng ;
+
+    Distribute Tree : LocalisationKit : unix-all : $(BUILDROOT)$/LocalisationKit : : $(TargetPlat) : all : PlatformThenSuffix ;
+    Distribute Tree : LocalisationKit : $(TargetPlat) : $(BUILDROOT)$/LocalisationKit : : $(TargetPlat) : all : PlatformThenSuffix ;
+  }
+
+# Message files
+  if $(MACOSX) {
+    DependsOn build_messages : build_messages : mac3 ;
+    msgsdir = $(CurrentPath)$/mac3$/obj$/macos-all ;
+  } else if $(NT) {
+    DependsOn build_messages : build_messages : gui ;
+    msgsdir = $(CurrentPath)$/gui$/obj$/pc-all ;
+  } else if $(UNIX) {
+    DependsOn build_messages : build_messages : motifpart ;
+    msgsdir = $(CurrentPath)$/motifpart$/obj$/unix-all ;
+  }
+  DependsOn guirip : build_messages ;
+
+  local msgsfile ;
+  MakeLeafTarget msgsfile : Messages : $(msgsdir) : Locate Distribute ;
+  DependsOn $(msgsfile) : build_messages ;
+  Distribute Tree : * : Messages : $(msgsdir) : : $(SupraPlat) : all : PlatformThenSuffix ;
+
+  GenericTarget <toplevel>Messages : $(msgsfile) : $(Copy) $> $< ;
+  CleanFile <toplevel>Messages ;
+  DependsOn $(ProductTarget) : <toplevel>Messages ;
+
+# Japanese resources
+  if $(NT) {
+    local jpn-src ; MakeLeafTarget jpn-src : RESOURCE.JPN : $(CurrentPath)$/gui$/msgui : Search ;
+    local jpn-dest ; MakeLeafTarget jpn-dest : RESOURCE.JPN : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+    DependsOn $(ProductTarget) : $(jpn-dest) ;
+    CopyFile $(jpn-dest) : $(jpn-src) ;
+
+    Distribute File : * : RESOURCE.JPN : $(CurrentPath)$/gui$/msgui : : $(SupraPlat) : all : PlatformThenSuffix ;
+  }
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+  AddToVar Local : EXTOPTS : USE_HYBRID_SW_FOLDER=1 : Variant sw=hybrid ;
+  AddToVar Local : EXTOPTS : USE_RAM_SW_FOLDER=1 : Variant sw=ram ;
+  AddToVar Local : EXTOPTS : USE_ZIP_HYBRID_SW_FOLDER=1 : Variant sw=ziphybrid ;
+
+  AddToVar Local : EXTOPTS : TEST_FRAMEBUFFER=1 : Variant framebuffer=yes ;
+
+# Include the ICM2 CMM code in builds with supported compilers
+  if $(C-Compiler-Family) = msvc
+  {
+    AddToVar Local : EXTOPTS  : USE_BYPASS_PRINTER=1  ;
+    AddToVar Local : ICM2OPTS : USE_ICM2_CMM=1 ;
+  }
+
+# Build the UFST5 library
+  local Ufst5Target ;
+  if $(Variant_fontlib) = ufst5inrip {
+    MakeGristed Ufst5Target : ufst5$(C-Lib-Suffix) : $(CurrentPath) ufst5 ;
+    DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(Ufst5Target) ;
+  }
+# Build the UFST7 library
+  local Ufst7Target ;
+  if $(Variant_fontlib) = ufst7inrip {
+    MakeGristed Ufst7Target : ufst7$(C-Lib-Suffix) : $(CurrentPath) ufst7 ;
+    DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(Ufst7Target) ;
+  }
+
+# Kit makefiles
+  local template make ;
+
+  if $(ProductName) = ebd {
+    # Makefile templates for embedded are defined in ./ebdrip/make/sdkrules.jam
+    local EmbeddedJambits = $(BUILDROOT)$/ebdrip$/make$/sdkrules.jam ;
+    Include $(EmbeddedJambits) ;
+  }
+  else {
+    AddToVar Local : Unifdef-Needs : WINDOWS LINUX SOLARIS MACOSX ;
+
+    if $(C-Compiler-Family) = msvc {
+      make = nmake ;
+      AddToVar Local : Unifdef-Defines   : WINDOWS ;
+    }
+    if $(UNIX) {
+      if solaris-all in $(JamHostPlat) {
+        make = gnumake ;
+        AddToVar Local : Unifdef-Defines   : SOLARIS ;
+      } else {
+        make = gmake ;
+        AddToVar Local : Unifdef-Defines   : LINUX ;
+      }
+      AddToVar Local : $(Com)-Dylib-Linker_Libraries $(Com)-Exec-Linker_Libraries : -lrt ;
+    }
+    if $(MACOSX) {
+      make = make ;
+      AddToVar Local : Unifdef-Defines   : MACOSX ;
+    }
+  }
+
+  if ! $(Variant_thirdparty) {
+    local template_defines_file = $(BUILDROOT)$/clrip$/make$/template-defines.jam ;
+    if $(template_defines_file:E) {
+      Include $(template_defines_file) ;
+      AddToVar Local : Unifdef-Defines : $(template-define) ;
+      AddToVar Local : Unifdef-UnDefines : $(template-undefine) ;
+      DontExportSource $(template_defines_file) ;
+    }
+  }
+
+  if $(template) {
+    # Using template makefile
+    ExportSource $(template) : C : $(template-define) : $(template-undefine)  ;    # type = C so that it is unifdef-ed by doexport.pl
+
+  } else {
+
+    # A cut down set of dependency generation rules, similar to those in
+    # depends.jam.
+    # These are simpler because there are no IDL file, resource files,
+    # etc to handle, and only one dependency file.
+    rule _Skin_Cache-Depends {
+      local file ;
+      for file in $(DependsFile) {
+        if $(Started-$(file)) {
+          FILEOPEN SkinDependsFileHandle : $(file) : a ;
+        }
+        else {
+          Started-$(file) = 1 ;
+          FILEOPEN SkinDependsFileHandle : $(file) : w ;
+        }
+        FILEWRITE $(SkinDependsFileHandle) : $(2:X) ":" $(3:X) ;
+        FILECLOSE $(SkinDependsFileHandle) ;
+      }
+    }
+
+    rule _SkinEnsureBinds { DEPENDS $(ProductTarget) : $(<) ; }
+
+    # Use the ExportSource regex which matches <file.h>
+    # so as to picks up e.g. <pthread.h>
+    Skin-Depends-Regexp = "^[  ]*#[    ]*include[  ]*[\"<]([^\">]*)[\">].*$" ;
+
+    rule _Skin-Depends-Rule {
+      _Skin_Cache-Depends C : $(<) : $(>) ;
+
+      local i ; for i in DependsFile HDRRULE HDRSCAN {
+         $(i) on $(Included) = $($(i)) ;
+      }
+    }
+
+    rule _Skin-Depends-Style {
+      _SkinEnsureBinds $(<) ;
+      HDRSCAN on $(<) = $(Skin-Depends-Regexp) ;
+      DependsFile on $(<) += $(>) ;
+    }
+
+    rule Skin-Dependencies {
+      HDRRULE on $(<) = _Skin-Depends-Rule ;
+      _Skin-Depends-Style $(<) : $(>) ;
+    }
+
+    # Generate makefile
+    actions quietly _GenerateMakefile bind genmake {
+      echo ...Generating $(<)...
+      $(Perl) $(genmake) $(product) $(platform) $(depfile) $(filelist) $(<)
+    }
+
+    rule GenerateMakefile {
+      local TargetPath = $(1:/) ;
+      local Target ; MakeLeafTarget Target : $(TargetPath) : : DirectoryFor ;
+      # Add a direct dependency from the file name to the target
+      DEPENDS $(TargetPath) : $(Target) ;
+
+      local SourcePath = $(2:/) ;
+      local Source ; MakeLeafTarget Source : $(SourcePath) : : Search ;
+
+      DEPENDS $(Target) : $(Source) ;
+      FloatingDepends $(Target) ;
+
+      if depend in $(JAM_ARGUMENTS) {
+        # Generated makefile contains dependencies, so force it to be
+        # regenerated when the depend target is specified 
+        Force $(Target) ;
+      }
+
+      local SkinFiles =
+        $(CoreInterfaces)
+        $(SDKSources)
+        $(4)
+      ;
+
+      local DepFile = $(CurrentPath)$/make$/Skin-$(Suffix)-$(3).dep ;
+      Skin-Dependencies $(SkinFiles) : $(DepFile) ;
+
+      if $(Variant_security) = le
+      {
+        # Added after dependencies are generated because it might not
+        # exist yet.  Not ideal, but shouldn't be a problem.
+        SkinFiles += skinkit$/src$/handshake.c ;
+      }
+
+      local FileList = $(CurrentPath)$/make$/Skinfiles-$(Suffix)-$(3).txt ;
+      CleanFile $(FileList) ;
+      FILEOPEN SkinFileListFileHandle : $(FileList) : w ;
+      local skinfile ;
+      for skinfile in $(SkinFiles) {
+        FILEWRITE $(SkinFileListFileHandle) : $(skinfile) ;
+      }
+      FILECLOSE $(SkinFileListFileHandle) ;
+
+      genmake on $(Target) = $(Source) ;
+      product on $(Target) = $(3) ;
+      depfile on $(Target) = $(DepFile) ;
+      filelist on $(Target) = $(FileList) ;
+      if $(C-Compiler-Family) = msvc
+      {
+        platform on $(Target) = win ;
+      }
+      else if vxworks in $(TargetOS)
+      {
+        platform on $(Target) = vxworks ;
+      }
+      else if threadx in $(TargetOS)
+      {
+        platform on $(Target) = threadx ;
+      }
+      else if linux in $(TargetOS)
+      {
+        platform on $(Target) = linux ;
+      }
+      else if montavista in $(TargetOS)
+      {
+        platform on $(Target) = montavista ;
+      }
+      else if macos_x in $(TargetOS)
+      {
+        platform on $(Target) = macosx ;
+      }
+      _GenerateMakefile $(Target) ;
+    }
+
+    # Put makefile in varianted directory because its dependecies section
+    # is variant dependent
+    if $(ProductName) = ebd {
+      template = $(GeneratedC-Directory)$/ebdrip.make.template ;
+      GenerateMakefile $(CurrentPath) $(template)
+        : $(CurrentPath) make genmake.pl
+        : ebdrip
+        : $(SkinSources) ;
+    } else {
+      local ct = $(GeneratedC-Directory)$/clrip.make.template ;
+      template += $(ct) ;
+      GenerateMakefile $(CurrentPath) $(ct)
+        : $(CurrentPath) make genmake.pl
+        : clrip
+        : $(SkinSources) ;
+      local mt = $(GeneratedC-Directory)$/minrip.make.template ;
+      template += $(mt) ;
+      GenerateMakefile $(CurrentPath) $(mt)
+        : $(CurrentPath) make genmake.pl
+        : minrip
+        : $(MinSources) ;
+      template-extn-$(GeneratedC-Directory)$/minrip.make.template = .minrip ;
+    }
+  }
+
+  # Generate hg changeset stamp
+  if $(ProductName) = ebd && ! $(Variant_thirdparty) {
+    actions quietly _GenerateHgVersion bind hgversion {
+      echo ...GENERATING $(<)...
+      $(Perl) $(hgversion) $(<)
+    }
+
+    rule GenerateHgVersion {
+      local TargetPath = $(1:/) ;
+      local Target ; MakeLeafTarget Target : $(TargetPath) : : Locate ;
+
+      local ToolPath = $(CurrentPath)$/bt$/hgversion.pl ;
+      local Tool ; MakeLeafTarget Tool : $(ToolPath) : : Search ;
+
+      DEPENDS $(Target) : $(Tool) ;
+      Force $(Target) ;
+
+      hgversion on $(Target) = $(Tool) ;
+      _GenerateHgVersion $(Target) ;
+    }
+
+    GenerateHgVersion $(CurrentPath) pms$/src$/pms_version.c ;
+  }
+
+
+  local UnifdefArgs = -U$(Unifdef-UnDefines) -D$(Unifdef-Defines) ;
+
+  AddToVar Local : Make-Unifdef-Defines : HQN : Variant skin_debug ;
+
+  for i in $(template) {
+    local mfextra = "" ;
+    if $(template-extn-$(i)) { mfextra = $(template-extn-$(i)) ; }
+    Unifdef $(CurrentPath) $(C-Exec-Directory) bin$(mfextra) Makefile :
+            $(CurrentPath) $(i) :
+            $(UnifdefArgs) -D$(Make-Unifdef-Defines) : ...Preprocessing Makefile from $(i) : $(Unifdef-Needs) ;
+  }
+# Kit README.txt
+  Unifdef $(CurrentPath) $(C-Exec-Directory) README.txt :
+          $(CurrentPath) clrip doc README.txt :
+          $(UnifdefArgs) -D$(Make-Unifdef-Defines) : ...Preprocessing README.txt : $(Unifdef-Needs) ;
+  ExportSource .$/clrip$/doc$/README.txt : C ;    # type = C so that it is unifdef-ed by doexport.pl
+
+  # hqnripsdk.dox
+  Unifdef $(CurrentPath) $(C-Exec-Directory) hqnripsdk.dox :
+          $(CurrentPath) clrip hqnripsdk.dox :
+          $(UnifdefArgs) -D$(Make-Unifdef-Defines) : ...Preprocessing hqnripsdk.dox : $(Unifdef-Needs) ;
+
+  ExportSource .$/clrip$/hqnripsdk.dox : C ;    # type = C so that it is unifdef-ed by doexport.pl
+  ExportSource .$/clrip$/branding$/lekit-header.html : Text ;
+  ExportSource .$/clrip$/branding$/footer.html : Text ;
+  ExportSource .$/clrip$/branding$/stylesheet.css : Text ;
+  ExportSource .$/clrip$/doc$/images$/gg_logo.gif : Binary ;
+  ExportSource .$/clrip$/doc$/images$/spacer.gif : Binary ;
+
+  ExportSource .$/xpsdrv : Unknown ;  # Ensure dir exists on all platforms (listed as input in hqnripsdk.dox)
+
+# Kit Sources and interfaces
+# All skin source code is now preprocessed with unifdef, in the same way as the
+# makefiles and README.txt are preprocessed, and using the same set of
+# defined/undefined symbols. The preprocessed code goes into an obj/sdksrc-XXX
+# subdirectory, where XXX is composed of the build suffixes. This is the
+# directory from which it will be distributed, and in which it is actually
+# compiled.
+
+  local PreprocessedSrcDir = obj$/skinsrc-$(Suffix) ;
+
+  for i in $(CoreInterfaces)
+  {
+    LESkinPreprocessSource $(i) : $(PreprocessedSrcDir)
+      : $(UnifdefArgs) -UCORE_INTERFACE_PRIVATE : $(Unifdef-Needs)
+      : distrib clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) ebdwrapper$(C-Exec-Suffix)
+    ;
+  }
+
+  for i in $(SDKSources)
+  {
+    LESkinPreprocessSource $(i) : $(PreprocessedSrcDir)
+      : $(UnifdefArgs) : $(Unifdef-Needs)
+      : distrib clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) ebdwrapper$(C-Exec-Suffix)
+    ;
+  }
+
+  for i in $(MinSources)
+  {
+    LESkinPreprocessSource $(i) : $(PreprocessedSrcDir)
+      : $(UnifdefArgs) : $(Unifdef-Needs)
+      : distrib minrip$(C-Exec-Suffix)
+    ;
+  }
+
+  for i in $(SkinSources)
+  {
+    LESkinPreprocessSource $(i) : $(PreprocessedSrcDir)
+      : $(UnifdefArgs) : $(Unifdef-Needs)
+      : distrib clrip$(C-Exec-Suffix) ebdwrapper$(C-Exec-Suffix)
+    ;
+  }
+
+  if $(Variant_security) = le
+  {
+    # Separate invocation of LESkinPreprocessSource for handshake.c as we need to
+    # 1. grist it so that it is found in the skinkit generated C dir
+    # 2. copy it to the skinkit/src dir in obj
+    LESkinPreprocessSource skinkit$/src$/handshake.c : $(PreprocessedSrcDir)
+      : $(UnifdefArgs) : $(Unifdef-Needs)
+      : distrib clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) ebdwrapper$(C-Exec-Suffix)
+    ;
+  }
+
+# Build the kit and test harness
+
+  if $(ProductName) = ebd
+  {
+    # Rules for building the Embedded SDK RIP are defined in ./ebdrip/make/buildsdk.jam
+    local EmbeddedJambits = $(BUILDROOT)$/ebdrip$/make$/buildsdk.jam ;
+    Include $(EmbeddedJambits) ;
+  }
+  else
+  {
+    if clrip != clrip$(C-Exec-Suffix) {
+      DependsOn clrip : clrip$(C-Exec-Suffix) ;
+      DependsOn minrip : minrip$(C-Exec-Suffix) ;
+      DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : corelib ;
+    }
+
+    DirectoryFor clrip$(C-Exec-Suffix) : $(CurrentPath) $(C-Exec-Directory) bin ;
+    DirectoryFor minrip$(C-Exec-Suffix) : $(CurrentPath) $(C-Exec-Directory) bin.minrip ;
+
+    if $(MACOSX) {
+      # Populate contents of the Frameworks folder
+
+      if $(Variant_dll) != nd {
+        # Set corelib.dylib destination folder
+        # Place in Frameworks dir alongside bin dir for executable
+        # so that executable can find it when run
+        DirectoryFor corelib$(C-Dylib-Suffix) : $(C-Exec-Directory)$/Frameworks ;
+      }
+
+      # Copy omniORB frameworks
+      if $(Variant_security) = le || $(Variant_security) = lic {
+        local i ; for i in $(Omni-Dynamic-Libs) {
+          local omni-src ;
+          MakeLeafTarget omni-src : $(i) : : Search ;
+          local omni-dest ;
+          MakeLeafTarget omni-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) Frameworks : Locate ;
+
+          DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(omni-dest) ;
+          CopyFile $(omni-dest) : $(omni-src) ;
+        }
+      }
+
+      # Copy SuperPro dongle frameworks
+      if $(Variant_security) = dng || $(Variant_security) = wm {
+        local i ; for i in $(SentinelFrameworkDir)$(FS)$(SentinelFrameworkNames).framework {
+          local fw-src ;
+          MakeLeafTarget fw-src : $(i) : : Search ;
+          local fw-dest ;
+          MakeLeafTarget fw-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) Frameworks : Locate ;
+
+          DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(fw-dest) ;
+          CopyFile $(fw-dest) : $(fw-src) ;
+        }
+      }
+    }
+    else if $(C-Compiler-Family) = msvc
+    {
+      # Copy omniORB frameworks
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        if $(Variant_dll) = d {
+          local i ; for i in $(Omni-Dynamic-Libs) {
+            local omni-src ;
+            MakeLeafTarget omni-src : $(i) : $(omniORB-Bin-Dir) : Search ;
+            local omni-dest ;
+            MakeLeafTarget omni-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+            DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(omni-dest) ;
+            CopyFile $(omni-dest) : $(omni-src) ;
+          }
+        } else {
+          local i ; for i in $(Omni-Static-Libs) {
+            local omni-src ;
+            MakeLeafTarget omni-src : $(i) : $(omniORB-Lib-Dir) : Search ;
+            local omni-dest ;
+            MakeLeafTarget omni-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+            DependsOn clrip$(C-Exec-Suffix) minrip$(C-Exec-Suffix) : $(omni-dest) ;
+            CopyFile $(omni-dest) : $(omni-src) ;
+          }
+        }
+      }
+    } else if $(UNIX) {
+      # Copy omniORB frameworks
+      if $(Variant_security) = ldklic || $(Variant_security) = lic {
+        if $(Variant_dll) = d {
+          local corelib-target ;
+          MakeGristed corelib-target : corelib$(C-Dll-Suffix) : $(CurrentPath) ;
+          DependsOn $(corelib-target) : $(OMNI_ARCH) ;
+          CopyLibraryDir $(OMNI_ARCH) : $(omniORB-Lib-Dir) ;
+        } else {
+          local i ; for i in $(Omni-Static-Libs) {
+            local omni-src ;
+            MakeLeafTarget omni-src : $(i) : $(omniORB-Lib-Dir) : Search ;
+            local omni-dest ;
+            MakeLeafTarget omni-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) : Locate ;
+
+            DependsOn clrip : $(omni-dest) ;
+            CopyFile $(omni-dest) : $(omni-src) ;
+          }
+        }
+      }
+    }
+
+    # In the SDK, clrip is built by an invocation of the per-platform
+    # Makefile, from the full set of preprocessed skin sources. The Makefile
+    # is created by the Unifdef rule, which provides gristed leaf and
+    # path dependencies which we need to link to the GenericTarget's idea
+    # of the Makefile target.
+    local GristedMakefile GristedMinripMakefile ;
+    MakeGristed GristedMakefile : $(C-Exec-Directory)$/bin$/Makefile : $(CurrentPath) ;
+    DEPENDS $(GristedMakefile) : $(CurrentPath)$/$(C-Exec-Directory)$/bin$/Makefile ;
+
+    MakeGristed GristedMinripMakefile : $(C-Exec-Directory)$/bin.minrip$/Makefile : $(CurrentPath) ;
+    DEPENDS $(GristedMinripMakefile) : $(CurrentPath)$/$(C-Exec-Directory)$/bin.minrip$/Makefile ;
+
+    if $(Variant_fontlib) = ufst7inrip {
+      actions quietly _MakeClrip bind Makefile Ufst7Lib {
+        echo ...Executing $(Make) -f $(Makefile)...
+        $(SetEnv)$(ENV)$(NewLine)
+        $(Make) -f $(Makefile) MAKEFILE=$(Makefile) UFST7LIB=$(Ufst7Lib) $(Options)
+        echo ...Done executing $(Make) -f $(Makefile)
+      }
+    } else {
+      actions quietly _MakeClrip bind Makefile Ufst5Lib {
+        echo ...Executing $(Make) -f $(Makefile)...
+        $(SetEnv)$(ENV)$(NewLine)
+        $(Make) -f $(Makefile) MAKEFILE=$(Makefile) UFST5LIB=$(Ufst5Lib) $(Options)
+        echo ...Done executing $(Make) -f $(Makefile)
+      }
+    }
+
+    rule MakeClrip {
+      local ClripTarget ; MakeGristed ClripTarget : $(1) : $(CurrentPath) ;
+      local MakefileTarget = $(4) ;
+
+      ENV on $(ClripTarget) = $(2) ;
+      Make on $(ClripTarget) = $(3) ;
+      Makefile on $(ClripTarget) = $(4) ;
+      Ufst5Lib on $(ClripTarget) = $(5) ;
+      Ufst7Lib on $(ClripTarget) = $(6) ;
+      Options on $(ClripTarget) = $(7) ;
+
+      DEPENDS $(ClripTarget) : $(MakefileTarget) ;
+      _MakeClrip $(ClripTarget) ;
+    }
+
+    local ClripDirs =
+      SRC_DIR=.$/$(PreprocessedSrcDir)
+      IF_CONTROL=core$/interface$/control
+      IF_SCREENING=core$/interface$/screening
+      IF_VERSION=core$/interface$/version
+      IF_SWZIP=core$/interface$/swzip
+      IF_XPS=core$/interface$/xps
+      IF_RLE=core$/interface$/rle
+      IF_PGB=core$/interface$/pgb
+      IF_LESEC=le-security$/export
+      IF_REFAPI=refiface$/export
+      IF_MPS=mps$/export
+    ;
+
+    local ClripOptions =
+      DEBUG=$(DEBUG)
+      ASSERT=$(ASSERT)
+      WITHPDB=$(extnlpdb)
+    ;
+
+    AddUnique MAKE_UNIFDEF_DEFINES : $(Unifdef-Defines) ;
+    Join TEMPDEFINE : " " : -D$(MAKE_UNIFDEF_DEFINES)=1 ;
+    AddToVar Local : EXTOPTS :
+      SKIN_DEBUG="\"$(TEMPDEFINE)\""
+      HQN=1 # We need this to add this to get the definition of SKIN_DEBUG in the template makefile.
+    : Variant skin_debug ;
+
+    if $(C-Compiler-Family) = msvc
+    {
+      ReplaceVar Local : TARGET_OPTS :
+        CORELIB_CALLING_CONVENTION=$(CallingConvention)
+        PATH_TO_CORELIB=..\\\\..\\\\..\\\\$(CoreSuffix)\\\\$(CompilerVersion-C)
+        COVERAGE=$(COVERAGE)
+        TIMING=$(TIMING)
+        PROFILE_BUILD=$(PROFILE_BUILD)
+        $(ICM2OPTS)
+      ;
+
+      if $(extnlpdb) != 0  {
+        # include clrip.pdb for debugging build.
+        MakeGristed clrippdb : clrip$(C-Pdb-Suffix) : $(CurrentPath) ;
+        DirectoryFor $(clrippdb) : $(CurrentPath)$/$(C-Exec-Directory)$/bin ;
+        DependsOn $(clrippdb) : clrip$(C-Exec-Suffix) ;
+      }
+
+    } else {
+      ReplaceVar Local : TARGET_OPTS :
+        CCOPTS=' $(C++-Compiler_Arguments) '
+        LNARGS=' $(mixedC-Exec-Linker_Arguments) $(mixedC-Exec-Linker_Libraries) '
+        DLOADPATH=$(mixedC-Exec-Linker_DynamicLoadPath)
+      ;
+    }
+
+    if $(MACOSX) {
+      if $(Variant_dll) = d {
+        AddToVar Local : TARGET_OPTS :
+          # corelib.dylib is in Frameworks dir alongside bin dir for executable
+          CORELIB_DIR=$(C-Exec-Directory)
+          FRAMEWORKS_DIR=Frameworks ;
+      } else {
+        # corelib.dylib is in dir based on CoreSuffix
+        AddToVar Local : TARGET_OPTS :
+          CORELIB_DIR=obj$/$(TargetPlat)$/$(CoreSuffix)$/$(CompilerVersion-C) ;
+      }
+    } else {
+      AddToVar Local : TARGET_OPTS :
+        CORELIB_DIR=obj$/$(TargetPlat)$/$(CoreSuffix)$/$(CompilerVersion-C) ;
+    }
+
+    MakeClrip clrip$(C-Exec-Suffix)
+      : $(C-Compiler_Environment)
+      : $(make) : $(GristedMakefile) : $(Ufst5Target) : $(Ufst7Target) :
+      OBJ_DIR=$(C-Exec-Directory)$/bin
+      $(ClripDirs)
+      $(ClripOptions)
+      $(EXTOPTS)
+      $(TARGET_OPTS)
+      CC=$(C-Compiler)
+      LN=$(mixedC-Exec-Linker)
+    ;
+
+    MakeClrip minrip$(C-Exec-Suffix)
+      : $(C-Compiler_Environment)
+      : $(make) : $(GristedMinripMakefile) : $(Ufst5Target) : $(Ufst7Target) :
+      OBJ_DIR=$(C-Exec-Directory)$/bin.minrip
+      $(ClripDirs)
+      $(ClripOptions)
+      $(EXTOPTS)
+      $(TARGET_OPTS)
+      CC=$(C-Compiler)
+      LN=$(mixedC-Exec-Linker)
+    ;
+  }
+
+  # Distribution rules
+
+  # Always ship corelib.
+  if $(Variant_dll) = nd {
+    Distribute File   : bin *           : corelib$(mixedC-Lib-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+  } else {
+    if $(MACOSX) {
+      Distribute File : Frameworks *    : corelib$(C-Dylib-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+    } else {
+      Distribute File : bin *           : corelib$(C-Dylib-Suffix) corelib$(C-Dll-Suffix) corelib$(C-DllStub-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+    }
+    if $(C-Compiler-Family) = msvc
+    {
+      Distribute File : bin *           : corelib.def : $(CurrentPath) : : : : PlatformThenSuffix ;
+
+      if $(extnlpdb) != 0 {
+         Distribute File : bin *        : corelib$(C-Pdb-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+      }
+    }
+  }
+
+  if $(Variant_sw) = ram
+  {
+    Distribute File : bin * : swfolderlib$(mixedC-Lib-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+  }
+
+  if $(Variant_security) = ldklic || $(Variant_security) = lic
+  {
+    if $(MACOSX) {
+      Distribute File : Frameworks * : $(Omni-Dynamic-Libs) : $(CurrentPath) : : : : PlatformThenSuffix ;
+    } else if $(C-Compiler-Family) = msvc {
+      if $(Variant_dll) = d {
+        Distribute File : bin * : $(Omni-Dynamic-Libs) : $(omniORB-Bin-Dir) : : : : PlatformThenSuffix ;
+      } else {
+        Distribute File : bin * : $(Omni-Static-Libs) : $(omniORB-Lib-Dir) : : : : PlatformThenSuffix ;
+      }
+    } else if $(UNIX) {
+      if $(Variant_dll) = d {
+        Distribute File : bin * : $(OMNI_ARCH) : $(CurrentPath) : : : : PlatformThenSuffix ;
+      } else {
+        Distribute File : bin * : $(Omni-Static-Libs) : $(omniORB-Lib-Dir) : : : : PlatformThenSuffix ;
+      }
+    }
+  }
+
+  # Documentation distribution rules.
+  # Distrib the LE Kit documentation in HTML and PDF form.
+  # The form of the HTML materials depends on whether the platform is Windows or not:
+  # - if you are Windows, you get the HTML Help (CHM) versions ONLY
+  # - if you are non-Windows, you get the raw Doxygen output ONLY
+
+
+  if ! $(Variant_sw) = ram {
+    # For LE, this SW folder is NOT the one that is used by the installer.
+    # This is solely for testing the buildkit target. The installer combines
+    # the distributed SW-subset directories.
+    Distribute Tree : SW : $(ProductSW) : $(CurrentPath) : : : : PlatformThenSuffix ;
+  }
+  Distribute File : README.txt : README.txt : $(CurrentPath) $(C-Exec-Directory) : : : : PlatformThenSuffix ;
+
+  Distribute File : * : COPYRIGHT.txt  : $(CurrentPath) clrip doc : : all-all : all : PlatformThenSuffix ;
+  ExportSource .$/clrip$/doc$/COPYRIGHT.txt : Text ;
+
+  Distribute File : XSD * : PageDetails.xsd : $(CurrentPath) clrip doc XSD : : all-all : : PlatformThenSuffix ;
+  Distribute File : * : HqnRIP_SDK_Document_Library.chm : $(CurrentPath) clrip doc : : all-all : : PlatformThenSuffix ;
+  Distribute File : hqnripsdk.dox : hqnripsdk.dox : $(CurrentPath) clrip  : : all-all : : PlatformThenSuffix ;
+
+  ExportSource .$/clrip$/doc$/XSD$/PageDetails.xsd : Binary ;
+  ExportSource .$/clrip$/doc$/HqnRIP_SDK_Document_Library.chm : Binary ;
+
+
+  # For Windows builds, distrib only compiled HTML Help (CHM) files; for other platforms, distrib
+  # the raw Doxygen HTML folders.
+
+  if $(C-Compiler-Family) = msvc
+  {
+    if $(CV_HTMLHELP_1_3)
+    {
+      Distribute File : hqnripsdk-html * : clrip$/hqnripsdkdox$/html$/HqnRIP_SDK_InterfaceRef.chm : $(CurrentPath) : : $(SupraPlat) : $(Suffix) : PlatformThenSuffix ;
+    }
+    else
+    {
+      Warning "Unable to distribute .chm files, CV_HTMLHELP_1_3 is not set" ;
+    }
+  }
+  else
+  {
+    Distribute Tree : hqnripsdk-html : html : $(CurrentPath) clrip hqnripsdkdox : : $(SupraPlat) : $(Suffix) : PlatformThenSuffix ;
+  }
+
+  if $(C-Compiler-Family) = msvc {
+    Distribute File : bin * : $(libjpegturbo-dest) : $(CurrentPath) : : : : PlatformThenSuffix ;
+  }
+  for i in $(template) {
+    local mfextra = "" ;
+    if $(template-extn-$(i)) { mfextra = $(template-extn-$(i)) ; }
+    Distribute File : bin$(mfextra) Makefile : Makefile : $(CurrentPath) $(C-Exec-Directory) bin$(mfextra) : : : : PlatformThenSuffix ;
+  }
+
+  if $(Variant_fontlib) = ufst5inrip
+  {
+    Distribute Tree : $(DistribSrcTo) pfinufst5 export : export : $(CurrentPath) $(PreprocessedSrcDir) pfinufst5 : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) pfinufst5 src    : src    : $(CurrentPath) $(PreprocessedSrcDir) pfinufst5 : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute Tree : $(DistribSrcTo) ufst rts fco  : fco  : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst rts inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst rts tt   : tt   : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst sys inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst sys : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute File : bin * : ufst$(C-Lib-Suffix) : $(CurrentPath) ufst : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+  else if $(Variant_fontlib) = ufst7inrip
+  {
+    Distribute Tree : $(DistribSrcTo) pfinufst7 export : export : $(CurrentPath) $(PreprocessedSrcDir) pfinufst7 : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) pfinufst7 src    : src    : $(CurrentPath) $(PreprocessedSrcDir) pfinufst7 : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute Tree : $(DistribSrcTo) ufst7 rts fco  : fco  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst7 rts inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst7 rts tt   : tt   : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) ufst7 sys inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 sys : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute File : bin * : ufst7$(C-Lib-Suffix) : $(CurrentPath) ufst7 : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+
+  Distribute Tree : $(DistribSrcTo) *                 : dlliface       : $(CurrentPath) $(PreprocessedSrcDir) : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  Distribute Tree : $(DistribSrcTo) skinkit src       : src            : $(CurrentPath) $(PreprocessedSrcDir) skinkit : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) skinkit export    : export         : $(CurrentPath) $(PreprocessedSrcDir) skinkit : : $(SkinPlat) : : PlatformThenSuffix ;
+  if $(NT) {
+    Distribute Tree : $(DistribSrcTo) skinkit pc src      : src        : $(CurrentPath) $(PreprocessedSrcDir) skinkit pc : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) skinkit pc export   : export     : $(CurrentPath) $(PreprocessedSrcDir) skinkit pc : : $(SkinPlat) : : PlatformThenSuffix ;
+  } else if $(MACOSX) || $(UNIX) {
+    Distribute Tree : $(DistribSrcTo) skinkit unix src    : src        : $(CurrentPath) $(PreprocessedSrcDir) skinkit unix : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) skinkit unix export : export     : $(CurrentPath) $(PreprocessedSrcDir) skinkit unix : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+  if $(ProductName) = ebd
+  {
+    if vxworks in $(TargetOS) {
+      Distribute Tree : $(DistribSrcTo) skinkit vxworks src     : src    : $(CurrentPath) $(PreprocessedSrcDir) skinkit vxworks : : $(SkinPlat) : : PlatformThenSuffix ;
+      Distribute Tree : $(DistribSrcTo) skinkit vxworks export  : export : $(CurrentPath) $(PreprocessedSrcDir) skinkit vxworks : : $(SkinPlat) : : PlatformThenSuffix ;
+    }
+  }
+
+  if $(ProductName) = le
+  {
+    Distribute Tree : $(DistribSrcTo) *               : skintest       : $(CurrentPath) $(PreprocessedSrcDir) : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) *               : skinmin        : $(CurrentPath) $(PreprocessedSrcDir) : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+  Distribute Tree : $(DistribSrcTo) interface control : control        : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) interface screening : screening    : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) interface swzip   : swzip          : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) interface version : version        : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) interface rle     : rle            : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) interface pgb     : pgb            : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) zlib export       : export         : $(CurrentPath) $(PreprocessedSrcDir) zlib : : $(SkinPlat) : : PlatformThenSuffix ;
+  if $(ProductName) = le
+  {
+    Distribute Tree : $(DistribSrcTo) jpeg    export     : export         : $(CurrentPath) $(PreprocessedSrcDir) jpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) libjpeg export     : export         : $(CurrentPath) $(PreprocessedSrcDir) libjpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) libjpeg-turbo export     : export   : $(CurrentPath) $(PreprocessedSrcDir) libjpeg-turbo : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  # RDR, Event and pthreads
+  Distribute Tree : $(DistribSrcTo) threads export    : export         : $(CurrentPath) $(PreprocessedSrcDir) threads        : : $(SkinPlat) : : PlatformThenSuffix ;
+  if $(MACOSX) {
+    Distribute Tree : $(DistribSrcTo) threads macos src : src          : $(CurrentPath) $(PreprocessedSrcDir) threads macos  : : $(SkinPlat) : : PlatformThenSuffix ;
+  } else if $(NT) {
+    Distribute Tree : $(DistribSrcTo) threads pc src    : src          : $(CurrentPath) $(PreprocessedSrcDir) threads pc     : : $(SkinPlat) : : PlatformThenSuffix ;
+  } else if $(UNIX) {
+    Distribute Tree : $(DistribSrcTo) threads unix src  : src          : $(CurrentPath) $(PreprocessedSrcDir) threads unix   : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+  Distribute Tree : $(DistribSrcTo) rdrevent export   : export         : $(CurrentPath) $(PreprocessedSrcDir) rdrevent       : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) rdrevent src      : src            : $(CurrentPath) $(PreprocessedSrcDir) rdrevent       : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  # Standard
+  Distribute Tree : $(DistribSrcTo) standard export   : export         : $(CurrentPath) $(PreprocessedSrcDir) standard       : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) standard pc export : export        : $(CurrentPath) $(PreprocessedSrcDir) standard pc    : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  # Timeline
+  Distribute Tree : $(DistribSrcTo) timeline export   : export         : $(CurrentPath) $(PreprocessedSrcDir) timeline       : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) timeline src      : src            : $(CurrentPath) $(PreprocessedSrcDir) timeline       : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  # Timer
+  Distribute Tree : $(DistribSrcTo) timer export    : export           : $(CurrentPath) $(PreprocessedSrcDir) timer        : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) timer src       : src              : $(CurrentPath) $(PreprocessedSrcDir) timer        : : $(SkinPlat) : : PlatformThenSuffix ;
+  if $(MACOSX) {
+    Distribute Tree : $(DistribSrcTo) timer macos src : src            : $(CurrentPath) $(PreprocessedSrcDir) timer macos  : : $(SkinPlat) : : PlatformThenSuffix ;
+  } else if $(NT) {
+    Distribute Tree : $(DistribSrcTo) timer pc src    : src            : $(CurrentPath) $(PreprocessedSrcDir) timer pc     : : $(SkinPlat) : : PlatformThenSuffix ;
+  } else if $(UNIX) {
+    Distribute Tree : $(DistribSrcTo) timer unix src  : src            : $(CurrentPath) $(PreprocessedSrcDir) timer unix   : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  if $(C-Compiler-Family) = msvc {
+    Distribute Tree : $(DistribSrcTo) pthreads export   : export       : $(CurrentPath) $(PreprocessedSrcDir) pthreads       : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) pthreads pc src   : src          : $(CurrentPath) $(PreprocessedSrcDir) pthreads pc    : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  # ebdrip uses zlib functions in corelib static library
+  if $(ProductName) = le 
+  {
+    Distribute Tree : $(DistribSrcTo) zlib src          : src          : $(CurrentPath) $(PreprocessedSrcDir) zlib : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute Tree : $(DistribSrcTo) libjpeg src       : src          : $(CurrentPath) $(PreprocessedSrcDir) libjpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) libjpeg-turbo src : src          : $(CurrentPath) $(PreprocessedSrcDir) libjpeg-turbo : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute Tree : $(DistribSrcTo) libtiff export       : export    : $(CurrentPath) $(PreprocessedSrcDir) libtiff : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) libtiff src          : src       : $(CurrentPath) $(PreprocessedSrcDir) libtiff : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  Distribute File : $(DistribSrcTo) interface mps *   : mps.h mpsavm.h mpsacl.h mpsash.h mpscmvff.h mpslib.h
+      : $(CurrentPath) $(PreprocessedSrcDir) mps export : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  if $(ProductName) = le
+  {
+    Distribute Tree : $(DistribSrcTo) liblittlecms src  : src          : $(CurrentPath) $(PreprocessedSrcDir) liblittlecms : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) liblittlecms export : export     : $(CurrentPath) $(PreprocessedSrcDir) liblittlecms : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) *                 : cmmeg        : $(CurrentPath) $(PreprocessedSrcDir) : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) *                 : htmeg        : $(CurrentPath) $(PreprocessedSrcDir) : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  # include import tool
+  Distribute File : bin *
+                  : $(SW-Tools-imptool)
+                  : $(SW-Tools-imptool:D) : : : : PlatformThenSuffix ;
+
+  # Include machinetype tool for PC
+  if $(NT)
+  {
+    Distribute File : bin *
+                    : $(SW-Tools-machinetype)
+                    : $(SW-Tools-machinetype:D) : : : : PlatformThenSuffix ;
+  }
+
+  if $(Variant_xps) = yes
+  {
+    Distribute Tree   : $(DistribSrcTo) interface xps   : xps            : $(CurrentPath) $(PreprocessedSrcDir) core interface : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    Distribute Tree   : $(DistribSrcTo) ptdev src       : src            : $(CurrentPath) $(PreprocessedSrcDir) ptdev : : $(SkinPlat) : : PlatformThenSuffix ;
+    Distribute Tree   : $(DistribSrcTo) ptdev export    : export         : $(CurrentPath) $(PreprocessedSrcDir) ptdev : : $(SkinPlat) : : PlatformThenSuffix ;
+
+    # ebdrip only requires the header files. It uses the functions exported from the corelib static library.
+    if $(ProductName) = ebd {
+      Distribute Tree : $(DistribSrcTo) libgenxml libexpat * : export : $(CurrentPath) $(PreprocessedSrcDir) libgenxml libexpat : : $(SkinPlat) : : PlatformThenSuffix ;
+    } else {
+      # Distribute Expat source in XPS builds
+      Distribute Tree : $(DistribSrcTo) libgenxml libexpat * : src export : $(CurrentPath) $(PreprocessedSrcDir) libgenxml libexpat : : $(SkinPlat) : : PlatformThenSuffix ;
+      if $(MACOSX) {
+        Distribute Tree : $(DistribSrcTo) libgenxml libexpat macos src : src : $(CurrentPath) $(PreprocessedSrcDir) libgenxml libexpat macos : : $(SkinPlat) : : PlatformThenSuffix ;
+      } else if $(UNIX) {
+        Distribute Tree : $(DistribSrcTo) libgenxml libexpat unix src : src : $(CurrentPath) $(PreprocessedSrcDir) libgenxml libexpat unix : : $(SkinPlat) : : PlatformThenSuffix ;
+      }
+
+      # Distribute the Reference API header. We are not building the reference
+      # variant here, but we still provide the interface, as well as the source
+      # code glue that implements it in terms of the SwLe interface.
+      Distribute File   : $(DistribSrcTo) interface reference *
+                        : refapi.h refdefs.h
+                        : $(CurrentPath) $(PreprocessedSrcDir) refiface export
+                        : : $(SkinPlat) : : PlatformThenSuffix ;
+    }
+  }
+
+  if $(Variant_security) = le
+  {
+    Distribute File : $(DistribSrcTo) le-security export * : lesec.h
+      : $(CurrentPath) $(PreprocessedSrcDir) le-security export : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  if $(ProductName) = ebd
+  {
+    Distribute File : $(DistribSrcTo) pdfparse export * : pdfparse.h
+      : $(CurrentPath) $(PreprocessedSrcDir) pdfparse export : : $(SkinPlat) : : PlatformThenSuffix ;
+  }
+
+  
+  # Add extra stuff when exporting source code for Embedded SDK
+  if $(ProductName) = ebd && exportsrc in $(JAM_ARGUMENTS) {
+
+    # Include probe scripts
+    ExportSource .$/testsrc$/probegraph.pl : Perl ;
+    ExportSource .$/testsrc$/perl5libs$/PDF$/Writer.pm : Perl ;
+ 
+    # Add jambit files for "other" supported compiler versions (does not need to set up matching CV names)
+    # note: any duplicates are ignored
+    local OtherCompilers ;
+    if $(NT) {
+	  OtherCompilers = msvcnt_10_0 msvcnt_11_0 msvcnt_12_0 ;
+	} else {
+	  OtherCompilers = gcc_4_1_2 gcc_4_3 gcc_4_4 gcc_4_5_3 gcc_4_6 gcc_x_ppc_4_1_2 ;
+	}
+    ExportJamBits $(OtherCompilers) ;
+  }
+
+
+  # Build the kit again in the distribution
+  if $(ProductName) = le
+  {
+    if $(MACOSX) {
+      ReplaceVar Local : OSX_ARCH     : OSX_ARCH=$(TargetArch) ;
+    }
+    GenericTarget buildkit : distrib :
+      $(SetEnv)$(C-Compiler_Environment)$(NewLine)
+        cd $(BUILDROOT)$/distrib$/$(TargetPlat)$/$(Suffix)$/bin "&&" $(make) -f Makefile DEBUG=$(DEBUG) WITHPDB=$(extnlpdb) $(OSX_ARCH) $(EXTOPTS) $(ICM2OPTS) "&&" cd $(BUILDROOT)$/distrib$/$(TargetPlat)$/$(Suffix)$/bin.minrip "&&" $(make) -f Makefile DEBUG=$(DEBUG) $(OSX_ARCH) $(EXTOPTS)
+    ;
+  }
+
+  if $(MACOSX) {
+    # Distrib SuperPro dongle frameworks
+    if $(Variant_security) = dng || $(Variant_security) = wm {
+      Distribute Tree : Frameworks * : $(SentinelFrameworkNames).framework : $(SentinelFrameworkDir) : : : : PlatformThenSuffix ;
+    }
+  }
+
+  # Conditionally distribute MSVC runtime DLLs
+  if $(Variant_rt_libs) = dynamic_multi_threaded
+  {
+    local i ;
+
+    if $(Variant_wintel_cpp_compiler) = msvc_7_0
+    {
+      # Use MsvcDllDir as source path
+      if $(MsvcDllDir) {
+        for i in $(MsvcDllSet) {
+          Distribute File : $(i) : $(i) : $(MsvcDllDir) : : : : PlatformThenSuffix ;
+        }
+      }
+    }
+  }
+
+  #
+  # Build the XPSDrv filters (Windows XPS Non-embedded Skin Only)
+  #
+  if $(C-Compiler-Family) = msvc && $(Variant_xpsdrv)
+  {
+    Distribute Tree : $(DistribSrcTo) * : xpsdrv : $(CurrentPath) $(PreprocessedSrcDir) : : $(SupraPlat) : : PlatformThenSuffix ;
+    Distribute Tree : $(DistribSrcTo) xpsdrv digsig digsigutil * : prebuilt : $(CurrentPath) xpsdrv digsig digsigutil : : $(SupraPlat) : : PlatformThenSuffix ;
+
+    Distribute File   : $(DistribSrcTo) xpsprinter *
+                      : ggrefrip.inf
+                      : $(CurrentPath) $(PreprocessedSrcDir) xpsdrv : : $(SupraPlat)
+                      : : PlatformThenSuffix ;
+    Distribute File   : $(DistribSrcTo) xpsprinter *
+                      : ggrefrip.gpd stdnames.gpd
+                      : $(CurrentPath) xpsdrv : : $(SupraPlat)
+                      : : PlatformThenSuffix ;
+
+    # The remaining XPSDrv resource is the hqn_PipelineConfig.xml file. There are
+    # four versions of this, in the xpsdrv/xps[multi]filter and
+    # xpsdrv/stream[multi]filter subdirectories. The value of the xpsdrvfilter
+    # variant matches the required subdirectory name. The first two versions select
+    # for high-level input mode (the filter reads from IXpsDocumentProvider).
+    # The second version selects for low-level mode (the filter reads from
+    # IPrintReadStream). Low-level mode is the only mode that existed prior to
+    # EA11a, and is still the default in most cases.
+    # The "multi" indicates whether concurrent RIPping is supported in the
+    # driver. (Concurrent RIPping is implemented with a different Filter DLL).
+    # Concurrent RIPping is only safe when the SW folder is a read-only
+    # resource (-va sw=ram|hybrid|ziphybrid).
+    Distribute File   : $(DistribSrcTo) xpsprinter *
+                      : hqn_PipelineConfig.xml
+                      : $(CurrentPath) xpsdrv $(Variant_xpsdrvfilter) : : $(SupraPlat)
+                      : : PlatformThenSuffix ;
+
+    local XPSDrvRipLib = reflib ;
+    local WDKNMakeArg = "-nmake " ;
+    local WDKMakeArgs = XPSDRV_LIBDIR=..$/..$/..$/..$/$(TargetPlat)$/$(Suffix) RIPLIB=$(XPSDrvRipLib) $(EXTOPTS) ;
+
+    # We're in the SDK (on windows). The filter links to the Reference API,
+    # rather than to the SwLe API. So, we need to build an additional
+    # DLL target to sit between the filter and corelib. This target is
+    # actually provided by the OEM makefile. This allows the OEM to rework
+    # the filter integration layer for themselves, should they wish to.
+    GenericTarget reflib : distrib :
+      $(SetEnv)$(C-Compiler_Environment)$(NewLine)
+        cd $(BUILDROOT)$/distrib$/$(TargetPlat)$/$(Suffix) "&&" $(make) -f Makefile DEBUG=$(DEBUG) $(EXTOPTS) SRC_DIR=..$/..$/$(SupraPlat)$/$(Suffix) $(ICM2OPTS) reflib.dll
+    ;
+
+    # Now we can build the filter. It will link to reflib.lib rather than
+    # corelib.lib. Reflib.lib has just been provided by the step above.
+    if $(TargetOS) = win_32 {
+      # Build the 32-bit XPSDrv filter DLL
+      GenericTarget buildfilter : reflib :
+        call $(WDKROOT)$/bin$/setenv $(WDKROOT) fre WLH $(NewLine)
+        cd /d $(BUILDROOT)$/distrib$/$(SupraPlat)$/$(Suffix)$/xpsdrv $(NewLine)
+        build -Cb $(WDKNMakeArg)$(WDKMakeArgs) $(NewLine)
+      ;
+
+      # Set up a separate target to build the 64 bit filter manually.
+      # This is a developer convenience. It allows 64 bit XPSDrv components
+      # to be built in isolation, without having to build a complete
+      # 64 bit RIP.
+      GenericTarget buildfilter64 : reflib :
+        call $(WDKROOT)$/bin$/setenv $(WDKROOT) fre AMD64 WLH $(NewLine)
+        cd /d $(BUILDROOT)$/distrib$/$(SupraPlat)$/$(Suffix)$/xpsdrv $(NewLine)
+        build $(WDKNMakeArg)$(WDKMakeArgs) $(NewLine)
+      ;
+    }
+
+    if $(TargetOS) = win_64 {
+      # Build the 64-bit XPSDrv filter DLL
+      GenericTarget buildfilter : reflib :
+        call $(WDKROOT)$/bin$/setenv $(WDKROOT) fre AMD64 WLH $(NewLine)
+        cd /d $(BUILDROOT)$/distrib$/$(SupraPlat)$/$(Suffix)$/xpsdrv $(NewLine)
+        build $(WDKNMakeArg)$(WDKMakeArgs) $(NewLine)
+      ;
+    }
+
+    ExportSource .$/xpsdrv$/digsig$/digsigutil$/prebuilt$/amd64$/digsigutil.exe : Binary ;
+    ExportSource .$/xpsdrv$/digsig$/digsigutil$/prebuilt$/i386$/digsigutil.exe : Binary ;
+    ExportSource .$/xpsdrv$/ggrefrip.gpd : Text ;
+    ExportSource .$/xpsdrv$/stdnames.gpd : Text ;
+    ExportSource .$/xpsdrv$/streamfilter$/hqn_PipelineConfig.xml : Text ;
+  }
+}
+
+# We only compile up Posix Threads for Windows
+if $(C-Compiler-Family) = msvc
+{
+  Makefile pthreads ;
+
+  local OriginalPThreads = $(CurrentPath)$/$(PTHREADS_DLL) ;
+  AddToVar Inherited Local : C-Defines : PTHREADS_DLL_PATH=\"\\\"$(OriginalPThreads:DX)\\\"\" ;
+
+  local PThreadsTarget ; MakeGristed PThreadsTarget : pthreads : $(CurrentPath) pthreads ;
+
+  # Copy DLL alongside rip executable
+  if $(ProductName) = gui {
+    PThreadsCopy = $(CurrentPath)$/$(C-Exec-Directory)$/$(PTHREADS_DLL:BS) ;
+  } else {
+    PThreadsCopy = $(CurrentPath)$/$(C-Exec-Directory)$/bin$/$(PTHREADS_DLL:BS) ;
+  }
+
+  DEPENDS <$(CurrentPath)>$(PThreadsCopy) : PThreadsEmbedManifest ;
+  DEPENDS PThreadsEmbedManifest : $(PThreadsTarget) ;
+
+  GenericTarget $(PThreadsCopy) : : $(Copy) $(OriginalPThreads) $(PThreadsCopy) ;
+
+  DependsOn $(ProductTarget) : $(PThreadsCopy) ;
+
+  if $(ProductName) = gui {
+    Distribute File : * : $(PThreadsCopy) : $(CurrentPath) : : $(TargetPlat) : : PlatformThenSuffix ;
+  } else {
+    Distribute File : bin * : $(PThreadsCopy) : $(CurrentPath) : : : : PlatformThenSuffix ;
+  }
+}
+
+# HDS check
+if ! $(Variant_thirdparty) {
+  GenericTarget hdscheck : : $(Perl) $(CurrentPath)$/tools$/hdscheck.pl hds-screens hdskey ;
+}
+
+# Jam documentation
+GenericTarget jamdoc : $(CurrentPath)$/bt$/jambits$/jamdoc$/bin$/jamdoc.pl : $(HqmakePerl) $> $(CurrentPath) ;
+
+# Build YMIXKit:
+DependsOn ymix : ymix : pgbrdwr ;
+
+# Copy RIP for copyto variant
+if $(ProductName) = gui {
+  if $(MACOSX) {
+    CopyTo Tree : * : $(Bundle) : $(CurrentPath) $(C-Exec-Directory) : guirip ;
+    if $(CompilerVersion-C) = gcc_4_2 || $(CompilerVersion-C) = llvm_gcc_4_2 {
+      CopyTo Tree : * : $(BundleDsym) : $(CurrentPath) $(C-Exec-Directory) : guirip ;
+      NOTFILE $(CurrentPath)$/$(C-Exec-Directory)$/$(BundleDsym) ;
+    }
+
+    if $(Variant_dll) = d {
+      CopyTo File : * : $(rip) : $(CurrentPath) : guirip ;
+      if $(CompilerVersion-C) = gcc_4_2 || $(CompilerVersion-C) = llvm_gcc_4_2 {
+        CopyTo Tree : * : $(rip).dSYM : $(CurrentPath) $(ripdir) : guirip ;
+        NOTFILE $(CurrentPath)$/$(ripdir)$/$(rip).dSYM ;
+      }
+    }
+
+  } else if $(NT) {
+    CopyTo File : * : gui$(C-Exec-Suffix) : $(CurrentPath) : guirip ;
+
+    if $(extnlpdb) != 0  {
+      CopyTo File : * : gui$(C-Pdb-Suffix) : $(CurrentPath) : guirip ;
+    }
+
+    if $(Variant_dll) = d {
+      CopyTo File : * : $(ScriptworksDll)$(C-Dll-Suffix) : $(CurrentPath) : guirip ;
+
+      if $(extnlpdb) != 0 {
+        CopyTo File : * : $(ScriptworksDll)$(C-Pdb-Suffix) : $(CurrentPath) : guirip ;
+      }
+    }
+
+    if $(Variant_C++_ORB) = OMNI {
+      CopyTo File : * : $(Omni-Dynamic-Libs) : $(omniORB-Bin-Dir) : guirip ;
+    }
+
+    CopyTo File : * : RESOURCE.JPN : $(CurrentPath)$/gui$/msgui : guirip ;
+
+    if $(C-Compiler-Family) = msvc {
+      CopyTo File : * : $(PThreadsCopy) : $(CurrentPath) : guirip ;
+    }
+
+  } else if $(UNIX) {
+    CopyTo File : * : gui : $(CurrentPath) : guirip ;
+    CopyTo File : * : XSwc.en_US : $(CurrentPath) : guirip ;
+    if $(Variant_dll) = d {
+      CopyTo File : * : $(ScriptworksDll).so : $(CurrentPath) : guirip ;
+    }
+
+    if $(Variant_C++_ORB) = OMNI {
+      CopyTo Tree : $(OMNI_ARCH) : $(OMNI_ARCH) : $(CurrentPath) : guirip ;
+    }
+  }
+
+  CopyTo Tree : Messages : Messages : $(CurrentPath) : guirip ;
+  NOTFILE $(CurrentPath)$/Messages ;
+  CopyTo Tree : $(ProductSW) : $(ProductSW) : $(CurrentPath) : guirip ;
+
+} else if $(ProductName) = le || $(ProductName) = ebd {
+  if $(ProductName) = ebd {
+    CopyTo File : bin * : ebdwrapper$(C-Exec-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+  } else {
+    CopyTo File : bin * : clrip$(C-Exec-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+    if minrip in $(JAM_ARGUMENTS) {
+      CopyTo File : bin.minrip * : minrip$(C-Exec-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+    }
+  }
+
+  if $(MACOSX) {
+    if $(Variant_dll) = d {
+      CopyTo File : Frameworks * : corelib$(C-Dylib-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+
+      if $(CompilerVersion-C) = gcc_4_2 || $(CompilerVersion-C) = llvm_gcc_4_2 {
+        CopyTo Tree : Frameworks * : corelib$(C-Dylib-Suffix).dSYM : $(CurrentPath) $(C-Exec-Directory) Frameworks  : $(ProductTarget) ;
+        NOTFILE $(CurrentPath)$/$(C-Exec-Directory)$/Frameworks$/corelib$(C-Dylib-Suffix).dSYM ;
+      }
+    }
+
+    if $(Variant_security) = dng || $(Variant_security) = wm {
+      CopyTo Tree : Frameworks * : $(SentinelFrameworkNames).framework : $(SentinelFrameworkDir) : $(ProductTarget) ;
+    } else if $(Variant_security) = ldklic || $(Variant_security) = lic {
+      CopyTo File : Frameworks * : $(Omni-Dynamic-Libs) : $(CurrentPath) : $(ProductTarget) ;
+    }
+  } else {
+    if $(Variant_dll) = d {
+      CopyTo File : bin * : corelib$(C-Dylib-Suffix) corelib$(C-Dll-Suffix) corelib$(C-DllStub-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+    }
+
+    if $(Variant_security) = ldklic || $(Variant_security) = lic {
+      if $(C-Compiler-Family) = msvc {
+        if $(Variant_dll) = d {
+          CopyTo File : bin * : $(Omni-Dynamic-Libs) : $(omniORB-Bin-Dir) : $(ProductTarget) ;
+        } else {
+          CopyTo File : bin * : $(Omni-Static-Libs) : $(omniORB-Lib-Dir) : $(ProductTarget) ;
+        }
+      } else if $(UNIX) {
+        if $(Variant_dll) = d {
+          CopyTo File : bin * : $(OMNI_ARCH) : $(CurrentPath) : $(ProductTarget) ;
+        } else {
+          CopyTo File : bin * : $(Omni-Static-Libs) : $(omniORB-Lib-Dir) : $(ProductTarget) ;
+        }
+      }
+    }
+
+    if $(C-Compiler-Family) = msvc {
+      CopyTo File : bin * : $(PThreadsCopy) : $(CurrentPath) : $(ProductTarget) ;
+
+      if $(extnlpdb) != 0  {
+        if $(ProductName) = ebd {
+          # TODO: Might we want ebdwrapper.pdb sometime ???
+        } else {
+          CopyTo File : bin * : clrip$(C-Pdb-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+        }
+
+        if $(Variant_dll) = d {
+          CopyTo File : bin * : corelib$(C-Pdb-Suffix) : $(CurrentPath) : $(ProductTarget) ;
+        }
+      }
+    }
+  }
+
+  if ! $(Variant_sw) = ram {
+    CopyTo Tree : $(ProductSW) : $(ProductSW) : $(CurrentPath) : $(ProductTarget) ;
+  }
+
+}
+
+# Export source for shipping to third party
+local ExportZipAndRebuildTarget ; MakeGristed ExportZipAndRebuildTarget : exportziprebuild : $(CurrentPath) ;
+
+# Do not include a, rel, etc from Suffix in directory, zip name.
+# We expect OEMs to want to be able to rebuild a or rel from
+# the same source tree, so we export all regimes to the same
+# directory so that they are all contained in a single zip file.
+local ExpSrcSuffix ;
+Join ExpSrcSuffix : "-" : $(Variant_customised) $(Variant_dll) $(Variant_security) "ebd" ;
+
+local ExportedSrcDir = obj$/expsrc-$(ExpSrcSuffix) ;
+local ExportedSrcZip = expsrc-$(ExpSrcSuffix).zip ;
+
+ExportZipAndRebuildSource $(ExportZipAndRebuildTarget) : $(ExportedSrcDir) : $(ProductDir) : $(ExportedSrcZip) ;
+
+if exportsrc in $(JAM_ARGUMENTS)
+{
+  DEPENDS distrib : $(ExportZipAndRebuildTarget) ;
+  Distribute File : exportedsource.zip : $(ExportedSrcZip) : $(CurrentPath) : : : $(Suffix) : PlatformThenSuffix ;
+}
+
+
+# Log stripped

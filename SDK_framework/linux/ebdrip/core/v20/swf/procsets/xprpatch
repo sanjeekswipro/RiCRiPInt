@@ -1,0 +1,81 @@
+%!PS-Adobe-3.0
+%%Title: HqnXPressPatch
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 1999
+%%VMusage: -1 -1
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnXPressPatch) 1 0
+
+% $HopeName: SWv20!swf:procsets:xprpatch(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+10 dict begin
+
+  /recombineshowpage 1183615869 internaldict /recombineshowpage get def
+
+  % Code to trigger a new page when recombining a pre-separated XPress
+  % PostScript job that contains multiple pages, but doesn't necessarily 
+  % contain black on all pages. Without this code separations from multiple 
+  % logical pages may be recombined incorrectly into a single page.
+  /Initialize {
+    /HqnXPressPatch {
+      1183615869 internaldict /recombinestatus get exec 
+      2 ge and {
+        HqnPageCountDict /QRKPageBegin 2 copy known {
+          get 
+%          1 index =print (   )print dup ==
+          1 index ne {
+            //recombineshowpage
+          } if
+        } { pop pop } ifelse
+      } if    
+    }
+    /HqnPageCounter /ProcSet findresource 
+    dup /Initialize get exec
+    /Register get exec
+  } bind def
+
+  currentdict /recombineshowpage undef
+
+
+  (%%dict) load (%%actions) get begin
+
+    % A patch to work around a Quark6 quirk whereby idiom recognition is
+    % turned off for part of jobs which prevents us from replacing blends
+    % with shfill's.
+    /DocumentProcSets: {
+      dup null exec
+      ( QuarkXPress_6) anchorsearch exch pop {
+        pop
+        <<
+          /setuserparams {
+            dup /IdiomRecognition known {dup /IdiomRecognition undef} if
+            setuserparams
+          } bind
+        >>
+        1183615869 internaldict /shadowop get exec
+      } if
+    }
+    dup 1
+    currentdict /DocumentProcSets: 2 copy known { 
+      get
+    } { 
+      pop pop { pop } 
+    } ifelse put bind def
+
+  end   % (%%actions)
+
+
+  currentdict
+end
+
+/HqnXPressPatch exch /ProcSet defineresource pop
+
+setglobal
+
+%%EOF

@@ -1,0 +1,45 @@
+# Copyright (C) 2007-2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# Makefile for Image Filtering compound
+#
+# $HopeName: COREimgfilter!make:makefile.jam(EBDSDK_P.1) $
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant metrics ;
+
+# Compilation rules
+
+    DependsOn all : filtering ;
+
+    DeclareExport C-ExportDirectories : $(CurrentPath)$/export ;
+
+    IncludeExportDirectories Inherited Local :
+        fileio
+        gstate
+        objects
+        pdfout
+        tables
+        v20
+    : .. .. ;
+
+    Library filtering :
+        alphaDiv.c
+        avrag_if.c
+        dataprpr.c
+        datatrns.c
+        decimate.c
+        fltrdimg.c
+        imagfltr.c
+        imfltchn.c
+        intrpltr.c
+        mskscalr.c
+        mtchptrn.c
+        pixlpckr.c
+        smooth.c
+    ;
+
+# Log stripped

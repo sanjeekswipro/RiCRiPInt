@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2006 Global Graphics Software Ltd. All Rights Reserved.
+ *Global Graphics Software Ltd. Confidential Information.
+ *
+ * $HopeName: HQNlibexpat!export:expat_redefs.h(EBDSDK_P.1) $
+ */
+
+#ifndef EXPAT_REDEFS_H_
+#define EXPAT_REDEFS_H_
+
+/* Add prefix to exported Expat functions to prevent name clashes when */
+/* used in 3rd party code.                                             */
+#define XML_DefaultCurrent expat_XML_DefaultCurrent
+#define XML_ErrorString expat_XML_ErrorString
+#define XML_ExpatVersion expat_XML_ExpatVersion
+#define XML_ExpatVersionInfo expat_XML_ExpatVersionInfo
+#define XML_ExternalEntityParserCreate expat_XML_ExternalEntityParserCreate
+#define XML_FreeContentModel expat_XML_FreeContentModel
+#define XML_GetBase expat_XML_GetBase
+#define XML_GetBuffer expat_XML_GetBuffer
+#define XML_GetCurrentByteCount expat_XML_GetCurrentByteCount
+#define XML_GetCurrentByteIndex expat_XML_GetCurrentByteIndex
+#define XML_GetCurrentColumnNumber expat_XML_GetCurrentColumnNumber
+#define XML_GetCurrentLineNumber expat_XML_GetCurrentLineNumber
+#define XML_GetErrorCode expat_XML_GetErrorCode
+#define XML_GetFeatureList expat_XML_GetFeatureList
+#define XML_GetIdAttributeIndex expat_XML_GetIdAttributeIndex
+#define XML_GetInputContext expat_XML_GetInputContext
+#define XML_GetParsingStatus expat_XML_GetParsingStatus
+#define XML_GetSpecifiedAttributeCount expat_XML_GetSpecifiedAttributeCount
+#define XML_MemFree expat_XML_MemFree
+#define XML_MemMalloc expat_XML_MemMalloc
+#define XML_MemRealloc expat_XML_MemRealloc
+#define XML_Parse expat_XML_Parse
+#define XML_ParseBuffer expat_XML_ParseBuffer
+#define XML_ParserCreate expat_XML_ParserCreate
+#define XML_ParserCreate_MM expat_XML_ParserCreate_MM
+#define XML_ParserCreateNS expat_XML_ParserCreateNS
+#define XML_ParserFree expat_XML_ParserFree
+#define XML_ParserReset expat_XML_ParserReset
+#define XML_ResumeParser expat_XML_ResumeParser
+#define XML_SetAttlistDeclHandler expat_XML_SetAttlistDeclHandler
+#define XML_SetBase expat_XML_SetBase
+#define XML_SetCdataSectionHandler expat_XML_SetCdataSectionHandler
+#define XML_SetCharacterDataHandler expat_XML_SetCharacterDataHandler
+#define XML_SetCommentHandler expat_XML_SetCommentHandler
+#define XML_SetDefaultHandler expat_XML_SetDefaultHandler
+#define XML_SetDefaultHandlerExpand expat_XML_SetDefaultHandlerExpand
+#define XML_SetDoctypeDeclHandler expat_XML_SetDoctypeDeclHandler
+#define XML_SetElementDeclHandler expat_XML_SetElementDeclHandler
+#define XML_SetElementHandler expat_XML_SetElementHandler
+#define XML_SetEncoding expat_XML_SetEncoding
+#define XML_SetEndCdataSectionHandler expat_XML_SetEndCdataSectionHandler
+#define XML_SetEndDoctypeDeclHandler expat_XML_SetEndDoctypeDeclHandler
+#define XML_SetEndElementHandler expat_XML_SetEndElementHandler
+#define XML_SetEndNamespaceDeclHandler expat_XML_SetEndNamespaceDeclHandler
+#define XML_SetEntityDeclHandler expat_XML_SetEntityDeclHandler
+#define XML_SetExternalEntityRefHandler expat_XML_SetExternalEntityRefHandler
+#define XML_SetExternalEntityRefHandlerArg expat_XML_SetExternalEntityRefHandlerArg
+#define XML_SetNamespaceDeclHandler expat_XML_SetNamespaceDeclHandler
+#define XML_SetNotationDeclHandler expat_XML_SetNotationDeclHandler
+#define XML_SetNotStandaloneHandler expat_XML_SetNotStandaloneHandler
+#define XML_SetParamEntityParsing expat_XML_SetParamEntityParsing
+#define XML_SetProcessingInstructionHandler expat_XML_SetProcessingInstructionHandler
+#define XML_SetReturnNSTriplet expat_XML_SetReturnNSTriplet
+#define XML_SetSkippedEntityHandler expat_XML_SetSkippedEntityHandler
+#define XML_SetStartCdataSectionHandler expat_XML_SetStartCdataSectionHandler
+#define XML_SetStartDoctypeDeclHandler expat_XML_SetStartDoctypeDeclHandler
+#define XML_SetStartElementHandler expat_XML_SetStartElementHandler
+#define XML_SetStartNamespaceDeclHandler expat_XML_SetStartNamespaceDeclHandler
+#define XML_SetUnknownEncodingHandler expat_XML_SetUnknownEncodingHandler
+#define XML_SetUnparsedEntityDeclHandler expat_XML_SetUnparsedEntityDeclHandler
+#define XML_SetUserData expat_XML_SetUserData
+#define XML_SetXmlDeclHandler expat_XML_SetXmlDeclHandler
+#define XML_StopParser expat_XML_StopParser
+#define XML_UseForeignDTD expat_XML_UseForeignDTD
+#define XML_UseParserAsHandlerArg expat_XML_UseParserAsHandlerArg
+
+#define XmlGetUtf16InternalEncoding expat_XmlGetUtf16InternalEncoding
+#define XmlGetUtf16InternalEncodingNS expat_XmlGetUtf16InternalEncodingNS
+#define XmlGetUtf8InternalEncoding expat_XmlGetUtf8InternalEncoding
+#define XmlGetUtf8InternalEncodingNS expat_XmlGetUtf8InternalEncodingNS
+#define XmlInitEncoding expat_XmlInitEncoding
+#define XmlInitEncodingNS expat_XmlInitEncodingNS
+#define XmlInitUnknownEncoding expat_XmlInitUnknownEncoding
+#define XmlInitUnknownEncodingNS expat_XmlInitUnknownEncodingNS
+#define XmlParseXmlDecl expat_XmlParseXmlDecl
+#define XmlParseXmlDeclNS expat_XmlParseXmlDeclNS
+#define XmlPrologStateInit expat_XmlPrologStateInit
+#define XmlPrologStateInitExternalEntity expat_XmlPrologStateInitExternalEntity
+#define XmlSizeOfUnknownEncoding expat_XmlSizeOfUnknownEncoding
+#define XmlUtf16Encode expat_XmlUtf16Encode
+#define XmlUtf8Encode expat_XmlUtf8Encode
+
+/*
+* Log stripped */
+
+#endif /* EXPAT_REDEFS_H_ */

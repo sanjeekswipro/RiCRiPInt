@@ -1,0 +1,46 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: SWptdev!make:swf.jam(EBDSDK_P.1) $
+#
+
+  # PrintTicket procset
+  SWF $(ptswf-path) : procsets : procsets : : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : procsets prnttckt : HqnXPSPrintTicket : : $(ptswf-subsets) ;
+
+  # PrintTicket external modules
+  SWF $(ptswf-path) : usr                               : Usr                  : : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt                      : XPSPTExtensions      : : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt collate.ps           : collate.ps           : "COLLATE.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt deprecated.ps        : deprecated.ps        : "DEPRECAT.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt documentpageranges.ps : DocumentPageRanges.ps : "DPGRANGE.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt documentseparatorsheet.ps : DocumentSeparatorSheet.ps : "SEPSHEET.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt duplex.ps            : duplex.ps            : "DUPLEX.PS"   : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt emulated.ps          : emulated.ps          : "EMULATED.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt inputbin.ps          : inputbin.ps          : "INPUTBIN.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobdigsigprocessing.ps : JobDigSigProcessing.ps : "JDIGSIG.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobggcolorspace.ps   : JobGGColorSpace.ps   : "GGCOLRSP.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobggposter.ps       : JobGGPoster.ps       : "GGPOSTER.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobggrasterout.ps    : JobGGRasterOut.ps    : "GGRASTER.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobsystemerrorreportlevel.ps : JobSystemErrorReportLevel.ps : "JSYSERR.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt jobxpsptemulation.ps : JobXPSPTEmulation.ps : "PTEMULAT.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt n-up.ps              : N-Up.ps              : "N-UP.PS"     : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt outputbin.ps         : outputbin.ps         : "OPUTBIN.PS"  : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageblendcolorspace.ps : PageBlendColorSpace.ps : "PG_BLEND.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageborderless.ps    : PageBorderless.ps    : "BORDLESS.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagecopies.ps        : PageCopies.ps        : "PAGECOPY.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageforcefrontside.ps : PageForceFrontSide.ps : "FORCFRNT.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageggclipregion.ps  : PageGGClipRegion.ps  : "PGG_CLIP.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageggcolormanagement.ps : PageGGColorManagement.ps : "PGG_CMM.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageggdestcolorprofile.ps : PageGGDestColorProfile.ps : "PGG_DEST.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageggsrccolorprofile.ps : PageGGSourceColorProfile.ps : "PGG_SRC.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagemediacolor.ps    : PageMediaColor.ps    : "MEDIACOL.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagemediasize.ps     : PageMediaSize.ps     : "MEDIASIZ.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagemirrorimage.ps   : PageMirrorImage.ps   : "MIRROR.PS"   : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagenegativeimage.ps : PageNegativeImage.ps : "NEGATIVE.PS" : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pageorientation.ps   : PageOrientation.ps   : "ORIENT.PS"   : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt pagescaling.ps       : PageScaling.ps       : "SCALING.PS"  : $(ptswf-subsets) ;
+  SWF $(ptswf-path) : usr hqnxpspt r_intent.ps          : PageICMRenderingIntent.ps : "R_INTENT.PS" : $(ptswf-subsets) ;
+
+
+# Log stripped

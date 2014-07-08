@@ -1,0 +1,195 @@
+%!PS
+
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+%
+% This file is not intended to be user-editable.
+%
+% See SW/Config/FontSubstitution for user-editable font substitution.
+%
+% This file contains mappings from anonymous font numbers to substitute font
+% names. Anonymous font numbers are allocated by Global Graphics and their
+% formulation is not documented.
+
+%-------------------------------------------------------------------------------
+% Unconditional Font substitution maps to font names.
+
+statusdict /FontSubstitutionDB <<
+
+  %-------------------------------------------------------------------------------
+% Font Fusion substitution names for PS3.
+  /617661E83D1A6DD9 (Flareserif821 Lt SWA Light)
+  /3717143347CB931A (Flareserif 821 SWA Roman)
+  /0D6F8A672B7F911A (Flareserif 821 SWA Italic)
+  /7A8460AC01FCA850 (Incised901 SWA Roman)
+  /124EFD502B981024 (Incised901 SWA Italic)
+  /61B87C691C3B425F (Incised901 SWA Bold)
+  /59DEE7B4293AC2C1 (Incised901 Ct SWA Compact)
+  /5B9188DD4EAF55B4 (Swiss721 SWM)
+  /5FF5E9046BF6944A (Swiss721 SWM Italic)
+  /236EA3F1439EF83F (Swiss721 SWM Bold)
+  /03A52E0D6DEB877A (Swiss721 SWM Bold Italic)
+  /3626163F30C1293E (Geometric 711 SWA)
+  /06D03FCF5058C37E (Geometric 711 SWA Italic)
+  /0DF60E733499C9F7 (Geometric 711 SWA Bold)
+  /24D823934FC8D30D (Geometric 711 SWA Bold Italic)
+  /17AB969D0515EB17 (Bodoni SWA Roman)
+  /50BC9A1F42D3916A (Bodoni SWA Italic)
+  /38F81296025B1122 (Bodoni SWA Bold)
+  /494CA0BE6302DE7B (Bodoni SWA Bold Italic)
+  /30A83C8339752F81 (PosterBodoni SWA Roman)
+  /6269DE2C5E8C909B (Onyx SWA)
+  /0EE039A643269CFA (Bookman SWA)
+  /13D40A971CB12E09 (Bookman SWA Italic)
+  /49FA6B38799C6663 (Bookman SWA Bold)
+  /39A7DF5A31C3640B (Bookman SWA Bold Italic)
+  /0D7DB9A5387F2A7D (Elemento SWA)
+  /2F17C03D76AB9D80 (Cataneo Lt SWA Light)
+  /06F1B9A534BB4867 (Daly Sans 350 SWA)
+  /33CA67EB3F52FC41 (Clarendon Lt SWA Light)
+  /4198486A1B029F7F (Clarendon SWA Roman)
+  /5F6248C83DF5C031 (Clarendon SWA Bold)
+  /49CDFE2103C29C73 (Cooper Blk SWA Black)
+  /7BB673A00FD152EB (Cooper Blk SWA Black Italic)
+  /38B2F9F803E5D9F4 (CopprplGoth SWA Roman)
+  /643C6B537AA99006 (CopprplGoth Hv SWA Heavy)
+  /29A38FB5499E26F1 (Ribbon 131 SWA)
+  /25D332C00EC1F7EF (Courier SWC)
+  /45878684777FBC02 (Courier SWC Italic)
+  /15A1434F53ABDCBC (Courier SWC Bold)
+  /1F4FE8995D7F2EC2 (Courier SWC Bold Italic)
+  /4DB30AFD25EB8DC7 (Square721 SWA Roman)
+  /354B72D620E8A656 (Square721 Bd SWA)
+  /12DCE4353769B78A (Square721 Ex SWA Roman)
+  /28A51AD42C698CC3 (Square721 Ex SWA Bold)
+  /31EADD6A3A373AD0 (OrigGarmnd SWA Roman)
+  /45F477C812D4BE5F (OrigGarmnd SWA Italic)
+  /0F8C9BDC41610E8D (OrigGarmnd SWA Bold)
+  /4C60F5EC56985D87 (OrigGarmnd SWA Bold Italic)
+  /19512AD618E8EE42 (Sans 721 SWA Roman)
+  /5054F8367F14554B (Humanst521 Lt SWA Light)
+  /759BE2B0737D1F28 (Humanst521 Lt SWA Light Italic)
+  /778DCB0D02DF1907 (Humanst521 SWA Roman)
+  /2CA202F53B67DFDE (Humanst521 SWA Italic)
+  /004D00B106CF9D8E (Humanst521 SWA Bold)
+  /55F3A6CE5855E705 (Humanst521 SWA Bold Italic)
+  /1564B7464DF82578 (Humanst521 XBd SWA Extra Bold)
+  /3BB3DBCE18504D1A (Humanst521 Cn SWA)
+  /5393D33F29D206A4 (Humanst521 Cn SWA Bold)
+  /0979EC4B66F99F87 (GoudyOlSt SWA Roman)
+  /7B61E6D175FD006D (GoudyOlSt SWA Italic)
+  /6AFA0B1820516928 (GoudyOlSt SWA Bold)
+  /6621AD57649B6EFF (GoudyOlSt SWA Bold Italic)
+  /11AF59280D3F4AF9 (GoudyOlSt XBd SWA Extra Bold)
+  /655BA2F07FA2D86B (Swis721 Cn SWA Roman)
+  /176543CD2626317F (Swis721 Cn SWA Italic)
+  /6B233F566F59D28A (Swis721 Cn SWA Bold)
+  /15EF341C0E3BF4BB (Swis721 Cn SWA Bold Italic)
+  /582A478B4002498E (Swiss 721 SWA)
+  /628B750D60A1698A (Swiss 721 SWA Italic)
+  /606C669460292C68 (Swiss 721 SWA Bold)
+  /3984C85069262735 (Swiss 721 SWA Bold Italic)
+  /12FD607E7D5A0175 (Swiss 721 Narrow SWA)
+  /37D71C527D470E08 (Swiss 721 Narrow SWA Italic)
+  /285781AC057D21DC (Swiss 721 Narrow SWA Bold)
+  /2352B16614C6A417 (Swiss 721 Narrow SWA Bold Italic)
+  /154738C02A5319F6 (Classical SWA)
+  /53FB018C146DC3FF (Classical SWA Italic)
+  /1BF4DA927E673ADE (Classical SWA Black)
+  /2B48B85B797F2A6A (Classical SWA Black Italic)
+  /30A2D1F818B8436B (Classical Ornaments SWA)
+  /1E3033D73115EB06 (Sophie SWA Roman)
+  /414482E8276CD428 (Sophie SWA Italic)
+  /55DE1EE84ABE7C28 (Sophie SWA Bold)
+  /11C86A063BAF5EBF (Sophie SWA Bold Italic)
+  /41B2CDBE4F1253D8 (LetterGothic SWA)
+  /7F152B7B66C23850 (LetterGothic SWA Oblique)
+  /50DD284B6C3D2EF5 (LetterGothic SWA Bold)
+  /5F755FFD143CEC62 (LetterGothic SWA Bold Oblique)
+  /5C776E391A4B368C (GeoSlab761 Bk SWA Book)
+  /3707D0234DCA4FEB (GeoSlab761 Bk SWA Book Oblique)
+  /67A776751E13D645 (GeoSlab761 Bk SWA Demi)
+  /150FCC7F525A5F98 (GeoSlab761 Bk SWA Demi Oblique)
+  /3F7CB3D3339491C3 (VictoriaRose SWC)
+  /5CA5012230474A3F (Laguna Sans SWA Roman)
+  /1F61954224D404B1 (Jilli Open SWA)
+  /7B8F15FF1227D2D0 (WestchesterSWA Roman)
+  /0D549B9D70828904 (Century Schoolbook SWA)
+  /02E9AE1C5045EF81 (Century Schoolbook SWA Italic)
+  /4D2C8D20388EE8E6 (Century Schoolbook SWA Bold)
+  /71EE59541AA5B7EC (Century Schoolbook SWA Bold Italic)
+  /5D64AB7358B2042E (ZapfHumnst SWA Roman)
+  /00ACFCF034DEE564 (ZapfHumnst SWA Italic)
+  /52A305CF074F7B39 (ZapfHumnst SWA Bold)
+  /24BB3CBC2CE7E53E (ZapfHumnst SWA Bold Italic)
+  /67907F646E8272EF (Shelford SWA Italic)
+  /5C8CEB8919416C22 (Zapf Calligraphic 801 SWA)
+  /591C323010B40D38 (Zapf Calligraphic 801 SWA Italic)
+  /34A3FA8F2A50B555 (Zapf Calligraphic 801 SWA Bold)
+  /0EA933166D58CAC8 (Zapf Calligraphic 801 SWA Bold Italic)
+  /390468B6099E4647 (Symbol Set SWA)
+  /168218211CA4401E (Draftsman Casual SWA Roman)
+  /09A8D4753723197F (Dutch 801 SWA)
+  /0DED9FD302B81E91 (Dutch 801 SWA Italic)
+  /31D2BDD0361BB310 (Dutch 801 SWA Bold)
+  /0FA56FB97FE1DBFA (Dutch 801 SWA Bold Italic)
+  /609DDAD155C665BD (Dutch801 SWM)
+  /31339D2E77293880 (Dutch801 SWM Italic)
+  /1303D9E01F743E49 (Dutch801 SWM Bold)
+  /6ADCDCB64EA8FF84 (Dutch801 SWM Bold Italic)
+  /61512A4C02B3B869 (Zurich SWA Roman)
+  /2D513FEF1050C728 (Zurich SWA Italic)
+  /2B1404B2314325AB (Zurich Lt SWA Bold)
+  /05F52F2E174BFBB9 (Zurich Lt SWA Bold Italic)
+  /47F027A4773B1D08 (Zurich Cn SWA)
+  /783CCED26E5F9934 (Zurich Cn SWA Italic)
+  /196F4FE73B01D17B (Zurich BdCn SWA Bold)
+  /03F05E7048C2EA81 (Zurich BdCn SWA Bold Italic)
+  /7A9890B71F351AEC (Zurich Lt SWA Light)
+  /07A20C0517EB96A4 (Zurich Lt SWA Light Italic)
+  /0C9EDC076364B6E9 (Zurich Ex SWA)
+  /45ED318A6D266E10 (Zurich Ex SWA Italic)
+  /790BCB760CDC0261 (Zurich Ex SWA Bold)
+  /6FEC5F8C2DF6A699 (Zurich Ex SWA Bold Italic)
+  /58555E900A04FFD4 (Chancery 801 SWA Italic)
+  /7E43DAB856FF1724 (DingDings SWA)
+  /72224D5B08076889 (MoreWingbats SWM)
+>> put
+
+%-------------------------------------------------------------------------------
+% Unconditional ShivaFont substitution maps to Shiva font names.
+
+statusdict /ShivaFontSubstitutionDB <<
+
+  % eg /ABCD1234ABCD1234 /Bullet
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional Font substitution maps to arrays of font names
+
+statusdict /ConditionalFontSubstitutionDB <<
+
+  % eg /182736450AFBECD0 [/Times-Roman/Palatino-Roman]
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional ShivaFont substitution maps to arrays of Shiva font names
+
+statusdict /ConditionalShivaFontSubstitutionDB <<
+
+  % eg /A9B8C7D6E5F40123 [/Bullet]
+
+>> put
+
+%-------------------------------------------------------------------------------
+%%EOF
+
+# Revision 1.2  2012/11/30  11:16:56  peterp
+# new unit
+# [Bug #367592]
+# EBDSDK_F update from 3.9r01
+#
+% Revision 1.1.1.1  2010/09/29  08:35:54  rahulr
+% branched from trunk for label EBDSDK_F
+%

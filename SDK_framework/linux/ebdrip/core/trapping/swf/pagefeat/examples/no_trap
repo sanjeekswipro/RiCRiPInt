@@ -1,0 +1,17 @@
+%!PS-Adobe
+%%Title: Disable trapping
+%%Creator: Global Graphics Software Limited
+% Copyright (C) 1999-2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% 
+% This simple page feature will disable in-RIP trapping. It is useful for
+% processing jobs with embedded in-RIP trapping commands (settrapzone etc.)
+% without actually trapping the job.
+%
+
+% $HopeName: COREtrapping!swf:pagefeat:examples:no_trap(EBDSDK_P.1) $
+% 
+
+<< /OverrideKeys << /Trapping true >> /Trapping false >> setpagedevice
+
+%%END

@@ -1,0 +1,564 @@
+%!PS-Adobe-3.0
+%%Title: HqnColumnSeps
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 8, 1993
+% Copyright (C) 1993-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnColumnSeps)" 1 1
+
+% this procset gives procedures 'DeviceCMYK', 'DeviceRGB' and
+% 'DeviceCMY', (no operands) which turns on separations such that you
+% get a single page with CMYK (RGB, CMY) vertically arranged. This is
+% particularly for plugins which want to paint CMYK seps from a single
+% page. A similar arrangement is possible for banding by horizontally
+% imposing the seps by calling the RowSeps procedure first. The procedure
+% '8Bits' called first gives 8-bit variations on the theme, though for
+% row oriented data, band-interleaved contone is a better choice.
+% There is also a procedure 'PreSeparated' which imposes pages in the same
+% layout. This only applies for CMYK. You have to know the order of the
+% separations to make use of this.
+
+% $HopeName: SWv20!swf:procsets:colmseps(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+10 dict begin
+  /globalness exch def
+
+  /GlobalWorkSpace true setglobal 5 dict false setglobal def
+  /WorkSpace 4 dict def
+
+  //GlobalWorkSpace begin
+    /RowSeps false def
+    /Adjustment 0.0 def
+    /Dimension 4 def
+    /Bits 1 def
+  end
+
+  /DeviceGray {
+    << 
+      //GlobalWorkSpace begin
+        /Tones [ /Gray Bits ]
+      end
+    >> setpagedevice
+  } bind def
+
+  /AutoInstall {
+    //GlobalWorkSpace begin
+      //WorkSpace begin
+        { % switch
+          { % case HalftoneType 1
+            /Frequency [ currenthalftone /Frequency get dup dup dup ] def
+            /Angle     [ 15 75 0 45 ] def
+            /SpotFunction [ currenthalftone /SpotFunction get dup dup dup ] def
+          }
+          { % case HalftoneType 2
+            /Frequency [
+              currenthalftone begin
+                RedFrequency GreenFrequency BlueFrequency GrayFrequency 
+              end
+            ] def
+            /Angle [
+              currenthalftone begin
+                RedAngle GreenAngle BlueAngle GrayAngle 
+              end
+            ] def
+            /SpotFunction [
+              currenthalftone begin
+                /RedSpotFunction load /GreenSpotFunction load
+                /BlueSpotFunction load /GraySpotFunction load
+              end
+            ] def
+          }
+          { % case HalftoneType 3
+          }
+          { % case HalftoneType 4
+          }
+          { % case HalftoneType 5
+            /Frequency [
+              currenthalftone begin
+                currentdict /Cyan known { 
+                  Cyan begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                } ifelse
+                currentdict /Magenta known { 
+                  Magenta begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                } ifelse
+                currentdict /Yellow known { 
+                  Yellow begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                } ifelse
+                currentdict /Black known { 
+                  Black begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Frequency } if
+                  end
+                } ifelse
+              end
+            ] def
+            /Angle [
+              currenthalftone begin
+                currentdict /Cyan known { 
+                  Cyan begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                } ifelse
+                currentdict /Magenta known { 
+                  Magenta begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                } ifelse
+                currentdict /Yellow known { 
+                  Yellow begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                } ifelse
+                currentdict /Black known { 
+                  Black begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { Angle } if
+                  end
+                } ifelse
+              end
+            ] def
+            /SpotFunction [
+              currenthalftone begin
+                currentdict /Cyan known { 
+                  Cyan begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                } ifelse
+                currentdict /Magenta known { 
+                  Magenta begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                } ifelse
+                currentdict /Yellow known { 
+                  Yellow begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                } ifelse
+                currentdict /Black known { 
+                  Black begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                }{ 
+                  Default begin
+                    HalftoneType 1 eq { /SpotFunction load } if
+                  end
+                } ifelse
+              end
+            ] def
+          }
+          { % case HalftoneType 6
+          }
+        }
+        currenthalftone /HalftoneType get 1 sub get exec
+        <<
+          /HalftoneType 5
+          /Separations true
+          /Override 1
+
+          //GlobalWorkSpace begin
+	    Dimension 4 eq { /Cyan }{ /Red } ifelse <<
+	      /HalftoneType 1
+	      /Frequency Frequency 0 get
+	      /Angle Angle 0 get
+	      /SpotFunction SpotFunction 0 get
+	      /TransferFunction {}
+	      RowSeps {
+		/Positions [[Width Scaling mul Adjustment add PageOrder 0 get mul 0 1]]
+	      }{
+		/Positions [[0 Height Scaling mul Adjustment add 
+                            Dimension PageOrder 0 get sub 1 sub mul 1]]
+	      } ifelse
+	    >>
+	    Dimension 4 eq { /Magenta }{ /Green } ifelse <<
+	      /HalftoneType 1
+	      /Frequency Frequency 1 get
+	      /Angle Angle 1 get
+	      /SpotFunction SpotFunction 1 get
+	      /TransferFunction {}
+	      RowSeps {
+		/Positions [[Width Scaling mul Adjustment add PageOrder 1 get mul 0 1]]
+	      }{
+		/Positions [[0 Height Scaling mul Adjustment add 
+                            Dimension PageOrder 1 get sub 1 sub mul 1]]
+	      } ifelse
+	    >>
+	    Dimension 4 eq { /Yellow }{ /Blue } ifelse <<
+	      /HalftoneType 1
+	      /Frequency Frequency 2 get
+	      /Angle Angle 2 get
+	      /SpotFunction SpotFunction 2 get
+	      /TransferFunction {}
+	      //GlobalWorkSpace /RowSeps get {
+		/Positions [[Width Scaling mul Adjustment add PageOrder 2 get mul 0 1]]
+	      }{
+		/Positions [[0 Height Scaling mul Adjustment add 
+                            Dimension PageOrder 2 get sub 1 sub mul 1]]
+	      } ifelse
+	    >>
+	    Dimension 4 eq { 
+              /Black <<
+		/HalftoneType 1
+		/Frequency Frequency 3 get
+		/Angle Angle 3 get
+		/SpotFunction SpotFunction 3 get
+		/TransferFunction {}
+  	        //GlobalWorkSpace /RowSeps get {
+		  /Positions [[Width Scaling mul Adjustment add PageOrder 3 get mul 0 1]]
+	        }{
+		  /Positions [[0 Height Scaling mul Adjustment add 
+                              Dimension PageOrder 3 get sub 1 sub mul 1]]
+	        } ifelse
+	      >> 
+            } if
+	    /Default 1 index
+          end
+        >>
+        dup dup length dict copy sethalftone
+        dup /Separations undef sethalftone
+      end % WorkSpace
+    end % GlobalWorkSpace
+  } bind def
+
+  /AutoBeginPage {
+    //GlobalWorkSpace begin
+      newpath
+      0 0 moveto
+      0 Height lineto
+      Width Height lineto
+      Width 0 lineto
+      closepath
+      clip
+      newpath
+    end
+  } bind def
+
+  /AutoSensePageDevice {
+    currentpagedevice begin
+      PageSize aload pop
+      //GlobalWorkSpace begin
+        RowSeps {
+          Height ne exch Width Adjustment add Dimension mul ne or
+        }{
+          Height Adjustment add Dimension mul ne exch Width ne or
+        } ifelse
+        {
+          PageSize aload pop
+          /Height exch def
+          /Width exch def
+          /Scaling currentpagedevice /Scaling get dup type /arraytype eq { 
+            RowSeps { 0 } { 1 } ifelse get
+          }{
+            pop 1
+          } ifelse def
+          RowSeps {
+            /Adjustment
+              Width Scaling mul Dimension mul HWResolution 0 get mul 72 div 
+                % pixels
+              dup ceiling cvi 127 add 128 idiv 128 mul exch sub Dimension div
+              72 mul HWResolution 0 get div % -> points
+              def
+          }{
+            /Adjustment
+              Height Scaling mul Dimension mul HWResolution 1 get mul 72 div
+              dup ceiling cvi Dimension 1 sub add Dimension idiv Dimension mul
+              exch sub Dimension div
+              72 mul HWResolution 1 get div % -> points
+              def
+          } ifelse
+          /PageSize [ 
+            RowSeps { 
+              Width Adjustment Scaling div add Dimension mul Height
+            }{ 
+              Width Height Adjustment Scaling div add Dimension mul
+            } ifelse
+          ]
+        } if
+      end
+    end
+  } bind def
+
+  /AutoSetup {
+    currentpagedevice begin
+      PageSize aload pop
+      //GlobalWorkSpace begin
+        /Height exch def
+        /Width exch def
+        /Scaling Scaling type /arraytype eq { 
+          Scaling RowSeps { 0 } { 1 } ifelse get
+        }{
+          1
+        } ifelse def
+      end
+
+      <<
+        /SensePageDevice 
+        dup load null eq {
+          //AutoSensePageDevice
+        }{
+          [ //AutoSensePageDevice /exec load
+            /SensePageDevice load /exec load ] cvx
+        } ifelse
+        /Install   [ /Install load /exec load //AutoInstall /exec load ] cvx
+        /BeginPage [ /BeginPage load /exec load 
+                     //AutoBeginPage /exec load ] cvx
+        % /Imposition true
+        /Separations true
+        /Tones [
+          //GlobalWorkSpace begin
+            Dimension 4 eq {
+              /Cyan /Magenta /Yellow /Black
+            }{
+              /Red /Green /Blue
+            } ifelse
+            Bits
+          end
+        ]
+      >> setpagedevice
+    end
+  } bind def
+
+  /DeviceCMYK {
+    //GlobalWorkSpace begin
+      /Dimension 4 def
+      /PageOrder true setglobal [0 1 2 3] false setglobal def
+    end
+    //AutoSetup exec
+  } bind def
+
+  /DeviceYMCK {
+    //GlobalWorkSpace begin
+      /Dimension 4 def
+      /PageOrder true setglobal [2 1 0 3] false setglobal def
+    end
+    //AutoSetup exec
+  } bind def
+
+  /DeviceBGR {
+    //GlobalWorkSpace begin
+      /Dimension 3 def
+      /PageOrder true setglobal [2 1 0] false setglobal def
+    end
+    //AutoSetup exec
+  } bind def
+
+  /DeviceRGB {
+    //GlobalWorkSpace begin
+      /Dimension 3 def
+      /PageOrder true setglobal [0 1 2] false setglobal def
+    end
+    //AutoSetup exec
+  } bind def
+
+  /PreSeparatedBeginPage {
+     % showpagecount
+     pop
+     % pw ph
+     initgraphics
+     //GlobalWorkSpace begin
+       currentpagedevice /PageSize get aload pop
+       1.0 0.25 RowSeps { exch } if scale
+       //WorkSpace /PageOrder get PageCount 4 mod get
+       RowSeps { 3 -1 roll mul 0 } { mul 0 exch } ifelse translate
+       newpath
+       0 0 moveto
+       0 Height lineto
+       Width Height lineto
+       Width 0 lineto
+       closepath
+       clip
+       newpath
+       pop
+     end
+  } bind def
+
+  /PreSeparatedEndPage {
+    % decide whether to output the page
+    % showpagecount code -> bool
+    exch pop
+    //GlobalWorkSpace /PageCount 2 copy get
+    4 -1 roll 2 eq {
+      % deactivation
+      4 mod 0 ne
+      3 1 roll 0 put
+    }{
+      % normal showpage
+      1 add
+      dup 4 mod
+      4 1 roll put
+      0 eq
+    } ifelse
+  } bind def
+
+  /PreSeparatedSensePageDevice {
+    % adjust the page size so that when scaled it is a multiple of 4 scan
+    % lines or 32 * 4 = 128 pixels across
+    currentpagedevice begin
+      PageSize aload pop
+      //GlobalWorkSpace begin
+        RowSeps {
+          1 index Scaling 0 get mul HWResolution 0 get mul 72 div % pixels
+          dup ceiling cvi 127 add 128 idiv 128 mul exch sub Scaling 0 get div
+          72 mul HWResolution 0 get div
+
+          dup 0.0 ne Height 3 index ne or {
+            /Width 3 index def
+            /Height 2 index def
+            /PageSize [ Width 3 index add Height ] 5 2 roll
+          } if
+        }{
+          dup Scaling 1 get mul HWResolution 1 get mul 72 div % pixels
+          dup ceiling cvi 3 add 4 idiv 4 mul exch sub Scaling 1 get div
+          72 mul HWResolution 1 get div
+
+          dup 0.0 ne Width 4 index ne or {
+            /Width 3 index def
+            /Height 2 index def
+            /PageSize [ Width Height 4 index add ] 5 2 roll
+          } if
+        } ifelse
+        pop pop pop
+      end
+    end
+  } bind def
+
+  /PreSeparated { % takes an array for the  color ordering: the positions
+    % in the array indicate the colors (slot 0 is Cyan, 1 is Magenta, etc),
+    % and their values indicate the position of that color on the page.
+    % For example to have Cyan at position 4 on the page, set slot 0 of the
+    % array to have value 4. Position here means the order, when counting
+    % either up or across the page.
+
+    currentpagedevice begin
+      //GlobalWorkSpace begin
+        /PageCount 0 def
+        currentpagedevice /PageSize get aload pop
+        /Height exch def
+        /Width exch def
+      end
+
+      //WorkSpace begin
+        /PageOrder exch def
+
+        /Scaling Scaling type /arraytype eq { 
+          Scaling //GlobalWorkSpace /RowSeps get { 0 } { 1 } ifelse get
+        }{
+          1
+        } ifelse def
+      end
+
+      5 dict begin
+        /Scaling [ Scaling null eq {
+          1 4 //GlobalWorkSpace /RowSeps get { exch } if 
+        }{
+          //GlobalWorkSpace /RowSeps get {
+            //WorkSpace /Scaling get 4 mul Scaling 1 get
+          }{
+            Scaling 0 get //WorkSpace /Scaling get 4 mul
+          } ifelse
+        } ifelse ] def
+
+        /SensePageDevice 
+        dup load null eq {
+          //PreSeparatedSensePageDevice
+        }{
+          [ //PreSeparatedSensePageDevice /exec load
+            /SensePageDevice load /exec load ] cvx
+        } ifelse def
+
+        /BeginPage [ /dup load /BeginPage load /exec load 
+                     //PreSeparatedBeginPage /exec load ] cvx def
+        /EndPage   [ 2 /copy load /EndPage load /exec load /pop load
+                     //PreSeparatedEndPage /exec load ] cvx def
+        /Imposition true def
+        /Tones [ /Gray //GlobalWorkSpace /Bits get ] def
+        currentdict
+      end
+    end
+    setpagedevice
+  } bind def
+
+  /RowSeps {
+    //GlobalWorkSpace begin
+      /RowSeps true def
+    end
+  } bind def
+
+  /8Bits {
+    //GlobalWorkSpace begin
+      /Bits 8 def
+    end
+  } bind def
+
+  [ 
+    /AutoBeginPage 
+    /AutoInstall 
+    /AutoSensePageDevice 
+    /PreSeparatedBeginPage
+    /PreSeparatedEndPage
+    /PreSeparatedSensePageDevice
+    /WorkSpace
+    /GlobalWorkSpace
+  ] { currentdict exch undef } forall
+  
+  currentdict
+end
+
+/HqnColumnSeps exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet
+
+

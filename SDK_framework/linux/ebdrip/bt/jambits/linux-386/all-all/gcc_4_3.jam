@@ -1,0 +1,54 @@
+# Copyright (C) 2009-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!linux-386:all-all:gcc_4_3.jam(EBDSDK_P.1) $
+#
+
+  FatalIfNotSet CompilerVariable ;
+
+  local Com = C C++ mixedC ;
+
+  local gcc_compiler = $(CompilerVariable) ;
+
+  local g++_compiler ;
+  if ! $($(CV_Name)_CPLUSPLUS) {
+    g++_compiler = $(gcc_compiler:D)/g++ ;
+    Warning $(CV_Name)_CPLUSPLUS not set.  Assuming $(g++_compiler) ;
+  } else {
+    g++_compiler = $($(CV_Name)_CPLUSPLUS) ;
+  }
+
+  local cpp_compiler ;
+  if ! $($(CV_Name)_CPP) {
+    cpp_compiler = $(gcc_compiler:D)/cpp ;
+    Warning $(CV_Name)_CPP not set.  Assuming $(cpp_compiler) ;
+  } else {
+    cpp_compiler = $($(CV_Name)_CPP) ;
+  }
+
+  local GCClib ;
+  if ! $($(CV_Name)_LIB) {
+    local GCClibdir = $(gcc_compiler:D) ;
+    GCClib  = $(GCClibdir:P)/lib/gcc-lib/i386-redhat-linux/3.2 ;
+    Warning $(CV_Name)_LIB not set.  Assuming $(GCClib) ;
+  } else {
+    GCClib = $($(CV_Name)_LIB) ;
+  }
+
+  if ! $(gcc_compiler:E) {
+    Error Expected to find gcc 4.3 installed in $(gcc_compiler) ;
+  }
+
+  CompilerVar $(Com)-Compiler_Arguments : -fstrict-aliasing -Wstrict-aliasing ;
+
+  # We need Splint to have some of the same predefined preprocessor
+  # symbols as the compiler in order to parse some headers properly.
+
+  AddToVar Inherited Local : SplintOptions :
+    -D__GNUC__=4
+    -D__GNUC_MINOR__=3
+  ;
+
+  CompilerBits gcc_all.jam ;
+
+# Log stripped

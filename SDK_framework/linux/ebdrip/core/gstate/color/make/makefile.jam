@@ -1,0 +1,92 @@
+# Copyright (C) 2009-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core RIP Graphics state color operators
+#
+# $HopeName: COREgstate!color:make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant metrics ;
+
+# Compilation rules
+
+    DependsOn all : color ;
+
+    # Allow access to these compounds for all sub-libraries
+    IncludeExportDirectories Inherited Local :
+        blob
+        devices
+        crypt
+        fileio
+        fonts
+        functions
+        gstate
+        halftone
+        multi
+        recombine
+        render
+        trapping
+        v20
+        wcs
+    : .. .. ;
+
+    IncludeExportDirectories Local :
+        unicode
+    : .. .. .. ;
+
+    ReplaceVar Local : CFILES :
+        cieopts.c
+        ciepsfns.c
+        colcomnt.c
+        gs_cache.c
+        gs_chaincache.c
+        gs_callps.c
+        gs_color.c
+        gs_table.c
+        gscblackevaluate.c
+        gscblackremove.c
+        gscblackreplace.c
+        gsccalib.c
+        gsccie.c
+        gsccmm.c
+        gscalternatecmm.c
+        gsccrd.c
+        gscdevci.c
+        gscdevcn.c
+        gscequiv.c
+        gscfastrgbconv.c
+        gschcms.c
+        gschead.c
+        gschtone.c
+        gscicc.c
+        gscindex.c
+        gscinit.c
+        gscluminosity.c
+        gscparams.c
+        gscpdf.c
+        gscphotoink.c
+        gscpresp.c
+        gscsmplk.c
+        gscsmpxform.c
+        gsctable.c
+        gsctint.c
+        gsctoicc.c
+        gscxfer.c
+        hcmspss.c
+        icmini.c
+    ;
+
+    Library color : $(CFILES) ;
+
+# Process some .pss files
+    Pss2C
+        cieopts
+        colcomnt
+        hcmspss
+    ;
+
+# Log stripped

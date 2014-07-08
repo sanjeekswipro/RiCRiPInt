@@ -1,0 +1,80 @@
+#
+# $HopeName: HQNzip231-src!make:makefile.jam(trunk.7) $
+# $Id: make:makefile.jam,v 1.7 2012/07/30 11:47:36 anon Exp $
+#
+
+RequiresVariant warning_level : low ;
+
+RequiresVariant ansi : 0 ;
+
+AddToVar Inherited Local : C-Defines : NO_ASM ;
+
+DependsOn all : zip ;
+
+SOURCES = 
+    zipfile.c
+    zipup.c
+    fileio.c
+    util.c
+    globals.c
+    crypt.c
+    ttyio.c
+    crc32.c
+    crctab.c
+    deflate.c
+    trees.c
+;
+
+if $(NT) {
+    local Com = C C++ mixedC ;
+
+    SOURCES += 
+        win32zip.c
+        win32.c
+        nt.c
+    ;
+
+    AddToVar Local : $(Com)-Exec-Linker_Libraries :
+        advapi32.lib
+        comctl32.lib
+        comdlg32.lib
+        gdi32.lib
+        kernel32.lib
+        mpr.lib
+        user32.lib
+        version.lib
+        netapi32.lib
+    ;
+} else if $(UNIX) || $(MACOSX) {
+    switch $(TargetOS) {
+         case macos_x : AddToVar Inherited Local : C-Defines : HAVE_DIRENT_H HAVE_TERMIOS_H HAVE_FSEEKO UNIX ;
+    }
+
+    SOURCES +=
+        unix.c
+    ;
+}
+
+Makefile bt ;
+
+Executable zip : $(SOURCES) zip.c ;
+
+Distribute File : * : zip$(C-Exec-Suffix) : $(CurrentPath) : : : : PlatformThenSuffix ;
+
+
+if exportsrc in $(JAM_ARGUMENTS)
+{
+  # Export source for shipping to third party
+  local ExportZipAndRebuildTarget ; MakeGristed ExportZipAndRebuildTarget : exportziprebuild : $(CurrentPath) ;
+
+  local ExportedSrcDir = obj$/expsrc ;
+  local ExportedSrcZip = expsrc-zip231.zip ;
+	  
+  ExportZipAndRebuildSource $(ExportZipAndRebuildTarget) : $(ExportedSrcDir) : zip : $(ExportedSrcZip) ;
+
+  DEPENDS distrib : $(ExportZipAndRebuildTarget) ;
+  Distribute File : exportedsource.zip : $(ExportedSrcZip) : $(CurrentPath) : : : $(ExpSrcSuffix) : PlatformThenSuffix ;
+}
+
+	
+# Log stripped

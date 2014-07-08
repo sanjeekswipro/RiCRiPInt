@@ -1,0 +1,91 @@
+/* -*- Mode: PostScript -*- mode for Emacs
+ * $HopeName: COREpcl_pclxl!src:names.nam(EBDSDK_P.1) $
+ * Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+ * Global Graphics Software Ltd. Confidential Information.
+ *
+ * Names table for COREpcl_pclxl. See SWv20!src/names.nam for documentation on
+ * the file format. Most names in this file should be plain names, with no
+ * attribute information. Nametool will merge multiple definitions, checking
+ * that they do not conflict.
+ */
+
+% PCLXL input operators
+pclxlexec OPERATOR
+
+
+% PCLXL threshold array processing operator. Similar to the PCLXL image reading
+% operator.
+pclxlthresholdread OPERATOR
+
+/*
+ * Unfortunately there are a growing number of places
+ * where the empirically determined implementation of PCLXL
+ * inside a number of real-world printers
+ * differs from any and all versions of the PCLXL Protocol Class Specifications
+ *
+ * Therefore we need a special GG-specific operator that
+ * allows us to configure the PCLXL behaviour at run time
+ *
+ * This configuration takes the form of a dictionary
+ * that is set using the "setpclxlparams" Postscript Operator
+ */
+ 
+setpclxlparams OPERATOR DICT(1183615869 internaldict)
+
+/*
+ * In the first instance this dictionary contains
+ * a simple boolean switch that says whether we are attempting to
+ * adhere strictly according to the PCLXL Protocol Class Specification
+ * whose "key" in the dictionary is as follows:
+ */
+ 
+Strict
+StreamEndianness
+Little
+Big
+Both
+PCLXLDefaultFontName
+Courier
+PointSize
+SymbolSet
+PCLDefaultOrientation
+PCLDefaultDuplex
+PCLDefaultTumble
+PCLOrientation
+PCLXLDefaultPageSize
+PCLXLDefaultPrintableAreaMargins
+PCLXLDefaultMediaType
+PCLXLDefaultMediaSource
+PCLXLDefaultMediaDestination
+Copies
+BackChannel
+Tumble
+MediaType
+DeviceCMYK
+DeviceGray
+DeviceRGB
+Duplex
+LeadingEdge
+HalftoneType
+Height
+Indexed
+PageSize
+Thresholds
+Width
+WMode
+
+CloseSource
+image
+
+% Names for pclxlparams
+VirtualDeviceSpace
+Default
+Other
+
+% Passed into userdict for num copies
+% #copies has to be expressed in octal to get around the C preprocessor
+\043copies NAME(copies)
+
+DebugPCLXL
+ 
+/* Log stripped */

@@ -1,0 +1,326 @@
+# Copyright (C) 1999-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for v20
+#
+# $HopeName: SWv20!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# List the generated files before we introduce variants -- these shouldn't
+# be compiled differently from one variant to another.
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant custiface metrics security source_date valgrind ;
+
+if $(Variant_custiface) in 0 {
+  ImplementsVariant customised ;
+}
+
+# Additional source files required for the metrics variant.
+local metricsExtras ;
+ReplaceVar Local : metricsExtras : metrics.c jobmetrics.c : Variant metrics=yes ;
+ReplaceVar Local : metricsExtras : nometrics.c : Variant metrics=no ;
+
+# Ensure that exported source can be built with/without metrics as required
+if $(Variant_metrics) = yes {
+  ExportSource $(CurrentPath)$/src$/nometrics.c : C ;
+} else {
+  ExportSource $(CurrentPath)$/src$/metrics.c : C ;
+  ExportSource $(CurrentPath)$/src$/jobmetrics.c : C ;
+}
+
+
+  # peterg> The security variant _is_ needed, since otherwise the watermark
+  # doesn't get ripped!
+
+# Compilation rules
+
+    DependsOn all : v20 ;
+    DependsOn v20 : v20a v20b v20c v20e v20f v20g v20h ;
+
+    IncludeExportDirectories Local :
+        backdrop
+        blob
+        cce
+        crypt
+        datum
+        devices
+        fonts
+        fileio
+        functions
+        gstate
+        halftone
+        hdlt
+        images
+        imstore
+        multi
+        objects
+        pcl5in
+        pdf
+        pdfin
+        pdfout
+        ps
+        recombine
+        render
+        tables
+        trapping
+        wcs
+        xps
+        zipdev
+    : .. ;
+
+    IncludeExportDirectories Local :
+        $(CustIface)
+        unicode
+    : .. .. ;
+    #
+    #
+    # Lots of hackery to get mingw ld to suck this stuff in. Note it's roughly 25 files per target.
+    ReplaceVar Local : v20a_files :
+        $(metricsExtras)
+        adobe1.c
+        alldicts.c
+        altsdpss.c
+        arithops.c
+        arrayops.c
+        asyncps.c
+        binfile.c
+        binscan.c
+        bitGrid.c
+        blends.c
+        boolops.c
+        bresfill.c
+        chartype.c
+        clipops.c
+        clippath.c
+        cmpprog.c
+        colorops.c
+        comment.c
+        comntpss.c
+        compress.c
+        control.c
+        copyops.c
+        corejob.c
+     ;
+     ReplaceVar Local : v20b_files :
+        cvcolcvt.c
+        cvdecodes.c
+        devices.c
+        devops.c
+        dictops.c
+        dicts.c
+        display.c
+        dl_bbox.c
+        dl_bres.c
+        dl_cell.c
+        dl_cleanup.c
+        dl_color.c
+        dl_foral.c
+        dl_free.c
+        dl_image.c
+        dl_purge.c
+        dl_ref.c
+        dl_shade.c
+        dl_store.c
+        edpdpss.c
+        emit.c
+        epsexec.c
+        errorpss.c
+        execops.c
+     ;
+     ReplaceVar Local : v20c_files :
+        execupss.c
+        fbezier.c
+        fcache.c
+        filename.c
+        fileops.c
+        filters.c
+        fontops.c
+        fontpriv.c
+        forms.c
+        formOps.c
+        genhook.c
+        gofiles.c
+        gouraud.c
+        group.c
+        gs_tag.c
+        gstack.c
+        gstate.c
+        gstatpss.c
+        gu_chan.c
+        gu_cons.c
+        gu_ctm.c
+        gu_fills.c
+        gu_htm.c
+        ;
+    ReplaceVar Local : v20e_files :
+        gu_path.c
+        gu_rect.c
+        hdl.c
+        idiom.c
+        idlepss.c
+        imageadj.c
+        imagecontext.c
+        images.c
+        imaskgen.c
+        imcolcvt.c
+        imdecodes.c
+        imexpand.c
+        imfile.c
+        imlut.c
+        implicitgroup.c
+        imskgen4.c
+        imtiles.c
+        interrupts.c
+        irr.c
+       ;
+     ReplaceVar Local : v20f_files :
+        jobpss.c
+        lanlevel.c
+        level1sp.c
+        mathfunc.c
+        mathops.c
+        matrix.c
+        matrxops.c
+        mischook.c
+        miscops.c
+        miscpss.c
+        nsidetst.c
+        objmatch.c
+        packdata.c
+        pagedev.c
+        pager.c
+        panalyze.c
+        params.c
+        pathcons.c
+        pathops.c
+        pattern.c
+        patternshape.c
+        pclAttrib.c
+        pcmnames.c
+        pgbproxy.c
+        pixelLabels.c
+       ;
+     ReplaceVar Local : v20g_files :
+        plotops.c
+        preconvert.c
+        printpss.c
+        procfilt.c
+        pseudpss.c
+        psstacks.c
+        psvm.c
+        rainstorm.c
+        randops.c
+        rectops.c
+        region.c
+        render.c
+        renderom.c
+        resource.c
+        ripdebug.c
+     ;
+     ReplaceVar Local : v20h_files :
+        rlecache.c
+        rleColorantMapping.c
+        rollover.c
+        routedev.c
+        scanner.c
+        security.c
+        setup.c
+        shadecev.c
+        shading.c
+        showops.c
+        spdetect.c
+        spotlist.c
+        srvrpss.c
+        stackops.c
+        startup.c
+        statops.c
+        std_file.c
+        strngops.c
+        stroker.c
+        swcopyf.c
+        swmemory.c
+        system.c
+        tensor.c
+        tokenops.c
+        tranState.c
+        typeops.c
+        uparse.c
+        upathops.c
+        upcache.c
+        userobjs.c
+        utils.c
+        vndetect.c
+        wclip.c
+        xpswatermark.c
+    ;
+
+    local NoOptFileList = $(BUILDROOT)$/core$/v20$/make$/noopt-$(C-Compiler-Family).jam ;
+        if $(NoOptFileList:E)
+        {
+         Include $(NoOptFileList) ;
+        }
+        local libs = v20a v20b v20c v20e v20f v20g v20h ;
+            local lib ;
+            local file ;
+
+            if ! $(NoOptFiles)
+
+            {
+                for lib in $(libs) {
+                Library $(lib) : $($(lib)_files) ;
+                }
+            }
+            else
+            {
+                for lib in $(libs) {
+                    for file in $($(lib)_files) {
+                        if ! $(file) in $(NoOptFiles) {
+                        Library $(lib) : $(file) ;
+                        }
+                    }
+                }
+            }
+   Library v20 ;
+
+   C-LinkWithLibraries v20 : $(libs) : . ;
+
+  if $(NoOptFiles) {
+       ECHO "optimisations will be turned off/reduced for" $(NoOptFiles) ;
+    # Temporarily switch off optimisation arg for the NOOPT files
+        TmpVar = $(C-Compiler_OptimsationArgs) ;                             # Save current optimisation arg
+        C-Compiler_OptimsationArgs = $(C-Compiler_OptimsationArgs_limited) ; # Set args to no opt
+        Library v20_noopt : $(NoOptFiles) ;
+        C-Compiler_OptimsationArgs = $(TmpVar) ;                             # Restore optimisation arg
+     C-LinkWithLibraries v20 : v20_noopt : . ;
+   }
+
+# Process some .pss files
+    Pss2C
+        alldicts
+        altsdpss
+        comntpss
+        edpdpss
+        errorpss
+        execupss
+        gstatpss
+        idlepss
+        jobpss
+        miscpss
+        pagedev
+        printpss
+        pseudpss
+        resource
+        srvrpss
+    ;
+
+    # Jam parses each file as a single sequence. If you have too many tokens
+    # in a file, you'll get a yacc overflow error. To get around that in
+    # SWv20, we split off the SW mappings from the main SWv20 Makefile.
+    SubMakefile swf-mapping swf ;
+
+# Log stripped

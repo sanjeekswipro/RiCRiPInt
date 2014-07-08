@@ -1,0 +1,173 @@
+# $HopeName: HQNlibicu_3_4!common:make:makefile.jam(EBDSDK_P.1) $
+# 
+# Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for extracts from IBM's ICU Unicode library
+#
+# (Adapted from HQNlibicu!common:make:makefile.jam(trunk.3))
+#
+# common source directory contains all of the functionality we want
+
+    ImplementsVariant ICU $(ICUVariants) ;
+
+    local Com = C C++ mixedC ;
+
+    RequiresVariant warning_level : low ;
+
+    # We don't use the src sub-directory to keep the source code structured as
+    # closely to the original ICU source structure as possible, to make
+    # updating easier.
+    AddToVar Local : $(Com)-SourceDirectories : . ;
+
+# Compilation rules
+
+    DependsOn all : common ;
+    DependsOn common : common_a common_b ;
+
+    Library common_a :
+        brkdict.cpp
+        brkiter.cpp
+        caniter.cpp
+        chariter.cpp
+        cmemory.c
+        cstring.c
+        cwchar.c
+        dbbi.cpp
+        dbbi_tbl.cpp
+        filestrm.c
+        locbased.cpp
+        locid.cpp
+        locmap.c
+        locutil.cpp
+        normlzr.cpp
+        parsepos.cpp
+        propname.cpp
+        punycode.c
+        putil.c
+        rbbi.cpp
+        rbbidata.cpp
+        rbbinode.cpp
+        rbbirb.cpp
+        rbbiscan.cpp
+        rbbisetb.cpp
+        rbbistbl.cpp
+        rbbitblb.cpp
+        resbund.cpp
+        resbund_cnv.cpp
+        ruleiter.cpp
+        schriter.cpp
+        serv.cpp
+        servlk.cpp
+        servlkf.cpp
+        servls.cpp
+        servnotf.cpp
+        servrbf.cpp
+        servslkf.cpp
+        uarrsort.c
+        ubidi.c
+        ubidiln.c
+        ubidiwrt.c
+        ubidi_props.c
+        ubrk.cpp
+        ucase.c
+        ucasemap.c
+        ucat.c
+        uchar.c
+        uchriter.cpp
+        ucln_cmn.c
+        ucmndata.c
+        ucmp8.c
+    ;
+
+    Library common_b :
+        ucnv.c
+        ucnv2022.c
+        ucnvbocu.c
+        ucnvdisp.c
+        ucnvhz.c
+        ucnvisci.c
+        ucnvlat1.c
+        ucnvmbcs.c
+        ucnvscsu.c
+        ucnv_bld.c
+        ucnv_cb.c
+        ucnv_cnv.c
+        ucnv_err.c
+        ucnv_ext.c
+        ucnv_io.c
+        ucnv_lmb.c
+        ucnv_set.c
+        ucnv_u16.c
+        ucnv_u32.c
+        ucnv_u7.c
+        ucnv_u8.c
+        ucol_swp.c
+        udata.c
+        udatamem.c
+        udataswp.c
+        uenum.c
+        uhash.c
+        uhash_us.cpp
+        uidna.cpp
+        uinit.c
+        uinvchar.c
+        uiter.cpp
+        uloc.c
+        umapfile.c
+        umutex.c
+        unames.c
+        unifilt.cpp
+        unifunct.cpp
+        uniset.cpp
+        uniset_props.cpp
+        unistr.cpp
+        unistr_case.cpp
+        unistr_cnv.cpp
+        unistr_props.cpp
+        unorm.cpp
+        unormcmp.cpp
+        unorm_it.c
+        uobject.cpp
+        uprops.c
+        uresbund.c
+        uresdata.c
+        ures_cnv.c
+        uscript.c
+        usc_impl.c
+        uset.cpp
+        usetiter.cpp
+        uset_props.cpp
+        ushape.c
+        usprep.cpp
+        ustack.cpp
+        ustrcase.c
+        ustrenum.cpp
+        ustrfmt.c
+        ustring.c
+        ustrtrns.c
+        ustr_cnv.c
+        ustr_wcs.c
+        utext.cpp
+        utf_impl.c
+        util.cpp
+        utrace.c
+        utrie.c
+        utypes.c
+        uvector.cpp
+        uvectr32.cpp
+    ;
+
+    Library common ;
+    C-LinkWithLibraries common : common_a common_b ;
+
+
+    # Note any #included .c files explicitly for WDK build
+    NoteWDKExtraSources common :
+      ubidi_props_data.c
+      ucase_props_data.c
+      uchar_props_data.c
+    ;
+
+
+# Log stripped

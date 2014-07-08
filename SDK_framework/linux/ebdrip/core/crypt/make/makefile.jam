@@ -1,0 +1,53 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP encryption interfaces
+#
+# $HopeName: COREcrypt!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : crypt ;
+    DependsOn hqcrypt : hqcrypt : hqx ;
+
+    ReplaceVar Local : Libraries :
+        hqx
+    ;
+
+    # Allow access to all crypt libraries from here
+    IncludeExportDirectories Inherited Local :
+        $(Libraries)
+    ;
+
+    # Morisawa decryption should be under crypt compound. Until it is,
+    # import exports here
+    IncludeExportDirectories Local :
+        morisawa
+    : .. ;
+
+    # Propagate export directories from sub-directories to parent
+    AddExportDirectories $(Libraries) ;
+
+    ReplaceVar Local : CFILES :
+        cryptinit.c
+    ;
+
+    Library crypt : $(CFILES) ;
+
+    Makefile $(Libraries) ;
+
+    ImplementsVariant hqx ;
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries crypt : $(i) : $(i) ;
+    }
+
+    # Make HQXlib if necessary
+    Makefile hqxlib ;
+
+# Log stripped

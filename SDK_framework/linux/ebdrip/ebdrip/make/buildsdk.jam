@@ -1,0 +1,376 @@
+# Copyright (C) 2007-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for SWebd_OIL
+#
+# $HopeName: SWprod_hqnrip!ebdrip:make:buildsdk.jam(EBDSDK_P.1) $
+#
+
+DependsOn ebdrip : ebdwrapper$(C-Exec-Suffix) ;
+DependsOn ebdwrapper$(C-Exec-Suffix) : corelib ;
+
+if $(Variant_ebd_ufst) = eufst5o || $(Variant_ebd_ufst) = eufst5y || exportsrc in $(JAM_ARGUMENTS)
+{
+  MakeGristed Ufst5Target : ufst5$(C-Lib-Suffix) : $(CurrentPath) ufst ;
+  DependsOn ebdwrapper$(C-Exec-Suffix) : $(Ufst5Target) ;
+}
+
+if $(Variant_ebd_ufst) = eufst7o || $(Variant_ebd_ufst) = eufst7y || exportsrc in $(JAM_ARGUMENTS)
+{
+  MakeGristed Ufst7Target : ufst7$(C-Lib-Suffix) : $(CurrentPath) ufst7 ;
+  DependsOn ebdwrapper$(C-Exec-Suffix) : $(Ufst7Target) ;
+}
+
+
+if $(Variant_ebd_ff) = effy || $(Variant_ebd_ff) = effo
+{
+  MakeGristed FFTarget : ff$(C-Lib-Suffix) : $(CurrentPath) ff ;
+  DependsOn ebdwrapper$(C-Exec-Suffix) : $(FFTarget) ;
+}
+
+DirectoryFor ebdwrapper$(C-Exec-Suffix) : $(CurrentPath) $(C-Exec-Directory) bin ;
+
+# SW in RAM
+if $(Variant_sw) = ram
+{
+  AddToVar Local : swfinram : 1 ;
+}
+else
+{
+   AddToVar Local : swfinram : 0 ;
+}
+
+# EXTOPTS... Only applies to build in obj folder... it does not apply to build in distrib folder.
+
+# Switch off some pms features by controlling the Makefile build file
+# Note that some features may have already be force included... 
+# e.g. if "-va ebd_pdfout=epdfouty", then pdfout is always included in the build, SUPPORT_PDF_OUT=0 has no effect
+if $(Variant_ebd_pms_min) = epmin 
+{
+  AddToVar Local : EXTOPTS : SUPPORT_SCRN1BPP=0 
+                             SUPPORT_SCRN2BPP=0 
+                             SUPPORT_SCRN4BPP=0 
+                             SUPPORT_SOCKET=0 
+                             SUPPORT_TIFF_OUT=0 
+                             SUPPORT_PJL=0 
+                             SUPPORT_PDF_OUT=0
+                            ;
+  if $(Variant_ebd_pdfout) = epdfouty
+  {
+    Warning "Unable to remove pdfout in epmin variant because epdfouty has been specified... executable will have the pdfout feature." ;
+  }
+}
+
+AddToVar Local : EXTOPTS : SUPPORT_SCRN1BPP=0 : Variant ebd1bpp=no ;
+AddToVar Local : EXTOPTS : SUPPORT_SCRN2BPP=0 : Variant ebd2bpp=no ;
+AddToVar Local : EXTOPTS : SUPPORT_SCRN4BPP=0 : Variant ebd4bpp=no ;
+
+AddToVar Local : EXTOPTS : SUPPORT_SCRN1BPP=1 : Variant ebd1bpp=yes ;
+AddToVar Local : EXTOPTS : SUPPORT_SCRN2BPP=1 : Variant ebd2bpp=yes ;
+AddToVar Local : EXTOPTS : SUPPORT_SCRN4BPP=1 : Variant ebd4bpp=yes ;
+
+# vxworks
+if vxworks in $(TargetOS)
+{
+  if $(Variant_ebd_vxfloat) = sfp
+  {
+    AddToVar Local : EXTOPTS : VX_HARD_FP=0 ;
+  }
+  else
+  {
+    AddToVar Local : EXTOPTS : VX_HARD_FP=1 ;
+  }
+
+  if $(Variant_ebd_vxenv) = env63
+  {
+    AddToVar Local : EXTOPTS : VX_ENV=63 ;
+  }
+  else if $(Variant_ebd_vxenv) = env64
+  {
+    AddToVar Local : EXTOPTS : VX_ENV=64 ;
+  }
+  else
+  {
+    AddToVar Local : EXTOPTS : VX_ENV=66 ;
+  }
+}
+
+if $(MACOSX)
+{
+  AddToVar Local : EXTOPTS :
+    OSX_ARCH=$(TargetArch)
+    FRAMEWORKS_DIR=$(C-Exec-Directory)$/Frameworks
+  ;
+
+  # Copy SuperPro dongle frameworks
+  if $(Variant_security) = dng {
+    local i ; for i in $(SentinelFrameworkDir)$(FS)$(SentinelFrameworkNames).framework {
+      local fw-src ;
+      MakeLeafTarget fw-src : $(i) : : Search ;
+      local fw-dest ;
+      MakeLeafTarget fw-dest : $(i:D=) : $(CurrentPath) $(C-Exec-Directory) Frameworks : Locate ;
+
+      DependsOn ebdwrapper$(C-Exec-Suffix) : $(fw-dest) ;
+      CopyFile $(fw-dest) : $(fw-src) ;
+    }
+  }
+}
+
+# The SDK is built by an invocation of the per-platform
+# Makefile, from the full set of preprocessed skin sources. The Makefile
+# is created by the Unifdef rule, which provides gristed leaf and
+# path dependencies which we need to link to the GenericTarget's idea
+# of the Makefile target.
+local GristedMakefile ;
+MakeGristed GristedMakefile : $(C-Exec-Directory)$/bin$/Makefile : $(CurrentPath) ;
+DEPENDS $(GristedMakefile) : $(CurrentPath)$/$(C-Exec-Directory)$/bin$/Makefile ;
+
+actions quietly _MakeEbdWrapper bind Makefile Ufst5Lib Ufst7Lib FFLib {
+  echo ...MAKING $(<)...
+  $(SetEnv)$(ENV)$(NewLine)
+  echo $(Make) -f $(Makefile) MAKEFILE=$(Makefile) UFST5LIB=$(Ufst5Lib) UFST7LIB=$(Ufst7Lib) FFLIB=$(FFLib) $(Options)
+  $(Make) -f $(Makefile) MAKEFILE=$(Makefile) UFST5LIB=$(Ufst5Lib) UFST7LIB=$(Ufst7Lib) FFLIB=$(FFLib) $(Options)
+}
+
+rule MakeEbdWrapper {
+  local EbdWrapperTarget ;
+  MakeGristed EbdWrapperTarget : $(1) : $(CurrentPath) ;
+  local MakefileTarget = $(4) ;
+
+  ENV on $(EbdWrapperTarget) = $(2) ;
+  Make on $(EbdWrapperTarget) = $(3) ;
+  Makefile on $(EbdWrapperTarget) = $(4) ;
+  Ufst5Lib on $(EbdWrapperTarget) = $(5) ;
+  Ufst7Lib on $(EbdWrapperTarget) = $(6) ;
+  FFLib on $(EbdWrapperTarget) = $(7) ;
+  Options on $(EbdWrapperTarget) = $(8) ;
+
+  DEPENDS $(EbdWrapperTarget) : $(MakefileTarget) ;
+  _MakeEbdWrapper $(EbdWrapperTarget) ;
+}
+
+local EbdWrapperDirs =
+  SRC_DIR=.$/$(PreprocessedSrcDir)
+  OBJ_DIR=$(C-Exec-Directory)$/bin
+  CORELIB_DIR=obj$/$(TargetPlat)$/$(CoreSuffix)$/$(CompilerVersion-C)
+  IF_CONTROL=core$/interface$/control
+  IF_SCREENING=core$/interface$/screening
+  IF_VERSION=core$/interface$/version
+  IF_SWZIP=core$/interface$/swzip
+  IF_XPS=core$/interface$/xps
+  IF_RLE=core$/interface$/rle
+  IF_PGB=core$/interface$/pgb
+  IF_LESEC=le-security$/export
+  IF_MPS=mps$/export
+;
+
+local EbdWrapperOptions =
+  DEBUG=$(DEBUG)
+  TIMING=$(TIMING)
+  PROFILE_BUILD=$(PROFILE_BUILD)
+  CORELIB_CALLING_CONVENTION=$(CallingConvention)
+  USE_RAM_SW_FOLDER=$(swfinram)
+  SWFOLDERLIB=$(SWFolderLibPath)$(CompilerVersion-C)$/swfolderlib$(mixedC-Lib-Suffix)
+  SWOPT='$(SWOPT)'
+;
+
+AddUnique MAKE_UNIFDEF_DEFINES : $(Unifdef-Defines) ;
+Join TEMPDEFINE : " " : -D$(MAKE_UNIFDEF_DEFINES)=1 ;
+AddToVar Local : EXTOPTS :
+  SKIN_DEBUG="\"$(TEMPDEFINE)\""
+  HQN=1
+: Variant skin_debug ;
+
+if $(C-Compiler-Family) = msvc
+{
+  ReplaceVar Local : TARGET_OPTS :
+    PATH_TO_CORELIB=..\\\\..\\\\$(CoreSuffix)\\\\$(CompilerVersion-C)
+    COVERAGE=$(COVERAGE)
+    $(ICM2OPTS)
+  ;
+
+  # Use checked-in runtime manifest
+  if $(RuntimeManifest) {
+    AddToVar Local : EXTOPTS : MACHINETYPE_DIR=$(BUILDROOT)$/tools$/$(PrebuiltPathPrefix)
+                               MANIFEST_PATH=$(RuntimeManifest:D) ;
+  }
+
+  MakeEbdWrapper ebdwrapper$(C-Exec-Suffix)
+    : $(C-Compiler_Environment)
+    : $(make) : $(GristedMakefile) : $(Ufst5Target) : $(Ufst7Target) : $(FFTarget) :
+      $(EbdWrapperDirs)
+      $(EbdWrapperOptions)
+      $(EXTOPTS)
+      $(TARGET_OPTS)
+    ;
+}
+else
+{
+  MakeEbdWrapper ebdwrapper$(C-Exec-Suffix)
+    :
+    : $(make) : $(GristedMakefile) : $(Ufst5Target) : $(Ufst7Target) : $(FFTarget) :
+    $(EbdWrapperDirs)
+    $(EbdWrapperOptions)
+    $(EXTOPTS)
+    CORELIB=.$/obj$/$(TargetPlat)$/$(CoreSuffix)$/$(CompilerVersion-C)$/corelib$(C-Lib-Suffix)
+    OPENSSLLIB=
+  ;
+}
+
+# Build the kit again in the distribution with default values except SRC_DIR
+AddToVar Local : MAKEFILE_DIR : $(BUILDROOT)$/distrib$/$(TargetPlat)$/$(Suffix)$/bin ;
+
+if $(C-Compiler-Family) = msvc
+{
+  # Use del *.obj rather than clean rule because clean rule fails sometimes on buildserver
+  GenericTarget buildkit : distrib :
+    $(SetEnv)$(C-Compiler_Environment)$(NewLine)
+    cd $(MAKEFILE_DIR) "&&" 
+    del /Q /S *.obj "&&"
+    $(make) -f Makefile USE_RAM_SW_FOLDER=1 DEBUG=$(DEBUG) EBDWRAPPER=ebdwrapper_SWinRAM.exe $(EXTOPTS) "&&" 
+    del /Q /S *.obj "&&"
+    $(make) -f Makefile DEBUG=$(DEBUG) $(EXTOPTS)
+    ;
+} else if vxworks in $(TargetOS) {
+  # Do not build sw on disk version for this vxworks release
+  GenericTarget buildkit : distrib :
+    $(SetEnv)$(C-Compiler_Environment)$(NewLine)
+    cd $(MAKEFILE_DIR) "&&" 
+    $(make) -f Makefile USE_RAM_SW_FOLDER=1 DEBUG=$(DEBUG) EBDWRAPPER=ebdwrapper_SWinRAM $(EXTOPTS)
+  ;
+} else {
+  GenericTarget buildkit : distrib :
+    $(SetEnv)$(C-Compiler_Environment)$(NewLine)
+    cd $(MAKEFILE_DIR) "&&" 
+    $(make) -f Makefile clean "&&"
+    $(make) -f Makefile USE_RAM_SW_FOLDER=1 DEBUG=$(DEBUG) $(OSX_ARCH) EBDWRAPPER=ebdwrapper_SWinRAM $(EXTOPTS) "&&" 
+    $(make) -f Makefile clean "&&"
+    $(make) -f Makefile USE_RAM_SW_FOLDER=0 DEBUG=$(DEBUG) $(OSX_ARCH) $(EXTOPTS)
+  ;
+}    
+
+# Distribution rules
+
+# Kit README.txt
+Unifdef $(CurrentPath) $(C-Exec-Directory) README-ebd.txt :
+        $(CurrentPath)$/clrip$/doc$/README.txt :
+        -U$(Unifdef-UnDefines) -D$(Unifdef-Defines) -D$(Make-Unifdef-Defines)
+        : ...Preprocessing EBDSDK README.txt
+        : $(Unifdef-Needs) ;
+
+ExportSource .$/clrip$/doc$/README.txt : C ;    # type = C so that it is unifdef-ed by doexport.pl
+
+Distribute File : README-ebd.txt : README-ebd.txt : $(CurrentPath) $(C-Exec-Directory) : : : : PlatformThenSuffix ;
+
+
+#  Distribute File : * : Embed_SDK_DevGuide.pdf          : $(CurrentPath)$/..$/doc : : doc : : PlatformThenSuffix ;
+#  Distribute File : * : Embed_SDK_Document_Library.chm  : $(CurrentPath)$/..$/doc : : doc : : PlatformThenSuffix ;
+#  Distribute File : * : Embed_SDK_GetStarted.pdf        : $(CurrentPath)$/..$/doc : : doc : : PlatformThenSuffix ;
+#  ExportSource .$/..$/doc$/Embed_SDK_DevGuide.pdf : Binary ;
+#  ExportSource .$/..$/doc$/Embed_SDK_Document_Library.chm : Binary ;
+#  ExportSource .$/..$/doc$/Embed_SDK_GetStarted.pdf : Binary ;
+
+if $(C-Compiler-Family) = msvc && ! $(Variant_thirdparty)
+{
+  Distribute Tree : drivers ps    : drivers$/ps   : $(CurrentPath) ebdrip : : $(SkinPlat) : all : PlatformThenSuffix ;
+  Distribute Tree : drivers xps   : drivers$/xps  : $(CurrentPath) ebdrip : : $(SkinPlat) : all : PlatformThenSuffix ;
+  ExportSource .$/ebdrip$/drivers$/ps$/gge_sdkeval_ps.inf : Text ;
+  ExportSource .$/ebdrip$/drivers$/ps$/gge_sdkeval_ps_cmyk.ppd : Text ;
+  ExportSource .$/ebdrip$/drivers$/ps$/gge_sdkeval_ps_mono.ppd : Text ;
+  ExportSource .$/ebdrip$/drivers$/xps$/ggrefrip.inf : Text ;
+  ExportSource .$/ebdrip$/drivers$/xps$/ggrefrip.gpd : Text ;
+  ExportSource .$/ebdrip$/drivers$/xps$/stdnames.gpd : Text ;
+  ExportSource .$/ebdrip$/drivers$/xps$/hqn_PipelineConfig.xml : Text ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/GGFilterHost.exe : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/GGFilterHostIface.dll : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/MultiFilterHqn.dll : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/corelib.dll : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/digsigutil.exe : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/pthreads.dll : Binary ;
+  ExportSource .$/ebdrip$/drivers$/xps$/i386$/reflib.dll : Binary ;
+}
+Distribute Tree : tools linux-x86 * :  ebdsocksend  : $(CurrentPath) ebdsocksend prebuilt linux_2-pentium : : $(SkinPlat) : all : PlatformThenSuffix ;
+Distribute Tree : tools netbsd-386 * :  ebdsocksend  : $(CurrentPath) ebdsocksend prebuilt netbsd-386 : : $(SkinPlat) : all : PlatformThenSuffix ;
+Distribute Tree : tools win32 * :  ebdsocksend.exe  : $(CurrentPath) ebdsocksend prebuilt win_32-pentium : : $(SkinPlat) : all : PlatformThenSuffix  ;
+ExportSource .$/ebdsocksend$/prebuilt$/linux_2-pentium$/ebdsocksend : Binary ;
+ExportSource .$/ebdsocksend$/prebuilt$/netbsd-386$/ebdsocksend : Binary ;
+ExportSource .$/ebdsocksend$/prebuilt$/win_32-pentium$/ebdsocksend.exe : Binary ;
+
+Distribute Tree : $(DistribSrcTo) oil export      : export        : $(CurrentPath) $(PreprocessedSrcDir) oil : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) oil src         : src           : $(CurrentPath) $(PreprocessedSrcDir) oil : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pdfspool export : export        : $(CurrentPath) $(PreprocessedSrcDir) pdfspool : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pdfspool src    : src           : $(CurrentPath) $(PreprocessedSrcDir) pdfspool : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pjl export      : export        : $(CurrentPath) $(PreprocessedSrcDir) pjl : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pjl src         : src           : $(CurrentPath) $(PreprocessedSrcDir) pjl : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pms export      : export        : $(CurrentPath) $(PreprocessedSrcDir) pms : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) pms src         : src           : $(CurrentPath) $(PreprocessedSrcDir) pms : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) ggetiff export  : export        : $(CurrentPath) $(PreprocessedSrcDir) ggetiff : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) ggetiff src     : src           : $(CurrentPath) $(PreprocessedSrcDir) ggetiff : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) jpeg export     : export        : $(CurrentPath) $(PreprocessedSrcDir) jpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) libjpeg export  : export        : $(CurrentPath) $(PreprocessedSrcDir) libjpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) libjpeg src     : src           : $(CurrentPath) $(PreprocessedSrcDir) libjpeg : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) libjpeg-turbo export  : export        : $(CurrentPath) $(PreprocessedSrcDir) libjpeg-turbo : : $(SkinPlat) : : PlatformThenSuffix ;
+Distribute Tree : $(DistribSrcTo) libjpeg-turbo src     : src           : $(CurrentPath) $(PreprocessedSrcDir) libjpeg-turbo : : $(SkinPlat) : : PlatformThenSuffix ;
+if win_32 in $(TargetOS)
+{
+  Distribute File : bin * : turbojpeg-static$(C-Lib-Suffix) : $(CurrentPath) libjpeg-turbo lib win_32-x86 : : : : PlatformThenSuffix ;
+}
+if win_64 in $(TargetOS)
+{
+  Distribute File : bin * : turbojpeg-static$(C-Lib-Suffix) : $(CurrentPath) libjpeg-turbo lib win_64-amd64 : : : : PlatformThenSuffix ;
+}
+if win_32 in $(TargetOS) || win_64 in $(TargetOS)
+{
+  Distribute Tree : $(DistribSrcTo) oil pc src    : pc$/src       : $(CurrentPath) $(PreprocessedSrcDir) oil : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) pms pc src    : pc$/src       : $(CurrentPath) $(PreprocessedSrcDir) pms : : $(SkinPlat) : : PlatformThenSuffix ;
+}
+else if linux in $(TargetOS) || macos_x in $(TargetOS) || unix in $(TargetOS) || netbsd in $(TargetOS)
+{
+  Distribute Tree : $(DistribSrcTo) oil unix src  : unix$/src     : $(CurrentPath) $(PreprocessedSrcDir) oil : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) pms unix src  : unix$/src     : $(CurrentPath) $(PreprocessedSrcDir) pms : : $(SkinPlat) : : PlatformThenSuffix ;
+}
+else if vxworks in $(TargetOS)
+{
+  Distribute Tree : $(DistribSrcTo) oil vxworks src : vxworks$/src : $(CurrentPath) $(PreprocessedSrcDir) oil : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) pms vxworks src : vxworks$/src : $(CurrentPath) $(PreprocessedSrcDir) pms : : $(SkinPlat) : : PlatformThenSuffix ;
+}
+
+if $(Variant_ebd_gboxvfd) = evfdy || $(Variant_ebd_gboxvfd) = evfdo
+{
+  Distribute Tree : $(DistribSrcTo) gboxvfd export   : export    : $(CurrentPath) $(PreprocessedSrcDir) gboxvfd : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) gboxvfd src      : src       : $(CurrentPath) $(PreprocessedSrcDir) gboxvfd : : $(SkinPlat) : : PlatformThenSuffix ;
+}
+
+if $(Variant_ebd_ufst) = eufst5y || $(Variant_ebd_ufst) = eufst5o || exportsrc in $(JAM_ARGUMENTS)
+{
+  Distribute Tree : $(DistribSrcTo) pfinufst5 export : export        : $(CurrentPath) $(PreprocessedSrcDir) pfinufst5 : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) pfinufst5 src    : src           : $(CurrentPath) $(PreprocessedSrcDir) pfinufst5 : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  Distribute Tree : $(DistribSrcTo) ufst rts fco  : fco  : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst rts inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst rts tt   : tt   : $(CurrentPath) $(PreprocessedSrcDir) ufst rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst sys inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst sys : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  Distribute File : bin * : ufst5$(C-Lib-Suffix) : $(CurrentPath) ufst : : : : PlatformThenSuffix ;
+}
+
+if $(Variant_ebd_ufst) = eufst7y || $(Variant_ebd_ufst) = eufst7o || exportsrc in $(JAM_ARGUMENTS)
+{
+  Distribute Tree : $(DistribSrcTo) pfinufst7 export : export        : $(CurrentPath) $(PreprocessedSrcDir) pfinufst7 : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) pfinufst7 src    : src           : $(CurrentPath) $(PreprocessedSrcDir) pfinufst7 : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  Distribute Tree : $(DistribSrcTo) ufst7 rts fco  : fco  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst7 rts inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst7 rts tt   : tt   : $(CurrentPath) $(PreprocessedSrcDir) ufst7 rts : : $(SkinPlat) : : PlatformThenSuffix ;
+  Distribute Tree : $(DistribSrcTo) ufst7 sys inc  : inc  : $(CurrentPath) $(PreprocessedSrcDir) ufst7 sys : : $(SkinPlat) : : PlatformThenSuffix ;
+
+  Distribute File : bin * : ufst7$(C-Lib-Suffix) : $(CurrentPath) ufst7 : : : : PlatformThenSuffix ;
+}
+
+if $(C-Compiler-Family) = msvc && $(Variant_security) = dng
+{
+  Distribute File : * : USB7.5_Component.rar : $(CurrentPath) ebdrip dongle winxpe : : : dongle_winxpe : PlatformThenSuffix ;
+}
+
+#
+# Log stripped

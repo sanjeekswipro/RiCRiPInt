@@ -1,0 +1,37 @@
+%!PS-Adobe-2.0 AdobeEncoding
+%%Title: EUCEncoding
+%%Version: 002.000
+%%CreationDate: Thu Dec  7 11:11:32 PDT 1989
+% Copyright (c) 1984, '85, '86, '87, '88, '89 Adobe Systems Incorporated.
+% All Rights Reserved.
+
+
+/EUCEncoding
+256 array dup 0 1 255 {/.notdef put dup} for pop
+                     dup 16#A1 /cA1 put dup 16#A2 /cA2 put dup 16#A3 /cA3 put
+  dup 16#A4 /cA4 put dup 16#A5 /cA5 put dup 16#A6 /cA6 put dup 16#A7 /cA7 put
+  dup 16#A8 /cA8 put dup 16#A9 /cA9 put dup 16#AA /cAA put dup 16#AB /cAB put
+  dup 16#AC /cAC put dup 16#AD /cAD put dup 16#AE /cAE put dup 16#AF /cAF put
+  dup 16#B0 /cB0 put dup 16#B1 /cB1 put dup 16#B2 /cB2 put dup 16#B3 /cB3 put
+  dup 16#B4 /cB4 put dup 16#B5 /cB5 put dup 16#B6 /cB6 put dup 16#B7 /cB7 put
+  dup 16#B8 /cB8 put dup 16#B9 /cB9 put dup 16#BA /cBA put dup 16#BB /cBB put
+  dup 16#BC /cBC put dup 16#BD /cBD put dup 16#BE /cBE put dup 16#BF /cBF put
+  dup 16#C0 /cC0 put dup 16#C1 /cC1 put dup 16#C2 /cC2 put dup 16#C3 /cC3 put
+  dup 16#C4 /cC4 put dup 16#C5 /cC5 put dup 16#C6 /cC6 put dup 16#C7 /cC7 put
+  dup 16#C8 /cC8 put dup 16#C9 /cC9 put dup 16#CA /cCA put dup 16#CB /cCB put
+  dup 16#CC /cCC put dup 16#CD /cCD put dup 16#CE /cCE put dup 16#CF /cCF put
+  dup 16#D0 /cD0 put dup 16#D1 /cD1 put dup 16#D2 /cD2 put dup 16#D3 /cD3 put
+  dup 16#D4 /cD4 put dup 16#D5 /cD5 put dup 16#D6 /cD6 put dup 16#D7 /cD7 put
+  dup 16#D8 /cD8 put dup 16#D9 /cD9 put dup 16#DA /cDA put dup 16#DB /cDB put
+  dup 16#DC /cDC put dup 16#DD /cDD put dup 16#DE /cDE put dup 16#DF /cDF put
+  dup 16#E0 /cE0 put dup 16#E1 /cE1 put dup 16#E2 /cE2 put dup 16#E3 /cE3 put
+  dup 16#E4 /cE4 put dup 16#E5 /cE5 put dup 16#E6 /cE6 put dup 16#E7 /cE7 put
+  dup 16#E8 /cE8 put dup 16#E9 /cE9 put dup 16#EA /cEA put dup 16#EB /cEB put
+  dup 16#EC /cEC put dup 16#ED /cED put dup 16#EE /cEE put dup 16#EF /cEF put
+  dup 16#F0 /cF0 put dup 16#F1 /cF1 put dup 16#F2 /cF2 put dup 16#F3 /cF3 put
+  dup 16#F4 /cF4 put dup 16#F5 /cF5 put dup 16#F6 /cF6 put dup 16#F7 /cF7 put
+  dup 16#F8 /cF8 put dup 16#F9 /cF9 put dup 16#FA /cFA put dup 16#FB /cFB put
+  dup 16#FC /cFC put dup 16#FD /cFD put dup 16#FE /cFE put
+/Encoding defineresource pop
+
+%%EndAdobeEncoding

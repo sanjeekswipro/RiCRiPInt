@@ -1,0 +1,69 @@
+# Copyright (C) 2007-2013 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core RIP HQX encryption/decryption routines
+#
+# $HopeName: COREcrypt!hqx:make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before dependant compilation rules
+RequiresVariant warning_level : high ;
+
+ImplementsVariant hqx thirdparty customised ;
+
+# Compilation rules
+
+DependsOn all : hqx ;
+
+# Allow access to these compounds for all sub-libraries
+IncludeExportDirectories Inherited Local :
+  errors
+  fileio
+  objects
+  v20
+  tables
+: .. .. ;
+
+ReplaceVar Local : CFILES :
+  hqxcrypt.c
+  hqxfonts.c
+  hqxcore.c
+: Variant hqx=yes ;
+
+AddToVar Local : CFILES :
+  nohqx.c
+  hqxcore.c
+: Variant hqx=no ;
+
+Library hqx : $(CFILES) ;
+
+# HPRIP => escrow build for now; may need a separate variant if we have to deliver to escrow for others as well
+if ( ! $(Variant_thirdparty) && ! wdkbuild in $(JAM_ARGUMENTS) ) || $(Variant_customised) = HPRIP
+{
+  local SrcHqxCrypt ;
+  local SrcHqxCore ;
+  MakeGristed SrcHqxCrypt : hqxcrypt.c  : $(CurrentPath) ;
+  MakeGristed SrcHqxCore : hqxcore.c  : $(CurrentPath) ;
+  Search $(SrcHqxCrypt) : $(CurrentPath)$/$(C-SourceDirectories) ;
+  Search $(SrcHqxCore) : $(CurrentPath)$/$(C-SourceDirectories) ;
+
+  GenericTarget hqcrypt.c : $(SrcHqxCrypt) : $(Copy) $> $< ;
+  GenericTarget hqcore.c  : $(SrcHqxCore) : $(Copy) $> $< ;
+
+  CleanFile hqcrypt.c hqcore.c ;
+  DirectoryFor hqcrypt.c : $(CurrentPath)$/$(GeneratedC-Directory) ;
+  DirectoryFor hqcore.c : $(CurrentPath)$/$(GeneratedC-Directory) ;
+
+  AddToVar Local : C-Defines : MAKETOOL MAKEMAIN ;
+  Executable hqcrypt : hqcrypt.c hqcore.c ;
+  C-LinkWithLibraries hqcrypt : standard : .. .. .. standard ;
+
+  Distribute File : * : hqcrypt$(C-Exec-Suffix) : $(CurrentPath)  : : : all : PlatformThenSuffix ;
+}
+
+if $(Variant_hqx) = yes {
+  # So that exported source can be built without hqx if required
+  ExportSource $(CurrentPath)$/src$/nohqx.c : C ;
+}
+
+# Log stripped

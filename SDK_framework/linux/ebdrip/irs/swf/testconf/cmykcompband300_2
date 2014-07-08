@@ -1,0 +1,26 @@
+% CMYK composite (band-interleaved), 300 dpi, 2 bits per sample using object-based in-RIP screening
+% Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+%
+% $HopeName: SWirs!swf:testconf:cmykcompband300_2(EBDSDK_P.1) $
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+<<
+  /PageBufferType /LE
+  /HWResolution [ 300 300 ]
+  /InterleavingStyle 3
+  /ProcessColorModel /DeviceCMYK
+  /SeparationDetails
+  <<
+    /SeparationStyle 4
+    /CompositeColorNames [ /Cyan /Magenta /Yellow /Black ]
+    /CompositeOrder [ /Cyan /Magenta /Yellow /Black ]
+  >>
+  /ValuesPerComponent 4
+  /Halftone true
+  /DefaultScreenName /irsCMYK2bppAuto
+>> setpagedevice

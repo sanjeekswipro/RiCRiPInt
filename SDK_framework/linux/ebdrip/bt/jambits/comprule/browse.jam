@@ -1,0 +1,145 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Browse compilation rules.
+#
+# $HopeName: HQNjambits!comprule:browse.jam(EBDSDK_P.1) $
+#
+
+##################
+# Initialisation #
+##################
+
+    NOTFILE browse ;
+    if browse in $(JAM_ARGUMENTS) || ! $(BROWSE) in 0 {
+        EnableBrowse = 1 ;
+    }
+
+##############################
+# Low-level updating actions #
+##############################
+
+# This should go in comprule:all.jam if I'm sure I want it:
+  actions quietly together _EmptyActions { }
+
+# Note that we have to touch the .bsr file (and THEN the .bsc file) after we
+# run bscmake -- bscmake will truncate (and hence touch) the .sbr files, which
+# makes them newer than the .bsr file, which will then update on the next build.
+    actions quietly together _Browse-Link {
+echo ...MAKING $(<)...
+$(SetEnv)$(ENV)$(NewLine)
+$(Mb) $(-o)$(<) @$(>)
+$(Perl) -e "sleep 1"
+$(Touch) $(>)
+$(Perl) -e "sleep 1"
+$(Touch) $(<)
+    }
+
+
+#############
+# Interface #
+#############
+
+#* $(1) gristedtarget
+#* $(2) gristedtargetfile
+#* $(3) gristedsources ...
+#* This rule links the $(2) (identifed by $(1)) with the $(3), which is
+#* a list of gristed <em>sbr</em> files.  In actual fact, it uses the $(1)
+#* to produce the name of a <em>bsc</em> file, which $(2) is made
+#* to depend on, and links the $(3) into that.
+#*
+#* This is an internal rule, and should not be called directly.
+#* @C-LinkWithLibraries and its friends will call this rule for you
+#* if you have asked for browse files to be produced.
+#*seerule Browse-LinkWithLibraries C-LinkWithLibraries
+#*section internal
+    rule Browse-LinkWithObjects {
+        if $(EnableBrowse) && $(Browse-Linker) {
+            CheckGristed $(1) $(2) $(3) ;
+
+            # Check all the object names we have been given to see if we have
+            # the required rules for updating the corresponding .sbr files.
+            # Extract those that do, into RawSources.
+            local Raw RawSources ; for Raw in $(3) {
+                if $(Compound-$(Raw)) {
+                    RawSources += $(Raw) ;
+                }
+            }
+            Sources-$(1) += $(RawSources) ;
+
+            if $(LinkType-$(1)) in Dll Exec && $(RawSources) {
+                local BscFile = $(1).bsc ;
+                local BsrFile = $(1).bsr ;
+
+                local Dir ; MakePath Dir : $(CurrentPath) $(C-$(LinkType-$(1))-Directory) ;
+                DirectoryFor $(BscFile) : $(Dir) ;
+                Dir = $(Dir)$/sbr-$(1:G=) ;
+                DirectoryFor $(BsrFile) : $(Dir) ;
+
+                FloatingDepends $(BsrFile) ;
+
+                local DestDir SbrFiles Sbr HostObj Fake ;
+                for Raw in $(RawSources) {
+                    MakePath DestDir : $(Dir) $(Compound-$(Raw)) ;
+
+                    HostObj = $(Raw:S=$(C-Object-Suffix)) ;
+
+                    # Look to see if we are already using this Sbr
+                    # file for another executable already encountered
+                    # to decide what to do next.
+
+                    if $(UsingBrowse-$(Raw)) {
+                        # Yes.  So will will have to use our
+                        # Copies-$(Raw) target to produce this one.
+                        Sbr = $(Raw:G=$(DestDir)) ;
+                        Fake = Copies-$(Raw) ; NOTFILE $(Fake) ;
+                        Sbr on $(Fake) += $(Sbr) ;
+                        DEPENDS $(Fake) : $(Sbr) ;
+                        DEPENDS $(BscFile) : $(Fake) ;
+                        # Make sure that Jam knows $(Sbr) is a target!
+                        _EmptyActions $(Sbr) ;
+                    }
+                    else {
+                        # Nope.  We can safely point the location of
+                        # this one wherever we like, but mark it used.
+                        UsingBrowse-$(Raw) = 1 ;
+                        Sbr = $(Raw) ;
+                        Sbr on $(HostObj) $(Sbr) = $(Sbr) ;
+                        DEPENDS $(HostObj) : $(DestDir) ;
+                    }
+
+                    DirectoryFor $(Sbr) : $(DestDir) ;
+                    DEPENDS $(Sbr) : $(HostObj) ;
+                    SbrFiles += $(Sbr) ;
+                }
+
+
+                ENV on $(BscFile)  = $(Browse-Linker_Environment) ;
+                Mb  on $(BscFile)  = $(Browse-Linker) $(Browse-Linker_Arguments) ;
+                -o  on $(BscFile)  = $(Browse-Linker_OutputFile=) ;
+
+                ResponseFile $(BscFile) : $(BsrFile) : $(SbrFiles) ;
+                _Browse-Link $(BscFile) : $(BsrFile) ;
+
+                DEPENDS $(2) : $(BscFile) ;
+            }
+        }
+    }
+
+#* $(1) gristedtarget
+#* $(2) gristedtargetfile
+#* $(3) gristedlibraries ...
+#* This rule takes the <em>sbr</em> files used to link the $(3), and
+#* uses them to call @Browse-LinkWithObjects.
+#*
+#* This is an internal rule, and should not be called directly.
+#* @C-LinkWithLibraries and its friends will call this rule for you
+#* if you have asked for browse files to be produced.
+#*seerule Browse-LinkWithObjects C-LinkWithLibraries
+#*section internal
+    rule Browse-LinkWithLibraries {
+        Browse-LinkWithObjects $(1) : $(2) : $(Sources-$(3)) ;
+    }
+
+
+# Log stripped

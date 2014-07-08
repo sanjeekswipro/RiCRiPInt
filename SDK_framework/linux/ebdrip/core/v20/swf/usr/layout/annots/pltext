@@ -1,0 +1,84 @@
+%!PS-Adobe-3.0
+%%Title: PlateText
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sept 2004
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.6.2.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:annots:pltext(EBDSDK_P.1) $
+
+% A file in this directory provides the definition of a slug option for us
+% with the HqnLayout procset, providing simple in-RIP imposition.
+
+% The file must return a single dictionary
+	<<
+
+	/Name		(PlateText)
+	
+	/AnnotType /Mark
+	
+	/AnnotSpace	14
+	
+	/Mark <<
+		% The mark dictionary is a standard ControlText mark,
+		/MarkType /ControlText
+		/Enabled true
+
+		% BaseY sets the distance from the edge of the raster
+		% to the baseline of the mark text.
+		/BaseY 3 
+		% BaseX is the distance in from the edge of the raster that the slug text will start
+		% BaseAngle will be ignored.
+		/BaseX 4 /BaseAngle 0
+		
+		% UVPS (Contone)
+		
+		/Text (\
+<#f1<s10>X\
+<?PageClipped><#f1<s10>T<#s2<s8> <!\
+<?IsScaled><#f1<s10>R<#s2<s8><+!O <!\
+<?IsTiled><#f1<s10>V<#s2<s8><+!T <!\
+<?IsUserDefined><#f1<s10>U<#s2<s8><U <!\
+<?PageClipped IsScaled IsUserDefined or or><#f1<s10>-<!\
+\
+<#f1<s10>J<#s3<s8><J <#s2<s10>\(\
+<#f1<s10>A<#s2<s8><+!P\
+<#f1<s10><?IsSheetFront>G<:H<!<#s2<s8>\
+, <S\
+<#f1<s10>F<#s2<s8><G<#s2<s8>\
+<?IsDateKnown>, <#f1<s10>W<#s2<s8><W<!\
+<s10>\)<s8> \
+\
+<#f1<s10>-D<#s2<s8><D <s10>\(\
+<#f1<s10>L<#s2<s8><#D0, \
+<#f1<s10>I<#s2<s8><I\
+<s10>\)<s8> \
+\
+<#f1<s10>-P<#s2<s8><P <s10>\(\
+<?IsImpositionKnown><#f1<s10>1<#s2<s8><1, <!\
+<?IsTrappingKnown><#f1<s10>2<#s2<s8><2, <!\
+<#f1<s10>S<#s2<s8>\
+<?IsContone><mContone><:<0<!\
+<?IsCalKnown>, <#f1<s10>3<#s2<s8><3<!\
+<?IsActualKnown>, <#f1<s10>5<#s2<s8><5<!\
+<?IsIntendedKnown>, <#f1<s10>6<#s2<s8><6<!\
+<?IsToneKnown>, <#f1<s10>4<#s2<s8><4<!\
+<?IsColorManaged>, <#f1<s10>C<#s2<s8><C, <#f1<s10>Q<#s2<s8><Q<!\
+<s10>\)<s8> \
+<#f1<s10>-<#s2<s8><H <V, \
+<#f1<s10>K<#s2<s8><R\
+<#f1<s10>X\
+)
+		/TextFonts <<
+			1	/PlateSlug
+		>>
+	>>
+>>
+
+% preload font.
+/PlateSlug findfont pop
+
+%%EOF
+

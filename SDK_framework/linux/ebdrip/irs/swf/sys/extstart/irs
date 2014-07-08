@@ -1,0 +1,23 @@
+%!PS
+%%Title: HqnEmbedded_ExtraStart
+%%Creator: Global Graphics Software Limited
+% Copyright (c) 2009 Global Graphics Software Ltd. All Rights Reserved
+
+% $HopeName: SWirs!swf:sys:extstart:irs(EBDSDK_P.1) $
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% ExtraStart file to define the screens for in-RIP 2 and 4 bit screening
+%
+
+(%os%/Irs/Irs2bpp) run
+(%os%/Irs/Irs4bpp) run
+(%os%/Irs/DCThinLine_CMYK2) run
+
+(%os%/Irs/DCLine_CMYK2) run
+(%os%/Irs/DCLine_CMYK1) run
+(%os%/Irs/DCLine_MONO1) run

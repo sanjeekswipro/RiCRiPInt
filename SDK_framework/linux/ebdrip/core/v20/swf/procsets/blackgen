@@ -1,0 +1,111 @@
+%!PS-Adobe-3.0
+%%Title: HqnBlackGeneration
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sep 8, 1992
+%{HqnBlackGeneration version #1 0
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnBlackGeneration)" 1 0
+
+% this proc set provides procedures Ignore, None, Light, Medium, Heavy, Maximum
+% and UCR to give varying amounts of black generation and undercolor removal.
+% Each procedure takes a dictionary containing keys MaxBlack and MaxInk, 
+% numbers typically in the range 0 to 1 and 1 to 4 respectively.
+% 
+% typical use:
+%   << /MaxInk 3.0 /MaxBlack 1.0 >> 
+%   /HqnBlackGeneration /ProcSet findresource /Medium get exec
+% 
+
+% $HopeName: SWv20!swf:procsets:blackgen(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+% the resource:
+12 dict begin
+  /globalness exch def
+  /l << /E 6 /T .68  /G .2  >> def
+  /m << /E 4 /T .633 /G .3  >> def
+  /h << /E 2 /T .44  /G .48 >> def
+  /general {
+    begin
+      begin
+        [ E /exp load 
+          MaxBlack 1.0 ne {
+             MaxBlack /mul load 
+          } if
+        ] cvx bind setblackgeneration
+        [ /dup load T /lt load
+          currentblackgeneration
+          [ 
+            T /sub load G /mul load T 
+            currentblackgeneration /exec load /add load
+          ] cvx /ifelse load
+        ] cvx bind setundercolorremoval
+      end
+    end
+  } bind def
+
+  /Light  { //l //general exec } bind def
+  /Medium { //m //general exec } bind def
+  /Heavy  { //h //general exec } bind def
+
+  /Ignore {
+    begin
+      { } setblackgeneration
+      { } setundercolorremoval
+    end
+  } bind def
+
+  /Maximum {
+    begin
+      MaxBlack 1.0 eq {
+        { } setblackgeneration
+        { } setundercolorremoval
+      }{
+        [ MaxBlack /mul load ] cvx bind setblackgeneration
+        [ MaxBlack /mul load ] cvx bind setundercolorremoval
+      } ifelse
+    end
+  } bind def
+
+  /None {
+    begin
+      { pop 0 } bind setblackgeneration
+      3.0 MaxInk sub 3.0 div
+      dup 0.0 eq {
+        pop
+        { pop 0 }
+      } {
+        [ exch /mul load ] cvx bind
+      } ifelse
+      setundercolorremoval
+    end
+  } bind def
+
+  /UCR {
+    begin
+      [ 
+        /dup load 
+        MaxInk MaxBlack sub 3.0 div 
+        /lt load { pop 0 }
+        [ 3 index /sub load MaxBlack 1.0 3 index sub div /mul load ] cvx
+        /ifelse load
+      ] cvx bind setblackgeneration
+      [
+        MaxInk MaxBlack sub 3.0 div
+        /sub load /dup load 0 /lt load { pop 0 } /if load
+      ] cvx bind setundercolorremoval
+    end
+  } bind def
+
+  currentdict
+end
+
+/HqnBlackGeneration exch /ProcSet defineresource
+/globalness get setglobal
+
+%%EndProcSet

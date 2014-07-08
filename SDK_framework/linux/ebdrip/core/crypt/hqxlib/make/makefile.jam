@@ -1,0 +1,34 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core RIP HQX encryption/decryption library
+#
+# $HopeName: COREcrypt!hqxlib:make:makefile.jam(EBDSDK_P.1) $
+#
+
+
+if $(C-Compiler-Family) = msvc {
+    RequiresVariant warning_level : high ;
+
+    DependsOn all : hqxlib hqxlib_m ;
+
+    IncludeExportDirectories Local :
+        v20
+    : .. .. ;
+
+    AddToVar Local : C-Defines : MAKE_HQXLIB ;
+
+    Library hqxlib : hqxcrypt.c : .. hqx ;
+
+    # build single-threaded library
+    Distribute File : * : hqxlib.lib : $(CurrentPath) : : : all : PlatformThenSuffix ;
+
+    # build multi-threaded library
+    RequiresVariant rt_libs : multi_threaded ;
+
+    Library hqxlib_m : hqxcrypt.c : .. hqx ;
+
+    Distribute File : * : hqxlib_m.lib : $(CurrentPath) : : : all : PlatformThenSuffix ;
+}
+
+# Log stripped

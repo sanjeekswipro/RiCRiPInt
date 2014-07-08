@@ -1,0 +1,132 @@
+
+%! Hqn-3.3
+%%Title: HQNsubfindfont
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Mon Apr 5 1993
+%{HQNsubfindfont version #2 3
+% (C) Copyright (C) 1989-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HQNsubfindfont)" 2 3
+
+%% This procset contains the operator HQNsubfindfont
+
+%(running subfindfont) ==
+
+/HQNsubfindfont
+<<
+    /string1 256 string
+    /string2 256 string
+    /string3 256 string
+>>
+
+begin
+    /fontsfoldername
+    {
+	% Stack: /fontname
+	% Copy fontdir into the start of string1.
+	(fonts/) //string1 cvs pop
+	//string1
+	6
+	//string1 length 6 sub
+	getinterval            % leaves remaining space of string1 on stack
+	cvs                    % puts font name or mapped font name into it
+	length                 % length of font name as copied
+	6 add
+	//string1 0 3 -1 roll
+	getinterval            % the whole filename
+    } bind def
+%    (done fontsfoldername) ==
+
+    /subfontsfoldername
+    {
+	% Stack: /familyname /fontname
+	exch
+	% Copy fontdir into the start of string2.
+	(subfonts/) //string2 cvs pop
+	//string2
+	9
+	//string2 length 9 sub
+	getinterval            % leaves remaining space of string2 on stack
+	cvs                    % puts familyname into it
+	length                 % length of familyname as copied
+	9 add
+	//string2 0 3 -1 roll
+	getinterval            % /fontname, subfonts/familyname
+	length dup
+	//string2 exch dup //string2 length exch sub getinterval
+	(/) exch cvs pop 1 add dup 3 1 roll
+	% lengthofrest, /fontname, lengthofrest
+	//string2 exch dup //string2 length exch sub getinterval cvs
+	length add //string2 exch 0 exch getinterval
+    } bind def
+%    (done subfontsfoldername) ==
+
+    /movefonttosubfontsfolderifnecessary
+    {
+	% Stack: /familyname, /fontname
+	% Check for existence
+	dup fontsfoldername
+	status
+	{
+	   pop pop pop pop
+	   dup fontsfoldername 3 1 roll subfontsfoldername
+	   dup (w) file closefile
+%	   1 index 1 index exch (moved) == == (to) == ==
+	   renamefile
+	}
+	{
+	   pop pop
+	} ifelse
+    } bind def
+%    (done movetothingywotsit ...) ==
+
+    % eg.  /HoriMincho /HoriMinchoA3 HQNsubfindfont
+    % If this finds the font HoriMinchoA3 in the fonts/ folder, it will move
+    % it into the subfonts/Kanji folder automatically.
+    % This takes care of any file mapping issues that may arise without
+    % having to do any manual file name mapping.
+
+    /HQNsubfindfont 1183615869 internaldict /_hqxrun get def
+
+    /HQNsubfindfont {
+	% Stack: familyname, fontname
+	dup FontDirectory exch known {
+	     exch
+	}{
+	    /HQNsubfindfont /ProcSet findresource begin
+	        1 index 1 index movefonttosubfontsfolderifnecessary
+	        dup 3 1 roll subfontsfoldername
+	        % now run the file, which may be encrypted
+	        dup mark exch
+		% Stack: [fontname] [whole file name] mark [whole file name]
+		(r@) file % may fail coz encrypted, or genuine failure
+		{ dup cvx exec } stopped {
+		    dup type /filetype eq { closefile } if
+		    false setglobal % why ??
+		    cleartomark dup
+		    % check for encrypted fonts
+		    % Stack: [fontname] [whole file name]
+		    mark exch { //HQNsubfindfont } stopped
+		    { (hmm) == } if cleartomark
+		}{
+		    cleartomark
+		} ifelse
+	    end
+	} ifelse
+	% Stack: [fontname] [whole file name]
+	pop findfont
+    } bind def
+
+    /wotsit {
+	(Hello) ==
+    } bind def
+
+currentdict end
+/ProcSet defineresource
+
+% A typical font query from an application:
+% /SC 100 string def
+% (fonts/*){dup length 6 sub 6 exch getinterval = flush}SC filenameforall
+% (*) = flush
+
+%%EndProcSet

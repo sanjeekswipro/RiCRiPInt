@@ -1,0 +1,8 @@
+# $HopeName: HQNjambits!comprule:prefast.jam(trunk.4) $
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+    NOTFILE prefast ;
+    if prefast in $(JAM_ARGUMENTS) {
+        EnablePrefast = 1 ;
+        ECHO PREfast checking enabled ;
+    }

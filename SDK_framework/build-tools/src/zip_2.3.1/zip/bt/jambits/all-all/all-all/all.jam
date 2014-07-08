@@ -1,0 +1,47 @@
+# Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:all-all:all.jam(trunk.16) $
+#
+
+    DefaultVar GeneratedC-Suffix        : .c ;
+    DefaultVar Idl-Suffix               : .idl ;
+    DefaultVar Midl-Suffix               : .midl ;
+
+    local Com = C C++ mixedC ;
+    DefaultVar $(Com)-ExportDirectories : export ;
+    DefaultVar $(Com)-SourceDirectories : src ;
+
+    DefaultVar Idl-Directory            : idl ;
+    DefaultVar Idl-ExportDirectories    : idl ;
+
+    DefaultVar Midl-Directory            : midl ;
+    DefaultVar Midl-ExportDirectories    : midl ;
+
+    DefaultVar C-Defines                : RELEASE_BUILD : Build RELEASE ;
+    DefaultVar C-Defines                : TIMING_BUILD  : Build TIMING ;
+
+    DefaultVar C-Defines                : COVERAGE_BUILD  : Build COVERAGE ;
+    DefaultVar C-Defines                : ASSERT_BUILD  : Build ASSERT ;
+    DefaultVar C-Defines                : DEBUG_BUILD   : Build DEBUG ;
+    DefaultVar C-Defines                : NOOPT_BUILD   : Build Non_OPTIMISE ;
+
+    Space ?= " " ;
+
+  # Some "standard" tools -- don't need to be proper flavoured variables, since
+  # if they change, you won't want the old one back again.  They should be
+  # considered "constant".
+
+    Perl        ?= $(HqmakePerl) ;
+    FileutilRune = $(HqmakePerl) -e \"use lib '$(HQNperl5libs)';use Fileutil;\" ;
+
+    MkDir       ?= $(FileutilRune) -e \"Fileutil::MakeDirectory\" -- ;
+    Copy        ?= $(FileutilRune) -e \"Fileutil::Copy\"          -- -fmnpsu ;
+    Erase       ?= $(FileutilRune) -e \"Fileutil::Erase\"         -- -i ;
+
+  # I hope these will become obsolete:
+    CopyFile ?= $(Copy)  ; CopyTree  ?= $(Copy)  ;
+    EraseDir ?= $(Erase) ; EraseFile ?= $(Erase) ;
+
+
+# Log stripped

@@ -1,0 +1,59 @@
+# Copyright (C) 2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for Core RIP display list recombine files. Conceptually, recombine
+# is a filter on the DL addition operations that uses COREdodl as a store for
+# the partially-merged display list.
+#
+# $HopeName: CORErecombine!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : recombine ;
+
+    ReplaceVar Local : Libraries :
+        adjust
+        merge
+    ;
+
+    # Allow access to these compounds for all sub-libraries
+    IncludeExportDirectories Inherited Local :
+        fonts    # Unwanted third-party dependency from routedev.h
+        gstate
+        halftone
+        imstore
+        mm
+        objects
+        v20
+    : .. ;
+
+    # Allow access to all Recombine libraries from each other
+    IncludeExportDirectories Inherited Local :
+        $(Libraries)
+    ;
+
+    # Add recombine private includes to path; this is for headers shared within
+    # the recombine compound that are not exported to the rest of the world
+    AddToVar Inherited Local : C-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    # Sub-compounds get access to top-level exports:
+    AddToVar Inherited : C-IncludeDirectories : $(CurrentPath)$/export ;
+
+    ReplaceVar Local : CFILES :
+        rcbinit.c
+    ;
+
+    Library recombine : $(CFILES) ;
+
+    Makefile $(Libraries) ;
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries recombine : $(i) : $(i) ;
+    }
+
+# Log stripped

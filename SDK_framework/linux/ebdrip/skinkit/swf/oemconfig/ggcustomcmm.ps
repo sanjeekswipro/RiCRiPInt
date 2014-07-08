@@ -1,0 +1,31 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWskinkit!swf:oemconfig:ggcustomcmm.ps(EBDSDK_P.1) $
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+% Configuration file for "Custom colorspace conversion" settings.
+% Allows for simple change profiles and CM settings.
+% Please see CMM API doc for more details
+
+<<
+  /DeviceCMYK [ /ICCBased (%os%iccreg/ISOcoated.icc) (r) file ]
+  /DeviceRGB  [ /ICCBased (%os%iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) (r) file ]
+
+  /Black true  % Set to 'false' to preserve 100% black
+>> setinterceptcolorspace
+
+<<
+  /Profile << /Default (%os%iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) (r) file >>
+
+  /NextDevice <<
+    /InputColorSpace [ /CMM (InvertColors) /DeviceRGB /DeviceRGB ]
+
+    /NextDevice <<
+      /InputColorSpace [ /ICCBased (%os%iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) (r) file ]
+      /Profile << /Default (%os%iccreg/ISOcoated.icc) (r) file >>
+    >>
+  >>
+>> setreproduction

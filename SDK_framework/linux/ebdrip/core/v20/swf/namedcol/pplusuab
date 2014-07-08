@@ -1,0 +1,113 @@
+%!PS-Adobe
+%%Title: PantonePLUSUncoatedAbr
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 22, 2010
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:namedcol:pplusuab(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This header will create a dictionary containing all the named colours in this file,
+% along with their XYZ values.
+% Done this way to minimise VM use.
+
+	<<
+	/Globalness currentglobal false setglobal		% Will be reverted by initialize
+	/ResName /PantonePLUSUncoatedAbr	% The name of this resource
+	/BaseSpace /XYZ-D50		% Underlying color space for the values below
+	/RetrySuffix false		% If a name can't be found, try stripping the suffix to 'CV'
+	/Divisor 100			% Divide values by 100
+>> /HqnColorDatabase /ProcSet findresource /initialize get exec
+PANTONE YEL 0131 U
+82.33	89.03	34.00
+PANTONE MAG 0521 U
+68.12	54.82	56.50
+PANTONE VLT 0631 U
+43.62	36.74	55.87
+PANTONE BLU 0821 U
+42.74	53.61	68.20
+PANTONE GRN 0921 U
+46.78	63.89	53.78
+PANTONE BLK 0961 U
+31.35	32.16	24.86
+PANTONE MED YEL U
+77.05	78.94	8.00
+PANTONE BRT ORG U
+56.57	37.70	5.52
+PANTONE BRT RED U
+49.84	30.03	6.15
+PANTONE STG RED U
+33.93	19.28	11.49
+PANTONE MED PRP U
+11.49	8.48	18.77
+PANTONE DK BLUE U
+9.12	7.64	22.01
+PANTONE MED BLU U
+14.71	18.98	43.49
+PANTONE BRT GRN U
+15.45	29.01	24.29
+PANTONE NTR BLK U
+6.53	6.67	5.04
+PANTONE YEL. U
+77.79	81.77	8.39
+PANTONE OR.021 U
+55.28	36.24	5.02
+PANTONE WM RED U
+53.76	34.43	10.62
+PANTONE RUBRED U
+38.58	22.68	16.49
+PANTONE RHODRED U
+43.11	25.49	24.29
+PANTONE BLU072 U
+10.11	7.68	30.19
+PANTONE REFBLU U
+9.02	7.72	24.30
+PANTONE PROBLU U
+13.96	18.00	41.54
+PANTONE WMGY 1 U
+65.49	67.16	51.25
+PANTONE WMGY 2 U
+56.89	58.17	44.08
+PANTONE WMGY 3 U
+46.81	47.73	36.15
+PANTONE WMGY 4 U
+41.23	41.97	31.78
+PANTONE WMGY 5 U
+35.75	36.35	27.64
+PANTONE WMGY 6 U
+32.82	33.34	25.41
+PANTONE WMGY 7 U
+27.73	28.16	21.52
+PANTONE WMGY 8 U
+24.69	25.06	19.20
+PANTONE WMGY 9 U
+21.53	21.84	16.75
+PANTONE WMGY 10 U
+20.19	20.47	15.66
+PANTONE WMGY 11 U
+18.56	18.82	14.40
+PANTONE CLGY 1 U
+67.09	69.48	55.99
+PANTONE CLGY 2 U
+56.75	58.83	47.99
+PANTONE CLGY 3 U
+53.89	55.86	46.03
+PANTONE CLGY 4 U
+46.13	47.84	39.93
+PANTONE CLGY 5 U
+40.74	42.27	35.73
+PANTONE CLGY 6 U
+36.35	37.72	32.20
+PANTONE CLGY 7 U
+32.59	33.82	29.07
+PANTONE CLGY 8 U
+28.71	29.81	25.81
+PANTONE CLGY 9 U
+24.68	25.63	22.35
+PANTONE CLGY 10 U
+21.83	22.68	19.89
+PANTONE CLGY 11 U
+19.56	20.31	17.87

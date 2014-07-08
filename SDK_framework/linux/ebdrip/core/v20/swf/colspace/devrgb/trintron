@@ -1,0 +1,33 @@
+%!PS-Adobe-3.0
+%%Title: Trinitron
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Wed Mar 22 13:59:00 1995
+%%Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colspace:devrgb:trintron(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+[
+  /CIEBasedABC
+  <<
+    /XUID [124 0 0 19950322 15060]
+    /DecodeLMN [ { 1 0.45 div exp } bind dup dup ]
+    /MatrixLMN [
+      0.4124 0.2126 0.0193
+      0.3576 0.7152 0.1192
+      0.1805 0.0722 0.9505
+    ]
+    /WhitePoint [ 0.9505 1 1.0890 ]
+  >>
+]
+
+(DeviceRGB/Trinitron) cvn exch /ColorSpace defineresource pop
+
+setglobal
+
+%%EndResource

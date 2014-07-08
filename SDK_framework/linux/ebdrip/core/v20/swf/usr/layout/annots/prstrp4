@@ -1,0 +1,32 @@
+%!PS-Adobe-3.0
+%%Title: ProofStrip_4
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sept 2004
+% Copyright (C) 2004 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.3.10.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:annots:prstrp4(EBDSDK_P.1) $
+
+% A file in this directory provides the definition of an annotation option 
+% for use with the HqnLayout procset, providing simple in-RIP imposition.
+
+% The file must return a single dictionary
+	<<
+
+	% The dictionary must contain the name of the annotation, 
+	/Name		(ProofStrip_4)
+	
+	% Two annotation types are supported, a simple Mark, and a dynamically 
+	% constructed control bar
+	/AnnotType /ControlBar
+
+	% A ControlBar annotation must refer to a control bar defined in 
+	% SW/Usr/ColorBars/Components
+	/BarName   /BaseControlBar_4
+	
+>>
+
+%%EOF
+

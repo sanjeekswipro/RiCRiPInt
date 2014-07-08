@@ -1,0 +1,796 @@
+%!PS-Adobe-3.0
+%%Title: HqnGIF
+%%Creator: Global Graphics Software Limited
+%%CreationDate: June 2000
+% Copyright (C) 2000 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%%EndComments
+%%BeginProcSet: "(HqnGIF)" 1 0
+
+% $HopeName: COREimages!swf:procsets:hqngif(EBDSDK_P.1) $
+%
+% this procset provides GIF file support procedures for use of native 
+% GIF in PostScript.
+% 
+% typical use:
+%   as a job source:
+%     <file> /HqnGIF /ProcSet findresource /analyseGIF get exec % returns true if a GIF
+%   and then emit the following to run
+%     (/HqnGIF /ProcSet findresource /runGIFinfodict get exec)
+%
+%   from a job (you'll need a showpage as well):
+%     <file> /HqnGIF /ProcSet findresource /runGIFfile get exec
+%
+%   or separately, so you can look at the header information in a dictionary
+%     <file> /HqnGIF /ProcSet findresource /getGIFinfodict get exec
+%   and apply the dictionary so returned to image it:
+%     <dict> /HqnGIF /ProcSet findresource /GIFimage get exec
+%
+%   Note: <file> means either a filename, or a file open for reading. In either case, 
+%   the file must be seekable
+%
+%   The keys in <dict> are
+%		/GIF_file
+%		/GIF-screen-width
+%		/GIF-screen-height
+%		/GIF-background
+%		/GIF-tags
+%		/GIF-aspect
+%		/GIF-depth
+%
+%	In addition the following keys may be added to the dictionary supplied to GIFimage 
+%	to change the default behaviour.
+%	
+%		/GIF-resolution			- the sample resolution that the image is treated as having - 
+%						either a single number, or an array of 2.
+%		/GIF-honor-transparency	- if true then transparent data will be shown as transparent, 
+%								  if false then 'transparent' colours will be painted in.
+%		/GIF-set-PageSize		- if true then the job will set PageSize in the page device
+%		/GIF-honor-grayscale	- if true, then an image where all the colour table values 
+%                                 are equal for RGB will be printed in DeviceGray rather than
+%                                 DeviceRGB.
+%		/GIF-base-colorspace	- A colour space array which will be used as the base colorspace
+%                                 if the image is grayscale and GIF-honor-grayscale is true.
+%		/GIF-skip-image			- true to skip the image, as an extended information gathering job.
+
+currentglobal false setglobal
+
+% the resource:
+32 dict begin
+  /globalness exch def
+
+   /gifdict 10 dict def
+
+% CONFIG ITEMS HERE +++++++++++++++++++++++++++++++++++++++++++++++++
+	
+	% set this to true to emit various pieces of debugging information
+	/GIF-debug false def
+
+	% set this to true to have more unusual files flagged - useful for building a QA suite
+	/GIF-unusual false def
+
+	% images will be assumed to have this sample resolution (in dpi) unless overridden
+	%   by setting GIF-resolution in the dictionary passed to GIFimage
+	/GIF-default-resolution 72 def		% deliberately an integer if 72 here.
+
+	% If there is no /GIF-honor-transparency key in the dictionary passed to GIFimage
+	%   then this key will be used
+	% The default is false so that you get gray backgrounds on most files - 
+	%   appropriate for stand-alone usage. When used from an HTML interpreter
+	%   or in OPI then GIF-honor-transparency should be set to true.
+	/GIF-default-honor-transparency false def
+
+	% If there is no /GIF-set-PageSize key in the dictionary passed to GIFimage
+	%   then this key will be used.
+	% The default is true so that an image printed on its own will not be
+	%   clipped, and will not include excessive white space round it.
+	/GIF-default-set-PageSize true def
+
+	/GIF-default-honor-grayscale true def
+	/GIF-default-base-colorspace /DeviceGray def
+
+% END OF CONFIG ITEMS +++++++++++++++++++++++++++++++++++++++++++++++
+
+/se serverdict /altout 2 copy known {
+	get dup type /filetype eq {
+		dup status not dup { exch pop } if
+	} { pop true } ifelse
+  } { pop pop true } ifelse
+  	{
+	(%stderr)(w)file 
+  } if
+def
+/se { 
+	//se exch 
+	dup type /stringtype ne { =string cvs } if 
+	writestring 
+} bind def
+	
+/s2  { 
+	//gifdict /GIF-file get (12) readstring pop 
+	dup length 2 eq dup not { 
+		//GIF-debug { (s2 failed\n) //se exec } if
+		exch pop 
+	} if
+} def
+/s3  { 
+	//gifdict /GIF-file get (123) readstring pop 
+	dup length 3 eq dup not { 
+		exch pop 
+		//GIF-debug { (s3 failed\n) //se exec } if
+	} if
+} def
+
+/i2 {
+	//s2 exec
+	dup {
+		exch dup
+		0 get exch 1 get 256 mul add
+		exch
+	} if
+} bind def
+
+/i1 {
+	//gifdict /GIF-file get read 
+	dup not //GIF-debug and { (i1 failed\n) //se exec } if
+} bind def
+
+/GIF-string 256 string def
+
+/Default-color-table 256 3 mul string def
+% So what *IS* the default GIF colour table? ###################
+0 1 255 { 0 1 2 { 1 index 3 mul add //Default-color-table exch 2 index put } for pop } for
+
+/sfp {
+	mark 3 1 roll 
+	{ setfileposition } stopped not
+	counttomark 1 add 1 roll 
+	cleartomark
+	dup not //GIF-debug and { (sfp failed\n) //se exec } if
+} bind def
+
+/rs {
+	% f s
+	dup length mark 4 2 roll
+	% l m f s
+	{ readstring } stopped {
+		cleartomark pop 
+		false
+		//GIF-debug { (rs failed\n) //se exec } if
+	}	{
+		% l m s b
+		pop dup length 
+		4 -1 roll ne {
+			pop pop false
+		}	{
+			exch pop true
+		} ifelse
+	} ifelse
+} bind def
+
+/SkipBlocks { % skip any remaining blocks in an extension
+		{
+		//i1 exec not { false exit } if
+		dup 0 eq {
+			pop true exit
+		} if
+		GIF-file dup fileposition
+		3 -1 roll add //sfp exec not { false exit } if
+	} loop
+	dup not //GIF-debug and { (SkipBlocks failed\n) //se exec } if
+} bind def
+
+/IndexBase {
+	GIF-grayscale GIF-honor-grayscale and { GIF-base-colorspace }{ /DeviceRGB } ifelse
+} bind def
+
+/DeriveGrayscale {
+	GIF-grayscale GIF-honor-grayscale and {
+		% RGB string -> Grayscale string
+		dup length 
+		3 idiv string
+		0 1 2 index length 1 sub {
+			% rgb gray i
+			2 index 1 index 3 mul
+			% rgb gray i rgb 3i
+			2 { 2 copy get 3 1 roll 1 add } repeat
+			get
+			% rgb gray i R G B
+			.11 mul exch .59 mul add exch .3 mul add
+			dup 255. gt { pop 255. } if
+			round cvi
+			% rgb gray i G
+			2 index 3 1 roll put
+			% rgb gray
+		} for
+		exch pop
+		% gray
+	} if
+} bind def
+
+/DoBackground {
+	Background-done not {
+		% It appears that background is ignored by NetScape, PSP etc if
+		% the image is transparent ... 
+		% This doesn't match the spec, but then the spec provides no way
+		% of ignoring a background if using a global colour table.
+
+		GIF-background 0 ge
+		GIF-transparency -1 eq and {
+				[ 
+				/Indexed 
+				//IndexBase exec 
+				1 GIF-depth bitshift 1 sub 
+				GIF-global-table //DeriveGrayscale exec
+			] setcolorspace
+
+			GIF-background setcolor
+
+			0 0 GIF-screen-width GIF-screen-height rectfill
+		} if
+
+		/Background-done true def
+	} if
+} bind def
+
+/Extensions <<
+
+	16#F9 {			% Graphics tags, including transparency
+		1	{
+			//i1 exec not { false exit } if
+			4 ne { false exit } if
+			//i1 exec not { false exit } if
+			1 and 1 eq {
+				//i2 exec not { false exit } if
+				pop	% delay time
+				
+				//i1 exec not { false exit } if
+				/GIF-transparency exch def
+			}	{
+				% no transparency
+				GIF-file dup fileposition 3 add setfileposition
+			} ifelse
+
+			//SkipBlocks exec not { false exit } if
+
+			true
+		} repeat
+	} bind
+
+	16#01 {		% Plain text
+		//GIF-unusual { (***************** PLAIN TEXT\n) //se exec } if
+
+		//DoBackground exec
+
+		//SkipBlocks exec
+	} bind
+
+>> def
+
+  /giftag (GIF) def
+
+  % ------------------------------------------------------------
+
+  /readheader {
+	//gifdict begin
+
+	1	{
+		GIF-file 6 //sfp exec not { false exit } if
+		//i2 exec not { false exit } if /GIF-screen-width exch def
+		//i2 exec not { false exit } if /GIF-screen-height exch def
+		//i1 exec not { false exit } if /GIF-tags exch def
+		//i1 exec not { false exit } if /GIF-background exch def
+		//i1 exec not { false exit } if dup 49 eq { pop 0 } if /GIF-aspect exch def
+		/GIF-depth GIF-tags 7 and 1 add def
+
+		GIF-tags 128 and 0 eq {
+			/GIF-background -1 def
+		} if
+
+		true
+	} repeat
+
+	end
+  } bind def
+
+  % ------------------------------------------------------------
+
+  /analyseGIF { % filename / file -> true / false
+    //gifdict { pop //gifdict exch undef } forall
+
+    dup type /filetype ne {
+      (r) file
+    } if
+    
+	//gifdict /GIF-file 3 -1 roll put
+
+    1 {
+      % check seekable file
+      mark //gifdict /GIF-file get 0 { setfileposition } stopped { 
+		cleartomark false exit 
+	  } if
+	  pop
+
+	% if first 3 bytes are not (GIF), give up now
+	//s3 exec not { false exit } if
+	//giftag ne { false exit } if
+
+      //readheader exec not { false exit } if
+
+      true
+    } repeat % once, just for use of exit - saves lots of nested ifs
+
+    mark //gifdict /GIF-file get 0 { setfileposition } stopped cleartomark
+  } bind def
+
+  % ------------------------------------------------------------
+% This is a procedure called as the source of the image data.
+/GIFimage {
+		{
+		GIF-channel null eq GIF-complete not and {
+			/GIF-channel /GIF-file load 
+			//i1 exec not { 
+				false exit 
+			} if
+			dup 0 eq {
+				/GIF-complete true def
+				0 1 255 { //GIF-string exch 0 put } for
+				pop pop pop
+			}	{
+				/GIF-length 1 index def
+				() /SubFileDecode filter
+				def
+			} ifelse
+		} if
+		GIF-complete {
+			//GIF-string
+			true
+			exit
+		}	{
+			GIF-channel //GIF-string 
+			0 GIF-length getinterval
+			//rs exec not { false exit } if
+
+			GIF-channel status not {
+				/GIF-channel null def
+			} if
+			dup length 0 gt { 
+				true exit 
+			} if
+		} ifelse
+	} loop
+	not {
+		/GIFimage errordict /ioerror get exec
+	} if
+} bind def
+
+/GIFfilterDict { 
+		<<
+		/UnitLength GIF-code-size
+		/ExtendUnitLength true	% allows UnitLength = 2
+		/LowBitFirst true
+		/EarlyChange 0
+	>> /LZWDecode filter 
+} def
+
+/GIF-table 768 string def
+
+/InterleaveDict <<
+	/ImageType 1
+	/Width 1
+	/Height 1
+	/ImageMatrix [ 1 0 0 -1 0 1 ]
+	/MultipleDataSources false
+	/BitsPerComponent 8
+	/DataSource null
+	/Decode [ 0 255 ]
+>> def
+
+/OneInterleave {
+	% start ht
+	gsave
+	
+	0 2 index 1 add neg translate		% to the 1st scanline
+
+	GIF-image-height 2 index sub 1 index 1 sub add 1 index idiv {
+		//InterleaveDict image
+		0 1 index neg translate
+	} repeat
+	pop pop
+	grestore
+} bind def
+
+/NoVignette <<
+	/VignetteDetect false
+>> def
+
+  /RunImage {
+		{
+			GIF-code-size 2 lt {
+				end
+				(%%[ Can't process images with initial code depth of 1 ] %%\n) //se exec
+				/GIFimage errordict /rangecheck get exec
+				stop
+			} if
+
+			GIF-background GIF-transparency eq 
+			GIF-transparency 2 GIF-depth exp round cvi gt or
+			GIF-honor-transparency not or {
+				//GIF-debug { (Clearing transparency flag\n) //se exec } if
+				/GIF-transparency -1 store
+			} if
+			GIF-background 2 GIF-depth exp round cvi gt {
+				//GIF-debug { (Clearing background flag\n) //se exec } if
+				/GIF-background -1 store
+			} if
+
+			GIF-background 0 ge
+			GIF-transparency -1 eq and {
+				gsave
+					[ 
+					/Indexed 
+					//IndexBase exec
+					1 GIF-depth bitshift 1 sub 
+					GIF-global-table //DeriveGrayscale exec 
+				] setcolorspace
+
+				GIF-background setcolor
+
+				0 0 moveto GIF-screen-width 0 rlineto
+				0 GIF-screen-height rlineto 0 GIF-screen-height lineto
+				closepath
+				GIF-image-left GIF-image-top moveto
+				GIF-image-width 0 rlineto 0 GIF-image-height neg rlineto
+				GIF-image-width neg 0 rlineto closepath
+				eofill
+				grestore
+
+				/Background-done true def
+			} if
+
+			//GIF-debug { //gifdict { exch //se exec  (  )//se exec //se exec (\n) //se exec } forall (________\n)//se exec } if
+	
+			GIF-image-left GIF-screen-height 
+				GIF-image-top sub GIF-image-height sub translate
+
+				[ 
+				/Indexed 
+				//IndexBase exec
+				1 GIF-depth bitshift 1 sub 
+				GIF-color-table //DeriveGrayscale exec
+			] setcolorspace
+
+			/GIF-channel null def
+			/GIF-complete false def
+
+			//GIF-unusual {
+				GIF-depth 8 ne { (>>>>>>>>>>>>>>> DEPTH: ) //se exec GIF-depth //se exec (\n) //se exec} if
+				GIF-code-size 8 ne { (>>>>>>>>>>>>>>> CODESIZE: ) //se exec GIF-code-size //se exec (\n) //se exec } if
+				GIF-transparency -1 ne { (************* TRANSPARENT\n) //se exec } if
+			} if
+			/GIF-filter //GIFimage //GIFfilterDict exec def
+
+			GIF-interleaved { 
+				//GIF-unusual { (************* INTERLEAVED\n)//se exec } if
+				/GIF-scanline GIF-image-width string def
+
+				% turn off vignette detection and replacement in case the 
+				% image is exactly 256 pixels wide - some parts will be 
+				% drawn 1 pixel high. Unset by the restore.
+				//NoVignette setuserparams
+
+				//InterleaveDict begin
+
+				/Width GIF-image-width def
+				ImageMatrix 0 GIF-image-width put
+
+				/DataSource GIF-filter def
+
+				GIF-transparency -1 ne {
+					/ImageType 4 def
+					/MaskColor [ GIF-transparency ] def
+
+					0 GIF-image-height translate	% to the top of the image
+					GIF-image-width 1 scale
+
+					0 8 //OneInterleave exec
+				}	{
+					% Optimise first interleave pass - can't do this for transparent images.
+					0 0 GIF-image-width GIF-image-height rectclip
+
+					save
+					/Height GIF-image-height 7 add 8 idiv def
+					/ImageMatrix [ GIF-image-width 0 0 Height neg 0 Height ] def
+					GIF-image-width GIF-image-height scale
+					currentdict image
+					restore
+
+					0 GIF-image-height translate	% to the top of the image
+					GIF-image-width 1 scale
+				} ifelse
+
+				end
+
+				4 8 //OneInterleave exec
+				2 4 //OneInterleave exec
+				1 2 //OneInterleave exec
+			}	{
+				GIF-image-width GIF-image-height scale
+					<<
+					/ImageType GIF-transparency -1 eq { 1 }{ 
+						4 
+						/MaskColor [ GIF-transparency ]
+					} ifelse
+					/Width GIF-image-width
+					/Height GIF-image-height
+					/ImageMatrix [ GIF-image-width 0 0 
+						GIF-image-height neg 0 GIF-image-height ]
+					/MultipleDataSources false
+					/BitsPerComponent 8
+					/DataSource /GIF-filter load
+					/Decode [ 0 255 ]
+				>> image
+			} ifelse
+		} stopped 
+		//GIF-debug { dup { defaulthandleerror } if } if
+		not
+  } bind def
+
+  /CheckGrayscale {
+	GIF-grayscale {
+		0 3 2 GIF-depth exp round cvi 1 sub 3 mul {
+			GIF-color-table exch
+			% gct i
+			2 { 2 copy get 3 1 roll 1 add } repeat
+			get
+			% R G B
+			dup 3 1 roll 
+			% R B G B
+			ne 3 1 roll ne or {
+				/GIF-grayscale false def
+				exit
+			} if
+		} for
+	} if
+  } bind def
+
+  /GIFimage {
+{
+    begin
+
+	//GIF-debug { currentdict { exch //se exec  (  )//se exec //se exec (\n) //se exec } forall } if
+
+	true
+
+	currentdict /GIF-resolution known not {
+		/GIF-resolution //GIF-default-resolution def
+	} if
+	currentdict /GIF-set-PageSize known not {
+		/GIF-set-PageSize //GIF-default-set-PageSize def
+	} if
+	currentdict /GIF-honor-transparency known not {
+		/GIF-honor-transparency //GIF-default-honor-transparency def
+	} if
+	currentdict /GIF-honor-grayscale known not {
+		/GIF-honor-grayscale //GIF-default-honor-grayscale def
+	} if
+	currentdict /GIF-base-colorspace known not {
+		/GIF-base-colorspace //GIF-default-base-colorspace def
+	} if
+	currentdict /GIF-skip-image known not {
+		/GIF-skip-image false def
+	} if
+
+	/GIF-grayscale true def
+
+	GIF-set-PageSize GIF-skip-image not and {
+			<< 
+			/PageSize [ 
+				GIF-screen-width 72. GIF-resolution 
+					dup type /arraytype eq { 0 get } if div mul
+				GIF-aspect 0 ne {
+					//GIF-unusual { (************* ASPECT: )//se exec GIF-aspect //se exec (\n) //se exec } if
+					GIF-aspect 15 add 64 div mul
+				} if
+				GIF-screen-height 72. GIF-resolution 
+					dup type /arraytype eq { 1 get } if div mul
+			] 
+		>> setpagedevice
+	} if
+	save
+	/gif-save exch def
+
+	1	{
+		GIF-resolution dup type /arraytype eq {
+			{ 72. exch div } forall
+		}	{
+			72. exch div dup 
+		} ifelse
+		scale
+
+		GIF-aspect 0 ne {
+			GIF-aspect 15 add 64 div 1 scale
+		} if
+
+		GIF-file 13 //sfp exec not { pop false exit } if
+
+		/GIF-transparency -1 def
+		/done-44 false def
+		/Background-done false def
+
+		GIF-tags 128 and 0 ne {
+			/GIF-color-table 2 GIF-depth exp round cvi 3 mul string def
+			GIF-file GIF-color-table //rs exec not { pop false exit } if
+			pop
+% (GLOBAL)=
+		}	{
+% (DEFAULT)=
+			/GIF-color-table //Default-color-table def
+		} ifelse
+		//CheckGrayscale exec
+
+		/GIF-global-table GIF-color-table def
+
+			{		% Loop
+			//i1 exec not { 
+				% Finished reading tags
+				exit 
+			} if
+
+			dup 0 eq {
+				pop 
+				GIF-skip-image not {
+					% Skip to the end of the file:
+					GIF-file status {
+							{
+							GIF-file //GIF-string readstring
+							exch pop
+							not { exit } if
+						} loop
+					} if
+				} if
+				exit
+			}	{
+				dup 44 eq {
+					% image descriptor
+					pop		% 44
+					//i2 exec not { pop false exit } if /GIF-image-left exch def
+					//i2 exec not { pop false exit } if /GIF-image-top exch def
+					//i2 exec not { pop false exit } if /GIF-image-width exch def
+					//i2 exec not { pop false exit } if /GIF-image-height exch def
+					//i1 exec not { pop false exit } if /GIF-tags exch def
+
+					/GIF-interleaved GIF-tags 64 and 0 ne def
+
+					GIF-tags 128 and 0 ne {
+						/GIF-depth GIF-tags 7 and 1 add def
+						/GIF-color-table 2 GIF-depth exp round cvi 3 mul string def
+						GIF-file GIF-color-table //rs exec not { pop false exit } if pop
+% (LOCAL)=
+						//CheckGrayscale exec
+					} if
+
+					GIF-skip-image { exit } if
+
+					//i1 exec not { pop false exit } if /GIF-code-size exch def
+
+					done-44 not {
+						//RunImage exec 
+						not { 
+							//GIF-debug { (Failed RunImage\n) //se exec } if
+							pop false exit 
+						} if
+					}	{
+						//SkipBlocks exec not { pop false exit } if
+					} ifelse
+
+					/GIF-color-table GIF-global-table def
+					/done-44 true def
+% (Image complete)=
+				}	{
+					33 eq {
+						% extension block
+						//i1 exec not { pop false exit } if
+						//Extensions exch 2 copy known {
+							//GIF-debug { (Extension: )//se exec dup //se exec (\n) //se exec } if
+							get exec
+							not { 
+								//GIF-debug { (Failed in Extension\n) //se exec } if
+								pop false exit 
+							} if
+						}	{ 
+							//GIF-debug { (Skiping extension: )//se exec dup //se exec (\n) //se exec } if
+							pop pop
+							//SkipBlocks exec not { pop false exit } if
+						} ifelse
+					} if
+				} ifelse
+			} ifelse
+
+			GIF-file status not {
+				//GIF-debug { (file no longer open\n) //se exec } if
+				/analyseGIF errordict /ioerror get exec
+			} if
+% (Loop end)=
+		} loop
+
+		not {
+			//GIF-debug { (Failed GIFimage loop\n) //se exec } if
+			/GIFimage errordict /ioerror get exec
+		} if
+	} repeat
+
+	GIF-skip-image {
+		GIF-grayscale
+		GIF-image-left
+		GIF-image-top
+		GIF-image-width
+		GIF-image-height
+		GIF-transparency
+		gif-save restore
+%		//gifdict begin
+			{ 
+			/GIF-transparency /GIF-image-height /GIF-image-width 
+			/GIF-image-top /GIF-image-left /GIF-grayscale
+		} { exch def } forall
+%		end
+		/GIF-file load 0 setfileposition
+	}	{
+		gif-save restore
+	} ifelse
+
+	end
+} stopped { defaulthandleerror } if
+  } bind def
+
+  % ------------------------------------------------------------
+
+  /runGIFinfodict {
+    //gifdict //GIFimage exec
+	showpage
+  } bind def
+
+  % ------------------------------------------------------------
+
+  /getGIFinfodict {
+    //analyseGIF exec dup { //gifdict dup length dict copy exch } if
+  } bind def
+
+  % ------------------------------------------------------------
+
+  /runGIFfile { % filename / file -> - , utility procedure for combining the above two
+	  //analyseGIF exec {
+		//gifdict //GIFimage exec
+	  } if
+  } bind def
+
+  % ------------------------------------------------------------
+
+  globalness
+  [ 
+    /gifdict
+    /readheader
+    /s2 /s3 /i1 /i2
+	/Default-color-table
+	/giftag
+	/se /GIF-string /T1 /GIF-table
+	/OneInterleave /InterleaveDict
+	/NoVignette /sfp /rs
+	/SkipBlocks /Extensions
+	/RunImage /DoBackground
+	/GIF-debug /GIF-unusual
+	/GIF-default-resolution /GIF-default-honor-transparency
+	/GIF-default-set-PageSize
+	/GIF-default-honor-grayscale
+	/GIF-default-base-colorspace
+	/CheckGrayscale /DeriveGrayscale /IndexBase
+	/globalness
+  ] { currentdict exch undef } forall
+  currentdict
+end
+
+/HqnGIF exch /ProcSet defineresource pop
+setglobal
+
+
+%%EndProcSet

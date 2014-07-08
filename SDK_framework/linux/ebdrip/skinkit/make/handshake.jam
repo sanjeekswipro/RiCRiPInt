@@ -1,0 +1,34 @@
+# Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: SWskinkit!make:handshake.jam(EBDSDK_P.1) $
+#
+
+    # copy appropriate handshake file
+    local Handshake ;
+
+    local CustomerHandshakeJambits = $(BUILDROOT)$/skinkit$/make$/handshake-$(Variant_customised).jam ;
+    if $(CustomerHandshakeJambits:E)
+    {
+      Include $(CustomerHandshakeJambits) ;
+    }
+
+    if $(Handshake) = "" {
+      Error No LE security handshake for customer $(Variant_customised) ;
+    }
+
+    Locate $(Handshake) : $(CurrentPath)$/src ;
+    ExportSource $(CurrentPath)$/src$/$(Handshake) : C ;
+
+    # Copy of handshake file is put into GeneratedC-Directory. Its target
+    # is gristed so that LESkinPreprocess can find it.
+    local HandshakeCopy ;
+    MakeGristed HandshakeCopy : handshake.c : $(CurrentPath) src ;
+    GenericTarget $(HandshakeCopy) : $(Handshake) : $(Copy) $> $< ;
+    DirectoryFor $(HandshakeCopy) : $(CurrentPath)$/$(GeneratedC-Directory) ;
+    CleanFile $(HandshakeCopy) ;
+
+    AddToVar Local : SkinKitSources : $(HandshakeCopy) : Variant security=le ;
+
+#
+# Log stripped

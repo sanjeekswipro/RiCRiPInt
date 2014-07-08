@@ -1,0 +1,46 @@
+<!-- Copyright (C) 2006-2007 Global Graphics Software Ltd. All rights reserved. -->
+<?xml version="1.0"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://schemas.globalgraphics.com/xps/2005/03/pagedetails"
+           xmlns="http://schemas.globalgraphics.com/xps/2005/03/pagedetails"
+           elementFormDefault="qualified">
+
+  <!-- PointGE0: 2 non-negative numbers, separated by , and arbitrary whitespace -->
+  <xs:simpleType name="ST_PointGE0">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="collapse" />
+      <xs:pattern value="(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- BleedBox: 4 numbers, separated by , and arbitrary whitespace. Second number pair must be non-negative -->
+  <xs:simpleType name="ST_BleedBox">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="collapse" />
+      <xs:pattern value="((\-|\+)?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)((\-|\+)?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ContentBox: 4 non-negative numbers, separated by commas and arbitrary whitespace -->
+  <xs:simpleType name="ST_ContentBox">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="collapse" />
+      <xs:pattern value="(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)( ?, ?)(\+?(([0-9]+(\.[0-9]+)?)|(\.[0-9]+))((e|E)(\-|\+)?[0-9]+)?)" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="PageDetails">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Page" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:attribute name="Size" type="ST_PointGE0" use="required"/>
+           <xs:attribute name="BleedBox" type="ST_BleedBox" use="required"/>
+           <xs:attribute name="ContentBox" type="ST_ContentBox" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

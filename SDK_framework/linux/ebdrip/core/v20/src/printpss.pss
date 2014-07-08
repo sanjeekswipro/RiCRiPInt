@@ -1,0 +1,234 @@
+% /* $HopeName: SWv20!src:printpss.pss(EBDSDK_P.1) $ */
+%
+% Copyright (C) 2007-2012 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% ----------------------------------------------------------------------
+% text printing
+
+currentglobal false setglobal 36 dict begin
+  setglobal       % lasertalk 1.3 has the dict local, and we have to do as well.
+  /==dict currentdict def
+  /cp       0 def
+  /NL    (\n) def
+  /rmargin 72 def
+
+  /tprint {
+    //dup //length cp //add rmargin //gt {
+      NL print
+      /cp 0 //def
+    } //if
+    //dup //length cp //add 
+    /cp //exch //def
+    print
+  } readonly def
+
+  /typeprint {
+    dup type exec
+  } bd
+
+  /typeprintsep {
+    dup type exec
+    ( ) tprint
+  } bd
+
+  /cvsprint {
+    =string cvs tprint
+  } bd
+
+  /integertype { cvsprint } bd
+  /realtype { cvsprint } bd
+  % Only current method to get an infinitytype object
+  1e+38 10 mul type { pop (-infinity-) tprint } bd
+  /booleantype { cvsprint } bd
+  /nulltype { pop (-null-) tprint } bd
+  /marktype { pop (-mark-) tprint } bd
+  /filetype { pop (-filestream-) tprint } bd
+  /dicttype { pop (-dictionary-) tprint } bd
+  /savetype { pop (-savelevel-) tprint } bd
+  /fonttype { pop (-fontid-) tprint } bd
+  /nametype { dup xcheck not { (/) tprint } if cvsprint } bd
+  /gstatetype { pop (-gstate-) tprint } bd
+  /locktype { pop (-lock-) tprint } bd
+  /pdfobjtype { cvsprint } bd
+  /conditiontype { pop (-condition-) tprint } bd
+  /fileoffsettype { pop (-fileoffset-) tprint } bd
+  /cpointertype { pop (-cpointer-) tprint } bd
+
+  /operatortype { 
+    dup xcheck {
+      (--) tprint
+      =string cvs tprint
+      (--) tprint
+    } {
+      =string cvs tprint
+    } ifelse
+  } bd
+
+  /stringtype {
+    dup rcheck {
+      <28> tprint
+      tprint
+      <29> tprint
+    } {
+      pop (-string-) tprint
+    } ifelse
+  } bd
+
+  /longstringtype {
+    dup rcheck {
+      <28> tprint
+      tprint
+      <29> tprint
+    } {
+      pop (-longstring-) tprint
+    } ifelse
+  } bd
+
+  /arraytype {
+    dup rcheck {
+      dup xcheck {
+        ({) (})
+      } {
+        ([) (])
+      } ifelse
+      3 1 roll
+      tprint
+      dup length 1000 gt {
+        (--) tprint length cvsprint (--) tprint
+      } {
+        { typeprintsep } forall
+      } ifelse
+      tprint
+    } {
+      pop
+      (-array-) tprint
+    } ifelse
+  } bd
+
+  /packedarraytype { 
+    dup rcheck {
+      dup xcheck {
+        ({) (})
+      } {
+        ([) (])
+      } ifelse
+      3 1 roll
+      tprint
+      dup length 1000 gt {
+        (-) tprint length cvsprint (-) tprint
+      } {
+        { typeprintsep } forall
+      } ifelse
+      tprint
+    } {
+      pop
+      (-packedarray-) tprint
+    } ifelse
+  } bd
+
+
+  /== {
+    //==dict //begin
+      /cp 0 //def 
+      typeprint
+      NL print
+    //end
+  }
+
+end % ==dict, leaving == procedure on the stack
+
+systemdict begin
+
+  readonly def % /== in systemdict
+
+  % readonly below ensures they cant accidentally be bound with 
+  % an inclusion in another bound procedure (with //...). This is so that
+  % error handlers can be modified by simple redefintions of print
+
+  /=print {
+    //dup //type /stringtype 
+    //ne { =string //cvs} //if
+    print
+  } readonly def 
+
+  /= { 
+    //=print //exec (\n) print
+  } readonly def
+
+  /stack {
+    0 1 count 3 sub { index =  } for
+  } bd
+
+  /pstack {
+    0 1 count 3 sub { index == } for
+  } bd
+
+end  % systemdict
+
+% end of printpss
+% /* $Log: src:printpss.pss,v $
+% Revision 1.18.1.1.1.1  2013/12/19  11:25:25  rogerb
+% branched from SW_P for label EBDSDK_P
+%
+% Revision 1.18.1.1  2013/05/24  21:04:14  build
+% branched from trunk for label SW_P
+%
+% Revision 1.18  2012/09/25  18:08:52  simonb
+% [Bug #367230]
+% Cap the size of arrays printed by =print.
+% Move log to end.
+%
+% Revision 1.17  2011/06/07  13:20:23  mikew
+% [Bug #65357]
+% Add support for some missing object types.
+%
+% Revision 1.16  2009/11/05  22:35:42  pekka
+% [Bug #12605]
+% Add fileoffsettype
+%
+% Revision 1.15  2007/03/14  16:41:47  miker
+% [Bug #61423]
+% Add HopeName
+%
+% Revision 1.14  2007/02/05  13:49:15  peterc
+% [Bug #61423]
+% Add remaining copyright notices "manually"
+%
+% Revision 1.13  2005/12/23  17:48:45  angus
+% [Bug #29776]
+% Remove coreconf.h; obsolete
+%
+% Revision 1.12  1998/03/03  11:23:58  jonw
+% [Bug #21407]
+% Add support for pdfobjtype.
+%
+% Revision 1.11  1997/10/15  20:12:09  mamye
+% [Bug #10259]
+% Implementing OLONGSTRING for woodpecker port
+%
+% Revision 1.10  1994/06/28  20:38:34  andy
+% [1284] Remove compiler warnings for new Mac compiler
+%
+% Revision 1.9  1994/06/19  11:11:38  freeland
+% -inserting current code, with Log keyword and downcased #includes
+%
+%  1994-Apr-5-10:05 peng
+% 	[Task number: 2308]
+% 	just the dict local, its contents remain global (as in lw).
+%  1994-Mar-31-13:54 peng
+% 	[Task number: 2308]
+% 	lasertalk 1.3 cannot connect to the rip
+%  1994-Mar-16-21:16 andy
+% 	[Task number: 1882]
+% 	[p]stack is too tightly bound
+%  1993-Nov-4-18:43 hugo
+% 	Remove trailing spaces from double-equals - FIX BUG NUMBER 1823
+%  1993-Apr-19-19:05 luke
+% 	machine.h spring clean
+% 1993-Mar-1-12:56 andy
+%	unbound level2 ops in error handler - causes error when in level1
+%	mode, so 'bind' them
+% 1992-Dec-2-12:17 davide = readonly relevant procedures to prevent
+% 1992-Dec-2-12:17 davide + accidental binding
+% 1991-Nov-26-17:09 davide = Created
+% */

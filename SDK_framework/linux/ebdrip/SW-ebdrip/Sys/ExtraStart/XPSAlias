@@ -1,0 +1,17 @@
+%!PS-Adobe-3.0
+%%Title: XPS
+%%Creator: Global Graphics Software Limited
+%%CreationDate: March 22, 2005
+% Copyright (C) 2005-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+currentglobal true setglobal
+  globaldict begin
+    /XpsXMLParams <<
+      /NamespaceAliases <<
+      >>
+    >> def
+  end
+setglobal
+
+%EOF

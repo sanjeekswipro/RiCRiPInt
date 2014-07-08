@@ -1,0 +1,21 @@
+# Copyright (C) 2008 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!all-all:unix-all:all.jam(EBDSDK_P.1) $
+
+    local Com = C C++ mixedC ;
+    DefaultVar $(Com)-Dll-Suffix    : .so ;
+    DefaultVar $(Com)-Exec-Suffix   : "" ;
+    DefaultVar $(Com)-Lib-Suffix    : .a ;
+    DefaultVar $(Com)-Object-Suffix : .o ;
+
+    DefaultVar $(Com)-Defines            : UNIX=1 ;
+    DefaultVar $(Com)-ExportDirectories  : unix$(FS)export ;
+    DefaultVar $(Com)-SourceDirectories  : unix$(FS)src ;
+
+    DefaultVar Shared-Object-Suffix : .so ;
+    DefaultVar Shared-Object-Prefix : lib ;
+     
+    DefaultVar Script-Suffix :  "" ;
+
+# Log stripped

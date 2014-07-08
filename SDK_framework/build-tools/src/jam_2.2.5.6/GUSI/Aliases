@@ -1,0 +1,12 @@
+open			file_open
+close			file_close
+read			file_read
+write			file_write
+fcntl			file_fcntl
+dup				file_dup
+lseek			file_lseek
+ioctl			file_ioctl
+faccess			file_faccess
+__dl__FPv		__dl__FPv
+__nw__FUi		__nw__FUi
+_new_handler	_new_handler

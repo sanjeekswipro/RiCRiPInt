@@ -1,0 +1,854 @@
+%!PS-Adobe-3.0
+%%Title: SaddleStitch_4Up _2
+%%Creator: Global Graphics Software Limited
+%%CreationDate: May 2005
+% Copyright (C) 2005 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.6.10.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:schemes:sadst4u2(EBDSDK_P.1) $
+
+
+
+% This file defines the Saddle-stitched, four-up imposition scheme for use with 
+% the HqnLayout procset. 
+% Copyright (C) 2005 Global Graphics Software Limited. All Rights Reserved.
+
+	<<
+
+	/Name  (SaddleStitch_4Up_2)
+
+	/UserName (Four-up, saddle-stitched)
+	
+	/SchemeVersion	(1.1.0)
+
+	/Sides 2
+
+	/CheckDivisor 0
+
+	% Any values that differ from those in Validate
+	/LocalValidate <<
+		/SpineFold <<
+			/default	/Horizontal
+			/override	{ SpineFold dup /None eq { pop /Auto } if } bind
+		>>
+	>>
+	
+	/LocalValues [
+	]
+	
+	% SetOnce should be a boolean or a procedure that returns a boolean
+	% If true, a single layout is used for all surfaces, 
+	% if false the layout is recalculated for every sheet
+	/SetOnce false
+	
+	/FixedPageCount true
+	/UsePageRotate false
+	
+	/CreepPerSheet 2
+	
+	% Called at the start of the job to set anything that might be useful
+	% later in SetLayout
+	/Initialize {
+		/SSFUP2PageArray <<
+			/Horizontal <<	% SpineFold
+				/Left	<<	% BindingEdge
+					/Head2Head [
+							[ % front
+							[<< /PN 3 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN 0 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -4 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN -1 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 1 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN 2 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN 0 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN 3 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -1 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN -4 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]                                                                          
+							[ % back                                                               
+							[<< /PN 2 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN 1 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -3 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN 0 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -1 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+							[<< /PN -4 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN 3 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+							[ % back
+							[<< /PN 1 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+							[<< /PN -3 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN 2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN -4 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 3 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 0 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN -1 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN 2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 1 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -2 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/Right	<<	% BindingEdge
+					/Head2Head [
+							[ % front
+							[<< /PN -4 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -1 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 3 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 0 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -3 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 1 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN 3 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN 0 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -4 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN -1 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]                                                                          
+							[ % back                                                               
+							[<< /PN 1 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN 2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -2 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN -1 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 0 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+							[<< /PN 3 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -4 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 1 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+							[<< /PN 2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -3 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN 3 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -4 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -1 /PO 90 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN 0 /PO 90 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -3 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -2 /PO 270 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 1 /PO 270 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/TopA	<<	% BindingEdge
+					/Head2Head [
+							[ % front
+							[<< /PN 3 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -4 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -1 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN 0 /PO 00 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -3 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 1 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -1 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 3 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN -4 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN 1 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -3 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -1 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 3 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -3 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY -1 >>]
+							[<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN -1 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 3 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -2 /PO 0 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 2 /PO 180 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+				>>
+				/TopB	<<	% BindingEdge
+					/Head2Head [
+							[ % front
+							[<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN -4 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN -4 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -3 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY -1 >>]
+							[<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN -1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+				>>
+				/TopC	<<	% BindingEdge
+					/Head2Head [
+							[ % front
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN -2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0 >>]
+							[<< /PN 2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1  >>]
+							[<< /PN -1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+							[<< /PN 1 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -3 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN -2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN -3 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY -1 >>]
+							[<< /PN -1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN -4 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>
+								<< /PN 2 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>]
+							[<< /PN 0 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>
+								<< /PN -2 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY 0  >>
+								<< /PN 3 /PO 180 /SCX 0 /SCY -1 /CX 0 /CY -1 >>]
+							[<< /PN 1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 0 /SCX 0 /SCY 1 /CX 0 /CY 1 >>]
+						]
+					]
+				>>
+			>>
+			/Vertical <<	% SpineFold
+				/Left	<<
+					/Head2Head [
+							[ % front
+							[<< /PN -4 /PO 180 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 180 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 180 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 180 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN 3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 0 /PO 180 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -2 /PO 180 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN 3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN -1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN -1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/Right	<<
+					/Head2Head [
+							[ % front
+							[<< /PN 3 /PO 180 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 180 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 0 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 180 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 180 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -2 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -4 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -1 /PO 180 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 1 /PO 180 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 180 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN -4 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 0 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN 0 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 0 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 0 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN -2 /PO 0 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 0 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/TopA	<<
+					/Head2Head [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -4 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 3 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 1 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN 3 /PO 90 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 90 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 270 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 3 /PO 90 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 1 /PO 270 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -3 /PO 90 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/TopB	<<
+					/Head2Head [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 3 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN -4 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 3 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -3 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+				/TopC	<<
+					/Head2Head [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -2 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 1 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -3 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Foot2Foot [
+							[ % front
+							[<< /PN 2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>
+								<< /PN 1 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -3 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Left2Right [
+							[ % front
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 2 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN -3 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+					/Right2Left [
+							[ % front
+							[<< /PN 0 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -4 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -2 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN -2 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+							[ % back
+							[<< /PN 3 /PO 270 /SCX 1 /SCY 0 /CX 1 /CY 0 >>
+								<< /PN -1 /PO 90 /SCX -1 /SCY 0 /CX -1 /CY 0 >>]
+							[<< /PN -3 /PO 270 /SCX 1 /SCY 0 /CX 0 /CY 0 >>
+								<< /PN 1 /PO 90 /SCX -1 /SCY 0 /CX 0 /CY 0 >>]
+						]
+					]
+				>>
+			>>
+		>> def
+		
+		/SSFUP2Auto <<
+			/Left [
+					<< 
+					/name /Land
+					% Values are priorities, in the range 1 to 10 (only one can have each value)
+					/geometries << /Head2Head 2 /Foot2Foot 2 /Auto 2 >>
+					/getwidth { pw 2 mul GA add } bind
+					/getheight { ph 2 mul GutterB add } bind
+					/result <<
+						/SpineFold /Vertical
+						/Geometry /Head2Head
+						/PageCountUp 2
+						/PageCountAcross 2
+					>>
+				>>
+					<<
+					/name /Port
+					/geometries << /Head2Head 1 /Foot2Foot 1 /Auto 1 >>
+					/getwidth { ph 2 mul GutterB add } bind
+					/getheight { pw 2 mul GA add } bind
+					/result <<
+						/SpineFold /Horizontal
+						/Geometry /Head2Head
+						/PageCountUp 2
+						/PageCountAcross 2
+					>>
+				>>
+					<<
+					/name /Tall
+					/geometries << /Left2Right 1 /Right2Left 1 /Auto 3 >>
+					/getwidth { pw 4 mul GA 2 mul add GB add } bind
+					/getheight { ph } bind
+					/result <<
+						/SpineFold /Vertical
+						/Geometry /Left2Right
+						/PageCountUp 1
+						/PageCountAcross 4
+					>>
+				>>
+					<<
+					/name /VTall
+					/geometries << /Left2Right 2 /Right2Left 2 /Auto 4 >>
+					/getwidth { ph } bind
+					/getheight { pw 4 mul GA 2 mul add GB add } bind
+					/result <<
+						/SpineFold /Horizontal
+						/Geometry /Left2Right
+						/PageCountUp 4
+						/PageCountAcross 1
+					>>
+				>>
+			]
+			/Right 1 index
+			/TopA [
+					<< 
+					/name /Port
+					/geometries << /Left2Right 2 /Right2Left 2 /Auto 2 >>
+					/getwidth { ph 2 mul GA add } bind
+					/getheight { pw 2 mul GutterB add } bind
+					/result <<
+						/SpineFold /Vertical
+						/Geometry /Left2Right
+						/PageCountUp 2
+						/PageCountAcross 2
+					>>
+				>>
+					<<
+					/name /Land
+					/geometries << /Left2Right 1 /Right2Left 1 /Auto 1 >>
+					/getwidth { pw 2 mul GutterB add } bind
+					/getheight { ph 2 mul GA add } bind
+					/result <<
+						/SpineFold /Horizontal
+						/Geometry /Left2Right
+						/PageCountUp 2
+						/PageCountAcross 2
+					>>
+				>>
+					<<
+					/name /Wide
+					/geometries << /Head2Head 1 /Foot2Foot 1 /Auto 3 >>
+					/getwidth { ph 4 mul GA 2 mul add GB add } bind
+					/getheight { pw } bind
+					/result <<
+						/SpineFold /Vertical
+						/Geometry /Head2Head
+						/PageCountUp 1
+						/PageCountAcross 4
+					>>
+				>>
+					<<
+					/name /VWide
+					/geometries << /Head2Head 2 /Foot2Foot 2 /Auto 4 >>
+					/getwidth { pw } bind
+					/getheight { ph 4 mul GA 2 mul add GB add } bind
+					/result <<
+						/SpineFold /Horizontal
+						/Geometry /Head2Head
+						/PageCountUp 4
+						/PageCountAcross 1
+					>>
+				>>
+			]
+			/TopB 1 index
+			/TopC 1 index
+		>> def
+		
+		/SSFUP2PageCounts <<
+			/Horizontal <<
+				/Left <<
+					/Head2Head [ 2 2 ]
+					/Foot2Foot 1 index
+					/Auto 1 index
+					/Left2Right [ 1 4 ]
+					/Right2Left 1 index
+				>>
+				/Right 1 index
+				/TopA <<
+					/Head2Head [ 1 4 ]
+					/Foot2Foot 1 index
+					/Left2Right [ 2 2 ]
+					/Right2Left 1 index
+					/Auto 1 index
+				>>
+				/TopB 1 index
+				/TopC 1 index
+			>>
+			/Vertical <<
+				/Left <<
+					/Head2Head [ 2 2 ]
+					/Foot2Foot 1 index
+					/Auto 1 index
+					/Left2Right [ 4 1 ]
+					/Right2Left 1 index
+				>>
+				/Right 1 index
+				/TopA <<
+					/Head2Head [ 4 1 ]
+					/Foot2Foot 1 index
+					/Left2Right [ 2 2 ]
+					/Right2Left 1 index
+					/Auto 1 index
+				>>
+				/TopB 1 index
+				/TopC 1 index
+			>>
+		>> def
+	} bind
+	
+	/TableInitialize {	
+			<<
+			/PageCountAcross SSFUP2PageCounts 
+				SpineFold dup /Auto eq { pop /Vertical } if get 
+				BindingEdge get Geometry get aload pop
+			/PageCountUp exch
+			/PageFlow BindingEdge /TopC eq { /TopC }{ /JobSaddle } ifelse
+		>>
+	} bind
+	
+	% No SetLayout, because Initialize has called TableBasedInit_2. Instead, we have GetAutoSpine
+	% and GetPageArray
+
+	/GetAutoSpine {
+		SSFUP2Auto BindingEdge get
+	} bind
+	
+	/GetPageArray {
+    1 dict begin
+    /GPA {
+			SSFUP2PageArray 
+			SpineFold dup /Auto eq { pop /Vertical } if
+			get BindingEdge get Geometry get
+	
+			% Invert last page for TopA
+			Surface 0 eq BindingEdge /TopA eq and {
+				% Special case rotate the last page
+				[ exch {
+					[ exch {
+						[ exch {
+							% dict
+							dup /PN get -1 eq {
+								dup length dict copy
+								dup begin
+								/PO PO 180 add 360 mod def
+								end
+							} if
+						} forall ] 	% row
+					} forall ] % surface
+				} forall ]	% array
+			} if
+		} bind def
+
+		Surface 0 eq {
+      GPA exec
+		} {
+      WorkTurn /None eq {
+        PagesArray
+      } {
+        % when Work & Turn is on, we flatten the PagesArray into one surface,
+        % so we need to recalculate it
+        GPA exec
+      } ifelse
+		} ifelse
+
+    end
+	} bind
+	
+	/FoldMarks [ true true ]
+	
+	% No CutMarks
+
+>>
+
+%%EOF

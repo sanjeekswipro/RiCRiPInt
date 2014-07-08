@@ -1,0 +1,2720 @@
+%!PS-Adobe
+%%Title: "DCSCommentParser"
+%%Creator: Global Graphics Software Limited
+%%CreationDate: March 27, 1992
+%%VMusage: -1 -1
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: DCSCommentParser 2 0
+
+% $HopeName: SWv20!swf:procsets:dcsparse(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+
+% --------------------------------------------------------------------------
+%
+% DCSCommentParser ProcSet:
+%
+% Used by running
+%  /DCSCommentParser /ProcSet findresource pop
+%
+% The comment parsing code expects to find DCS keys in a dictionary called
+% DCSDictionaries which is in internaldict. What that dictionary contains
+% depends on whether the RIP is separating or the job is pre-separated.
+%
+% 1) The RIP is separating.
+% 
+% The /DCS entry in each type 1 halftone dictionary is entered into
+% the dictionary /DCSDictionaries under the name of the separation entry in
+% the type 5 halftone dictionary. The key dicionaries and their contents are
+% copied into global VM if they were provided in local.
+%
+% 2) The job is pre-separated.
+%
+% The /DCS entry in the single type 1 halftone dictionary is entered into
+% the DCSDictionaries dictionary under the name /Default. Again, the key
+% dictionary and its contents are copied into global VM if they are
+% provided in local.
+
+false setglobal
+userdict begin
+
+/DCSPrintfile serverdict /altout 2 copy known {
+  get dup type /filetype eq {
+    dup status not dup { exch pop } if
+  } { pop true } ifelse
+  } { pop pop true } ifelse
+    {
+  (%stderr)(w)file 
+  } if
+def
+/DCSPrint {
+  //DCSPrintfile exch writestring
+} bind def
+/DCSFlush {
+  //DCSPrintfile flushfile
+} bind def
+/DCSerror {
+  % offendingcommand errortype extrainfo
+  hqnversion 0 get 53 ge {
+    $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+    % offendingcommand errortype extrainfo dict
+    /errorinfo [ null 5 -1 roll ] put
+  }  {
+    (Error: ) //DCSPrint exec
+    //DCSPrint exec
+    (\n) //DCSPrint exec
+  } ifelse
+  errordict exch get exec
+} bind def
+
+/rightparen (\)) 0 get def
+/leftparen (\() 0 get def
+ 
+globaldict /HqnHangingLine 2 copy known not { false put } { pop pop } ifelse
+globaldict /HqnOPIindent 2 copy known not { 0 put } { pop pop } ifelse
+
+userdict /HqnProcessingFile /None put
+
+/DCSIndent ( .. ) def
+/DCSIndent {
+  //globaldict /HqnHangingLine get {
+    (\n) //DCSPrint exec
+    //globaldict /HqnHangingLine false put
+  } if
+  globaldict /HqnOPIindent get 
+  dup 0 lt {
+    pop
+    globaldict /HqnOPIindent 0 put
+  }  {
+      { 
+      //DCSIndent //DCSPrint exec 
+    } repeat
+  } ifelse
+} bind def
+
+/DCSdict 25 dict def
+
+DCSdict begin
+
+/recstat 1183615869 internaldict /recombinestatus get def
+/csysparam 1183615869 internaldict /currentsystemparam get def
+
+% This defines what should be done if a separation is included in the DCS
+% file but will not be produced on output.
+/DCSdoValidate /LowRes def
+% Legal values:
+%  /LowRes - if any of the separations present in the DCS file will not be 
+%    produced, use the low res composite in the master instead of the 
+%    high res.
+%  /SkipSeparation - if any separation is present in the DCS data, but will 
+%    not be produced by the RIP, then skip that separation, but uise all 
+%    the other high res separations.
+
+% This defines what should be sone when the high res data is in an external
+% single-file DCS2 file, and the PlateFile comments don't match those in the
+% embedded header in the job itself.
+/DCSsingleFileMismatch /Ignore def
+% Legal values:
+%  /Ignore - carry on regardless, using the values from the external file.
+%  /Warn - report the issue and continue
+%  /Abort
+
+/keys 5 dict def
+/DCSenable true def
+/linebuffer 2048 string def
+/s4 linebuffer 0 4 getinterval def
+/pcepshead <C5D0D3C6> def
+/DCSver 0 def
+
+% This switches between two methods of translating DCS keys to filenames.
+% If false, the keys are found in a dictionary called DCSDictionaries
+% in internaldict (set up by the RIP when it encounters the DCS key in a
+% halftone dictionary). If true, the translation is done via a translation
+% procedure called DCStranslator. The translation procedure
+% should take two arguments, a color name and a key, and return a filename
+% and true, or false to indicate failure.
+/DCStranslation false def
+
+% Default translation procedure: just return the key itself.
+% Note that alternatives - StandardDCSTranslator and OPIlikeDCStranslator, are
+% defined below, and used by Harlequin-supplied page features.
+/DCStranslator {
+  exch pop true
+} bind def
+
+/DCSMissing /LowRes def
+  % valid options:
+  %  /LowRes    Image the low resolution data
+  %  /Blank    Leave blank
+  %  /Abort    Abort the job
+
+% This defined whether we should act on the DCS data now, or whether we need to postpone
+% that till later, e.g. in an EP2000 Splitter.
+/DCSAction /ReplaceDCS def
+
+% Option for DCSAction - act on the comment data now.
+/ReplaceDCS {
+    /done_hi_res /unset store
+  DCSver 1 eq { 
+    keys length 0 eq {
+      % No keys matched this sep. We need to skip the low res preview anyway!
+      //DCSIndent exec
+      UVS (This file contains no data for the current separation\n) //DCSPrint exec
+      /done_hi_res /success store
+      skipLowRes
+      /DCSver 0 store
+      /DCS true def
+    }  {
+      DCS1 
+    } ifelse
+  }  { 
+    DCS2keys length 
+    0 eq {
+      % No keys matched this sep. We need to skip the low res preview anyway!
+      //DCSIndent exec
+      UVS (This file contains no data for the current separation\n) //DCSPrint exec
+      /done_hi_res /success store
+      skipLowRes
+      /DCS true def
+    }  {
+      /DCSver 0 store
+      DCS2
+    } ifelse
+  } ifelse
+} bind def
+
+/DCS2baseOffset 0 def
+/BeginDocumentLevel 0 def
+/BeginDocumentList 4 dict def
+BeginDocumentList 0 () put
+/MissingProcsetList 12 dict def
+/InXPressFile false def
+
+/done_hi_res  /unset def
+  % /unset
+  % /missing  - at least one file was missing
+  % /failed  - at least one sep failed.
+  % /success  - everything OK so far
+  % /blank  - skip low res even though high res was missing.
+
+/StripLeadingSpaces {
+    {
+    dup length 0 eq { exit } if
+    dup 0 get 32 ne { exit } if
+    1 1 index length 1 sub getinterval
+  } loop
+} bind def
+
+% Check that it's even a complete preview image - XPress strips out procsets
+% which it's already defined for the job as a whole ...
+% return true if missung, false otherwise
+/checkMissingProcsets <<
+
+  /BeginProcSet: {
+    % remove this procset from the list
+    //StripLeadingSpaces exec
+    % undef is specified to silently ignore values that aren't there ...
+    //DCSdict /MissingProcsetList get exch undef
+  } bind
+  
+  /BeginSetup {
+    % end of test zone
+    pop
+    /DCSendScan errordict /undefinedresult get exec
+  } bind
+  
+  /EndProlog 1 index
+
+>> def
+/checkMissingProcsets {
+    InXPressFile {
+    % install comment parsing:
+    (%%dict) load begin (%%actions) load begin
+    //checkMissingProcsets {
+      % respect any previous definitions
+      currentdict 2 index known {
+          [
+          /dup load
+          3 -1 roll
+          /exec load
+          4 index load
+          /exec load
+        ] cvx bind
+      } if
+      def 
+    } forall
+    end end
+    
+    % run the prolog:
+    currentfile cvx stopped {
+      $error /command get /DCSendScan ne { stop } if
+      $error /newerror false put
+    }  {
+      % GLOB: Treat as assert - do not translate
+      (Error: Unexpected end of file whilst scanning DCS2 header\n) //DCSPrint exec
+      stop
+    } ifelse
+    
+    % return boolean
+    MissingProcsetList length 0 gt
+  }  {
+    false
+  } ifelse
+} bind def
+
+
+/TestWholeDCS2 {
+  currentfile 1183615869 internaldict /fileseekable get { exec } stopped { pop false } if not {
+    false
+  }  {
+    % (ECPOS: )print dup ==
+    /EndCommentPosition currentfile fileposition def
+    
+    save /PreScanSave exch def
+    checkMissingProcsets 
+    PreScanSave restore
+    % leaves boolean on stack still
+    /TrimmedDCS2Preview 1 index def
+      {
+      currentfile EndCommentPosition setfileposition
+      false
+    }  {
+%      last!PS
+      -1
+      DCS2keys {
+        exch pop /subFileLocation get
+        dup 2 index lt
+        2 index -1 eq or
+        { exch } if pop
+      } forall
+      % offset to first separation
+      currentfile exch last!PS add 1 sub 
+      1 index //linebuffer statusdict /filename get exec 
+      pop
+      status not {
+        % The file is positionable, but status reports that it doesn't
+        % exist on disk. It must be filtered, so we'll assume that's
+        % because it's a PC format EPS file. If so the whole of the DCS
+        % data will be present
+        pop pop  % pointer and file
+        true
+      }  { 
+        pop pop exch pop
+        % pointer, filesize
+        1 index le {
+          pop pop  % pointer, currentfile
+          false
+        }  {
+          { setfileposition } stopped {
+            % No - can't be the whole file - we've just tried to
+            % read off the end of it ...
+            % GLOB: treat as assert, do not translate
+            (Error: Insufficient data for embedded DCS2 comments.\n) //DCSPrint exec
+            stop
+          }  {
+            currentfile linebuffer 0 5 getinterval readstring pop
+            (%!PS) search {
+              % yes! We think the whole file is here!
+              /SeparationPosition currentfile fileposition def
+              /searchprestring exch def
+              pop pop    % from the search
+
+              % Now doublecheck if %%Trailer is there
+                -1
+                DCS2keys {
+                  exch pop /subFileDetails get
+                  dup 2 index lt
+                  2 index -1 eq or
+                  { exch } if pop
+                } forall
+              SeparationPosition add currentfile exch setfileposition
+              currentfile linebuffer 0 10 getinterval readstring pop
+              (%%Trailer) search {
+                % We have definitely found a sep.
+                % correct offset to start of file if necessary
+                searchprestring length 0 eq { /last!PS dup load 1 sub def } if
+                true
+              } {
+                % Cannot find Trailer ... just the preview embedded.
+                pop
+                false % from the search for Trailer
+              } ifelse
+              % Wind up to the beginning of the separation
+              currentfile SeparationPosition setfileposition
+            }  {
+              % no ... just the preview embedded.
+              pop      % from the search for PS
+              false
+            } ifelse
+          } ifelse
+        } ifelse
+      } ifelse
+      currentfile EndCommentPosition setfileposition
+    } ifelse
+  } ifelse
+  /WholeDCS 1 index def
+} bind def
+/WholeDCS false def
+
+/CleanBeginDocument {
+  % Check whether we have a valid BeginDocument comment that can be tried
+  % as an external file name.
+  BeginDocumentList BeginDocumentLevel get
+  //StripLeadingSpaces exec
+  dup length 0 ne exch 1 index {
+    BeginDocumentList BeginDocumentLevel 3 -1 roll put
+  } { pop } ifelse
+} bind def
+
+/MakeOPI << /Black null /Cyan null /Yellow null /Magenta null >> def
+/MakeOPI { %  pass over to OPI code
+  12 dict begin
+  
+  DCSBoundingBox null eq dup not {
+    DCSBoundingBox 
+    cvx mark exch stopped {
+      cleartomark true
+    }  {
+      counttomark 4 ne {
+        cleartomark true
+      }  {
+        4 copy 4 {
+          type dup /integertype ne exch /realtype ne and {
+            cleartomark true
+            exit
+          } if
+        } repeat
+        dup type /booleantype eq
+      } ifelse
+    } ifelse
+  } if
+    {
+       % GLOB: Treat as assert, not for translation
+    (Error: DCS comment extraction can only be done with a complete BoundingBox comment\n) //DCSPrint exec
+    stop
+  } if
+          
+  % llx lly urx ury
+  /Size [ 3 index 6 index sub 3 index 6 index sub ] def
+  /CropRect [ 0 Size aload pop exch 0 ] def
+  /ImageType [ 4 8 ] def  % reasonable guess ...
+  /Overprint overprintDCS def
+  /Position [ 6 2 roll
+    % llx lly urx ury
+    3 index 1 index 4 2 roll
+    % llx lly ulx uly urx ury
+    1 index 5 index
+    % llx lly ulx uly urx ury lrx lry
+    
+    % transform to default user space.
+    4 { transform 8 2 roll } repeat
+    gsave initmatrix
+    4 { itransform 8 2 roll } repeat
+    grestore
+  ] def
+  /Hqn_DCS DCSver def
+  % save process colour emulations of spot colours
+  /Hqn_spotList <<
+    statusdict /CMYKCustomColors get { dup length string copy } forall
+  >> def
+  
+  /Hqn_F DCSver 1 eq { 
+    keys length dict begin
+    keys {
+      % colour filename
+      1 dict dup
+      /subFileDetails 4 -1 roll put
+      def
+    } forall
+    currentdict end
+  }{ DCS2keys } ifelse def
+  /F singleFile {
+    BeginDocumentList BeginDocumentLevel get
+  }  {
+    Hqn_F /Black known {
+      % use the black sep name if there is one ...
+      Hqn_F /Black get
+    }  {
+      % ... else choose a random one.
+      Hqn_F { exch pop exit } forall
+    } ifelse
+    /subFileDetails get
+  } ifelse
+  def    % F
+  DCSver 2 eq {
+    /Hqn_Single singleFile def
+  } if
+  
+  /Type /OPI def
+  /Version 1.3 def
+  
+  currentdict end
+  /HqnOPI /ProcSet findresource /HqnEP2kRecord get exec
+  
+  pop  % mark
+  
+  DCSver 2 eq {
+    % Now jump to the end of the DCS2 data in the main file
+    TrimmedDCS2Preview {
+      % Hmm ... tricky. The embedded doc must have a %%BeginDocument comment 
+      % before it to have got to here, so it seems reasonable to assume that
+      % there will be an %%EndDocument comment after it, BUT beware of
+      % other embedded EPS files within the proview causing extra %%Begin/EndDocument
+      % comments ...
+      /CommentNesting 0 def
+        {
+        % loop until end line marker
+    
+          {
+          % loop to read a single line if 
+          % too long for the buffer
+          mark //currentfile //linebuffer { readline } stopped 
+          not { 
+            exit 
+          } if
+          cleartomark
+        } loop
+    
+        not {
+          % end of file - shouldn't happen
+          pop  pop  % the string and mark
+          exit 
+        } if    
+        (%%EndComments) anchorsearch {
+          % found end marker
+          pop 
+          CommentNesting 0 gt {
+            /CommentNesting dup load 1 sub def
+          }  {
+            pop pop % string bits and mark
+            exit
+          } ifelse
+        } if
+        (%%BeginComments) anchorsearch {
+          pop
+          /CommentNesting dup load 1 add def
+        } if
+    
+        pop  pop    % the string and mark
+      } loop
+    }  {
+      % jump to "beginning of first sep", because that's the end of the embedded
+      % preview image.
+      currentfile 
+      -1
+      DCS2keys {
+        exch pop /subFileLocation get
+        dup 2 index lt
+        2 index -1 eq or
+        { exch } if pop
+      } forall
+      last!PS add setfileposition
+    } ifelse
+  } if
+} bind def
+
+/ActNow { %  act on it now ...
+  /DCS2baseOffset last!PS def
+  /DCS2lastEnd -1
+  DCS2keys {
+    exch pop
+    dup /subFileDetails get exch /subFileLocation get add
+    dup 2 index 
+    gt { exch } if pop 
+  } forall 
+  def
+  
+  % run the real seps
+  //ReplaceDCS exec
+  
+  % now skip the file pointer to the end of the last separation.
+  currentfile DCS2baseOffset DCS2lastEnd add 
+  /DCS2baseOffset 0 def
+  setfileposition  
+} bind def
+
+/IgnoreIt { %  ignore it completely
+  % do nothing ...
+  UVS (Warning: A DCS2 single file preview image is embedded, but there is insufficient data to find the separation files.\n) 
+  UVS ( .. Running the low resolution preview.\n) //DCSPrint exec
+  //DCSPrint exec
+} bind def
+
+% Option for DCSAction - save the comment data as OPI.
+/ConvertDCS2OPI {
+  DCSver 1 eq { /MakeOPI }{
+    singleFile 
+    last!PS dup 0 ge exch 2 le and
+    and { /ActNow } {
+      singleFile { 
+        % it's an embedded single-file DCS 2 image. That might be just the
+        % preview, or it might be the whole thing.
+        TestWholeDCS2 { /ActNow }{ 
+          CleanBeginDocument { /MakeOPI }{ /IgnoreIt } ifelse 
+        } ifelse 
+      }  { 
+        /TrimmedDCS2Preview true def
+        /MakeOPI 
+      } ifelse
+    } ifelse
+  } ifelse
+  load exec
+} bind def
+
+/DCSBoundingBox null def
+
+% lowercase: a utility procedure to convert the argument string to lower case
+/A (A)0 get def
+/Z (Z)0 get def
+/a-A (a)0 get A sub def
+
+/lowercase {
+  dup length 0 exch 1 exch 1 sub {
+    2 copy get
+    dup //A ge 1 index //Z le and {
+      3 copy //a-A add put 
+    } if
+    pop pop
+  } for
+} bind def
+
+/checkSeparation {
+% Separation detection (which is based on screen angles) can
+ % be misleading if the job used an unconventional angle set.
+ % That does not matter too much for screen selection (presumably
+ % they _wanted_ the screens usually used for the other seps), but
+ % can be disasterous for DCS - so re-verify it here by calling
+ % the setcmykcolor-redefinition version of separation detection.
+  DCSdict /insideDCS get not {
+  //DCSdict /separating get exec not {
+      /DetectSeparation csysparam {
+        /Separation csysparam
+        dup length 0 gt {
+          1183615869 internaldict /DetectSeparation get exec
+          dup /Separation ne   % /Separation means DetectSeparation failed
+            {
+            dup dup length string cvs //DCSdict /lowercase get exec
+            2 index dup length string copy //DCSdict /lowercase get exec ne
+              {
+              % Detected separation is _different_ from what we thought!
+              % UVM(%%%%[ Warning: Previously detected separation %s changed to %s for DCS ]%%%%)
+              (%%[ Warning: Previously detected separation ) //DCSPrint exec 
+              exch //DCSPrint exec
+              ( changed to ) //DCSPrint exec dup dup length string cvs //DCSPrint exec 
+              ( for DCS ]%%\n) //DCSPrint exec
+              << exch /Separation exch /Password 0 >> setsystemparams
+            }
+              {
+              pop pop
+            } ifelse
+          }
+            {
+            pop pop
+          } ifelse
+        }
+          {
+          pop
+        } ifelse          
+      } if
+    } if
+  } if
+} bind def
+
+% DCSKeys: add the key to the keys dictionary if the color string is mentioned
+% in the DocumentProcessColors comment. Key is possibly preceded by a colon and
+% some whitespace.
+%
+% keystring colorname colorstring DCSkeys --> -
+%
+% eg: (: YourPhotoCyan) /Cyan (cyan) DCSkeys --> -
+%
+/compositestring (Composite) def
+
+/DCSkeys {
+  dup //globaldict /DCSProcessColors 2 copy known {
+    % test if the colorstring is listed in the DocumentProcessColors comment
+    get exch search {
+      pop pop pop true
+    } {
+      pop false
+    } ifelse
+  }  {
+    pop pop pop true
+  } ifelse
+
+  DCSdict /checkSeparation get exec
+  % test if colorstring is the PlateColor (or color as deduced otherwise)
+  % case independently
+  % -- but only if we are not auto-separating!
+  //DCSdict /separating get exec {
+    exch pop true
+  }  {
+    exch
+    DCSdict /insideDCS get {
+      DCSdict /mockSeparation get
+    }  {
+      recstat exch pop 2 ge {
+        /Separation csysparam
+      }  {
+        //compositestring
+      } ifelse
+    } ifelse
+
+    dup length 0 gt 1 index //compositestring ne and {
+      % Can only be CMYK in DCS 1 - no need to adjust for Pantone
+      % name extensions.
+      //lowercase exec cvn
+      exch cvn eq
+    }  {  
+      pop pop true
+    } ifelse
+  } ifelse
+  and {
+    exch
+    (:) anchorsearch {
+      pop % the matched colon
+      % skip any spaces - string (without the colon) now on stack
+        { %loop
+        dup 0 get 32 eq { 
+          dup length 1 sub 1 exch getinterval % leave a shorter string
+        }  { 
+          exit
+        } ifelse
+      } loop % leaves space stripped string on stack
+      % And remove any parens that surround the whole string
+      dup length 1 gt {
+        dup 0 get //leftparen eq 1 index dup length 1 sub get //rightparen eq and {
+          1 1 index length 2 sub getinterval
+        } if
+      } if
+      dup length string copy
+      //DCSdict /keys get 3 1 roll put
+    }  {
+      pop pop % the string and colourname
+      /CommentParser /DCSkeys .error
+    } ifelse
+    //DCSdict /DCSver 1 put
+    //DCSdict /DCS true put
+  }  { 
+    pop pop % the string and colourname
+  } ifelse
+} bind def
+
+/our-setgray {
+  currentcolorspace 0 get dup /DeviceGray ne exch /Separation ne and {
+  /DeviceGray setcolorspace
+  } if
+  //DCSdict /ConvertToSeparation get { 
+  //DCSdict /separationColorspace get setcolorspace
+  1 exch sub
+  //DCSdict /ExpectedCSpace /DeviceGray put
+  } if
+  setcolor
+} bind def
+/our-setrgbcolor { 
+  gsave setrgbcolor currentcmykcolor grestore
+  setcolor 
+  pop pop pop 
+  //DCSdict /ExpectedCSpace /DeviceRGB put
+} bind def
+/our-sethsbcolor { 
+  gsave sethsbcolor currentcmykcolor grestore
+  setcolor 
+  pop pop pop 
+  //DCSdict /ExpectedCSpace /DeviceRGB put
+} bind def
+/our-setcmykcolor { 
+%  //DCSdict /ConvertToSeparation get { 
+%    //DCSdict /separationColorspace get setcolorspace
+%  } if
+  setcolor 
+  pop pop pop 
+  //DCSdict /ExpectedCSpace /DeviceCMYK put
+} bind def
+/our-setcolor <<
+  /DeviceGray //our-setgray
+  /DeviceRGB  //our-setrgbcolor
+  /DeviceCMYK //our-setcmykcolor
+  /Indexed  { setcolor } bind
+  /Separation { setcolor } bind
+  /DeviceN  { 
+    //DCSdict /DeviceNSpace get
+    gsave setcolorspace setcolor currentcmykcolor grestore
+    setcolor
+    pop pop pop
+  } bind
+>> def
+/our-setcolor {
+  //our-setcolor //DCSdict /ExpectedCSpace get 
+  2 copy known {
+    get exec
+  }  {
+    (Error: Unknown colorspace used in DCS separation: )//DCSPrint exec
+    =string cvs //DCSPrint exec
+    (\n) //DCSPrint exec
+    stop
+  } ifelse
+} bind def
+
+/our-setcolorspace <<
+  /DeviceGray 1
+  /DeviceRGB  3
+  /DeviceCMYK 4
+  /Separation 1
+  /DeviceN  { 
+    currentcolorspace 1 get length 
+  } bind
+>> def
+/our-setcolorspace {
+  /HqnDCS pop
+  dup dup type dup /arraytype eq exch /packedarraytype eq or { 0 get } if
+  //DCSdict /ExpectedCSpace 2 index put
+  dup /Indexed eq //DCSdict /ConvertToSeparation get and {
+    pop
+    % It's an Indexed colorspace - need to re-jig into one based 
+  % on the right Separation space.
+  % NOTE: This is illegal in PostScript Level 2, but allowed in
+  % LanguageLevel 3. ScriptWorks will allow this even if set to
+  % emulate Level 2, so we can use it here in ScriptWorks 5.0 
+  % and later
+
+  hqnversion 0 get 53 lt {
+    % Before v 5.0
+    /DCS /undefinedresult (Indexed image) //DCSerror exec
+  } if
+
+  gsave
+  dup 1 get setcolorspace
+  dup 2 get dup 1 add string
+  % cspace hival newstring
+  2 index 3 get
+  dup type /stringtype eq {
+    //our-setcolorspace 3 index 1 get
+    dup type /nametype ne { 0 get } if
+    get exec
+    % cspace hival newstring oldstring valcount
+    0 1 6 -1 roll {
+      % cspace newstring oldstring valcount i
+      3 copy mul
+      % cspace newstring oldstring valcount i oldstring offset
+      3 index getinterval
+      { 255 div } forall setcolor
+      currentcmykcolor 4 1 roll pop pop pop
+      % cspace newstring oldstring valcount i newK
+      255 mul round cvi
+      3 index 3 1 roll put
+    } for
+    pop  % valcount
+  }  {
+    0 1 5 -1 roll {
+      % cspace newstring proc i
+      dup 2 index exec setcolor 
+      currentcmykcolor 4 1 roll pop pop pop
+      % cspace newstring proc i newK
+      255 mul round cvi
+      3 index 3 1 roll put
+    } for
+  } ifelse
+  pop    % proc/string
+  grestore
+
+  [ /Indexed //DCSdict /separationColorspace get
+  5 -1 roll 2 get
+  5 -1 roll ] 
+  setcolorspace
+  } {
+    /DeviceN eq {
+    //DCSdict /DeviceNSpace 3 -1 roll put
+  } {
+    pop
+  } ifelse
+  } ifelse
+} bind def
+
+end
+
+//DCSdict /ExpectedCSpace /DeviceGray put
+//DCSdict /ConvertToSeparation false put
+
+% Change the 5-operand version of the image operator to the dictionary
+% variety so that the image uses the current color space rather than
+% changing it to DeviceGray.
+%
+DCSdict begin
+/our-image <<
+  /DeviceGray [ 0 1 ]
+  /CIEBasedA 1 index
+  /Separation 1 index
+  /DeviceRGB [ 0 1 0 1 0 1 ]
+  /CIEBasedABC 1 index
+  /DeviceCMYK [ 0 1 0 1 0 1 0 1 ]
+>> def
+/our-image {
+  /HqnDCS pop
+  systemdict /languagelevel known { systemdict /languagelevel get } { 1 } ifelse
+  //userdict /_ois_level 2 index put
+  1 eq {
+    <</Password 0 /LanguageLevel 2>> setsystemparams
+  } if
+  //userdict /_ois save put
+
+  dup type /dicttype ne {
+  //DCSdict /ExpectedCSpace /DeviceGray put
+    9 dict begin
+      /DataSource exch def
+      /ImageMatrix exch def
+      /BitsPerComponent exch def
+      /Height exch def
+      /Width exch def
+      /Decode //our-image currentcolorspace 
+      0 get get def
+      /ImageType 1 def
+      currentdict
+    end
+  } if
+
+  //DCSdict /ConvertToSeparation get 
+  //DCSdict /ExpectedCSpace get 
+  /DeviceGray eq and {
+  dup /Decode get dup length 2 eq {
+    % Don't invert DCS from Shira when they've been made in spot mode
+    /shiradictR where {
+      pop
+      /ISpotParms where { /ISpotParms get 2 index ne } { true } ifelse
+    } { true } ifelse
+      {
+      aload 3 1 roll exch 3 -1 roll astore
+    } if
+    pop
+  } { pop } ifelse
+  }  {
+    //DCSdict /ExpectedCSpace get /Indexed eq {
+    dup /Decode get aload 3 1 roll
+    2 { dup 0 ne { pop 1 } if exch } repeat
+    3 -1 roll astore pop
+    } if
+  } ifelse
+  
+% dup { (\t)print exch =print (  )print == } forall
+  //systemdict /image get exec
+  _ois_level 1 eq {
+    <</Password 0 /LanguageLevel 1 >> setsystemparams
+  } if
+  //userdict /_ois get restore
+} bind def
+
+% New versions of settransfer and currenttransfer, used to invert the sense of
+% data defined for DeviceGray, but used on a Separation colorspace.
+% Need to define current... as well becase some code will explicitly concatenate
+% the new function with existing stuff, and some won't ...
+/our-settransfer { null exec null exec 1. exch sub } def % NOT bound
+/our-currenttransfer {
+  {}
+} bind def
+/our-currentcolortransfer {
+  {}dup dup dup
+} bind def
+/our-setcolortransfer {
+  % Inside a DCS file we're only interested in the black
+  % channel, because the data should all be in device gray.
+  //our-settransfer dup length array copy
+  dup 0 //DCSdict /baseTransfer get put
+  dup 2 4 -1 roll put
+  cvx bind setcolortransfer
+} bind def
+/our-settransfer {
+  //our-settransfer dup length array copy
+  dup 0 //DCSdict /baseTransfer get put
+  dup 2 4 -1 roll put
+  cvx bind 
+  settransfer
+} bind def
+
+/StripFileName << { (:) (/) (\\) (%) } { 0 get null } forall >> def
+/StripFileName /HqnLocal /ProcSet mark 3 copy pop resourcestatus {
+  cleartomark findresource /StripFileName_1 get
+}  {
+  pop pop pop
+    {
+    dup length 1 sub -1 0 {
+      2 copy get //StripFileName exch
+      known {
+        exit
+      } if
+      pop
+    } for
+    dup type /integertype eq {
+      1 add
+      1 index length 1 index sub
+      getinterval
+    } if
+  } bind    
+} ifelse
+def
+
+/StripPath {
+  % stack contains original full file name with path - cut off the path
+  //StripFileName exec
+  
+    {
+    dup dup length 1 sub get //rightparen ne {
+      exit
+    } if
+    dup length 1 sub -1 0 {
+      2 copy get //leftparen eq {
+        exit
+      } if
+      pop
+    } for
+    dup type /integertype eq {
+      % string ptr
+      dup 0 eq { 
+        pop
+      }  {
+      0 exch getinterval
+      } ifelse
+    } if
+    exit
+  } loop
+} bind def
+
+%
+% colorname colorkey  dcsfilename -> pathname true
+%                                 -> false
+%
+/dcsfilename {
+  //statusdict /FileSubstitutes 2 copy known {
+    get 1 index known
+  dup {
+    % colour filename true
+    3 -1 roll pop
+  } if
+  dup not
+  } { pop pop true } ifelse
+    {
+    2 copy
+    //StripPath exec
+    /DCStransKey exch def
+    /DCStransColor exch def
+
+    DCSdict /DCStranslation get {
+    DCSdict /DCStranslator get exec
+    }
+    {
+    1183615869 internaldict /DCSDictionaries get
+    3 -1 roll 2 copy known {
+      get begin 
+      dup currentdict exch known {
+        dup load dup type /stringtype eq {
+        exch pop true
+        } {
+        dup type /arraytype eq {
+          % modify the array to be the subarray with the first
+          % element removed
+          dup 0 get 3 1 roll dup length 1 sub 1 exch getinterval def
+          dup type /stringtype eq dup not {
+          % a null item in the array, so skip it 
+          pop pop false
+          } if
+        } {
+          pop pop false
+        } ifelse
+        } ifelse
+      } {
+        pop false
+      } ifelse
+      end
+    } {
+      pop pop pop false
+    } ifelse
+    } ifelse
+
+    % Use the (%dcs%) device if supplied
+    dup
+    {
+    pop
+    dup
+    dup length 5 add string
+    dup 0 (%dcs%) putinterval
+    dup 5 4 -1 roll putinterval
+    dup {(r) file} stopped
+    { 
+      pop pop pop true
+    }
+    { closefile exch pop true
+    } ifelse
+    } if
+  } if
+} bind def
+
+/RunStopped {
+    //DCSdict /fromFile get {
+    % check to see if the file is PC format or not
+    dup 4 string readstring pop
+    mark 2 index { 0 setfileposition } stopped cleartomark
+    //pcepshead eq {
+      % Yes
+      cvx
+      dup serverdict /stdout get
+      statusdict begin setstdio end
+      serverdict /switchexecmode get 3 get
+    } if
+  } if
+  //DCSdict /insideDCS true put
+  (%dict) load (%actions) get /!PS undef
+  cvx stopped 
+  dup { defaulthandleerror } if
+} bind def
+
+/coreRunDCS {
+    {
+  cleartomark 
+  dup type /nametype eq { 
+    /safetystop eq { exit } if
+  } if
+  } loop
+  countdictstack exch sub { end } repeat
+} bind def
+/coreRunDCS {
+    save DCSdict /DCSinnerSave 3 -1 roll put
+  <<
+  /setgray //DCSdict /our-setgray get
+    /image //DCSdict /our-image get
+     /setcolorspace //DCSdict /our-setcolorspace get
+  /showpage { }
+  /setrgbcolor //DCSdict /our-setrgbcolor get
+  /sethsbcolor //DCSdict /our-sethsbcolor get
+  /setcmykcolor //DCSdict /our-setcmykcolor get
+  /setcolor //DCSdict /our-setcolor get
+  /setoverprint { pop } bind
+  /erasepage {} bind
+  >>  1183615869 internaldict begin shadowop end
+    countdictstack exch
+    /safetystop mark 3 -1 roll
+    //DCSdict /RunStopped get exec 
+    {
+      //DCSIndent exec
+      UVS( Error in DCS file\n) //DCSPrint exec
+    //DCSFlush exec
+    defaulthandleerror
+      //coreRunDCS exec
+      false
+    } {
+      //globaldict /HqnHangingLine get { 
+        //globaldict /HqnHangingLine false put
+      } {
+        //DCSIndent exec 
+      } ifelse
+      UVS( done.\n) //DCSPrint exec
+      //coreRunDCS exec
+      true
+    } ifelse
+  DCSdict /DCSinnerSave get restore
+} bind def
+
+/GetFileObject <<
+  /Intent    0    % 'image data' - sequentially accessed, probably only once.
+  /AsyncRead  true  % Don't read immediateoly - file may be big and we'd rather not page to disk.
+  /CloseSource true  % Closing the filter closes the underlying file.
+>> def
+/GetFileObject {
+  dup type /filetype eq {
+    true
+    //DCSdict /fromFile false put
+  } {
+    //statusdict /FileSubstitutes 2 copy known {
+      get 1 index 2 copy known {
+        get
+        //GetFileObject /ReusableStreamDecode filter
+        true false
+      } { pop pop true } ifelse
+    } { pop pop true } ifelse
+      {
+      dup (r) {file} stopped not
+    } if
+    //DCSdict /fromFile true put
+  } ifelse 
+} bind def
+
+% runDCS: given a filename, run the file in a stopped context. This is called
+% when the RIP is separating. Change the meaning of the image and setgray
+% operators.
+%
+% filename runDCS -> true         % if DCS executed okay
+%                 -> false        % if didn't exist or an error
+%
+/runDCS {
+  //GetFileObject exec
+  {
+    % filename channel
+    //DCSIndent exec
+    % UVM(Running %s)
+    (Running ) //DCSPrint exec
+    exch {(%) search {pop pop}{exit}ifelse}loop
+    {(/) search {pop pop}{exit}ifelse}loop
+    //DCSPrint exec (...) //DCSPrint exec //DCSFlush exec
+    //globaldict /HqnHangingLine true put
+    coreRunDCS
+  } {
+  pop pop pop
+  false
+  } ifelse
+} bind def
+
+/coreRunSeparatedDCS {
+  save DCSdict /DCSinnerSave 3 -1 roll put
+  << 
+  [ /setgray /image /setcolorspace /setcolor /colorimage ] {
+    //systemdict 1 index 2 copy known { get }{ pop pop pop } ifelse
+  } forall
+  /showpage {}
+  >> begin
+
+  //DCSdict /separationColorspace currentcolorspace put
+
+  DCSdict /insideDCS get {
+    <<
+    /image {
+      /HqnDCS pop
+      currentcolorspace 
+      0 get /DeviceGray eq {
+        DCSdict /separationColorspace get setcolorspace
+        1 setcolor
+      } if
+      DCSdict /our-image get exec 
+    } bind
+    >> 1183615869 internaldict begin shadowop end
+  } if
+
+    countdictstack exch
+    mark exch
+    //DCSdict /RunStopped get exec {
+      //DCSIndent exec
+      UVS( Error in DCS file\n) //DCSPrint exec
+      cleartomark countdictstack exch sub { end } repeat
+      false
+    } { 
+      //globaldict /HqnHangingLine get { 
+        //globaldict /HqnHangingLine false put
+      } {
+        //DCSIndent exec 
+      } ifelse
+      UVS( done.\n) //DCSPrint exec
+      cleartomark pop
+      true
+    } ifelse
+  
+  end
+  DCSdict /DCSinnerSave get restore
+} bind def
+
+
+% runSeparatedDCS: given a filename, run the file in a stopped context. This
+% is called when the job is pre-separated.
+%
+% Substitute true definitions of setgray etc, as the separator will have defined
+% them to do separation, which we do not want when running the high-res
+%
+% filename runSeparatedDCS -> true         % if DCS executed okay
+%                          -> false        % if didn't exist or an error
+%
+
+/runSeparatedDCS {
+  //GetFileObject exec
+    {
+    % filename channel
+    % UVM(Running %s)
+    //DCSIndent exec
+    (Running ) //DCSPrint exec
+    exch {(%) search {pop pop}{exit}ifelse}loop
+    {(/) search {pop pop}{exit}ifelse}loop
+    //DCSPrint exec (...) //DCSPrint exec //DCSFlush exec
+    //globaldict /HqnHangingLine true put
+
+    coreRunSeparatedDCS
+  } {
+    pop pop pop
+    false
+  } ifelse
+} bind def
+
+/MissingImageActions <<
+
+  /LowRes {}    % use low res image - do nothing here
+
+  /Abort {
+    UVS (Warning: ABORTING job because of missing image data\n) //DCSPrint exec
+    /DCS-replacement errordict /undefinedresult get exec
+  } bind
+
+  /Blank {
+    /done_hi_res /blank store
+  } bind
+
+>> def
+
+/skipLowRes {
+  done_hi_res dup /success ne exch /pceps ne and {
+    //MissingImageActions DCSMissing get exec
+  } if
+
+    done_hi_res dup /blank eq exch /success eq or {
+    done_hi_res /blank eq {
+      //DCSIndent exec
+      UVS (Skipping low resolution image data\n) //DCSPrint exec
+    } if
+
+    % Discard the low-res file
+
+      {  % loop
+      mark
+      currentfile //linebuffer
+      { readline } stopped not { % ignore rangecheck errors
+        % read a line but it could be "end of file"
+          {
+          DCSdict /insideOPI get {
+            (%%Trailer) anchorsearch {
+              exit
+            } if
+          }  {
+            dup (%%EndBinary) anchorsearch {
+              % swallow grestore end
+              currentfile //linebuffer readline
+              pop dup length 0 eq {
+                % Sometimes you'll get extra blank lines if line end
+                % conversion has occurred - this was one of those times.
+                currentfile //linebuffer readline pop
+              } if
+              (grestore end) anchorsearch {
+                % Yup, it's a PShop EPS.
+                pop pop pop
+                
+                % and the next grestore as well ...
+                currentfile //linebuffer readline
+                pop dup length 0 eq {
+                  currentfile //linebuffer readline pop
+                } if
+                (grestore) anchorsearch {
+                  %( and removed PhotoShop lowres) =    % for debug
+                  exit
+                } if
+              } if
+            } if
+            dup (%%EOF) anchorsearch {
+              %( and removed nonPhotoShop lowres) = % for debug
+              exit
+            }  {
+              dup (%%EndDocument) anchorsearch {
+                %( and removed PageMaker stripped lowres) = % for debug
+                () (%%dict) load (%%actions) cvn get /EndDocument get exec
+                exit
+              } if
+            } ifelse
+          } ifelse
+        }  {
+          DCSdict dup /insideDCS get exch /insideOPI get or not 
+          last!PS dup 0 lt exch 2 ge or
+          and {
+            //DCSIndent exec
+            UVS(Error: Found EOF without finding End of low resolution image\n) //DCSPrint exec
+          } if
+          exit
+        }ifelse
+      }if
+      cleartomark
+    } loop
+    cleartomark
+  }  {
+    done_hi_res /pceps ne {
+      //DCSIndent exec
+      UVS (Using low resolution image\n) //DCSPrint exec
+    } if
+  } ifelse
+} bind def
+
+/MissingImage {
+    //DCSIndent exec
+    % UVM (Warning: DCS separation for "%s", color "%s" could not be found\n)
+    (Warning: DCS separation for ") //DCSPrint exec
+    DCStransKey //DCSPrint exec
+    (", color ") //DCSPrint exec
+    DCStransColor =string cvs //DCSPrint exec
+    (" could not be found\n) //DCSPrint exec
+
+    /done_hi_res /missing store
+} bind def
+
+/DCS1 {
+    % Find out the name of the high-res file and run it. 
+    % Or, if we are doing the
+    % colour separation ourselves, find out all four filenames
+    % and run them all, one for each process colour separation.
+    //globaldict /HqnOPIindent 2 copy get 1 add put
+    save //DCSdict /outersave 3 -1 roll put
+  userdict /HqnProcessingFile /DCS put
+    separating {
+      % we are separating
+      keys length
+      keys { %forall
+    % colorname filename
+        gsave
+        DCSdict /overprintDCS get {
+          true setoverprint
+          <</OverprintProcess true>> setuserparams
+        } if
+    % colorname filename
+        1 index //DCSdict /DCSvalidateSeparation get exec
+    % colorname filename [ false | newspotname true ]
+    dup not { 3 index exch } if
+    % colorname filename usespotname bool
+      DCSdict /mockSeparation 
+        1 index =string cvs dup length string copy put
+          {
+      % colorname filename usespotname
+      setupColorspace
+      % colour filename
+      DCS1fileSource 2 index known {
+        DCS1fileSource 3 -1 roll get
+      true
+      }  {
+        dcsfilename 
+      } ifelse {
+      runDCS {
+        done_hi_res /unset eq { /done_hi_res /success store } if
+      }  {
+        /done_hi_res /failed store
+      } ifelse
+      }  {
+      //MissingImage exec
+      } ifelse
+        } {
+          % colorname filename usespotname
+          pop pop pop 
+          done_hi_res /unset eq DCSdoValidate /SkipSeparation eq and 
+      { /done_hi_res /success store } if
+        } ifelse
+        grestore
+        dup 1 gt { 
+          true setoverprint
+          <</OverprintProcess true>> setuserparams
+        } if
+        DCSdict /overprintDCS true put
+    done_hi_res /failed eq { exit } if
+      } forall
+      pop % keys length
+    } {
+    % File was already separated
+    currentpagedevice dup /ProcessColorModel get /DeviceGray eq exch /Separations get not and {
+      % It's mono composite
+      true
+      keys {
+        % true colorname filename
+        pop 
+        //DCSdict /DCSvalidateSeparation get exec
+        % true [ usespotname true | false ]
+          {
+          pop
+          % true
+        }  { 
+          pop false 
+          % false
+          done_hi_res /unset eq DCSdoValidate /SkipSeparation eq and 
+            { /done_hi_res /success store } if
+        } ifelse
+      } forall
+    }  { true } ifelse
+      {
+      keys { %forall
+        % Keys have already been filtered to include just the one 
+        % for this separation.
+        % They can only be CMYK in DCS1 anyway.
+        1 index setupColorspace
+        exch pop /Default exch
+        gsave
+        % colour filename
+        DCS1fileSource 2 index known {
+          DCS1fileSource 3 -1 roll get
+          true
+        }  {
+          dcsfilename 
+        } ifelse {
+          runSeparatedDCS{
+            done_hi_res /unset eq { /done_hi_res /success store } if
+          }  {
+            /done_hi_res /failed store
+          } ifelse 
+        }  {
+          //MissingImage exec
+        } ifelse
+        grestore
+      } forall
+    } if
+  } ifelse
+
+    skipLowRes
+    //globaldict /HqnOPIindent 2 copy get 1 sub put
+  //DCSdict /outersave get restore
+} bind def
+
+/processComponents <<
+  /Black [ 0 0 0 1 ]
+  /Cyan [ 1 0 0 0 ]
+  /Magenta [ 0 1 0 0 ]
+  /Yellow [ 0 0 1 0 ]
+>> def
+
+/separationSetup << /Separation null /Password 0 >> def
+
+/insideDCS false def
+/insideOPI false def
+/overprintDCS false def
+/DCS2keys 12 dict def
+
+/FullTestSpot /HqnSpots /ProcSet findresource /FullTestSpot get def
+
+/CompareSpots /HqnSpots /ProcSet findresource /CompareSpots get def
+
+/DCSplateFile <<
+    (0123456789) { dup 48 sub } forall
+  (abcdef) { dup 87 sub } forall
+  (ABCDEF) { dup 55 sub } forall
+>> def
+/DCSplateFile {
+  //DCSdict begin
+      {
+    token not { false exit } if
+    dup type /stringtype ne { pop pop false exit } if
+    /colorName exch def 
+    token not { false exit } if
+    cvlit
+    /subFileType exch def
+    token not { false exit } if
+    dup =string cvs 0 get 35 eq % '#'
+    dup /singleFile exch def
+      {
+      /singleFileName null def
+      =string cvs
+      dup length 1 eq {
+        pop token not { false exit } if
+        =string cvs
+      }  {
+        1 1 index length 1 sub getinterval
+      } ifelse
+
+        mark exch { token not { exit } if exch } loop
+        counttomark 1 ne 1 index type /integertype ne or {
+          cleartomark pop
+          false exit
+        } if
+        /subFileLocation exch def
+        exch { token not { exit } if exch } loop
+        counttomark 1 ne 1 index type /integertype ne or {
+          cleartomark pop
+          false exit
+        } if
+        /subFileDetails exch def
+        pop  % the mark
+    }  {
+      % Multiple file version
+      cvlit /subFileLocation 1 index def
+
+      % ignore none-local files.
+      (Local) ne {
+        false exit
+      } if
+
+      StripLeadingSpaces
+      dup length 1 gt {
+        dup 0 get //leftparen eq 1 index dup length 1 sub get //rightparen eq and {
+          1 1 index length 2 sub getinterval
+        } if
+      } if
+      /subFileDetails exch dup length string copy def
+    } ifelse
+    true exit
+  } loop
+    {
+    % act on the comment if the file is positionable or
+    % this is not single-file, or if it's a complete single-file
+    % rather than being embedded.
+    % insideOPI is set to true by the OPI procset
+    /commentName colorName def
+
+    singleFile {
+      last!PS -1 ne
+    }  {
+      supportedFileLocations subFileLocation known
+        DCS2keys commentName known not and
+      subFileLocation preferredFileLocation eq
+      or
+      subFileTypeRun subFileType known and
+    } ifelse
+    
+    % Act on the comment if we're autoseparating, or if this is the right 
+    % plate for the current separation
+    //DCSdict /separating get exec {
+      true  % run them all
+    }  {
+      checkSeparation
+      colorName 
+
+      DCSdict /insideDCS get {
+        DCSdict /mockSeparation get
+      }  {
+        /Separation csysparam
+      } ifelse
+      
+      % colorName CurrentSepName
+      dup length 0 gt {
+        dup 3 1 roll
+        % CurrentSepName colorName CurrentSepName
+        //CompareSpots exec
+        % CurrentSepName bool
+        dup {
+          /commentName colorName def
+          /colorName 3 -1 roll def
+        }  { 
+          exch pop 
+        } ifelse
+      }  {
+        pop pop true
+      } ifelse
+    } ifelse
+    and  {
+      DCS2keys commentName 6 dict begin
+      { /colorName /commentName /subFileType /subFileLocation /subFileDetails } {
+        dup load def
+      } forall
+      currentdict end put
+    } if
+    
+    /DCS true def
+    /DCSver 2 def
+  }  {
+    true
+    singleFile not {
+      subFileLocation (Local) ne {
+        pop false
+      } if
+    } if
+      {
+      UVS(Warning: Invalid PlateFile comment\n) //DCSPrint exec
+    } if
+  } ifelse
+  end  % DCSdict
+} bind def    % DCSplateFile
+
+% Check to see that the named separation is going to be produced, and
+% warn if not, because the output may then be wrong.
+% spotname -> DCSValidateSeparation -> [ newspotname true | false ]
+/DCSvalidateSeparation {
+  dup //FullTestSpot exec
+
+  % spotname false  |  spotname newspotname true
+    { 
+    exch pop 
+    true 
+  }  {
+    % issue warning
+    //DCSIndent exec
+    % UVM (Warning: DCS file contains data for separation '%s' which will not be produced.\n)
+    (Warning: DCS file contains data for separation ') //DCSPrint exec 
+    dup type /stringtype ne { =string cvs } if //DCSPrint exec
+    (' which will not be produced.\n) //DCSPrint exec
+    DCSdoValidate /LowRes eq { /done_hi_res /sepmissing store } if
+    false
+  } ifelse
+} bind def
+
+/setupColorspace {
+  //DCSdict /mockSeparation 2 index dup length string 
+  1 index type /stringtype eq { copy }{ cvs } ifelse put
+
+  recombining not separating and{
+    [ /Separation 3 -1 roll
+      /DeviceCMYK
+      [
+      //processComponents 3 index
+      dup type /nametype ne { cvn } if
+      2 copy known { get } {
+        % CMYKCustomColors is updated by the centralised handling of 
+        % %%CMYKCustomColor: comments.
+        exch pop statusdict /CMYKCustomColors get exch
+        2 copy known { get } {
+          pop pop 
+          { 0 0 0 1 } cvlit  % default to black if we don't know the color
+        } ifelse
+      } ifelse
+        {
+        /dup load exch /mul load /exch load
+      } forall
+      /pop load
+      ] cvx bind
+      ]
+      //DCSdict /separationColorspace 2 index put
+      setcolorspace 1 setcolor
+      //DCSdict /baseTransfer currenttransfer put
+
+      //DCSdict /ConvertToSeparation true put
+    }  {
+    % We're recombining, so we have to stay in DeviceGray and not
+    % invert any data from the high res file.
+    pop
+
+    DCSdict /insideOPI get {
+        <<
+        /setgray //DCSdict /our-setgray get
+           /setcolorspace //DCSdict /our-setcolorspace get
+        /setrgbcolor //DCSdict /our-setrgbcolor get
+        /sethsbcolor //DCSdict /our-sethsbcolor get
+        /setcmykcolor //DCSdict /our-setcmykcolor get
+      >>  1183615869 internaldict begin shadowop end
+    } if
+
+    0 systemdict /setgray get exec
+    //DCSdict /ConvertToSeparation 
+      currentpagedevice begin
+      Separations ProcessColorModel /DeviceGray ne or
+      end
+    put
+    } ifelse
+} bind def
+
+/setCorrectColorspace {
+  % set the correct colorspace
+  % colorname
+  setupColorspace
+  
+  //DCSdict /mockSeparation colorName put
+} bind def
+
+/InnerCheckValidPosition  {
+  % file off
+
+  2 copy setfileposition
+    {
+    mark 2 index //linebuffer { readline } stopped not
+    % file off mark string bool true
+    % file off mark file string false
+    dup not {
+      exit
+    } if
+    dup {
+      exch pop
+      1 index length 0 gt { exit } if
+    } if
+    pop pop pop
+  } loop
+
+    {
+    (%!PS) anchorsearch { 
+      % file off mark post match
+      pop pop pop 
+      true 
+      % file off true
+    }  {
+      % file off mark line
+      % OK - let's try offset -1 or -2
+      (!PS) anchorsearch {
+        % file off mark post match
+        pop pop pop
+        1 sub InnerCheckValidPosition
+      }  {
+        (PS) anchorsearch {
+          pop pop pop
+          2 sub InnerCheckValidPosition
+        }  {
+          pop pop
+          false
+        } ifelse
+      } ifelse
+    } ifelse
+  }  {
+    cleartomark
+    false
+  } ifelse
+  % file off bool
+} bind def
+
+/checkValidPosition {
+  % file off
+% dup 16 12 string cvrs ==
+
+  OffsetFromPS /Unknown eq {
+    //DCSdict /OffsetFromPS /False put
+    //InnerCheckValidPosition exec
+    dup not EPSOffset 0 ne and {
+      pop    % false
+      EPSOffset add
+      //InnerCheckValidPosition exec
+      //DCSdict /OffsetFromPS /True put
+    } if
+  }  {
+    OffsetFromPS /True eq {
+      EPSOffset add
+    } if
+    //InnerCheckValidPosition exec
+  } ifelse
+
+  not  {
+    UVS (Error: Invalid, incorrect or damaged DCS2 file\n) //DCSPrint exec
+    stop
+  } if
+
+  setfileposition
+} bind def
+
+% This array defines how each file type should be processed. All examples in the spec (and all that
+% we have seen) have been EPS of EPSF, but to extend the range add into this dictionary.
+% Each value is an array with two elements - the procedure to run a file in a composite context, and
+% that to run it if the job is pre-separated.
+/subFileTypeRun 3 dict begin
+  /EPS [ /runDCS /runSeparatedDCS ] def
+  /EPSF //EPS def
+currentdict end def
+
+/singleFile false def
+/singleFileName null def
+/DCS2fileSource null def
+/DCS1fileSource 4 dict def
+
+% We have an external single-file file - check that the offsets match.
+/ScanExternal {
+  % Take a copy of the current keys and clear them out
+  /EmbeddedKeys DCS2keys def
+  /DCS2keys 12 dict def
+  /safesingleFileName singleFileName def
+
+  DCS2fileSource //s4 readstring pop //pcepshead eq {
+    % PC format EPS file.
+    DCS2fileSource //s4 readstring pop
+    0 0 3 -1 roll {
+      % tot shift this
+      1 index bitshift
+      3 -1 roll or exch
+      8 add
+    } forall
+    pop
+    /EPSOffset 1 index def
+  } { 0 } ifelse
+  DCS2fileSource exch setfileposition
+
+  % Read the PlateFile comments from the new file
+  /HeaderSource DCS2fileSource 0 (%%EndComments) /SubFileDecode filter def
+
+  /singleFile false def
+    {
+    HeaderSource 1 (%%PlateFile:) /SubFileDecode filter
+      {
+      mark 1 index //linebuffer { readstring } stopped cleartomark
+      dup status not { exit } if
+    } loop
+    pop    % the filtered file.
+    HeaderSource status {
+      HeaderSource //linebuffer readline pop
+      //DCSplateFile exec
+      HeaderSource status not { exit } if
+    } { exit } ifelse
+  } loop
+  DCS2fileSource 0 setfileposition
+  /singleFileName safesingleFileName def
+
+  DCSsingleFileMismatch /Ignore ne {
+    singleFile not {
+      UVS (Embedded single DCS2 file - external multi-file)
+      /DCS /undefinedresult 3 -1 roll //DCSerror exec 
+    } if
+
+    DCS2keys length EmbeddedKeys length ne {
+      % Seps must be different
+      (Mismatched external single DCS2 file - separation count)
+      DCSsingleFileMismatch /Warn eq {
+        //DCSIndent exec
+        % UVM (DCS Warning: Scanning file %s - Mismatched external single DCS2 file - separation count)
+        (\n) exch ( - ) singleFileName (DCS Warning: Scanning file ) 5 { //DCSPrint exec } repeat
+      }  { 
+        /DCS /undefinedresult 3 -1 roll //DCSerror exec 
+      } ifelse
+    } if
+    /doExit false def
+    DCS2keys {
+      % sepname dict
+      EmbeddedKeys 3 -1 roll 2 copy
+      known not {
+        (Mismatched external single DCS2 file - separation names)
+        DCSsingleFileMismatch /Warn eq {
+          //DCSIndent exec
+          % UVM (DCS Warning: Scanning file %s - Mismatched external single DCS2 file - separation names)
+          (\n) exch ( - ) singleFileName (DCS Warning: Scanning file ) 5 { //DCSPrint exec } repeat
+        }  { 
+          /DCS /undefinedresult 3 -1 roll //DCSerror exec 
+        } ifelse
+      } if
+      get
+      % dict dict
+      { /subFileLocation /subFileDetails } {
+        2 index 1 index get
+        2 index 3 -1 roll get
+        ne {
+          (Mismatched external single DCS2 file - offsets)
+          DCSsingleFileMismatch /Warn eq {
+            //DCSIndent exec
+            % UVM (DCS Warning: Scanning file %s - Mismatched external single DCS2 file - offsets)
+            (\n) exch ( - ) singleFileName (DCS Warning: Scanning file ) 5 { //DCSPrint exec } repeat
+          }  { 
+            /DCS /undefinedresult 3 -1 roll //DCSerror exec 
+          } ifelse
+          /doExit true def
+          exit
+        } if
+      } forall
+      pop pop    % the dicts
+      doExit { exit } if
+    } forall
+  } if    % not /Ignore
+} bind def
+
+/DCS2 2048 string def
+/DCS2 {
+  save //DCSdict /outersave 3 -1 roll put
+
+  /done_hi_res /unset store
+
+  userdict /HqnProcessingFile /DCS put
+  singleFile {
+    % single file version
+
+    true
+    singleFileName null eq BeginDocumentLevel 0 ne and {
+      % check whether the whole DCS2 file is embedded:
+% { /DCS2baseOffset /subFileLocation /subFileDetails } { dup =print (  )print load == } forall (_____________)=
+      TestWholeDCS2 not {
+        % it's not - do we have a usable name for the external file?
+        CleanBeginDocument {
+          % yes - set the name.
+          /singleFileName BeginDocumentList BeginDocumentLevel get def
+          /DCS2baseOffset 0 def
+        }  {
+          % oh dear - it's not fully embedded and we don't have a file name ...
+          UVS (Warning: DCS2 file is not fully embedded and no external file name is available - using preview data.\n) //DCSPrint exec
+
+          /DCS2fileSource null def
+          pop false
+        } ifelse
+      } if
+    } if
+
+    % boolean left on stack to say whether the high res data should be attempted.
+      {
+      /EPSOffset 0 def
+      //DCSdict /OffsetFromPS /Unknown put
+
+      singleFileName null eq {
+        % The whole file is embedded.
+        currentfile dup 1183615869 internaldict /getrealsource get exec eq {
+          /DCS2fileSource currentfile def
+          /singleFileName currentfile statusdict begin //DCS2 filename pop end def
+        }  {
+          % it's a PC format EPS file
+          /DCS2fileSource currentfile 1183615869 internaldict /getrealsource get exec 
+          def
+          /DCS2fileSource load dup 0 setfileposition 
+          dup //s4 readstring pop //pcepshead ne {
+            % not for translation - treat as assert
+            (DCS file is not a PC format EPS file after all??\n) //DCSPrint exec
+          } if
+          //s4 readstring pop
+          0 0 3 -1 roll {
+            % tot shift this
+            1 index bitshift
+            3 -1 roll or exch
+            8 add
+          } forall
+          pop
+          /EPSOffset exch def
+          /singleFileName /DCS2fileSource load 1183615869 internaldict /getrealsource get exec
+          statusdict begin //DCS2 filename pop end def
+        } ifelse
+
+        /DCS2baseOffset last!PS 1 sub def
+      }  {
+        /Composite singleFileName 
+        /DCStranslator load exec 
+          {
+          /singleFileName exch def
+          /DCS2fileSource load null eq {
+            /DCS2fileSource singleFileName (r) file def
+          } if
+          /DCS2baseOffset 0 def
+
+          //ScanExternal exec
+        }  {
+        } ifelse
+      } ifelse
+
+      /DCSver 0 store
+          
+      /DCS2fileSource load null eq {
+        //DCSIndent exec
+        % UVM (Warning: DCS2 single file for "%s" could not be found\n)
+        (Warning: DCS2 single file for ") //DCSPrint exec
+        singleFileName //DCSPrint exec
+        (" could not be found\n) //DCSPrint exec
+
+        /done_hi_res /missing store
+      }  {
+        % UVM (Running DCS2 single file '%s'\n)
+        //DCSIndent exec
+        (Running DCS2 single file ') //DCSPrint exec
+        singleFileName //DCSPrint exec
+        ('\n) //DCSPrint exec
+        //globaldict /HqnOPIindent 2 copy get 1 add put
+        % ASSUMPTION: single file data will always be EPS (sometimes labelled EPSF).
+        separating {
+          % Single file DCS2 - we're separating - run all files
+          
+          % sort colours into offset order to reduce skipping round file
+          % and maximise read-ahead
+          /keylist DCS2keys length array def
+          /offsetlist DCS2keys length array def
+          /ptr 0 def
+          DCS2keys {
+            /subFileLocation get
+            % colorName offset
+            ptr
+            0 1 ptr 1 sub {
+              % colorname offset ptr i
+              offsetlist 1 index get
+              % colorname offset ptr i list[i]
+              3 index gt {
+                exch pop
+                exit
+              } if
+              pop
+            } for
+            % colorname offset insert
+            { /offsetlist /keylist }{
+              load
+              1 index 2 copy ptr 1 index sub getinterval
+              exch 1 add exch putinterval
+            } forall
+
+            % colorname offset insert
+            offsetlist 1 index 4 -1 roll put
+            keylist exch 3 -1 roll put
+            
+            /ptr dup load 1 add def
+          } forall
+                
+          DCSdict /overprintDCS get {
+            true setoverprint
+            <</OverprintProcess true>> setuserparams
+          } if
+          keylist {
+            DCS2keys exch get begin
+            colorName //DCSdict /DCSvalidateSeparation get exec 
+            % [ newColorName true | false ]
+              {
+              done_hi_res /sepmissing ne {
+                /newColorName exch def
+                save
+                % make sure DCS2 calls inside this one don't get confused
+                DCS2keys { pop //DCS2keys exch undef } forall
+
+
+                newColorName setCorrectColorspace
+                mark /DCS2fileSource load { fileposition } stopped {
+                  % defaulthandleerror
+                  //DCSIndent exec
+                  UVS (Error: Single file DCS2 may only be used in positionable files\n) //DCSPrint exec
+                  cleartomark
+                  /done_hi_res /failed store
+                }  {
+                  pop pop
+
+                  //DCSIndent exec
+                  % UVM (DCS separation '%s' ... )
+                  (DCS separation ') //DCSPrint exec
+                  colorName //DCSPrint exec
+                  colorName dup type /nametype ne { cvn } if
+                  newColorName dup type /nametype ne { cvn } if
+                  ne {
+                    (\() //DCSPrint exec
+                    newColorName  =string cvs //DCSPrint exec
+                    (\)) //DCSPrint exec
+                  } if
+                  (' ... ) //DCSPrint exec //DCSFlush exec
+                  //globaldict /HqnHangingLine true put
+
+                  /DCS2fileSource load
+                  subFileLocation DCS2baseOffset add 
+                  checkValidPosition
+
+                  /DCS2fileSource load subFileDetails () /SubFileDecode filter
+                  //DCSdict /fromFile false put
+
+                  coreRunDCS{
+                    done_hi_res /unset eq { /done_hi_res /success store } if
+                  }  {
+                    /done_hi_res /failed store
+                  } ifelse
+                } ifelse
+                
+                { /done_hi_res /OffsetFromPS } { load exch } forall
+                restore
+
+                { /OffsetFromPS /done_hi_res } { exch store } forall
+              } if
+            }  {
+              done_hi_res /unset eq DCSdoValidate /SkipSeparation eq and 
+                { /done_hi_res /success store } if
+            } ifelse
+
+            end  % datadict
+
+            % Make sure the next separation overprints this one
+            true setoverprint
+            <</OverprintProcess true>> setuserparams
+            
+            DCSdict /overprintDCS true put
+            done_hi_res /failed eq { exit } if
+          } forall
+
+          % Skip to the end of the file ... if it's a DCS2 file 
+          % that's been called in, or we're printing a DCS2 file directly.
+          DCSdict /last!PS get 2 lt {
+            % For a PC EPS file we need to run to the end of both
+            % the RSD on the PostScript segment, and the underlying RSD
+            % on the file as a whole.
+            EPSOffset 0 ne 
+            currentfile /DCS2fileSource load ne 
+            and {
+              save
+              currentfile //linebuffer
+                {
+                2 copy readstring
+                exch pop
+                not { exit } if
+              } loop
+              pop pop
+              restore
+              /done_hi_res /pceps def
+            } if
+            save
+            /DCS2fileSource load //linebuffer
+              {
+              2 copy readstring
+              exch pop
+              not { exit } if
+            } loop
+            pop pop
+            restore
+          } if
+        }  {
+          % Single file DCS2 - pre-separated file - just run the right file.
+          DCS2keys {
+            % DCS2keys is pre-filtered to include only the entry for this separation.
+            gsave begin
+            pop
+            
+            mark /DCS2fileSource load
+            subFileLocation DCS2baseOffset add
+            { setfileposition } stopped {
+              //DCSIndent exec
+              UVS (Error: Single file DCS2 may only be used in positionable files\n) //DCSPrint exec
+              cleartomark
+              /done_hi_res /failed store
+            }  {
+              pop  % the mark
+              
+              //DCSIndent exec
+              % UVM (DCS separation '%s' ... )
+              (DCS separation ') //DCSPrint exec
+              colorName //DCSPrint exec
+              colorName dup type /nametype ne { cvn } if
+              commentName dup type /nametype ne { cvn } if
+              ne {
+                (\() //DCSPrint exec
+                commentName  //DCSPrint exec
+                (\)) //DCSPrint exec
+              } if
+              (' ... ) //DCSPrint exec //DCSFlush exec
+              //globaldict /HqnHangingLine true put
+
+              colorName setupColorspace
+
+              /DCS2fileSource load dup fileposition checkValidPosition
+
+              /DCS2fileSource load subFileDetails () /SubFileDecode filter
+              //DCSdict /fromFile false put
+
+              coreRunSeparatedDCS {
+                done_hi_res /unset eq { /done_hi_res /success store } if
+              }  {
+                /done_hi_res /failed store
+              } ifelse
+            } ifelse
+
+            end  % datadict
+            
+            grestore
+          } forall
+
+          % Skip to the end of the file ... if it's a DCS2 file 
+          % that's been called in, or we're printing a DCS2 file directly.
+          DCSdict /last!PS get 2 lt {
+            save
+            /DCS2fileSource load //linebuffer
+              {
+              2 copy readstring
+              exch pop
+              not { exit } if
+            } loop
+            pop pop
+            restore
+          } if
+        } ifelse
+      } ifelse
+    } if
+
+
+    % now skip the low res if we used an external file ...
+    /DCS2fileSource load currentfile 1183615869 internaldict /getrealsource
+        get exec ne /DCS2fileSource load null ne and 
+    WholeDCS and {
+      % find the first separation offset:
+      -1
+      DCS2keys {
+        exch pop
+        /subFileLocation get
+        2 copy gt 2 index -1 eq or { exch } if pop
+      } forall
+      last!PS 
+      add 1 sub
+      currentfile exch setfileposition
+    } if
+    skipLowRes
+  }  {
+    % multiple file version
+    % UVM (Running DCS2 master file '%s'\n)
+    (Running DCS2 master file ') //DCSPrint exec
+    currentfile statusdict begin //DCS2 filename pop end //DCSPrint exec
+    ('\n) //DCSPrint exec
+    //globaldict /HqnOPIindent 2 copy get 1 add put
+    separating {
+      % we're separating - run all files
+      DCS2keys {
+        % colorname datadict
+        gsave
+        begin
+        /commentName 1 index def
+        
+        //DCSdict /DCSvalidateSeparation get exec 
+        % [ usecolorname true | false ]
+          {
+          done_hi_res /sepmissing ne {
+            /colorName 1 index def
+            setCorrectColorspace
+
+            currentdict /subFileChannel known {
+              subFileDetails
+              /subFileChannel load
+              true
+            }  {
+              commentName subFileDetails
+              dcsfilename 
+            } ifelse {
+              //DCSIndent exec
+
+              subFileTypeRun subFileType get 0 get load exec {
+                done_hi_res /unset eq { /done_hi_res /success store } if
+              }  {
+                /done_hi_res /failed store
+              } ifelse
+            }  {
+              //MissingImage exec
+            } ifelse
+          } if
+        }  { 
+          done_hi_res /unset eq DCSdoValidate /SkipSeparation eq and 
+            { /done_hi_res /success store } if
+        } ifelse
+
+        end  % datadict
+        
+        grestore
+        % Make sure the next separation overprints this one
+        true setoverprint
+        <</OverprintProcess true>> setuserparams
+      } forall
+    }  {
+      % pre-separated file - just run the right file.
+      DCS2keys {
+        % Dictionary is pre-filtered for just this separation.
+        % color dict
+        gsave
+        begin 
+        
+        pop
+  
+        currentdict /subFileChannel known {
+          subFileDetails
+          /subFileChannel load
+          true
+        }  {
+          colorName subFileDetails
+          dcsfilename 
+        } ifelse {
+          //DCSIndent exec
+          % UVM (Running DCS2 separation file '%s' ... )
+          (Running DCS2 separation file ') //DCSPrint exec
+          dup //DCSPrint exec
+          (' ... ) //DCSPrint exec //DCSFlush exec
+          //globaldict /HqnHangingLine true put
+
+          subFileTypeRun subFileType get 1 get load exec {
+            done_hi_res /unset eq { /done_hi_res /success store } if
+          }  {
+            /done_hi_res /failed store
+          } ifelse
+        }  {
+          //MissingImage exec
+        } ifelse        
+        
+        end  % datadict
+        grestore
+      } forall
+    } ifelse
+    skipLowRes
+  } ifelse
+  
+  //globaldict /HqnOPIindent 2 copy get 1 sub put
+  //DCSdict /outersave get restore
+  DCS2keys { pop //DCS2keys exch undef } forall
+} bind def
+
+/DCSMode 1 def
+
+/recombining {
+  recstat 2 ge and
+} bind def
+
+%
+% separating --> true  % if the job is not pre-separated
+%            --> false % if the job is preseparated
+% Note that separating true actually means that the job is not pre-separated, 
+% rather than that we really are separating it.
+/separating [
+  {
+  % Mode 1 - explicitly defined
+  1183615869 internaldict /DCSDictionaries get
+  /Default known not
+} bind  
+  {
+  % Mode 2 - dynamically check
+
+  % Separating
+  currentpagedevice /Separations get
+  % Or composite colour ...
+  statusdict /processcolors get exec 1 gt
+  % ( but we can't check for composite monochrome here - 
+  % it's treated as separating )
+  or
+  % and not recombining
+   //recombining exec not and
+
+  dup {
+    % Double check for a definitely pre-separated job in a separating workflow
+    % when recombine is not enabled.
+    recstat exch pop 2 ge { pop false } if
+  } if
+} bind
+] def
+
+/separating {
+  //separating //DCSdict /DCSMode get 1 sub get exec
+  DCSdict /insideDCS get not and
+} bind def
+
+end  % DCSdict
+
+% This is meant to be called from BeginPage.
+DCSdict /SeparatedKeys {
+  1183615869 internaldict begin
+    /Default exch DCS
+  end %internaldict
+} bind put
+
+DCSdict /CheckPlateColor {
+  % now does nothing: the system parameter Separation now
+  % contains the information we need. The example no longer
+  % uses it, but there may be some calls in real use.
+} bind put
+
+% By default this procset only supports local DCS 2 file callouts, but it may
+% be extended by adding to this dictionary and providing appropriate
+% Translator procedures.
+DCSdict /supportedFileLocations <<
+  /Local null
+>> put
+DCSdict /preferredFileLocation /Local put
+
+DCSdict begin
+
+/hqncurrenthalftone <</AdobeCurrentHalftone true /Password 0>> def
+/hqncurrenthalftone {
+  currentsystemparams /AdobeCurrentHalftone get dup {
+    //hqncurrenthalftone dup /AdobeCurrentHalftone false put setsystemparams
+  } if
+  currenthalftone
+  exch {
+    //hqncurrenthalftone dup /AdobeCurrentHalftone true put setsystemparams
+  } if
+} bind def
+
+/ScanSpecialPaths <<
+
+  /CommentPath {
+    % Included only for compatibility with OPI code
+    % Has no meaning in a DCS context, so just report
+    % that it could not be translated.
+    false
+  } bind
+
+  /JobPath {
+    (%stdin%)(r) file 
+    //linebuffer
+    statusdict /filename get exec
+    pop
+    (%ip:) anchorsearch {
+      % input plugin - ignore
+      pop pop
+      false
+    }  {
+      0 1 index length 
+      2 index //StripPath exec 
+      length sub 
+      getinterval
+      true
+    } ifelse
+  } bind
+
+>> def
+/ScanSpecialPaths {
+  % key -> ScanSpecialPaths -> [ val true ] or [ false ]
+  dup type /nametype eq {
+    //ScanSpecialPaths exch 2 copy known {
+      get exec
+    }  {
+      pop pop
+      /DCSdirectories /undefined (Unknown name) //DCSerror exec
+    } ifelse
+  }  { true } ifelse
+} bind def
+
+/OPIlikeTranslator {
+  % This translator is supplied to match the one used for OPI for where the
+  % two are used together.
+  % colorname colorkey
+
+  exch pop
+  /FoundFile false def
+  
+  % Search for colorkey in each specified directory in turn
+  % Then search for the same file name in sub-directories of each 
+  %  specified directory
+
+  //StripPath exec
+
+  /ShortFilename exch def
+
+  { () (*/) } {
+    % sep
+    DCSdirectories  {
+      % sep base
+      //ScanSpecialPaths exec {
+        2 copy length exch length add 
+        ShortFilename length add 
+        string
+        % sep base new
+        2 copy copy pop
+        % sep base new
+        2 copy exch length
+        % sep base new new baselen
+        4 index putinterval
+        % sep base new
+        dup 3 -1 roll
+        % sep new new base
+        length 3 index length add
+        % sep new new shortstart
+        ShortFilename putinterval
+        % sep new
+          {
+          /DCSfileName exch dup length string copy def
+          /FoundFile true def
+          exit
+        } //linebuffer filenameforall
+        FoundFile { exit } if
+      } if
+    } forall
+    pop    % (*/) etc
+    FoundFile { exit } if
+  } forall
+
+  FoundFile dup { DCSfileName exch } if
+} bind def
+
+/standardDCStranslator {
+  % This translator is used by the DCS file search page feature
+  % colorname colorkey
+  dup type /stringtype ne {
+    % It would be possible to act on the location etc. here
+    % but in this example we'll just use the file name.
+    subFileDetails get
+  } if
+  //StripPath exec
+  exch dup length dup 1 add dup 4 index length add string
+  dup 5 -1 roll exch cvs    % colour name to string
+  dup length 0 exch 1 exch 1 sub { % convert to upper case
+    2 copy get
+    dup (a) 0 get ge {
+    dup (z) 0 get le {
+      (a) 0 get sub (A) 0 get add put dup
+    } {
+      pop pop
+    } ifelse
+    } {
+    pop pop
+    } ifelse
+  } for pop
+  dup 4 -1 roll (/) putinterval
+  dup 3 -1 roll 3 index putinterval
+  false DCSdict /DCSdirectories get
+  { % stack contains: (filename) (COLOUR/filename) false (directory/)
+      //ScanSpecialPaths exec {
+      dup length 3 index dup length 2 index add string
+      dup 4 2 roll putinterval
+      dup 0 3 index putinterval
+      dup {(r) file}stopped    % try colour specific directory first
+      {
+      pop pop pop
+      dup length 4 index dup length 2 index add string
+      dup 4 2 roll putinterval
+      dup 0 4 -1 roll putinterval
+      dup {(r) file}stopped  % try generic directory second
+      { pop pop pop }
+      { closefile 3 {exch pop} repeat true exit } ifelse
+      } { closefile 4 {exch pop} repeat true exit } ifelse
+    } if
+  } forall
+  {true}{pop pop false}ifelse
+} bind def
+
+/InitializeDCS {
+  (%%dict) load begin
+    (%%actions) load begin
+
+    /CyanPlate { % %%CyanPlate: key
+      /Cyan (cyan) //DCSdict /DCSkeys get exec
+    } bind def
+
+    /MagentaPlate { % %%MagentaPlate: key
+      /Magenta (magenta) //DCSdict /DCSkeys get exec
+    } bind def
+
+    /YellowPlate { % %%YellowPlate: key
+      /Yellow (yellow) //DCSdict /DCSkeys get exec
+    } bind def
+
+    /BlackPlate { % %%BlackPlate: key
+      /Black (black) //DCSdict /DCSkeys get exec
+    } bind def
+
+    /PlateFile: //DCSplateFile def
+    
+  9 dict begin
+
+    /DocumentProcessColors: { % %%DocumentProcessColors: colour colour ...
+      % keep a copy of the string in global VM
+      currentglobal true setglobal exch
+      dup length string copy
+      //globaldict /DCSProcessColors 2 index put
+      //DCSdict /lowercase get exec pop
+      setglobal
+    } bind def
+
+    /DocumentSuppliedProcSets: {
+      % Add this procset to the list.
+      
+      //DCSdict /StripLeadingSpaces get exec
+      dup length string copy
+      //DCSdict /MissingProcsetList get
+      exch null put
+      
+    } bind def
+
+    /EndComments { % %%EndComments
+          //DCSdict begin
+      pop % empty argument string
+      DCSver 0 ne 
+      //DCSdict /DCS known 
+      //DCSdict /DCSenable known 
+      and and {
+        DCS DCSenable and {
+        /DCS false def
+        % There is a DCS high-res file to be substituted for the rest of
+        % the current EPS file (up to the next %%EOF)
+      
+      DCSdict DCSAction known {
+          DCSAction load exec
+        userdict /HqnProcessingFile /DCSdone put
+      }  {
+          % GLOB: Treat as assert, not for translation
+        (Error: Unknown DCS action: )//DCSPrint exec
+        DCSAction //DCSPrint exec
+        (\n) //DCSPrint exec
+      } ifelse
+
+      } if
+        currentglobal dup { false setglobal } if
+        /keys 5 dict def % remove all the previous keys
+        { true setglobal } if
+        //globaldict /DCSProcessColors undef
+      } if % otherwise no action required
+      /DCSver 0 store
+      end %DCSdict
+    } bind def
+    
+    /BoundingBox: {
+      (?) search {
+        pop pop pop
+        null
+      }  {
+        (atend) search {
+          pop pop pop
+          null
+        }  {
+          dup length string copy
+        } ifelse
+      } ifelse
+      //DCSdict /DCSBoundingBox 3 -1 roll put
+    } bind def
+    
+    /BeginDocument: {
+        % record the BeginDocument string for possible use with embedded
+        % DCS2 single-file images where only the preview is embedded.
+        //DCSdict begin
+      /BeginDocumentLevel dup load 1 add def  
+        BeginDocumentList BeginDocumentLevel 
+        2 copy
+        5 -1 roll dup length string copy put
+        1 add () put
+      end    % DCSdict        
+    } bind def
+    
+    /EndDocument {
+        pop
+        //DCSdict begin
+        BeginDocumentList BeginDocumentLevel
+          2 copy get 0 0 getinterval put
+        /BeginDocumentLevel dup load 1 sub 
+        dup 0 lt { pop 0 } if
+        def
+        end  % DCSdict
+    } bind def
+   
+  currentdict end {
+    % respect any previous definitions
+    currentdict 2 index known {
+        [
+        /dup load
+        3 -1 roll
+        /exec load
+        4 index load
+        /exec load
+      ] cvx bind
+    } if
+    def 
+  } forall
+
+    end
+  end
+
+  (%dict) load begin
+    (%actions) load begin
+
+    /!PS {
+      currentfile 1183615869 internaldict /fileseekable get { exec } stopped { pop false } if not {
+        pop    % the rest of the line
+        //DCSdict /last!PS get 0 eq { 0 }{ -1 } ifelse
+      }  {
+        currentfile fileposition exch length sub
+        5 sub    % the length of (%!PS) plus 1 line-end delimiter. This may still be 
+          % out by 1 if the end of the %!PS line was CR-LF i.e. MS-DOS format.
+      } ifelse
+      DCSdict /last!PS 3 -1 roll put
+      
+      % Clean out the list of missing procsets.
+      //DCSdict /MissingProcsetList get 
+      dup { pop 1 index exch undef } forall 
+      pop
+      //DCSdict /InXPressFile false put
+    } 
+    currentdict /!PS known {
+      [ /dup load
+      /!PS load /exec load
+      5 -1 roll
+      /exec load
+      ] cvx
+    } if 
+    bind def
+
+      {
+      //DCSdict /InXPressFile true put
+    } (QuarkXPress) HqnAddCreator
+
+    end
+  end
+
+  //DCSdict /last!PS 0 put
+} bind def    % InitializeDCS
+
+/standardSetup {
+  //InitializeDCS exec
+  DCSdict begin
+    count 1 lt {
+      % GLOB: Debugging info only - not for translation
+      /DCSstandardSetup /stackunderflow (No dictionary supplied to DCSstandardSetup) //DCSerror exec
+    } if
+    dup type /dicttype ne {
+      % GLOB: Debugging info only - not for translation
+      /DCSstandardSetup /typecheck (Argument to DCSstandardSetup should be a dictionary) //DCSerror exec
+    } if
+    { def } forall
+  
+    /DCSMode 2 def  
+
+    /DCStranslation true def
+    /DCStranslator load type /nametype eq {
+    /DCStranslator dup load load def
+    } if
+  end
+  (DCS parsing installed\n) //DCSPrint exec
+} bind def
+
+end    % DCSdict
+
+
+end %userdict
+
+
+/DCSCommentParser <<
+  /DCSdict //DCSdict
+  /DCSstandardSetup //DCSdict /standardSetup get
+  /DCSinitialize //DCSdict /InitializeDCS get
+>> /ProcSet defineresource pop
+
+%%EndProcSet

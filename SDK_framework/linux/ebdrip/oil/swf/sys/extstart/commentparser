@@ -1,0 +1,234 @@
+%!PS-Adobe
+%%Title: Sys/ExtraStart/CommentParser
+%%Creator: Global Graphics Software Limited
+
+% Copyright (C) 2007-2009 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWebd_OIL_example_gg!swf:sys:extstart:commentparser(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+%%EndComments
+
+% Ensure %embedded% has a chance to mount
+% This file is also run from ExtraStart\HqnEmbedded
+(%os%/Usr/HqnEmbedded/ExtraDevices) run
+
+userdict begin
+% string1 string2 append string
+% Function: Concatenates two strings together.
+/append {
+    2 copy length exch length add  % find the length of the new.
+    string dup     % string1 string2 string string
+    4 2 roll       % string string string1 string2
+    2 index 0 3 index
+    % string string string1 string2 string 0 string1
+    putinterval    % stuff the first string in.
+    % string string string1 string2
+    exch length exch putinterval
+} bind def
+  
+(%%dict) load
+(%%actions) get begin
+/Creator
+[ /dup load //Creator /exec load %concatenate to existing comment parsing procedure
+{ 
+(:) anchorsearch { 
+  pop 
+    {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+      ( ) anchorsearch { pop } { exit } ifelse
+    } loop
+}{ true }ifelse 
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (Creator: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+} /exec load  ]  cvx def
+end
+
+
+(%%dict) load
+(%%actions) get begin
+/Title:
+[ /dup load //Title: /exec load %concatenate to existing comment parsing procedure
+{
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (Title: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} /exec load  ]  cvx def
+end
+
+(%%dict) load
+(%%actions) get begin
+/CreationDate:
+[ /dup load //CreationDate: /exec load %concatenate to existing comment parsing procedure
+{ 
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (CreationDate: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} /exec load  ]  cvx def
+end
+
+(%%dict) load
+(%%actions) get begin
+/For:
+[ /dup load //For: /exec load %concatenate to existing comment parsing procedure
+{
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (For: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} /exec load  ]  cvx def
+end
+
+(%%dict) load
+(%%actions) get begin
+/Orientation: {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (Orientation: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+(%%dict) load
+(%%actions) get begin
+/ViewingOrientation: {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (ViewingOrientation: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+(%%dict) load
+(%%actions) get begin
+/BoundingBox: {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (BoundingBox: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+(%%dict) load
+(%%actions) get begin
+/PageBoundingBox: {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal exch
+  20 dict begin 
+    (%embedded%) << /ParseComment (PageBoundingBox: ) 5 -1 roll append>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+(%%dict) load
+(%%actions) get begin
+/EndDefaults {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+  
+  currentglobal false setglobal
+  20 dict begin 
+    (%embedded%) << /ParseComment (EndDefaults 1)>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+(%%dict) load
+(%%actions) get begin
+/BeginDefaults {
+% stack contains remainder of comment; ignore
+% leading spaces -- there may or may not be a
+% space after the colon
+{
+( ) anchorsearch { pop } { exit } ifelse
+} loop
+
+  currentglobal false setglobal
+  20 dict begin 
+    (%embedded%) << /ParseComment (BeginDefaults 1)>> setdevparams
+  end
+  setglobal
+	
+} bind def
+end
+
+end

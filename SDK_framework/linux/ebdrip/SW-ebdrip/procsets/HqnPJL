@@ -1,0 +1,105 @@
+%!PS-Adobe-3.0
+%%Title: HqnPJL
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Fri Sep 14 13:53:00 2001
+%%VMusage: -1 -1
+%{HqnPJL version #1 0
+% Copyright (C) 2001-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnPJL)" 1 0
+
+
+%% This procset contains code for closing the input stream on
+%% detection of a UEL.
+
+% Create a resource dictionary
+currentglobal false setglobal 20 dict begin
+/globalness exch def
+
+% Set this flag to true to get PJL information messages
+
+/PJLCommandInfo false def
+
+% Robust printing utility routine
+
+/PJLprint (%stderr)(w) file def
+/PJLprint {
+  //PJLCommandInfo {
+    dup type /stringtype ne {
+      //=string cvs
+    } if
+    dup dup length 
+    dup 0 eq {
+      pop pop pop
+    } {
+      1 sub get 13 eq exch
+      //PJLprint exch writestring
+      % flush at end of each line
+      { //PJLprint flushfile } if
+    } ifelse
+  } {
+    pop
+  } ifelse
+} bind def
+
+% Routine for giving a PS error with and extra info string
+
+/PJLError 128 string def
+/PJLError {
+  % offendingcommand errortype mark string1 string2 ... stringn
+  counttomark 2 add //PJLError exch 1 roll
+  1183615869 internaldict /concattomark get exec
+  $error /ErrorParams 2 copy known { get }{ 1 dict dup 4 1 roll put } ifelse
+  /errorinfo [ null 5 -1 roll ] put
+  errordict exch get exec
+} bind def
+
+
+% We only accept an escape in the input stream if it is followed by the
+% recognised PJL comment. We are not expecting a procedure with a
+% single escape as its name to be already defined.
+
+/PJLEscape (\033) cvn def
+//PJLEscape where {
+  pop UVS (%%[ Warning: HqnPJL - escape operator already defined ]%%\n)
+  //PJLprint exec
+} if
+
+% Also accept escape after CTRL-D PS terminator
+/PJLctrldEscape (\004\033) cvn def
+//PJLctrldEscape where {
+  pop UVS (%%[ Warning: HqnPJL - ctrl-d/escape operator already defined ]%%\n)
+  //PJLprint exec
+} if
+
+/PJLbuffer (%-12345X) def
+/PJLUELString (%-12345X) def
+
+//PJLEscape //PJLctrldEscape {
+  {
+    currentfile //PJLbuffer readstring {
+      //PJLUELString eq {
+        % UEL detected - close input stream
+        currentfile closefile
+      } {
+        stop
+      } ifelse
+    } {
+      stop
+    } ifelse
+  }
+
+  stopped {
+    //PJLEscape /undefined mark UVS (Escape not followed by valid PJL UEL comment)
+    //PJLError exec
+  } if
+} bind exch 1 index def def
+
+% Stick the escape procedures in userdict so they are always around
+userdict //PJLEscape dup load put
+userdict //PJLctrldEscape dup load put
+
+% Define the resource
+currentdict end
+/HqnPJL exch /ProcSet defineresource
+/globalness get setglobal

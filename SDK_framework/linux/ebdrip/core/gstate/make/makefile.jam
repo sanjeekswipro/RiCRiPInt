@@ -1,0 +1,56 @@
+# Copyright (C) 2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP graphics state
+#
+# $HopeName: COREgstate!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant metrics ;
+
+# Compilation rules
+
+    DependsOn all : gstate ;
+
+    # Sub-directories/compounds of COREgstate:
+    ReplaceVar Local : Libraries :
+        color
+    ;
+
+    # Allow access to these compounds for all sub-libraries
+    IncludeExportDirectories Inherited Local :
+        mm
+        objects
+        tables
+        v20
+    : .. ;
+
+    # Allow access to all PS libraries from each other
+    IncludeExportDirectories Inherited Local :
+        $(Libraries)
+    ;
+
+    # Propagate export directories from sub-directories to parent
+    AddExportDirectories $(Libraries) ;
+
+    # Add gstate private includes to path; this is for headers shared within
+    # the gstate compound that are not exported to the rest of the world
+    AddToVar Inherited Local : C-IncludeDirectories : $(CurrentPath)$/shared ;
+
+    ReplaceVar Local : CFILES :
+        gsinit.c
+    ;
+
+    Library gstate : $(CFILES) ;
+
+    Makefile $(Libraries) ;
+
+    local i ; for i in $(Libraries) {
+        C-LinkWithLibraries gstate : $(i) : $(i) ;
+    }
+
+# Log stripped

@@ -1,0 +1,33 @@
+
+
+/EUCCharStrings
+
+95 dict dup begin
+
+  /.notdef 0 def     /cA1 1 def         /cA2 2 def         /cA3 3 def
+  /cA4 4 def         /cA5 5 def         /cA6 6 def         /cA7 7 def
+  /cA8 8 def         /cA9 9 def         /cAA 10 def        /cAB 11 def
+  /cAC 12 def        /cAD 13 def        /cAE 14 def        /cAF 15 def
+  /cB0 16 def        /cB1 17 def        /cB2 18 def        /cB3 19 def
+  /cB4 20 def        /cB5 21 def        /cB6 22 def        /cB7 23 def
+  /cB8 24 def        /cB9 25 def        /cBA 26 def        /cBB 27 def
+  /cBC 28 def        /cBD 29 def        /cBE 30 def        /cBF 31 def
+  /cC0 32 def        /cC1 33 def        /cC2 34 def        /cC3 35 def
+  /cC4 36 def        /cC5 37 def        /cC6 38 def        /cC7 39 def
+  /cC8 40 def        /cC9 41 def        /cCA 42 def        /cCB 43 def
+  /cCC 44 def        /cCD 45 def        /cCE 46 def        /cCF 47 def
+  /cD0 48 def        /cD1 49 def        /cD2 50 def        /cD3 51 def
+  /cD4 52 def        /cD5 53 def        /cD6 54 def        /cD7 55 def
+  /cD8 56 def        /cD9 57 def        /cDA 58 def        /cDB 59 def
+  /cDC 60 def        /cDD 61 def        /cDE 62 def        /cDF 63 def
+  /cE0 64 def        /cE1 65 def        /cE2 66 def        /cE3 67 def
+  /cE4 68 def        /cE5 69 def        /cE6 70 def        /cE7 71 def
+  /cE8 72 def        /cE9 73 def        /cEA 74 def        /cEB 75 def
+  /cEC 76 def        /cED 77 def        /cEE 78 def        /cEF 79 def
+  /cF0 80 def        /cF1 81 def        /cF2 82 def        /cF3 83 def
+  /cF4 84 def        /cF5 85 def        /cF6 86 def        /cF7 87 def
+  /cF8 88 def        /cF9 89 def        /cFA 90 def        /cFB 91 def
+  /cFC 92 def        /cFD 93 def        /cFE 94 def
+
+end
+/CharStrings defineresource pop

@@ -1,0 +1,143 @@
+%!PS
+
+% Copyright (C) 2010 Global Graphics Software Ltd. All rights reserved.
+%
+% This file is not intended to be user-editable.
+%
+% See SW/Config/FontSubstitution for user-editable font substitution.
+%
+% This file contains mappings from anonymous font numbers to substitute font
+% names. Anonymous font numbers are allocated by Global Graphics and their
+% formulation is not documented.
+
+%-------------------------------------------------------------------------------
+% Unconditional Font substitution maps to font names.
+
+statusdict /FontSubstitutionDB <<
+
+  %-------------------------------------------------------------------------------
+% Font Fusion substitution names for PCLPS2. 
+  /2B9DA4E47F027DCF (Flareserif 821 SWC Medium)
+  /4F61A7560BBB1D85 (Flareserif 821 SWC Extrabold)
+  /76DF2A640666F75D (Incised 901 SWC)
+  /124EFD502B981024 (Incised 901 SWC Italic)
+  /61B87C691C3B425F (Incised 901 SWC Bold)
+  /7E53C0F07FD1946F (Swiss 721 SWM)
+  /658BBE3F5C4C6D5E (Swiss 721 SWM Italic)
+  /500E9B2B01B02890 (Swiss 721 SWM Bold)
+  /5E46208578566E87 (Swiss 721 SWM Bold Italic)
+  /7F6F3AE5200822E9 (Clarendon 701 SWC)
+  /09ACDAD4718D83D3 (Ribbon 131 SWC)
+  /15A1434F53ABDCBC (Fixed Pitch 810 Medium SWC)
+  /29C67BB053123AFB (Fixed Pitch 810 Medium SWC Bold)
+  /3AA367234D650EA5 (Fixed Pitch 810 Medium SWC Italic)
+  /15A1434F53ABDCBC (Fixed Pitch 810 Medium SWC Bold Italic)
+  /4011EC0D5F133377 (Aldine 430 SWC)
+  /076ED4BF4511C83B (Aldine 430 SWC Italic)
+  /10B9C2E97A939549 (Aldine 430 SWC Bold)
+  /6B83DF7B31ACC443 (Aldine 430 SWC Bold Italic)
+  /41B2CDBE4F1253D8 (Fixed Pitch 850 SWC)
+  /50DD284B6C3D2EF5 (Fixed Pitch 850 SWC Bold)
+  /7609A16B0E07FACB (Fixed Pitch 850 SWC Italic)
+  /3F7CB3D3339491C3 (Audrey Two SWC)
+  /010F63FB5C42891C (Zapf Humanist 601 SWC)
+  /01C0B28E37641661 (Zapf Humanist 601 SWC Italic)
+  /6FB00BB56CA0CA31 (Zapf Humanist 601 SWC Bold)
+  /498785475D0CC447 (Zapf Humanist 601 SWC Bold Italic)
+  /390468B6099E4647 (Symbol SWM)
+  /7195E06B3898C3E0 (Dutch 801 SWC)
+  /2CB5A5597056200B (Dutch 801 SWC Italic)
+  /4A44285F249EE07A (Dutch 801 SWC Bold)
+  /58FC345A286FAB68 (Dutch 801 SWC Bold Italic)
+  /72B0468165446919 (Dutch 801 SWM)
+  /6104CCFD22BFF215 (Dutch 801 SWM Italic)
+  /0AE81C30665095EA (Dutch 801 SWM Bold)
+  /133576F015B92746 (Dutch 801 SWM Bold Italic)
+  /1FF8DF647BEBBE18 (Swiss 742 SWC)
+  /5001AE5A73A6DE71 (Swiss 742 SWC Italic)
+  /2B1404B2314325AB (Swiss 742 SWC Bold)
+  /1C94FB5A212B8A6A (Swiss 742 SWC Bold Italic)
+  /3650C3E51E65DF47 (Swiss 742 Condensed SWC)
+  /6F7350C143F019EC (Swiss 742 Condensed SWC Italic)
+  /00040E575D8609B7 (Swiss 742 Condensed SWC Bold)
+  /3C552F53782022A1 (Swiss 742 Condensed SWC Bold Italic)
+  /19348EEB2A0D1183 (Fixed Pitch 810 Dark SWC)
+  /1E03DC226061A7B7 (Fixed Pitch 810 Dark SWC Bold)
+  /7A138B9507FFF8BF (Fixed Pitch 810 Dark SWC Italic)
+  /4289C2AB085A4FF8 (Fixed Pitch 810 Dark SWC Bold Italic)
+  /3626163F30C1293E (Geometric 711 SWA)
+  /06D03FCF5058C37E (Geometric 711 SWA Oblique)
+  /0DF60E733499C9F7 (Geometric 711 SWA Bold)
+  /24D823934FC8D30D (Geometric 711 SWA Bold Italic)
+  /0EE039A643269CFA (Revival 711 Light SWA)
+  /13D40A971CB12E09 (Revival 711 Light SWA Italic)
+  /49FA6B38799C6663 (Revival 711 Demi SWA Bold)
+  /39A7DF5A31C3640B (Revival 711 Demi SWA Bold Italic)
+  /25D332C00EC1F7EF (Fixed Pitch 810 SWA)
+  /45878684777FBC02 (Fixed Pitch 810 SWA Oblique)
+  /15A1434F53ABDCBC (Fixed Pitch 810 SWA Bold)
+  /1F4FE8995D7F2EC2 (Fixed Pitch 810 SWA Bold Oblique)
+  /582A478B4002498E (Swiss 721 SWA)
+  /628B750D60A1698A (Swiss 721 SWA Oblique)
+  /606C669460292C68 (Swiss 721 SWA Bold)
+  /3984C85069262735 (Swiss 721 SWA Bold Oblique)
+  /12FD607E7D5A0175 (Swiss 721 Narrow SWA)
+  /37D71C527D470E08 (Swiss 721 Narrow SWA Oblique)
+  /285781AC057D21DC (Swiss 721 Narrow SWA Bold)
+  /2352B16614C6A417 (Swiss 721 Narrow SWA Bold Oblique)
+  /0D549B9D70828904 (Century 702 SWA)
+  /02E9AE1C5045EF81 (Century 702 SWA Italic)
+  /4D2C8D20388EE8E6 (Century 702 SWA Bold)
+  /71EE59541AA5B7EC (Century 702 SWA Bold Italic)
+  /5C8CEB8919416C22 (Zapf Calligraphic 801 SWA)
+  /591C323010B40D38 (Zapf Calligraphic 801 SWA Italic)
+  /34A3FA8F2A50B555 (Zapf Calligraphic 801 SWA Bold)
+  /0EA933166D58CAC8 (Zapf Calligraphic 801 SWA Bold Italic)
+  /0AA43A3442959BCA (Symbol SWA)
+  /09A8D4753723197F (Dutch 801 SWA)
+  /0DED9FD302B81E91 (Dutch 801 SWA Italic)
+  /31D2BDD0361BB310 (Dutch 801 SWA Bold)
+  /0FA56FB97FE1DBFA (Dutch 801 SWA Bold Italic)
+  /58555E900A04FFD4 (Chancery 801 Medium SWA Italic)
+  /7E43DAB856FF1724 (Ding Dings SWA)
+  /72224D5B08076889 (More Wingbats SWM)
+>> put
+
+%-------------------------------------------------------------------------------
+% Unconditional ShivaFont substitution maps to Shiva font names.
+
+statusdict /ShivaFontSubstitutionDB <<
+
+  % eg /ABCD1234ABCD1234 /Bullet
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional Font substitution maps to arrays of font names
+
+statusdict /ConditionalFontSubstitutionDB <<
+
+  % eg /182736450AFBECD0 [/Times-Roman/Palatino-Roman]
+
+>> put
+
+%-------------------------------------------------------------------------------
+% Conditional ShivaFont substitution maps to arrays of Shiva font names
+
+statusdict /ConditionalShivaFontSubstitutionDB <<
+
+  % eg /A9B8C7D6E5F40123 [/Bullet]
+
+>> put
+
+%-------------------------------------------------------------------------------
+%%EOF
+
+# Revision 1.2  2012/11/30  11:16:55  peterp
+# new unit
+# [Bug #367592]
+# EBDSDK_F update from 3.9r01
+#
+% Revision 1.1.1.1  2010/09/29  08:35:42  rahulr
+% branched from trunk for label EBDSDK_F
+%

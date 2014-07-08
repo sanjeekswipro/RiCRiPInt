@@ -1,0 +1,29 @@
+%!PS-Adobe-3.0
+%%Title: XYZ-D50
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Wed Mar 22 13:59:00 1995
+%%Copyright (C) 1995-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:colspace:xyz-d50(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+currentglobal false setglobal
+
+[
+  /CIEBasedABC
+  <<
+    /XUID [124 0 0 19950322 15050]
+    /RangeABC [0 0.9642 0 1 0 0.8249]
+    /RangeLMN [0 0.9642 0 1 0 0.8249]
+    /WhitePoint [0.9642 1 0.8249]
+  >>
+]
+
+(XYZ-D50) cvn exch /ColorSpace defineresource pop
+
+setglobal
+
+%%EndResource

@@ -1,0 +1,41 @@
+%!PS-Adobe-2.0 AdobeEncoding
+%%Title: PDFDocEncoding
+%%Version: 001.000
+%%CreationDate: May 2003
+
+/PDFDocEncoding [
+8 { /.notdef } repeat 		% 0
+8 { /.notdef } repeat 		% 010
+8 { /.notdef } repeat		% 020
+/breve /caron /circumflex /dotaccent /hungarumlaut /ogonek /ring /tilde 		% 030
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quotesingle 	% 040
+/parenleft /parenright /asterisk /plus /comma /hyphen /period /slash 			% 050
+/zero /one /two /three /four /five /six /seven 									% 060
+/eight /nine /colon /semicolon /less /equal /greater /question 					% 070
+/at /A /B /C /D /E /F /G 														% 100
+/H /I /J /K /L /M /N /O 														% 110
+/P /Q /R /S /T /U /V /W 														% 120
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore 		% 130
+/grave /a /b /c /d /e /f /g 													% 140
+/h /i /j /k /l /m /n /o 														% 150
+/p /q /r /s /t /u /v /w 														% 160
+/x /y /z /braceleft /bar /braceright /asciitilde /bullet 						% 170
+/bullet /dagger /daggerdbl /ellipsis /emdash /endash /florin /fraction		 		% 200
+/guilsinglleft /guilsinglright /minus /perthousand /quotedblbase /quotedblleft /quotedblright /quoteleft 			% 210
+/quoteright /quotesinglbase /trademark /fi /fl /Lslash /OE /Scaron 			% 220
+/Ydieresis /Zcaron /dotlessi /lslash /oe /scaron /zcaron /.notdef 					% 230
+/Euro /exclamdown /cent /sterling /currency /yen /brokenbar /section 						% 240
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron 	% 250
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /periodcentered 		% 260
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown 	% 270
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla /Egrave 				% 300
+/Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis /Eth 				% 310
+/Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply /Oslash 					% 320
+/Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls /agrave 					% 330
+/aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla /egrave 						% 340
+/eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis /eth 				% 350
+/ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide /oslash 					% 360
+/ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis							% 370
+] /Encoding defineresource pop
+
+%%EndAdobeEncoding

@@ -1,0 +1,134 @@
+% /*
+% $HopeName: SWv20!src:idlepss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+% idle time handling
+
+statusdict begin
+  serverdict begin
+
+    /$idleTimeDict 25 dict def % in serverdict
+    $idleTimeDict begin
+
+      /ROMnames [
+        /Courier /Courier-Bold /Courier-Oblique /Courier-BoldOblique
+        /Times-Roman /Times-Bold /Times-Italic /Times-BoldItalic
+        /Helvetica /Helvetica-Bold /Helvetica-Oblique /Helvetica-BoldOblique
+        /Symbol
+        /AvantGarde-Book /AvantGarde-BookOblique
+        /AvantGarde-Demi /AvantGarde-DemiOblique
+        /Bookman-Demi /Bookman-DemiItalic /Bookman-Light /Bookman-LightItalic
+        /Helvetica-Narrow /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique
+        /Helvetica-Narrow-Oblique /NewCenturySchlbk-Roman
+        /NewCenturySchlbk-Bold /NewCenturySchlbk-Italic
+        /NewCenturySchlbk-BoldItalic
+        /Palatino-Roman /Palatino-Bold /Palatino-Italic /Palatino-BoldItalic
+        /ZapfChancery-MediumItalic /ZapfDingbats
+      ] def % in $idleTimeDict in serverdict
+
+      /idleI 0 def
+      /idleStrI 1 def
+      /idleA {idleArry exch idleI add get } bd
+      /idleArry [] def
+      /idleStr () def
+      /stopPred { true } bd
+      /boundsCheck { length eeinfo lt { /eeinfo 0 def } if } bd
+      /bmpI { /eeinfo exch def /idleI idleI 1 sub def idleArry idleI } bd
+      /idlA { idleArry exch idleL add get } bd
+      % please note \047 for appostrophe and \042 double quote mark, for some preprocessors
+      /ascii94 (abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,;?:-()\047\042!+[]$%&*/_=@#`{}<>^~|W) def
+      ascii94 93 92 put
+      /ascii81 ascii94 0 81 getinterval def
+      /ascii62 ascii81 0 62 getinterval def
+      /ascii26 ascii62 0 26 getinterval def
+
+      /ReadIdleFonts {
+        currentglobal true setglobal
+	//$idleTimeDict begin
+          /idleglobalr exch def
+	  idlefonts counttomark
+	  /idleI exch def
+	  idleI 0 gt idleI 5 mod 0 eq and {
+	    /idleArry idleI array def
+	    { idleI 0 le
+		{ exit }
+	      if
+	      bmpI ascii94 boundsCheck
+	      ascii94 0 eeinfo getinterval put
+	      bmpI eeinfo 5 mul put
+	      bmpI eeinfo 10 div put
+	      bmpI eeinfo 10 div put
+	      bmpI ROMnames boundsCheck
+	      ROMnames eeinfo get put
+	    } loop
+	  } if
+	  cleartomark
+          idleglobalr
+	end
+	statusdict /setidlefonts { setidlefonts ReadIdleFonts } put
+        setglobal
+      } bd
+
+    end % $idleTimeDict
+
+    /UseIdleTime {
+      currentglobal true setglobal
+      //$idleTimeDict begin
+        /idleglobalu exch def
+	/stopPred exch def
+	/idleL 0 def
+	/idleStrL 0 def
+	/idleStr 0 string def
+	/needflush true def
+	ReadIdleFonts
+
+        /idleM matrix currentmatrix def
+	gsave
+        nulldevice
+        idleM setmatrix
+
+	{ stopPred { exit } if
+	  idleStrL idleStr length ge {
+	    needflush systemdict /flushcache known and
+	    diskstatus exch pop 0 gt and
+	      { /needflush flushcache not def }
+ 	      { /needflush false def }
+	    ifelse
+	    idleL idleArry length ge {
+		exit  % fixed by Andy & Bear
+	    } if
+	    idleL idleArry length lt {
+	      0 idlA FontDirectory exch known {
+		grestore gsave nulldevice
+                idleM setmatrix
+		FontDirectory 0 idleA get setfont
+		1 idleA 2 idleA scale
+		3 idleA rotate
+	        /idleStr 4 idleA def
+		/idleStrL 0 def
+	      } if
+	    } if
+	    /idleL idleL 5 add def
+	  } {
+            0 0 moveto
+	    idleStr idleStrL 1 getinterval show
+	    /idleStrL idleStrL 1 add def
+	    /needflush true def
+          } ifelse
+        } loop
+
+        grestore
+        idleglobalu
+      end
+      setglobal
+    } bd
+
+  end % serverdict
+end % statusdict
+
+% end of idlepss.pss

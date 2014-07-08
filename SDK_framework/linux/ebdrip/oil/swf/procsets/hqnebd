@@ -1,0 +1,1379 @@
+%!PS-Adobe-3.0
+%%HqnTitle: HqnEmbedded
+%%Creator: Global Graphics Software Ltd.
+%%CreationDate: December 16, 2008
+% Copyright (c) 2008-2014 Global Graphics Software Limited, All Rights Reserved.
+%%EndComments
+
+% $HopeName: SWebd_OIL_example_gg!swf:procsets:hqnebd(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+% Log stripped
+
+%%BeginResource: procset HqnEmbedded 1 0
+
+currentglobal false setglobal
+
+30 dict dup begin
+
+  /HqnEbdWorkspaceDict 10 dict def
+
+  % This version of the procedure is used and then replaced by the second definition
+  /makesetrealdevice {
+    /HqnEmbedded /ProcSet findresource /HqnEmbeddedSetup get exec
+  } bind def
+
+  /makesetrealdevice {
+    //serverdict /setrealdevice //makesetrealdevice put
+  } bind def
+
+
+  %----------------------------------
+  % SCREEN PROCEDURES
+  %----------------------------------
+  % \brief PS to define embedded 1bpp screens and other related procedures.
+  %
+  % The halftone name(s) must have been made known to the RIP using the
+  % HqnHtm procset before they can be used in /OverrideSpotFunctionName.
+  %
+  % A rangecheck error on the setsystemparams usually means the name
+  % supplied has not been properly defined using the HqnHtm procset.
+  %
+  % Note that /OverrideSpotFunctionName takes the name of the halftone
+  % dictionary (rather than a true spot-function) when type 5 halftones
+  % are used, such as is usually the case with threshold screens.
+  %
+  % /OverrideSpotFunctionName can be used in the same way for separated
+  % output if required.
+  %
+
+
+  % Setting this to false, at any time, disables switching between halftones.
+  statusdict /HqnEbdSwitchHalftones true put
+
+  % Set the following true to enable trace messages.  Do not enable this in timing tests!
+  /HqnEbdTracing false def
+  /HqnEbdTraceFile (%stderr%)(w) file def  % (stderr never needs to be closed)
+  /HqnEbdTrace 1024 string def
+  /HqnEbdTrace {
+    //HqnEbdTracing {
+      dup type /stringtype ne { //HqnEbdTrace cvs }if
+      //HqnEbdTraceFile exch writestring
+    }{
+      pop
+    }ifelse
+  }bind def
+
+  % Helper function to answer "Is current job is a PostScript job?"
+  /HqnEbd_IsJobPS {
+    (%embedded%) currentdevparams /Job_PDL get 1 eq { true } { false } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job is a XPS job?"
+  /HqnEbd_IsJobXPS {
+    (%embedded%) currentdevparams /Job_PDL get 2 eq { true } { false } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job is a PDF job?"
+  /HqnEbd_IsJobPDF {
+    (%embedded%) currentdevparams /Job_PDL get 3 eq { true } { false } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job PCL5c or PCL5e?"
+  /HqnEbd_IsJobPCL5 {
+    (%embedded%) currentdevparams /Job_PDL get
+    dup 4 eq exch 5 eq or {  % pcl5e, pcl5c... 4 or 5
+      true
+    } {
+      false
+    } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job PCL5e?"
+  /HqnEbd_IsJobPCL5e {
+    (%embedded%) currentdevparams /Job_PDL get
+    4 eq {  % pcl5e
+      true
+    } {
+      false
+    } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job PCL6?"
+  /HqnEbd_IsJobPCL6 {
+    (%embedded%) currentdevparams /Job_PDL get
+    6 eq {  % pclxl... 6
+      true
+    } {
+      false
+    } ifelse
+  } bind def
+
+  % Helper function to answer "Is current job is a PCL job?"
+  /HqnEbd_IsJobPCL {
+    //HqnEbd_IsJobPCL6 exec //HqnEbd_IsJobPCL5 exec or {  % pcl53, pcl5c or pclxl ... 4,5, or 6
+      true
+    } {
+      false
+    } ifelse
+  } bind def
+
+  % procedure to configure Genoa compliance
+  % bool HqnEbd_GenoaCompliance |-
+  /HqnEbd_GenoaCompliance {
+     {
+      statusdict /checksum undef
+      << /Password 0 /AdobeSetHalftone true >> setsystemparams
+      << /Password 0 /AdobeFilePosition true >> setsystemparams
+      << /Password 0 /AdobeCurrentHalftone true >> setsystemparams
+      << /Password 0 /AdobeSetFlat true >> setsystemparams
+      << /Password 0 /AdobeSetLineJoin true >> setsystemparams
+      << /Password 0 /PoorStrokepath true >> setsystemparams
+      << /Password 0 /PoorPattern true >> setsystemparams
+      << /Password 0 /PoorFlattenpath true >> setsystemparams
+
+      % The following line is to fix Compliance : PS3 FTS : 257-01.PS
+      <<
+        /DetectScreenAngles null
+      >> setsystemparams
+
+      % The following line is to fix Compliance : PS3 FTS : 148-11.ps
+      <<
+        /InterpolateAllImages /DefaultFalse
+        /InterpolateAllMasks /DefaultFalse
+      >> setuserparams
+    } {
+      statusdict /checksum known not {
+        statusdict begin
+          /checksum /hqnchecksum load def
+        end
+      } if
+
+      << /Password 0 /AdobeSetHalftone false >> setsystemparams
+      << /Password 0 /AdobeFilePosition false >> setsystemparams
+      << /Password 0 /AdobeCurrentHalftone true >> setsystemparams
+      << /Password 0 /AdobeSetFlat true >> setsystemparams
+      << /Password 0 /AdobeSetLineJoin true >> setsystemparams
+      << /Password 0 /PoorStrokepath false >> setsystemparams
+      << /Password 0 /PoorPattern false >> setsystemparams
+      << /Password 0 /PoorFlattenpath false >> setsystemparams
+
+      <<
+        /DetectScreenAngles [15.0 75.0 0.0 45.0 ]
+      >> setsystemparams
+
+      <<
+        /InterpolateAllImages /ForceFalse
+        /InterpolateAllMasks /ForceFalse
+      >> setuserparams
+    } ifelse
+  } bind def
+
+  % This procedure sets the new halftone override, but only if the new one differs from the current one.
+  %       use:        /halftone-name //HqnEbdSwitchHalftone exec
+  %
+  % If /halftone-name is a string, assume spot function - use OverrideSpotFunctionName
+  % Otherwise assume or one our haltfone type 195 or 199 - use sethalftone
+  % sethalftone is cleared by setpagedevice, OverrideSpotFunctionName is not
+  % BeginPage hook is used to reset sethalftone... see oil_psconfig.c
+  /HqnEbdSwitchHalftone { % name //HqnEbdSwitchHalftone exec
+    dup type /stringtype eq
+    {
+      dup /OverrideSpotFunctionName 1183615869 internaldict /currentsystemparam get exec ne {
+        << /Password 0 >>
+        dup /OverrideSpotFunctionName 3 index put
+        setsystemparams
+        pop
+      } {
+        pop
+      } ifelse
+    } {
+      << /Password 0 >>
+      dup /OverrideSpotFunctionName () put
+      setsystemparams
+      dup $printerdict /switchscreens get dup 3 -1 roll known {
+        exch get sethalftone
+      } {
+        pop (%%[ ERROR: Screen )=print =print ( not known\n)=print flush
+      } ifelse
+    } ifelse
+  }bind def
+
+  /DCLine_Select {
+    currentpagedevice /ValuesPerComponent get
+    4 eq {
+      (DCLine_CMYK2)    % Default for all 2 bpp modes
+    } {
+      (%embedded%) currentdevparams /GGColorMode get 1 eq { % mono
+        (DCLine_MONO1)  % Mono 1 bpp
+      } {
+        (DCLine_CMYK1)  % Default for all other modes
+      } ifelse
+    } ifelse
+  }bind def
+
+  /DCThinLine_Select {
+    currentpagedevice /ValuesPerComponent get
+    4 eq {
+      (DCThinLine_CMYK2)    % Default for all 2 bpp modes
+    } {
+      (%embedded%) currentdevparams /GGColorMode get 1 eq { % mono
+        (DCLine_MONO1)  % Mono 1 bpp
+      } {
+        (DCLine_CMYK1)  % Default for all other modes
+      } ifelse
+    } ifelse
+  }bind def
+
+  /HqnEbd_DefaultScreen
+      [ (Euclidean) (Line) (DCThinLine_Select) (Square) (DCLine_Select) ]
+      % initial setting to force the same as prototype, needs PMS/OIL interface for value
+      4
+      get def
+
+  % Screen mode management dictionary
+  % bpp -> screen mode -> screen name
+  % Screen names as strings will use OverrideSpotFunctionName
+  % Screen names as keys will use sethalftone (and reset in BeginPage hook)
+  % If screen name is actually a procedure, then it will be executed.
+  /HqnEbd_SetScreenModeDict <<
+    2 <<  % 1-bpp
+#ifdef SDK_1BPP_EXAMPLE
+      0 /irsCMYK1bppAuto
+      1 /EBDPhoto_Line
+      2 /EBDGraphic_Line
+      3 /EBDText_Line
+#endif
+      4 HqnEbd_DefaultScreen
+      5 ()
+#ifdef SDK_1BPP_EXAMPLE
+      % 6 - no example implemented - 1bpp external module screen example
+#endif
+    >>
+    4 <<  % 2-bpp
+#ifdef SDK_2BPP_EXAMPLE
+      0 /irsCMYK2bppAuto
+      1 /irsCMYK2bpp_Photo
+      2 /irsCMYK2bpp_Gfx
+      3 /irsCMYK2bpp_Text
+#endif
+      4 HqnEbd_DefaultScreen
+      5 ()
+#ifdef SDK_2BPP_EXAMPLE
+      6 /htmCMYK2bpp
+#endif
+    >>
+    16 << % 4-bpp
+#ifdef SDK_4BPP_EXAMPLE
+      0 /irsCMYK4bppAuto
+      1 /irsCMYK4bpp_Photo
+      2 /irsCMYK4bpp_Gfx
+      3 /irsCMYK4bpp_Text
+#endif
+      4 HqnEbd_DefaultScreen
+      5 ()
+#ifdef SDK_4BPP_EXAMPLE
+      6 /htmCMYK4bpp
+#endif
+    >>
+   >> def
+
+
+  % procedure to set screen mode
+  /HqnEbd_SetScreenMode { % screen_mode HqnEbd_SetScreenMode |-
+
+    //HqnEbdWorkspaceDict begin
+      /screenmode exch def
+      /vpc currentpagedevice /ValuesPerComponent get def
+
+      % Store screen mode in statusdict
+      statusdict /GGEBDScreenMode screenmode put
+      statusdict /GGEBDScreen undef % This will be set below if applicable
+
+      % Render one bit images with photo screen
+      <<
+        /TreatOneBitImagesAs    /Picture
+        /TreatSingleRowImagesAs /Picture
+      >> setmiscobjectmappings
+
+      % look for the vpc value in the screen mode management dict
+      //HqnEbd_SetScreenModeDict vpc known {
+        //HqnEbd_SetScreenModeDict vpc get
+        % look for the screen mode value in the sub-dict
+        dup screenmode known not {
+          % Not a screened mode at this depth, no override
+          ()
+        } {
+          screenmode get
+        } ifelse
+
+        % if entry in dict is a name, its the screen name to be selected
+        dup type /nametype eq {
+
+          % The following is only to make the halftone phase
+          % identical to the screening modules. Useful if comparing
+          % output between internal screening and external module
+          % (assuming the same pattern is used).
+          vpc 4 eq vpc 16 eq or {
+            <<
+              /Install [
+                currentpagedevice /Install get /exec load
+                {
+                  0 0 sethalftonephase
+                } bind
+                /exec load
+              ] cvx
+            >> setpagedevice
+          } if
+
+          % Store screen dict in statusdict so that sethalftone can
+          % call it during BeginPage hook, if setpagedevice is called
+          dup dup
+          $printerdict /switchscreens get dup
+          3 -1 roll  known {
+            exch get
+            statusdict /GGEBDScreen 3 -1 roll put
+          } {
+            pop pop
+          } ifelse
+
+          % screen name is on stack
+          //HqnEbdSwitchHalftone exec
+
+        } {
+          dup (DCLine_Select) eq {
+            pop //DCLine_Select exec
+          } {
+            dup (DCThinLine_Select) eq { pop //DCThinLine_Select exec } if
+          } ifelse
+          % otherwise, it is a string to select as spotfunctionname
+          //HqnEbdSwitchHalftone exec
+        } ifelse
+
+        % ebd_RemapHTTables() in oil_ebddev.c does not need to
+        % change screen table mapping for 1bpp
+        % \todo why not?
+        vpc 2 ne {
+          (%embedded%) << /GGScreenMode screenmode >> setdevparams
+        } if
+
+      } {
+        % Not a bit depth that requires screening.. e.g. 8bpp and 16bpp
+        () //HqnEbdSwitchHalftone exec
+      } ifelse
+
+    end
+  } bind def
+
+  % procedure for configuration specific to trapping
+  /HqnEbd_Trapping {
+    dup begin /EbdTrapping known {
+      /EbdTrapping load 0.0 gt {
+        (procsets/Trapping_ebd) dup status {
+          pop pop pop pop run
+        } {
+          pop
+        } ifelse
+
+        /Trapping /ProcSet resourcestatus { pop pop
+          <<
+            /BlackWidth 1.0
+            /Enabled true
+            /HqnDefaultZone false
+            /HqnSmallObjectProtectionFactor 0.6
+            /HqnTextToImageRule (Spread)
+            /HqnTrapAspectRatio 1.0
+            /HqnTrapFeathering 1
+            /ImageInternalTrapping false
+            /ImageToObjectTrapping true
+            /ImageTrapPlacement /Center
+            /SlidingTrapLimit 0.9
+            /StepLimit 0.1
+            /TrapColorScaling 1.0
+            /TrapWidth /EbdTrapping load
+          >>
+          /Trapping /ProcSet findresource /settrapparams get exec
+
+          <<
+            /Install [
+              currentpagedevice /Install get /exec load
+              {
+                newpath /Trapping /ProcSet findresource /settrapzone get exec
+              } bind
+              /exec load
+            ] cvx
+          >>
+          setpagedevice
+          << /TrapPro 39330068 >> setsystemparams
+        } if
+      } if
+    } if
+    end
+  } bind def
+
+  % procedure to turn on Font Emulation
+  /HqnEbd_FontEmulation  {
+    /GGFontEmulation /ProcSet findresource /Emulate get exec
+  } bind def
+
+  % procedure to enable image-downsampling, if PDL-appropriate
+  /HqnEbd_ImageDownsampling {
+    //HqnEbd_IsJobXPS exec  {
+      << /ImageDownsampling false 
+	  /ImageDecimation << /Enabled true /MinimumResolutionPercentage 30 >> >> setuserparams
+    } {
+	   //HqnEbd_IsJobPCL5e exec {
+	     << /ImageDownsampling false >> setuserparams
+	   } {
+          << /ImageDownsampling true >> setuserparams
+	   } ifelse
+    } ifelse
+  } bind def
+
+  % Configure for SW in RAM
+  /HqnEbd_SWinRAMConfig {
+    % Mount %jobtmp% device so that PartialPaint and Compositing can borrow additional
+    %  memory from OIL/PMS if RIP memory pool runs out. This will allow a handful more
+    %  jobs to run that would not run in the availble RIP memory - a last chance attempt
+    %  at ripping the job.
+
+    % The following could be placed in the SW\Sys\Startup\ExtraDevices resource file
+    %   instead of sending it every job (as long as "DeviceType" and "Prefix" do not change).
+    mark {
+      (%jobtmp%) dup devstatus not {
+      dup devmount pop
+        <<
+          /Password 0
+          /DeviceType 16#ffff000E
+          /Prefix ()
+        >> setdevparams
+      } if
+    } stopped cleartomark
+
+    % SW folder in RAM - Disable a few RIP features
+    <<
+      /LowMemImagePurgeToDisk false
+      /LowMemRSDPurgeToDisk false
+    >> setsystemparams
+  } bind def
+
+  % Configure UFST5 pfin module parameters
+  /HqnEbd_UFST5Config {
+    //HqnEbd_IsJobPCL exec {
+      <<
+        /UFST <<
+         /DefaultSymbolSet (%embedded%) currentdevparams /Job_DefaultSymbolSet get
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    }
+    {
+      <<
+        /UFST <<
+         /DefaultSymbolSet (10J)
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    } ifelse
+  } bind def
+
+  % Configure UFST7 pfin module parameters
+  /HqnEbd_UFST7Config {
+    //HqnEbd_IsJobPCL exec {
+      <<
+        /UFST <<
+         /DefaultSymbolSet (%embedded%) currentdevparams /Job_DefaultSymbolSet get
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    }
+    {
+      <<
+        /UFST <<
+         /DefaultSymbolSet (10J)
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    } ifelse
+  } bind def
+  
+  % Configure FF pfin module parameters
+  /HqnEbd_FFConfig {
+    //HqnEbd_IsJobPCL exec {
+      <<
+        /FF <<
+         /DefaultSymbolSet (%embedded%) currentdevparams /Job_DefaultSymbolSet get
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    }
+    {
+      <<
+        /FF <<
+         /DefaultSymbolSet (10J)
+         /ListPSFonts true
+        >>
+      >> setpfinparams
+    } ifelse
+  } bind def
+
+  % Configuration to set up the retention of halftone screens based on empirical setpagedevice calls
+  /HqnEbd_HalftoneRetentionConfig {
+    % Retain halftone screens, 0 to disable
+    //HqnEbd_IsJobPCL5 exec {
+      << /HalftoneRetention 7 >> setsystemparams
+    } {
+      //HqnEbd_IsJobPCL6 exec {
+        << /HalftoneRetention 4 >> setsystemparams
+      } {
+        //HqnEbd_IsJobXPS exec {
+          << /HalftoneRetention 3 >> setsystemparams
+        } {
+          << /HalftoneRetention 1 >> setsystemparams
+        } ifelse
+      } ifelse
+    } ifelse
+  } bind def
+
+  % Enable "Scalable Consumption" RIP feature
+  /HqnEbd_ScalableConsumptionConfig {
+    <<
+      /LowMemImagePurgeToDisk false
+      /LowMemRSDPurgeToDisk false
+      /CompressImageParms << 8 true >>
+    >> setsystemparams
+  } bind def
+
+  % Enable/Disable "Image Decimation" RIP feature
+  /HqnEbd_ImageDecimationConfig {
+    <<
+       /ImageDecimation <<
+          /Enabled true
+       >>
+    >> setuserparams
+  } bind def
+
+  % Enable Retained Raster feature
+  /HqnEbd_RetainedRasterConfig {
+    <<
+      /EnableOptimizedPDFScan true
+      /OptimizedPDFScanLimitPercent 25
+      /OptimizedPDFCacheID (GGIRR)
+    >> setpdfparams
+  } bind def
+
+  % Setup page device
+  /HqnEbd_PageDeviceConfig {
+    //HqnEbdWorkspaceDict begin
+    /tmpEbdDict (%embedded%) currentdevparams def
+    <<
+     % Override the core default BeginPage/EndPage; the BeginPage will also be overwridden for PCL jobs
+      /BeginPage{
+        pop
+        (%embedded%) currentdevparams /TumbleFromPMS get{
+          currentpagedevice /PageSize get aload pop translate
+          180.0 rotate
+        } if
+      }
+      /PageSize [ tmpEbdDict /PageWidthFromJob get tmpEbdDict /PageHeightFromJob get ]
+      /MediaType tmpEbdDict /MediaTypeFromJob get dup length 0 eq{ pop null }if
+      /MediaPosition tmpEbdDict /MediaSourceFromJob get dup 0 eq{ pop null }if
+      /MediaColor tmpEbdDict /MediaColorFromJob get dup length 0 eq{ pop null }if
+      /MediaWeight tmpEbdDict /MediaWeightFromJob get dup 0 eq{ pop null }if
+      /OutputType tmpEbdDict /MediaDestFromJob get dup length 0 eq{ pop null }if
+      /ValuesPerComponent tmpEbdDict /Job_DefaultRIPDepth get dup 16 eq { pop 65281 } { 1 1 1 4 -1 roll { pop 2 mul } for } ifelse
+      /HWResolution [ tmpEbdDict /Job_DefaultResX get tmpEbdDict /Job_DefaultResY get ]
+      /Duplex tmpEbdDict /Job_DefaultDuplex get
+      /Tumble tmpEbdDict /Job_DefaultTumble get
+      /Collate tmpEbdDict /Job_DefaultCollate get
+      /JobName tmpEbdDict /Job_DefaultJobName get
+      /DefaultScreenName //HqnEbd_DefaultScreen cvn
+      /NumCopies tmpEbdDict /Job_DefaultCopies get dup 1 le { pop null } if
+     % PJL orientation is not used in PS as it is already accounted for in the PDL code.
+     % /Orientation tmpEbdDict /Job_DefaultOrientation get
+    >>
+    setpagedevice
+
+    end
+  } bind def
+
+  % Omit blank planes or not
+  % Leave the /Omit dict on the stack if not retained raster, otherwise nothing
+  /HqnEbd_OmitBlankPlanesDict {
+    (%embedded%) currentdevparams dup /Cfg_RetainedRaster get
+                           exch /Job_SuppressBlank get 0 eq	or not
+    {
+      /Omit <<
+        /Process true
+        /Spot true
+      >>
+    } if
+  } bind def
+
+  % Configure the RIP raster format
+  %   Note Omitting blank planes is not permitted when using the
+  %        Retained Raster feature (see above). Remove /Omit
+  %        dictionary in the setpagedevice call below, if using
+  %        retained raster.
+  /HqnEbd_RasterFormatConfig {
+    <<
+      exch
+      dup 1 eq { % Mono
+        pop
+        /BandHeight 128
+        /InterleavingStyle 3
+        /ProcessColorModel /DeviceGray
+        /SeparationDetails <<
+          /CompositeColorNames [ /Gray ]
+          /CompositeOrder [ /Gray ]
+          //HqnEbd_OmitBlankPlanesDict exec
+        >>
+      } {
+        dup 2 eq { % CMYK Seps:
+          pop
+          /BandHeight 128
+          /InterleavingStyle 3
+          /ProcessColorModel /DeviceCMYK
+          /Separations true
+          /SeparationDetails <<
+            /SeparationStyle 2
+            /SeparationColornames [ /Cyan /Magenta /Yellow /Black ]
+            /SeparationOrder [ /Cyan /Magenta /Yellow /Black ]
+            //HqnEbd_OmitBlankPlanesDict exec
+          >>
+        } {
+          dup 3 eq { % CMYK Composite
+            pop
+            /BandHeight 128
+            /InterleavingStyle 3
+            /ProcessColorModel /DeviceCMYK
+            /Separations false
+            /SeparationDetails <<
+              /SeparationStyle 4
+              /CompositeColorNames [ /Cyan /Magenta /Yellow /Black ]
+              /CompositeOrder [ /Cyan /Magenta /Yellow /Black ]
+              //HqnEbd_OmitBlankPlanesDict exec
+            >>
+          } {
+            dup 4 eq { % RGB Separations
+              pop
+              /BandHeight 128
+              /InterleavingStyle 3
+              /ProcessColorModel /DeviceRGB
+              /Separations true
+              /SeparationDetails <<
+                /SeparationStyle 2
+                /SeparationColornames [ /Red /Green /Blue ]
+                /SeparationOrder [ /Red /Green /Blue ]
+                //HqnEbd_OmitBlankPlanesDict exec
+              >>
+            } {
+              dup 5 eq { % RGB Composite
+                pop
+                /BandHeight 128
+                (%embedded%) currentdevparams /Cfg_PixelInterleaving get
+                  {/InterleavingStyle 2}{/InterleavingStyle 3}ifelse
+                /ProcessColorModel /DeviceRGB
+                /Separations false
+                /SeparationDetails <<
+                  /SeparationStyle 4
+                  /CompositeColorNames [ /Red /Green /Blue ]
+                  /CompositeOrder [ /Red /Green /Blue ]
+                  //HqnEbd_OmitBlankPlanesDict exec
+                >>
+              } {
+                dup 6 eq { % RGB Pixel interleaved (8bpp only)
+                  pop
+                  /BandHeight 128
+                  /InterleavingStyle 2
+                  /ProcessColorModel /DeviceRGB
+                  /Separations false
+                  /SeparationDetails <<
+                    /SeparationStyle 4
+                    /CompositeColorNames [ /Red /Green /Blue ]
+                    /CompositeOrder [ /Red /Green /Blue ]
+                    //HqnEbd_OmitBlankPlanesDict exec
+                 >>
+                } {
+                  % unknown
+                  pop
+                } ifelse
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      } ifelse
+    >> setpagedevice
+  } bind def
+
+  % HqnRIP calls this procset (for some PCL5 commands at least)
+  /HqnEbd_SetColorMode {
+    % Set the color model when it is different to that requested
+    dup (%embedded%) currentdevparams /GGColorMode get ne {
+      dup (%embedded%) << /GGColorMode 4 -1 roll >> setdevparams
+      //HqnEbd_RasterFormatConfig exec
+    } {
+      pop
+    } ifelse
+  } bind def
+
+  % setpagedevice resets any halftones screen selected, so we will
+  %  reselect the halftone every time Install proc is called
+  %  (see setpagedevice in PostScript Language Reference - 3rd edition)
+  /HqnEbd_ScreenConfig {
+    (%embedded%) currentdevparams /Job_DefaultScreenMode get //HqnEbd_SetScreenMode exec
+
+    <<
+      /Install [
+        currentpagedevice /Install get /exec load
+        {
+          statusdict /GGEBDScreen known {
+            statusdict /GGEBDScreen get
+            sethalftone
+          } {
+            % GGEBDScreenMode not set
+          } ifelse
+        } bind
+        /exec load
+      ] cvx
+    >> setpagedevice
+  } bind def
+
+  % PDL special configuration
+  /HqnEbd_PDLConfig {
+    //HqnEbdWorkspaceDict begin
+    /tmpEbdDict (%embedded%) currentdevparams def
+
+	% PS
+    //HqnEbd_IsJobPS exec {
+      % NameOverride the Pscript.dll doNimage helper functions
+      <<
+        /X [{/im_save save def/mask? exch def/maskcolor exch def imageprocarray
+             exch get/s exch load def/polarity exch def/smoothflag exch def
+             translate/dx 2 index def/dy 1 index def scale /mystring exch string
+             def/bpc exch def/ih exch def/iw exch def}bind
+            {/mask? exch def/maskcolor exch def imageprocarray exch get/s exch
+             load def/polarity exch def/smoothflag exch def translate/dx 2 index
+             def/dy 1 index def scale dup 0 gt{/im_save save def}if/mystring
+             exch string def/bpc exch def/ih exch def/iw exch def}bind
+            false]
+        /Z [{im_save restore}bind
+            {mystring length 0 gt{im_save restore}if}bind
+            false]
+      >> 1183615869 internaldict /nameoverride get exec
+    }if
+
+    % PDF
+    //HqnEbd_IsJobPDF exec {
+      % Chosen to better match Acrobat when doing simple rgb to cmyk conversion.
+      << /UseFastRGBToCMYK false /RGBToCMYKMethod 2 >> setuserparams
+
+      <<
+        /BeginPage{
+          pop
+          (%embedded%) currentdevparams /TumbleFromPMS get{
+            currentpagedevice /PageSize get aload pop translate
+            180.0 rotate
+          } if
+        }
+      >> setpagedevice
+
+      << /OverprintPreview true >> setinterceptcolorspace
+      << /VirtualDeviceSpace /DeviceRGB >> setpagedevice
+    }if
+
+    % PCL5c, 5e or XL
+    //HqnEbd_IsJobPCL exec {
+      % Note, PCL Sense Page Device hook requires the PCL page size list to be setup before it is called... see SetupPCLMedia() in oil_psconfig.c
+      (%embedded%/VirtFile/PCLMedia) dup run deletefile
+
+      % PCL sense page device
+      /HqnEmbeddedPCL /ProcSet findresource /GGEBDInstallPCLSensePageDevice get exec
+    } if
+
+    % PCL5c or 5e
+    //HqnEbd_IsJobPCL5 exec {
+      <<
+        /Jog tmpEbdDict /Job_DefaultJobOffset get
+        /ExtraPageDeviceKeys <<
+          /PCLDefaultDuplex tmpEbdDict /Job_DefaultDuplex get
+          /PCLDefaultPageSize null                 % Set by SensePageDevice proc
+          /PCLDefaultOrientation tmpEbdDict /Job_DefaultOrientation get
+          /PCLDefaultTumble tmpEbdDict /Job_DefaultTumble get
+          /PCLOrientation tmpEbdDict /Job_DefaultOrientation get
+          /PCLWideA4 tmpEbdDict /Job_DefaultWideA4 get
+          /PCL5DefaultLogicalPage [ 0 0 0 0 ]      % Set by SensePageDevice proc
+          /PCL5CustomPageWidth tmpEbdDict /Job_PCL5CustomPaperWidth get
+          /PCL5CustomPageHeight tmpEbdDict /Job_PCL5CustomPaperHeight get
+          /PCL5DefaultMediaType tmpEbdDict /Job_DefaultMediaType get
+          /PCL5DefaultOutputBin tmpEbdDict /Job_DefaultPCL5OutputTray get
+          /PCL5DefaultPageSize tmpEbdDict /Job_DefaultPCL5PaperSize get
+          /PCL5DefaultPaperSource tmpEbdDict /Job_DefaultPCL5MediaSource get
+          /PCL5DefaultPrintableArea [ 0 0 0 0 ]    % Set by SensePageDevice proc
+          /PCL5LogicalPage [ 0 0 0 0 ]             % Set by SensePageDevice proc
+          /PCL5MediaType tmpEbdDict /Job_DefaultMediaType get
+          /PCL5OutputBin tmpEbdDict /Job_DefaultPCL5OutputTray get
+          /PCL5PageLength -1
+          /PCL5PageSize tmpEbdDict /Job_DefaultPCL5PaperSize get
+          /PCL5PaperSource tmpEbdDict /Job_DefaultPCL5MediaSource get
+          /PCL5PrintableArea [ 0 0 0 0 ]           % Set by SensePageDevice proc
+          /PCL5RequestedPageSize 0                 % Set by SensePageDevice proc
+          /PCL5VMI tmpEbdDict /Job_DefaultVMI get
+          /PCLXLRequestedPageSize 0                % Set by SensePageDevice proc
+        >>
+         /BeginPage{
+          pop
+          (%embedded%) currentdevparams /TumbleFromPMS get{
+            currentpagedevice /PageSize get aload pop 100 mul exch 100 mul exch translate
+            180.0 rotate
+          } if
+        }
+      >> setpagedevice
+    } if
+
+    //HqnEbd_IsJobPCL6 exec {
+      <<
+        /Jog tmpEbdDict /Job_DefaultJobOffset get
+        /ExtraPageDeviceKeys
+        <<
+          /PCLDefaultDuplex tmpEbdDict /Job_DefaultDuplex get
+          /PCLDefaultPageSize null                 % Set by SensePageDevice proc
+          /PCLDefaultOrientation tmpEbdDict /Job_DefaultOrientation get
+          /PCLDefaultTumble tmpEbdDict /Job_DefaultTumble get
+          /PCLOrientation tmpEbdDict /Job_DefaultOrientation get
+          /PCLWideA4 tmpEbdDict /Job_DefaultWideA4 get
+          /PCL5DefaultLogicalPage [ 0 0 0 0 ]      % Set by SensePageDevice proc
+          /PCL5DefaultMediaType tmpEbdDict /Job_DefaultMediaType get
+          /PCL5DefaultOutputBin tmpEbdDict /Job_DefaultPCL5OutputTray get
+          /PCL5DefaultPageSize tmpEbdDict /Job_DefaultPCL5PaperSize get
+          /PCL5DefaultPaperSource tmpEbdDict /Job_DefaultPCL5MediaSource get
+          /PCL5DefaultPrintableArea [ 0 0 0 0 ]    % Set by SensePageDevice proc
+          /PCL5LogicalPage [ 0 0 0 0 ]             % Set by SensePageDevice proc
+%          /PCL5MediaType tmpEbdDict /Job_DefaultMediaType get
+%          /PCL5OutputBin tmpEbdDict /Job_DefaultPCL5OutputTray get
+          /PCL5PageLength -1
+          /PCL5PageSize -1
+%          /PCL5PaperSource tmpEbdDict /Job_DefaultPCL5MediaSource get
+          /PCL5PrintableArea [ 0 0 0 0 ]           % Set by SensePageDevice proc
+          /PCL5RequestedPageSize 0                 % Set by SensePageDevice proc
+          /PCL5VMI tmpEbdDict /Job_DefaultVMI get
+          /PCLXLDefaultMediaDestination tmpEbdDict /Job_DefaultPCLXLOutputTray get
+          /PCLXLDefaultMediaSource tmpEbdDict /Job_DefaultPCLXLMediaSource get
+          /PCLXLDefaultMediaType tmpEbdDict /Job_DefaultMediaType get
+          /PCLXLDefaultPageSize tmpEbdDict /Job_DefaultPCLXLPaperSize get
+          /PCLXLMediaDestination tmpEbdDict /Job_DefaultPCLXLOutputTray get
+          /PCLXLMediaSource tmpEbdDict /Job_DefaultPCLXLMediaSource get
+          /PCLXLMediaType tmpEbdDict /Job_DefaultMediaType get
+          /PCLXLPageSize tmpEbdDict /Job_DefaultPCLXLPaperSize get
+          /PCLXLRequestedPageSize 0                % Set by SensePageDevice proc
+        >>
+        /BeginPage{
+          pop
+          (%embedded%) currentdevparams /TumbleFromPMS get{
+            currentpagedevice /PageSize get aload pop 100 mul exch 100 mul exch translate
+            180.0 rotate
+          } if
+        }
+      >> setpagedevice
+    } if
+    end
+  } bind def
+
+  %  Configure sensepagedevice hook (see HqnRIP extension manual).
+  %   We want to install the SensePageDevice hook after the RIP default PageSize
+  %   has been configured in the previous setpagedevice call above, since dictionaries
+  %   are not guaranteed to run in the order that they are written.
+  %   Note that the PageSize is only set above if GG_SET_PAGESIZE_BEFORE_HOOK is
+  %   defined, otherwise you could consider combining this setpagedevice with the
+  %   one above.
+  %
+  %   We use GG_SearchStack to check for any previous SensePageDevice changes to
+  %   PageSize... e.g. the HqnEmbeddedPCL SensePageDevice.
+  %
+  %   GG_SearchStack could be applied to other page device keys.
+  %   For example, /MediaType... A previous SensePageDevice hook (e.g. PCL) might
+  %   set the /MediaType to something different to the current page device. In
+  %   this case, the new setting should be used instead of the one in currentpagedevice.
+  /HqnEbd_SensePageDeviceConfig {
+    <<
+      /SensePageDevice [
+        currentpagedevice /SensePageDevice get
+        dup null eq { pop } { /exec load } ifelse
+        {
+          (%embedded%) currentdevparams /Cfg_PaperSelectMode get 1 eq{
+            currentpagedevice /MediaType 2 copy known{get dup null ne{length 0 eq{currentpagedevice /MediaType null put}if}{pop}ifelse}{pop pop}ifelse
+            currentpagedevice /MediaPosition 2 copy known{ get 0 eq{currentpagedevice /MediaPosition null put}if}{pop pop}ifelse
+          }if
+        //HqnEbd_IsJobPCL exec not{
+        (%embedded%) <<
+          /PageHeightFromJob /PageWidthFromJob /PageSize GG_SearchStack not {currentpagedevice /PageSize get}if aload pop cvr 3 1 roll cvr
+          /xResolutionFromJob /yResolutionFromJob  currentpagedevice /HWResolution get aload pop cvr 3 1 roll cvr
+          /VPCFromJob  currentpagedevice /ValuesPerComponent 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+          /MediaTypeFromJob  currentpagedevice /MediaType 2 copy known {get dup null eq{pop ()}if}{pop pop pop}ifelse
+          /MediaColorFromJob  currentpagedevice /MediaColor 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+          /MediaWeightFromJob  currentpagedevice /MediaWeight 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+          /MediaSourceFromJob   currentpagedevice /MediaPosition 2 copy known {get dup null eq{pop 0}if}{pop pop pop}ifelse
+          /DuplexFromJob   currentpagedevice /Duplex get
+          /TumbleFromJob   currentpagedevice /Tumble get
+        >> setdevparams
+        }{
+        (%embedded%) <<
+        % /PageHeightFromJob /PageWidthFromJob set in HQNEmbeddedPCL for PCL jobs as it may be the last call to setpagedevice
+          /xResolutionFromJob /yResolutionFromJob  currentpagedevice /HWResolution get aload pop cvr 3 1 roll cvr
+          /VPCFromJob  currentpagedevice /ValuesPerComponent 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+        % /MediaTypeFromJob set in HQNEmbeddedPCL for PCL jobs as it may be the last call to setpagedevice
+          /MediaColorFromJob  currentpagedevice /MediaColor 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+          /MediaWeightFromJob  currentpagedevice /MediaWeight 2 copy known {get dup null eq{pop pop}if}{pop pop pop}ifelse
+        % /MediaSourceFromJob set in HQNEmbeddedPCL for PCL jobs as it may be the last call to setpagedevice
+          /DuplexFromJob   currentpagedevice /Duplex get
+          /TumbleFromJob   currentpagedevice /Tumble get
+          /OrientationFromJob currentpagedevice /PCLOrientation get
+        >> setdevparams
+        }ifelse
+        (%embedded%) <<
+          /MediaChangeNotify true
+        >> setdevparams
+        } bind
+        /exec load
+      ] cvx
+    >> setpagedevice
+  } bind def
+
+  % PMS Media Select configuration
+  /HqnEbd_PMSMediaSelectConfig {
+    % Get page size from the PMS
+    <<
+      /SensePageDevice [
+        currentpagedevice /SensePageDevice get
+        dup null eq { pop } { /exec load } ifelse
+        {
+          /tmpEbdDict (%embedded%) currentdevparams def
+          /InputAttributes <<
+           %null all previous Input Attributes and remove previous one that matches this selection; so we only have one left as selected by PMS;
+           currentpagedevice /InputAttributes get
+           { 1 index tmpEbdDict /MediaSourceFromPMS get ne {pop null}{pop pop} ifelse}forall
+            tmpEbdDict /MediaSourceFromPMS get
+            <<  /PageSize [ tmpEbdDict /PageWidthFromPMS get
+                            tmpEbdDict /PageHeightFromPMS get ]
+                /RasterBBox [ tmpEbdDict /ImagingBoxLeftFromPMS get
+                              tmpEbdDict /ImagingBoxTopFromPMS get
+                              tmpEbdDict /ImagingBoxRightFromPMS get
+                              tmpEbdDict /ImagingBoxBottomFromPMS get ]
+            >>
+          >>
+          /MediaPosition tmpEbdDict /MediaSourceFromPMS get
+          /Policies << /PageSize 5 >>
+
+          % pcl5e or pcl5c
+          //HqnEbd_IsJobPCL5 exec {
+             statusdict /GGEBDPCL5PageSizeValues get tmpEbdDict /PCL5PageSizeFromPMS get  get  /HqnEmbeddedPCL /ProcSet findresource /GGEBDPushPageSizeValues get exec
+          } if
+          % pclxl
+          //HqnEbd_IsJobPCL6 exec {
+             statusdict /GGEBDPCLXLPageSizeValues get tmpEbdDict /PCLXLPageSizeFromPMS get  get  /HqnEmbeddedPCL /ProcSet findresource /GGEBDPushPageSizeValues get exec
+          } if
+
+          % Clear ImagingBBox if RIP pads to unprintable area
+          tmpEbdDict /Cfg_PrintableAreaMode get 1 eq {
+            /ImagingBBox null
+          } if
+
+        } bind
+        /exec load
+      ] cvx
+    >> setpagedevice
+  } bind def
+
+  % Configure unprintable area mode based on setting in %embedded% device
+  /HqnEbd_UnprintableConfig {
+
+    % RIP crops (trims) or pads, and PMS media select
+    (%embedded%) currentdevparams /Cfg_PrintableAreaMode get 0 eq not
+    (%embedded%) currentdevparams /Cfg_PaperSelectMode get 2 eq and {
+      <<
+        % rectclip is used to limit rendering to the printable area.
+        % We set the clip region using the BeginPage hook (see HqnRIP extensions manual).
+        /BeginPage {
+          % add to the existing page setup
+          currentpagedevice /BeginPage get /exec load
+ %        pop % pop showpage count no longer needed as the initial embedded BeginPage routines remove them
+          (%embedded%) currentdevparams /MediaClipLeftFromPMS known {
+            (%embedded%) currentdevparams
+            dup dup dup % four dicts, one for each side
+
+            //HqnEbd_IsJobPCL exec {
+              % Use centipoints
+              /MediaClipLeftFromPMS get 100 mul 4 1 roll
+              /MediaClipTopFromPMS get 100 mul 3 1 roll
+              /MediaClipWidthFromPMS get 100 mul 2 1 roll
+              /MediaClipHeightFromPMS get 100 mul
+            } {
+              % Everything else uses points
+              /MediaClipLeftFromPMS get 4 1 roll
+              /MediaClipTopFromPMS get 3 1 roll
+              /MediaClipWidthFromPMS get 2 1 roll
+              /MediaClipHeightFromPMS get
+            } ifelse
+
+            rectclip
+          } if
+        } bind
+      >> setpagedevice
+    } if
+  } bind def
+
+  /HqnEbd_SetUCRBG {
+    % Handle RGB to CMYK conversions based on userparam setting
+    currentuserparams /RGBToCMYKMethod get
+    dup 0 eq {
+      % Uses default settings (identity proc)
+    } {
+      dup 1 eq {
+        { pop 0 } bind setblackgeneration
+        { pop 0 } bind setundercolorremoval
+      } {
+        dup 2 eq {
+          % Chosen to better match Acrobat when doing simple rgb
+          % to cmyk conversion; needs adjusting for PCL!
+          % ANY CHANGES HERE MUST BE REFLECTED IN FASTRGB2CMYK
+          { dup 0.5 gt { 0.5 sub 1.5 mul } { pop 0 } ifelse } bind
+          setblackgeneration
+          { dup 0.5 gt { 0.5 sub 0.5 mul } { pop 0 } ifelse } bind
+          setundercolorremoval
+        } if
+      } ifelse
+    } ifelse
+    pop
+  } bind def
+
+  % Configure color management based on %embedded% configuration paramter
+  /HqnEbd_ColorManagementConfig {
+    //HqnEbd_SetUCRBG exec
+
+    (%embedded%) currentdevparams /Cfg_ColorManageMode get
+    dup 0 eq {
+      % No color management
+      % Treat CIE spaces as device spaces where possible
+      <<
+        /OverrideCMYK true  /OverrideRGB true  /OverrideGray true
+        % Check for Mono, set if a color mode selected %
+ %      Restored setting to same as prototype while issues in AC8Z61EC.pdf resolved 
+ %       (%embedded%) currentdevparams /GGColorMode get 1 ne {
+ %         /Black false /BlackTint false } if
+      >> setinterceptcolorspace
+      % Treat more CIE spaces as device spaces where possible
+      << /PhotoshopInput true >> setuserparams
+    } {
+      dup 1 eq {
+        % Enable color management using ICC profiles
+        <<
+          /DeviceCMYK [ /ICCBased (iccprofiles/ECI_USWebCoatedSWOP.icc) (r) file ]
+          /DeviceRGB  [ /ICCBased (iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) (r) file ]
+          /DeviceGray /DeviceGray
+          /Black false
+          /BlackTint false
+        >> setinterceptcolorspace
+        <<
+          /Profile << /Default (iccreg/ISOcoated.icc) (r) file >>
+        >> setreproduction
+        /Perceptual setrenderingintent
+        << /EraseColor {0 0 0 0 setcmykcolor} bind >> setpagedevice
+      } {
+        % unknown mode
+      } ifelse
+    } ifelse
+    pop % pop the duplicated value
+  } bind def
+
+  % Check if its an image input based on %embedded% configuration paramter
+  /HqnEbd_ImageInput {
+    % if image input, read and process
+    (%embedded%) currentdevparams /Job_ImageInput get
+      dup 1 eq
+      {
+        pop (%embedded%/ImageInput) [ /TIFF /JFIF /JPEG ] /HqnImage /ProcSet findresource /analyseimage get exec
+        {
+          /HqnImage /ProcSet findresource /getimagedetails get exec % -> dict true/false
+
+          not { stop } if % error if getimagedetails fails
+
+          % setup any required manipulation to control how the image appears on the page.
+
+          begin % dictionary returned by getimagedetails
+
+          % Add the current page width and height to this dictionary
+          currentpagedevice /PageSize get aload pop /PageH exch def /PageW exch def
+
+          currentdict /XResolution known not
+          {
+            /XResolution 72 def
+            /YResolution 72 def
+          } if
+
+          % note that XResolution and YResolution here represent the image resolution and not output resolution
+          /IWidth Width XResolution div 72 mul def
+          /IHeight Height YResolution div 72 mul def
+
+          % todo: read the margins from embedded device.
+          /TopMargin 12 def
+          /BottomMargin 12 def
+          /LeftMargin 12 def
+          /RightMargin 12 def
+
+          /PrintableWidth PageW LeftMargin sub RightMargin sub def
+          /PrintableHeight PageH TopMargin sub BottomMargin sub def
+
+          % Define the output resolution requested by this page
+          /XResolution /YResolution  currentpagedevice /HWResolution get aload pop cvr 3 1 roll cvr def def
+
+          % does it fit the page without scaling ?
+          PrintableWidth IWidth gt PrintableHeight IHeight gt and
+          {
+            PrintableWidth IWidth sub 2 div LeftMargin add        % x co-ordinate
+            PrintableHeight IHeight sub 2 div BottomMargin add     % y co-ordinate
+            translate % centre the image by width and height
+            IWidth
+            IHeight
+            scale % scale to fit
+          }
+          {
+            % Want to keep the image proportions fixed,
+            % but scale it up to either page width or height, whichever fits
+            Width PrintableHeight mul Height PrintableWidth mul gt
+            {
+              % scale to page width. Height will change depending on aspect ratio.
+              0 LeftMargin add                               % x co-ordinate
+              PrintableHeight                     % Page height without margins
+              PrintableWidth Height mul Width div % new image height
+              sub 2 div abs BottomMargin add      % calculate y co-ordinate to centre the image
+              translate   % centre the image by height
+              PrintableWidth                        % scale to page width
+              PrintableWidth Height mul Width div   % calculate new height retaining aspect ratio
+              scale % scale to page width
+            }
+            {
+              % scale to page height. Height will change depending on aspect ratio.
+              PrintableWidth                          % Page width without margins
+              PrintableHeight Width mul Height div    % new image width
+              sub 2 div abs LeftMargin add         % calculate x co-ordinate to centre the image
+              0 BottomMargin add                   % y co-ordinate
+              translate   % centre the image by width
+              PrintableHeight Width mul Height div % calculate new width retaining aspect ratio
+              PrintableHeight                      % scale to page height
+              scale % scale to page height
+            } ifelse
+          }ifelse
+
+          end
+
+          <<
+            /hqn_image_do_setpagedevice false
+            /hqn_image_do_showpage true
+          >>  /HqnImage /ProcSet findresource /runimage get exec
+        } if
+      }
+      {
+        dup 0 eq
+        { % Non Image
+          pop
+        }
+        {
+          % unknown
+          pop
+        } ifelse
+      } ifelse
+  } bind def
+
+  /HqnEbd_AnythingLeftOnStack? {
+    % (/HqnEbd_AnythingLeftOnStack) == flush
+    % Check that the parameters file left nothing on the stack. set to false to skip check.
+    count 0 eq not {
+      (++++ Items left on stack... see below\n) =print
+      pstack
+      (---\n) =print
+      flush
+    } if
+  } bind def
+
+  /HqnEbd_LowMemSetup {
+    % Limit the memory allocated to backdrop resources
+    << /BackdropResourceLimit 20 >> setuserparams
+
+    % Assume there isnt a %tmp% disk for spilling image and rsd resources
+    <<
+      /DynamicBands false
+      /LowMemImagePurgeToDisk false
+      /LowMemRSDPurgeToDisk false
+    >> setsystemparams
+  } bind def
+
+  % Entry point to run setup PS based on the parameters in the config file
+  /HqnEmbeddedSetup {
+
+    % Tune the rip for low memory typical of embedded systems
+    //HqnEbd_LowMemSetup exec
+
+    % Need to set up the pdf spool to disk for swinram.  As it causes a ps failure if the device
+    % number is invalid (when SW on disk) we can not do this in ExtraDevices as it is part of bootup
+    % and it reports an error even in a stopped context
+
+    mark (%disktmp%) devstatus counttomark 1 add 1 roll cleartomark not {
+      (%disktmp%) devmount pop
+      mark {
+        (%disktmp%) <<
+          /Password 0
+          /DeviceType 16#ffff0009
+          /Enable true
+          /Prefix (%embedded%) currentdevparams /HDD_PDFSpoolDir get
+        >> setdevparams
+      } stopped counttomark 1 add 1 roll cleartomark
+      {
+        (%disktmp%) <<
+          /Password 0
+          /DeviceType 0
+          /Enable true
+          /Prefix (tmp/tmp)
+        >> setdevparams
+      } if
+    } if
+
+    % Enable full error handler for debugging purposes. Uncomment to enable.
+    % /HqnErrorHandler /ProcSet findresource /FullErrorHandler get exec
+
+    % View the current %embedded% device settings. Uncomment to enable.
+    %  (%embedded%) currentdevparams { ((%embedded%)->) =print exch =print ( = \t) =print =print (\n)=print } forall flush
+
+    % Configure BackChannel. It provides the RIP a callback to get message emitted from jobs back to the %embedded% device
+    statusdict begin (%stdin%) (r) file (%embedded%/BackChannel) (w) file setstdio end
+
+    % UFST5 configuration
+    (%embedded%) currentdevparams /Cfg_UseUFST5 get {
+      //HqnEbd_UFST5Config exec
+      } if
+
+      % UFST7 configuration
+      (%embedded%) currentdevparams /Cfg_UseUFST7 get {
+        //HqnEbd_UFST7Config exec
+    } if
+
+    % FF configuration
+    (%embedded%) currentdevparams /Cfg_UseFF get {
+      //HqnEbd_FFConfig exec
+    } if
+
+    % Configure SW in RAM
+    (%embedded%) currentdevparams /Cfg_SWinRAM get { //HqnEbd_SWinRAMConfig exec } if
+
+    <<
+      /CompressImageSource false
+    >> setsystemparams
+
+    % Run the tray information PS to set the /InputAttributes dictionary (Only if "-p 1")
+    (%embedded%) currentdevparams /Cfg_PaperSelectMode get 1 eq {
+      (%embedded%/VirtFile/TrayInformation) dup run deletefile
+    } if
+
+    % Run the output bin information PS to set the /OutputAttributes dictionary
+    (%embedded%/VirtFile/OutputInformation) dup run deletefile
+
+    % Configure page device
+    //HqnEbd_PageDeviceConfig exec
+
+    % Setup raster format
+    (%embedded%) currentdevparams /Cfg_DefaultColorMode get
+% //HqnEbd_SetColorMode exec
+    % The HqnEbd_SetColorMode has a conditional check to avoid unnecessary calls when no change has been made
+    % therefore we need to go direct to the HqnEbd_RasterFormatConfig at job start
+    dup (%embedded%) << /GGColorMode 4 -1 roll >> setdevparams
+    //HqnEbd_RasterFormatConfig exec
+
+    % Configure screening hooks
+    //HqnEbd_ScreenConfig exec
+
+    % Enable Halftone Retention RIP feature
+    //HqnEbd_HalftoneRetentionConfig exec
+
+    % Enable Scalable Consumption RIP feature
+    (%embedded%) currentdevparams /Cfg_ScalableConsumption get { //HqnEbd_ScalableConsumptionConfig exec } if
+
+    % Enable Image Decimation RIP feature
+    (%embedded%) currentdevparams /Cfg_ImageDecimation get { //HqnEbd_ImageDecimationConfig exec } if
+
+    % Turn on image downsampling, if appropriate
+    //HqnEbd_ImageDownsampling exec
+
+    % Turn on use of system-memory and disable band compression
+    (%pagebuffer%) <</PGBSysmem true /AllowBandCompression false>> setdevparams
+
+    % Turn off separation detection, but only if Retained Raster feature is disabled
+    (%embedded%) currentdevparams /Cfg_RetainedRaster get not {
+      << /DetectSeparation false >> setsystemparams
+    } if
+
+    % Enable retained raster if required
+    (%embedded%) currentdevparams /Cfg_RetainedRaster get {
+      //HqnEbd_RetainedRasterConfig exec
+    } if
+
+    % The HqnRIP is configured to startup using Letter *usually* but since it is not guaranteed, we can ensure it is by setting it  before our SensePageDevice hook is installed.
+    %  The only benefit of doing this is that you will not get a surprise  page size when the %embedded% device is called during startup, just after the SensePageDevice hook is added.
+    %  Alternatively the default page size could be setup in SW resource file HqnOEM as documented in the HqnRIP extensions manual (but ensure %embedded% is mounted).
+    % << /PageSize [ 612 792 ] >> setpagedevice
+    % or add a couple of parameters (Job_MediaWidth or Job_MediaHeight) to the embedded device to obtain the value from OIL/PMS.
+    % << /PageSize [ (%embedded%) currentdevparams dup /Job_MediaWidth get exch /Job_MediaHeight get ] >> setpagedevice
+
+    % Call the HqnEbd_GenoaCompliance routine to configure Genoa compliance for PS job only.
+    (%embedded%) currentdevparams /Cfg_GenoaCompliance get {
+      mark  //HqnEbd_IsJobPS exec /HqnEbd_GenoaCompliance //GG_CallHqnEbdProcset exec cleartomark
+    } if
+
+    % Special PDL parameters
+    //HqnEbd_PDLConfig exec
+
+    % Install Sense Page Device hook
+    //HqnEbd_SensePageDeviceConfig exec
+
+    % If PMS Media Select (Only if "-p 2")
+    (%embedded%) currentdevparams /Cfg_PaperSelectMode get 2 eq {
+      //HqnEbd_PMSMediaSelectConfig exec
+    } if
+
+    % Configure crop/trim/padded
+    //HqnEbd_UnprintableConfig exec
+
+    % Configure color management
+    //HqnEbd_ColorManagementConfig exec
+
+    % Call the HqnEbd_Trapping routine to configure trapping (0.0 means no trapping).
+    mark << /EbdTrapping (%embedded%) currentdevparams /Cfg_TrappingWidth get >> /HqnEbd_Trapping //GG_CallHqnEbdProcset exec cleartomark
+
+    % Uncomment the line below to enable font eumlation. Uncomment to enable.
+    % //HqnEbd_FontEmulation exec
+
+    % Run SW resource SW/Usr/HqnEmbedded/ExtraJobStart if it exists.
+    % Note that any errors that occur within the file are ignored and
+    % anything left on the stack is thrown away
+    mark { (%os%Usr/HqnEmbedded/ExtraJobStart) run } stopped cleartomark
+
+    % if image input, read and process
+    //HqnEbd_ImageInput exec
+
+    % Check that the configuration code has left nothing on the stack. Uncomment to enable.
+    % //HqnEbd_AnythingLeftOnStack? exec
+
+  } bind def
+
+end
+
+/HqnEmbedded exch /ProcSet defineresource pop
+
+setglobal
+
+% pfin ignores the first resourceforall, so do one here to ensure all user
+% jobs get appropriate resourceforall behaviour.
+(*) {pop} 256 string /Font resourceforall
+%%EndResource

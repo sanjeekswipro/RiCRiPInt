@@ -1,0 +1,32 @@
+# Copyright (C) 2001-2010 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+# Makefile for Color Compositing Engine (CCE)
+#
+# $HopeName: COREcce!make:makefile.jam(EBDSDK_P.1) $
+
+# Variant details come before dependant compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+# Compilation rules
+
+    DependsOn all : cce ;
+
+    IncludeExportDirectories Local :
+       mm
+       render
+    : .. ;
+
+
+    local Cfiles =
+      alpha.c
+      cce.c
+      compositers.c
+      nsCompositers.c
+    ;
+
+    Library cce : $(Cfiles) ;
+
+
+# Log stripped

@@ -1,0 +1,116 @@
+%!
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $HopeName: COREhdlt!src:idlompss.pss(EBDSDK_P.1) $
+%
+% Log stripped
+
+1183615869 internaldict begin
+
+% Save the current dictionary, for immediate evaluation, using a name we'll
+% re-define later.
+/savedlhooks currentdict def
+
+% mergedict is a utility routine to recursively merge dictionaries; it can
+%   be given a maximal depth (so that dictionaries below that depth are just
+%   replaced, rather than recursively merged) or a null to be infintely
+%   recursive.  Keys in sourcedict which do not conflict with existing entries
+%   in destdict are inserted there...
+/mergedict {  % |- destdict sourcedict maxdepth => destDict(merged)
+#ifdef DEBUG
+   { mark (DBG: hello from mergedict) = } stopped pop cleartomark
+#endif
+   2 index 4 -2 roll   % |- max destdict destdict srcdict
+     { % in forall: |- maxdepth destdict destdict srckey srcval
+       2 index 2 index known   % |- md dd dd skey sval ddict-known?
+         {  % if both have dicts, and max null or >0, merge; else skip
+            dup type /dicttype eq  % |- md dd dd skey sval srcDict?
+	    5 index dup type /integertype eq
+              { 0 gt }
+              { pop true }
+            ifelse and		% |- md dd dd skey sval srcDict&maxOk?
+            3 index 3 index get type /dicttype eq and  
+              { % we have to merge them... |- md dd dd skey sval
+#ifdef DEBUG
+                { mark (DBG: mergedict merges ) print 2 index == } stopped pop cleartomark
+#endif
+		2 index 2 index get     % |- max dd dd skey sval dval
+                exch 5 index
+		dup type /integertype eq
+		  { 1 sub }
+		if			% |- max dd dd skey dval sval max-1
+		//savedlhooks /mergedict get  % only the right one!
+		exec		% |- max dd dd skey dval+sval
+		put dup         % insert new dict, leaves |- max dest dest
+              }
+              { 
+#ifdef DEBUG
+                { mark (DBG: mergedict discards old ) print 2 index == } stopped pop cleartomark
+#endif
+                pop pop        % no merge; pop entry, leaving |- max dest dest
+              }
+            ifelse
+         }
+         { 
+#ifdef DEBUG
+           { mark (DBG: mergedict copies old ) print 2 index == } stopped pop cleartomark
+#endif
+           put dup 
+         }           % no prev. entry, so insert.  |- max dest dest
+       ifelse
+       % stack here should be |- maxdepth destdict destdict
+     }
+   forall
+   pop exch pop				% |- destdict
+#ifdef DEBUG
+   { mark (DBG: exit mergedict) = } stopped pop cleartomark
+#endif
+} bind def 
+
+/setdlhooks     % really an operator which calls this special PostScript to
+                % merge the user~s new dict into the old one, i.e.:
+                %     |- new-dict prev-dict-copy|null  ==>  |- merged-dict
+                % prev-dict might be null, in which case no merging is needed;
+                % this isn~t allowed to mutate the user~s dict, but can return
+{               % it unchanged (to be copied internally), or mutate prev-dict.
+#ifdef DEBUG
+   { mark (DBG: hello from setdlhooks) = } stopped pop cleartomark
+#endif
+
+   dup type /nulltype eq 
+     {
+       pop				% first time, just leave new dict
+     } {
+       null //mergedict exec
+     }
+   ifelse
+
+#ifdef DEBUG
+   { mark (DBG: exit setdlhooks) = } stopped pop cleartomark
+#endif
+} bind def
+
+% Make a deep copy of the HDLT hooks, sharing as much as possible except for
+% the Data dictionaries.
+/savedlhooks { % dict --savedlhooks-- dict
+  dup length dict copy dup { % dict key value
+    dup type /dicttype eq { % value copied is dictionary, shall we recurse?
+      1 index /Private ne { % Private gets copied as-is
+	% Recurse into other dictionaries
+	//savedlhooks /savedlhooks get exec
+	3 copy put
+      } if % Private?
+    } if % dicttype?
+    pop pop % drop key and value, leaving dict
+  } forall
+} bind def
+
+% An empty dictionary; there are several uses for this in HDLT: (as a return
+% null data dictionary for callbacks, when no corresponding original hooks
+% dict exists). Note that this is read-only, to prevent callbacks from
+% polluting it.
+/emptydldata 0 dict readonly def
+
+end % internaldict
+
+% end of idlom.pss

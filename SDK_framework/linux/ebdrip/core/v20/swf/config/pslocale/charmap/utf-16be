@@ -1,0 +1,62 @@
+%!PS-Adobe-3.0
+%%Title: PDFDoc-UTF-16BE
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Oct 2004
+% Copyright (C) 2004-2013 Global Graphics Software Limited. All Rights Reserved.
+% $Revision: 1.4.1.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:config:pslocale:charmap:utf-16be(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% Array to map from PDFDoc into the encoding used for Messages entries.
+% The values are then used by the TranslateChars_1 call in the HqnLocal procset.
+
+% The array below should contain exactly 256 entries, each of which must be an integer
+% in the range 0-255, or a string.
+
+/CharMap [
+	16#18 { 16#20 } repeat
+	<02D8>
+	<02C7>
+	<02C6>
+	<02D9>
+	<02BA>
+	<02DB>
+	<02DA>
+	<02DC>
+	16#20 1 16#7E {  } for
+	<2022>
+	<2022>
+	<2020> <2021> 
+	<2026>
+	<2014>
+	<2013>
+	<0192>
+	<2044>
+	<2039> <203A> 
+	<2212>
+	<2030>
+	<201E>
+	<201C> <201D> 
+	<2018> <2019> <201A> 
+	<2122>
+	<FB01> <FB02> 
+	<0141>
+	<0152>
+	<0160>
+	<0178>
+	<017D>
+	<0131>
+	<0142>
+	<0153>
+	<0161>
+	<017E>
+	16#20
+	<20AC>
+	16#A1 1 16#FF {  } for
+]
+
+%%EOF

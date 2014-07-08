@@ -1,0 +1,66 @@
+%!PS-Adobe-3.0
+%%Title: XPS init
+%%Creator: Global Graphics Software Limited
+%%CreationDate: July 12, 2004
+% Copyright (C) 2004-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: COREedoc!swf:sys:extstart:xps(EBDSDK_P.1) $
+
+% Global Graphics Software Ltd. Confidential Information.
+% ExtraStart file to add XPS initializations
+
+/HqnZIP /ProcSet findresource begin
+  currentglobal true setglobal
+
+  /XPS <<
+    /FilePattern (_rels/.rels)  
+    /Interpret {
+      % Open start file
+      (r) file dup 1183615869 internaldict /_rels.rels 3 -1 roll put
+      % Catch and tidy up after any error
+      mark exch
+      /XpsXMLParams where { /XpsXMLParams get } if
+      { systemdict /xmlexec get exec } stopped
+      counttomark 1 add 1 roll cleartomark
+      % Close start file
+      1183615869 internaldict /_rels.rels 2 copy get closefile undef
+      % Rethrow any error
+      { stop } if
+    } bind
+  >> addZIPfiletype
+
+  <<
+    /OpenPackage true
+  >> addZIPparams
+
+  setglobal
+end
+
+statusdict begin
+  mark {
+    (%xpspt%) dup devmount pop
+    <<
+       /Password 0
+       /SearchOrder -1
+       /DeviceType 27
+       /Enable true
+    >> setdevparams
+  } stopped
+  cleartomark
+
+  mark {
+    % This is in a stopped context, because the ZIP device may not be supported
+    % in the Core build.
+    (%zipgen%) dup devmount pop
+    <<
+      /DeviceType 32
+      /Password 0
+      /Enable true
+      /SearchOrder -1
+    >> setdevparams
+  } stopped cleartomark
+end
+
+
+%EOF

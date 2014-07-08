@@ -1,0 +1,276 @@
+# Copyright (C) 2008-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: GGEufst5!make:makefile.jam(EBDSDK_P.1) $
+#
+
+  RequiresVariant warning_level : low ;
+#  RequiresVariant 64bit_warnings ;
+
+ImplementsVariant thirdparty ;
+
+# Compilation rules
+    if $(Variant_thirdparty)
+    {
+         Library ufst7 ;
+         Search ufst7$(C-Lib-Suffix) : $(CurrentPath)$/$(C-TPB-Directory) ;
+    }
+    else
+    {
+        DependsOn all : ufst7 ;
+        DependsOn ufst7 : ufst7a ufst7b ;
+        
+        if $(C-Compiler-Family) = msvc
+        {
+          CompilerVar C-Defines : MSVC ;
+        }
+        else if linux in $(TargetOS) || linux_2 in $(TargetOS)
+        {
+          CompilerVar C-Defines : UFST_LINUX ;
+        }
+        else if netbsd in $(TargetOS)
+        {
+          CompilerVar C-Defines : UFST_NETBSD ;
+        }
+        else if $(MACOSX)
+        {
+          CompilerVar C-Defines : UFST_MACOSX ;
+        }
+        else if $(TargetOS) = vxworks
+        {
+          CompilerVar C-Defines : VXWORKS ;
+        }
+        else if $(TargetOS) = threadx
+        {
+          # threadx jam file defines THREADX
+        }
+        else
+        {
+          Error Unsupported platform in GGEufst5!make:makefile.jam ;
+        }
+
+        local Com = C C++ mixedC ;
+
+        AddToVar Local : $(Com)-SourceDirectories : rts$/adf ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/bmp ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/cor ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/da ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/dep ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/fco ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/gen ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/gray ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/met ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/out ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/psi ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/rac ;
+        AddToVar Local : $(Com)-SourceDirectories : rts$/tt ;
+
+        DeclareExport C-ExportDirectories :
+          $(CurrentPath)$/rts$/adf
+          $(CurrentPath)$/rts$/fco
+          $(CurrentPath)$/rts$/gray
+          $(CurrentPath)$/rts$/inc
+          $(CurrentPath)$/rts$/psi
+          $(CurrentPath)$/rts$/rac
+          $(CurrentPath)$/rts$/tt
+          $(CurrentPath)$/sys$/inc
+        ;
+
+        local SourceFiles =
+          bitmap.c        # rts/bmp
+          bmputl.c
+          effects.c
+          fill.c
+          lineto.c
+          merge.c
+          metrics.c
+          nzwind.c
+          raster.c
+          smear.c
+          bold.c          # rts/cor
+          comp_pix.c
+          des2bm.c
+          if.c
+          if_init.c
+          imath.c
+          ital.c
+          manipula.c
+          pixel_al.c
+          q3.c
+          skeletal.c
+          yclass.c
+          bucket.c        # rts/da
+          chr_def.c
+          da.c
+          dll.c
+          fm.c
+          ix.c
+          kanmap.c
+          mapfont.c
+          path.c
+          pcl_swap.c
+          pcleoutl.c
+          symmap.c
+          cache.c         # rts/dep
+          cg_multi.c
+          cg_mutex.c
+          cgif.c
+#          cmpr.c
+          extmem.c
+          fpmath.c
+          intmem.c
+          fc_da.c         # rts/fco
+          fc_dafil.c
+          fc_if.c
+          fc_intf2.c
+ #         fc_intf3.c ## moved to lib ufstb below
+          fc_intfl.c
+          fc_puts2.c
+          fc_putsg.c
+          makechar.c      # rts/gen
+          maker.c
+          graymap.c       # rts/gray
+          imagegr.c
+          chwidth.c       # rts/met
+          cubic.c         # rts/out
+          outdata.c
+          outline.c
+          quadra.c
+          cffdict.c       # rts/psi
+          cffsetup.c
+          cffsupp.c
+          t1idecod.c
+          t1ihints.c
+          t1imap.c
+          t1imm.c
+          t1iscan.c
+          t1isfnt.c
+          t1isyntb.c
+          t1itrans.c
+          t2char.c
+          bitio.c         # rts/rac
+          canon.c
+          memory.c
+          radecomp.c
+          ttf_conv.c
+          dimmdsk.c       # rts/tt
+          embedbit.c
+          fnt.c
+          fontmath.c
+          fontscal.c
+          fsglue.c
+          mapstrin.c
+          sfnt.c
+          stikoutl.c
+          tt_if.c
+          ttkan.c
+          ttpcleo.c
+          ttquery.c
+        ;
+
+        Library ufst7a : $(SourceFiles) ;
+        
+        # VxWorks diab compiler needs to compile library 'b' with limited optimisations
+        local SourceFiles_B =
+            fc_intf3.c     # rts/fco
+        ;
+        
+        if $(C-Compiler-Family) = diab-x-ppc 
+        {
+            # Switch off optimisation arg for the following library
+            TmpVar = $(C-Compiler_OptimsationArgs) ;                              # Save current optimisation arg
+            C-Compiler_OptimsationArgs = $(C-Compiler_OptimsationArgs_limited) ;  # Set args to limited opt
+            Library ufst7b : $(SourceFiles_B) ;                                   # Build library
+            C-Compiler_OptimsationArgs = $(TmpVar) ;                              # Restore optimisation arg 
+        }
+        else
+        {
+            Library ufst7b : $(SourceFiles_B) ;
+        }
+        
+        Library ufst7 ;
+        C-LinkWithLibraries ufst7 : ufst7a ufst7b : . ;
+
+        ExportSource ufst7 : ThirdPartyBinary : : : $(CurrentPath)$/$(C-TPB-Directory) ;
+        
+        # Need to export sub-libraries for ghs because ghs linker has issues in recognising sub libraries of a compound library
+        if $(C-Compiler-Family) = ghs-x-arm || $(C-Compiler-Family) = rvds-x-arm
+        {
+            ExportSource ufst7a : ThirdPartyBinary ;
+            ExportSource ufst7b : ThirdPartyBinary ;
+        }
+
+        local s ; for s in $(SourceFiles)
+        {
+            local T ; MakeGristed T : $(s) : $(CurrentPath) ;
+            DontExportSource $(T) ;
+        }
+
+        local HeaderFiles =
+#          rts$/fco$/fc_da.h
+#          rts$/fco$/fc_dafil.h
+          rts$/fco$/fc_dakey.h
+#          rts$/fco$/fc_intfl.h
+          rts$/fco$/fc_putsg.h
+#          rts$/fco$/fc_syntl.h
+          rts$/fco$/mmdebug.h
+          rts$/gray$/gmfile.h
+          rts$/gray$/gray_mgt.h
+          rts$/gray$/graymap.h
+          rts$/gray$/imagegr.h
+#          rts$/inc$/cgconfig.h
+#          rts$/inc$/cgif.h
+#          rts$/inc$/dbg_ufst.h
+          rts$/inc$/effects.h
+#          rts$/inc$/ifmem.h
+#          rts$/inc$/mixmodel.h
+#          rts$/inc$/pcleomgt.h
+#          rts$/inc$/shareinc.h
+          rts$/psi$/cffproto.h
+          rts$/psi$/t1iproto.h
+          rts$/psi$/t1isfnt.h
+          rts$/psi$/t1isyntx.h
+          rts$/psi$/t1itype1.h
+          rts$/rac$/bitio.h
+          rts$/rac$/config.h
+          rts$/rac$/ra_comp.h
+          rts$/rac$/ra_mem.h
+          rts$/rac$/radecomp.h
+          rts$/rac$/sfntx.h
+          rts$/rac$/ttf_conv.h
+#          rts$/tt$/fnt.h
+#          rts$/tt$/fontmath.h
+#          rts$/tt$/fontscal.h
+#          rts$/tt$/fscdefs.h
+#          rts$/tt$/fserror.h
+#          rts$/tt$/fsglue.h
+          rts$/tt$/mapstrin.h
+          rts$/tt$/privsfnt.h
+#          rts$/tt$/sfnt.h
+#          rts$/tt$/sfntenum.h
+          rts$/tt$/ttpcleo.h
+#          sys$/inc$/adj_skel.h
+#          sys$/inc$/cgmacros.h
+          sys$/inc$/cubic.h
+          sys$/inc$/dll.h
+          sys$/inc$/filltab.h
+#          sys$/inc$/if_type.h
+          sys$/inc$/imath.h
+#          sys$/inc$/ix.h
+#          sys$/inc$/kanji.h
+#          sys$/inc$/pcleo.h
+          sys$/inc$/q3.h
+          sys$/inc$/segments.h
+#          sys$/inc$/sym.h
+#          sys$/inc$/ufstport.h
+#          sys$/inc$/ufst_hqn.h
+        ;
+
+        local h ; for h in $(HeaderFiles)
+        {
+            DontExportSource $(CurrentPath)$/$(h) ;
+        }
+    }
+
+
+# Log stripped

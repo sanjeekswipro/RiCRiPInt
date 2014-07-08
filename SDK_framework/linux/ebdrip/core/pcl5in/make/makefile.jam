@@ -1,0 +1,100 @@
+# =============================================================================
+# $HopeName: COREpcl_pcl5!make:makefile.jam(EBDSDK_P.1) $
+# $Id: make:makefile.jam,v 1.34.4.1.1.1 2013/12/19 11:25:02 anon Exp $
+#
+# Copyright (C) 2007-2009 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Modification history at end of file.
+# ============================================================================
+
+# Variant details come before dependant compilation rules
+
+    RequiresVariant warning_level : high ;
+    RequiresVariant 64bit_warnings ;
+
+    ImplementsVariant pcl metrics ;
+
+    # Compilation rules
+
+    DependsOn all : pcl5in ;
+
+    IncludeExportDirectories Inherited Local :
+        devices
+        fileio
+        fonts
+        gstate
+        hdlt
+        mm
+        objects
+        pcl
+        tables
+        v20
+    : .. ;
+
+    ReplaceVar Local : PCL5FILES :
+# Shared files
+        pcl5context.c
+        pclutils.c
+# PCL5 files
+        areafill.c
+        cursorpos.c
+        factorypatterns.c
+        fontselection.c
+        jobcontrol.c
+        macros.c
+        macrodev.c
+        misc.c
+        pagecontrol.c
+        pcl5color.c
+        pcl5ctm.c
+        pcl5devs.c
+        pcl5fonts.c
+        pcl5ops.c
+        pcl5scan.c
+        pcl5state.c
+        pcl5raster.c
+        pictureframe.c
+        printmodel.c
+        resourcecache.c
+        status.c
+        twocharops.c
+        uelflush.c
+# HPGL2 files
+        hpgl2config.c
+        hpgl2dispatch.c
+        hpgl2fonts.c
+        hpgl2linefill.c
+        hpgl2misc.c
+        hpgl2polygon.c
+        hpgl2scan.c
+        hpgl2state.c
+        hpgl2technical.c
+        hpgl2vector.c
+        polygon_buffer_impl.c
+        stickarc.c
+    ;
+
+    ReplaceVar Local : CFILES : $(PCL5FILES) : Variant pcl=pcl5 ;
+    ReplaceVar Local : CFILES : $(PCL5FILES) : Variant pcl=pclall ;
+
+    ReplaceVar Local : CFILES : nopcl5.c : Variant pcl=no ;
+
+    Library pcl5in : $(CFILES) ;
+
+    # N.B. Don't use AddToVar with conditions, because we want this to propagate
+    # to the SW folder without having to make the product implement the pcl
+    # variant.
+    if $(Variant_pcl) != no {
+        AddUnique SW-Folder-Variants : pcl5 ;
+    }
+
+    if $(Variant_pcl) != no {
+        # So that exported source can be built without pcl if required
+        ExportSource $(CurrentPath)$/src$/nopcl5.c : C ;
+    }
+
+# =============================================================================
+# Log stripped
+
+# EOF makefile.jam

@@ -1,0 +1,154 @@
+# Copyright (C) 2003-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Makefile for CORE RIP Font subsystem
+#
+# $HopeName: COREfonts!make:makefile.jam(EBDSDK_P.1) $
+#
+
+# Variant details come before compilation rules
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+
+ImplementsVariant pdfout fontemul ebd_ufst ;
+
+# Compilation rules
+
+    DependsOn all : fonts ;
+
+    IncludeExportDirectories Inherited Local :
+        blob
+        crypt
+        datum
+        devices
+        errors
+        fileio
+        gstate
+        morisawa
+        objects
+        render
+        tables
+        v20
+    : .. ;
+
+    IncludeExportDirectories Inherited Local :
+        unicode
+    : .. .. ;
+
+    ReplaceVar Local : CFILES :
+        agl.c
+        cff.c
+        charstring1.c
+        charstring2.c
+        chbuild.c
+        cidfont.c
+        cidmap.c
+        cmap.c
+        dloader.c
+        encoding.c
+        fdsfnts.c
+        fontcache.c
+        fontdata.c
+        fonts.c
+        invalid.c
+        pfin.c
+        pstype1.c
+        pstype3.c
+        t1hint.c
+        t32font.c
+        tt_font.c
+    ;
+
+    AddToVar Local : CFILES : pfinexample.c : Build DEBUG ;
+
+    AddToVar Local : CFILES :
+        t1file.c
+    : Variant pdfout=yes ;
+
+    Library fonts : $(CFILES) ;
+
+    SWF testsrc : procsets : procsets : : normal ps pdfin : Build DEBUG ;
+    SWF testsrc : procsets HintDebug : HintDebug : : ps pdfin : Build DEBUG ;
+
+
+    if $(DEBUG) = 1 {
+        # Export debug aids to source list for shipping to third party - have to be added explicitly
+        ExportSource $(CurrentPath)$/src$/pfinexample.c : C ;
+        ExportSource $(CurrentPath)$/testsrc$/procsets$/HintDebug : Swf ;
+    }
+    
+    # Font emulation database
+    SWF swf : fontdb : FontDB : : fontemul ;
+    SWF swf : fontdb 0 : 0 : : fontemul ;
+    SWF swf : fontdb 1 : 1 : : fontemul ;
+    SWF swf : fontdb 2 : 2 : : fontemul ;
+    SWF swf : fontdb 3 : 3 : : fontemul ;
+    SWF swf : fontdb 4 : 4 : : fontemul ;
+    SWF swf : fontdb 5 : 5 : : fontemul ;
+    SWF swf : fontdb 6 : 6 : : fontemul ;
+    SWF swf : fontdb 7 : 7 : : fontemul ;
+    SWF swf : fontdb 8 : 8 : : fontemul ;
+    SWF swf : fontdb 9 : 9 : : fontemul ;
+    SWF swf : fontdb 10 : 10 : : fontemul ;
+    SWF swf : fontdb 11 : 11 : : fontemul ;
+    SWF swf : fontdb 12 : 12 : : fontemul ;
+    SWF swf : fontdb 13 : 13 : : fontemul ;
+    SWF swf : fontdb 14 : 14 : : fontemul ;
+    SWF swf : fontdb 15 : 15 : : fontemul ;
+    SWF swf : fontdb 16 : 16 : : fontemul ;
+    SWF swf : fontdb 17 : 17 : : fontemul ;
+    SWF swf : fontdb 18 : 18 : : fontemul ;
+    SWF swf : fontdb 19 : 19 : : fontemul ;
+    SWF swf : fontdb 20 : 20 : : fontemul ;
+    SWF swf : fontdb 21 : 21 : : fontemul ;
+    SWF swf : fontdb 22 : 22 : : fontemul ;
+    SWF swf : fontdb 23 : 23 : : fontemul ;
+    SWF swf : fontdb 24 : 24 : : fontemul ;
+    SWF swf : fontdb 25 : 25 : : fontemul ;
+    SWF swf : fontdb 26 : 26 : : fontemul ;
+    SWF swf : fontdb 27 : 27 : : fontemul ;
+    SWF swf : fontdb 28 : 28 : : fontemul ;
+    SWF swf : fontdb 29 : 29 : : fontemul ;
+    SWF swf : fontdb 30 : 30 : : fontemul ;
+    SWF swf : fontdb 31 : 31 : : fontemul ;
+
+    # fonts
+    SWF swf : fonts : fonts : : ps pdfin fontemul ;
+    SWF swf : fonts ggsans : GGSans : : fontemul ;
+    SWF swf : fonts ggsanso : GGSans-Oblique : : fontemul ;
+    SWF swf : fonts ggserif : GGSerif : : fontemul ;
+    SWF swf : fonts ggserifi : GGSerif-Italic : : fontemul ;
+
+    # procsets and utilities
+    SWF swf : procsets : procsets : : normal ps pdfin fontemul ;
+    SWF swf : procsets bfontini : BitmapFontInit : : ps pdfin ;
+    SWF swf : procsets cidinit : CIDInit : : normal ;
+    SWF swf : procsets fontem2 : GGFontEmulation : : fontemul ;
+    SWF swf : procsets fontbook : HqnFontBook : : ps pdfin ;
+    SWF swf : procsets fontconv : HqnFontConverter : : ps pdfin ;
+    SWF swf : procsets fontmap : FontNameMapping : : ps pdfin ;
+    SWF swf : procsets fontseti : FontSetInit : : ps pdfin ;
+    SWF swf : procsets fontsubs : HqnFontSubstitution : : ps pdfin ;
+    SWF swf : procsets hqnsubff : HQNsubfindfont : : ps pdfin ;
+    SWF swf : procsets listfont : HqnListFonts : : ps pdfin ;
+    SWF swf : procsets missfnts : HqnMissingFonts : : ps pdfin ;
+    SWF swf : config : Config : : normalclrip normalguirip normalebdrip fontemulclebd fontemulgui ebdnonufst defaultfontDB defaultfontDBgui ;
+    SWF swf : config fontemu : FontEmulation : : fontemulclebd fontemulgui ;
+    SWF swf : config fontsub : FontSubstitution : : normalclrip normalguirip ebdnonufst ;
+    SWF swf : config fntsubdb : FontSubstitutionDB : : defaultfontDB defaultfontDBgui ebdnonufst ;
+    SWF swf : config fontblst : FontUIDBlackList : : normalclrip normalguirip normalebdrip ;
+    SWF swf : usr : Usr : : normal ps pdfin ;
+    SWF swf : usr fontptch.ps : FontInstallationPatch.ps : : ps pdfin ;
+    SWF swf : usr optifont.ps : "Optimize fonts" : : ps pdfin ;
+    SWF swf : utils : Utilities : : ps pdfin  ;
+    SWF swf : utils fontback.ps : BackupFonts.ps : : ps pdfin ;
+
+    if $(Variant_ebd_ufst) = eufst5y || $(Variant_ebd_ufst) = eufst5o ||
+       $(Variant_ebd_ufst) = eufst7y || $(Variant_ebd_ufst) = eufst7o || exportsrc in $(JAM_ARGUMENTS) {
+        # So that exported source can be built without ufst if required
+        ExportSource $(CurrentPath)$/swf$/config$/fontsub : Swf ;
+    }
+
+
+# Log stripped

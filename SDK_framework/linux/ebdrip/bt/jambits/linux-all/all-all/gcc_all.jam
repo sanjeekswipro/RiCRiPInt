@@ -1,0 +1,48 @@
+# Copyright (C) 2000-2011 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# $HopeName: HQNjambits!linux-all:all-all:gcc_all.jam(EBDSDK_P.1) $
+#
+
+  local Com = C C++ mixedC ;
+
+  CompilerVar $(Com)-Compiler_Arguments          : -O3 : Build OPTIMISE ;
+
+# Function inlining has been observed to blow up C++ builds on Linux
+  CompilerVar C++-Compiler_Arguments        : -fno-inline : Build OPTIMISE ;
+
+  CompilerVar $(Com)-Lib-Linker                  : $(gcc_compiler) ;
+  CompilerVar $(Com)-Lib-Linker_Arguments        : -nostdlib ;
+
+  CompilerVar $(Com)-Exec-Post_Linker            : /usr/bin/strip : Build RELEASE ;
+
+
+  local Types = Dll Exec ;
+  CompilerVar $(Com)-$(Types)-Linker_Libraries   :
+      -ldl -lm -lpthread -lrt
+  ;
+
+  CompilerVar $(Com)-Exec-Linker_DynamicLoadPath : "-Wl,-rpath " ;
+
+  if $(GCClib:E) {
+    AddToVar Inherited Local : SplintOptions :
+      -sysdirs /usr/include:$(GCClib)/include
+      -I$(GCClib)/include
+    ;
+  }
+
+#  CompilerVar $(Com)-$(Types)-Linker_Libraries   :
+#    -lintl -lelf -lnsl -lsocket -ldl -lgen -lthread
+#  ;
+
+# restrict contents of dynamic symbol table in library to the API
+  CompilerVar $(Com)-Dll-Linker_GenerateExportsFilePrefix : "echo \"" ;
+  CompilerVar $(Com)-Dll-Linker_ExportsFileSeparator : $(NewLine) ;
+  CompilerVar $(Com)-Dll-Linker_GenerateExportsFileSuffix :
+    "\" | awk 'BEGIN { print \"{\\n  global:\" } { for(i=1;i<=NF;i++) printf(\"    \"$i\";\\n\") } END { print \"  local:\\n    *;\\n};\" }' > " ;
+  CompilerVar $(Com)-Dll-Linker_ExportsFileArgument : "-Xlinker --strip-all -Xlinker --version-script -Xlinker " : Build RELEASE ;
+  CompilerVar $(Com)-Dll-Linker_RemoveExportsFile : "rm " ;
+
+  CompilerVar DynamicLibraryExports-When : Link ;
+
+# Log stripped

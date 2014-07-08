@@ -1,0 +1,1882 @@
+%!PS-Adobe-3.0
+%%Title: HqnFontConverter
+%%Creator: Global Graphics Software Limited
+%%CreationDate: April 25, 1991
+%{type1Todld1 version #1 7
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: (HqnFontConverter) 1 7
+
+% this proc set provides a procedure 'convertfonts' which takes an array of
+% filenames and installs the fonts in the correct place. It is level 2 code
+% so cannot be run when level 2 is turned off. A typical job that uses it
+% looks like this (assuming you are worried about the level2ness):
+%         {
+%           /HqnFontConverter /ProcSet findresource begin
+%             [ (%floppy%StoneSerBolIta) ] 
+%             convertfonts
+%           end
+%         } serverdict /execlevel2 get exec
+%
+% 
+% If /SubstituteNotDefChar is defined and true when this procset is
+% instantiated, then the notdef character will turn out the same as a space
+% in any resulting DLD1 fonts, as opposed to twice as wide as that.
+% 
+% If /SubstituteBlankChar is defined and true when this procset is
+% instantiated, then a /blank character will be created, the same as a
+% space, in any resulting DLD1 fonts.  This will prevent sharing of the
+% CharStrings dictionary, unless we also create a LinoTypeCharStrings+blank
+% resource or add /blank to LinoTypeCharStrings.
+% 
+% If /SubstituteType5forDLD1 is defined and true when this procset is
+% instantiated, then fonts which are converted to DLD1 format will be given
+% FontType 5, and will also have some dummy values included in their
+% dictionary the better to emulate ROM based fonts.  For these fonts to be
+% usable, the RIP must be as late a version as this procset.  This option
+% should only be used by Harlequin on the built-in 35 fonts.
+%
+% If /SortDictionaryKeys is defined and true when this procset is
+% instantiated, then the keys in the header dictionaries will be output in
+% lexicographical order. This enables direct binary comparison of installed
+% fonts, and should be used by Harlequin for the built-in 35 fonts.
+%
+% If /SetBlueScale is defined and positive when this procset is instantiated
+% then the value will be used to override that of /BlueScale in the font's
+% Private dictionary.
+%
+% If /InstallingCoreFonts is defined and true when this procset is instantiated
+% then all the above flags will be set to appropriate values for Harlequin-internal
+% conversion of the core 35 fonts.
+%
+% If /FontSource is defined and a string, it will be output as a comment at the
+% head of the file, preceeded by "%FontSource: ".  This is intended to flag the
+% origin of the font.
+%
+% There should be commented-out fragments to enable these below.
+
+
+
+% Master install flag; see above.
+% userdict /InstallingCoreFonts true put
+
+% Font Origin string.  See above.
+%userdict /FontSource (Harlequin) put 
+%userdict /FontSource (Linotype-Hell A/G) put 
+%userdict /FontSource (Bitstream Inc.) put 
+
+% Substitution flags; see above.
+%userdict /SubstituteNotDefChar true put
+%userdict /SubstituteBlankChar true put
+%userdict /SubstituteType5forDLD1 true put
+
+% Flag for sorting dictionary keys; see above
+%userdict /SortDictionaryKeys true put
+
+% Flag for overriding BlueScale values; see above
+%userdict /SetBlueScale -1.0 put
+
+currentglobal false setglobal
+currentpacking false setpacking
+
+userdict /FontConvWorkSpace 50 dict dup begin put
+  /packingstate exch def
+  /globalness exch def
+  /converterdict currentdict def
+  /bd { bind def } bind def
+  /mytempstring 61440 string def % 0xf000, a multiple of 4096 bytes
+  % Prevent 'real' jobs selected by accident from outputting
+  /showpage {} def
+
+  /sortkeys
+    /SortDictionaryKeys dup where
+      { exch get true eq }
+      { pop false } ifelse
+  def
+
+  /sortstring1 2048 string def
+  /sortstring2 2048 string def
+  /dictkeysort { % dict dictkeysort array; creates sorted array of dict keys
+    [ exch
+      { pop } forall
+    ] % array of dict keys
+    dup length 2 sub //converterdict /lastindex 3 -1 roll put
+    { % bubble sort; inefficient, but it works
+      //converterdict /sorted true put
+      0 1 //converterdict /lastindex get {
+        dup 1 add 2 copy 4 index exch get //sortstring1 cvs
+        exch 4 index exch get //sortstring2 cvs lt {
+          2 copy 4 index exch get exch 4 index exch get
+          4 index 4 -1 roll 3 -1 roll put
+          2 index 3 -1 roll 3 -1 roll put
+          //converterdict /sorted false put
+        } {
+          pop pop
+        } ifelse
+      } for
+      //converterdict /sorted get { exit } if
+      //converterdict /lastindex 2 copy get 1 sub put
+    } loop
+  } bd
+
+  /hqncopyfile {
+    (w) file /tofile exch def
+    (r@) file /fromfile exch def
+    {
+      fromfile mytempstring readstring exch
+      tofile exch writestring
+      not { exit } if
+    } loop
+  } bd
+
+  /filenamebuffer 2048 string def
+
+  /fprintfDict 25 dict def
+  fprintfDict begin
+    /NL  (\r) def
+    /fl  null def
+    /in  0    def
+    /=string 2048 string def
+    
+    /dictList 50 array def
+    /subFontList 50 array def
+
+    /tprint {
+      fl exch writestring
+    } bd
+    /indent {
+      in { (  ) tprint } repeat
+    } bd
+
+    /typeprint {
+      dup type exec
+    } bd
+
+    /cvsprint {
+      =string cvs tprint
+      ( ) tprint
+    } bd
+
+    /filetype {
+        statusdict begin 
+        //filenamebuffer filename pop
+        end
+        stringtype
+        ((r) file ) tprint
+    } bd
+    
+    /savetype { 
+        pop 
+        $error /extraInfo (Save object found whilst dumping font) put
+        /convertfonts errordict /undefinedresult get exec
+    } bd
+    /fonttype { 
+        pop 
+        $error /extraInfo (Font object found whilst dumping font) put
+        /convertfonts errordict /undefinedresult get exec 
+    } bd
+
+    /integertype { cvsprint } bd
+    /realtype { cvsprint } bd
+    /booleantype { cvsprint } bd
+
+    /nulltype { pop (null ) tprint } bd
+    /marktype { pop (mark ) tprint } bd
+
+    /operatortype {
+        inArray 0 gt inLitArray inArray ne and {
+            dup (]) load ne 1 index ([) load ne and notType3 and{
+                (//) tprint 
+            } if
+            cvsprint
+        }   {
+            (/)tprint
+            cvsprint
+            (load )tprint
+        } ifelse
+    } bd
+    
+    /ignoreExternal <<
+        % ignore these names as external references.
+        % ########### probably needs extending
+        /systemdict null
+        /errordict null
+        /userdict null
+        /globaldict null
+        /shareddict null
+        /statusdict null
+        /$error null
+        /FontDirectory null
+        /GlobalFontDirectory null
+        /findfont null
+        /defaulthandleerror null
+    >> def
+    % ############################ These are provided for use when external references are
+    % not resolvable when the font is defined. The dictionary can probably be removed if
+    % dictionaries are not dumped until actually used rather than dumped when defined.
+    /expandExternal <<
+        /cmykprsnt true
+        /bkc (\0abcd)
+    >> def
+    /checkExternal {
+        % do we need to add this key to the list of external references which will be
+        % added into the dictionary at the end?
+        //expandExternal begin
+        dup where { 
+            pop
+            end     % expandExternal
+            //ignoreExternal 1 index known not extraItems 2 index known not and {
+                true
+                0 1 dictPtr 1 sub {
+                    % name false i
+                    dictList exch get
+                    2 index known {
+                        pop false
+                        exit
+                    } if
+                } for
+                    {
+                    % maybe - it might have been meant to be a standard operator,
+                    % which happened to have been redefined by the job prolog ...
+                    
+                    false
+                    { //systemdict //globaldict //userdict } {
+                            {
+                            % searchkey bool key val
+                            exch 3 index eq {
+                                % searchkey false val
+                                type /operatortype eq {
+                                    % Found it - ignore as standard reference
+                                    pop true
+                                    exit
+                                } if
+                            }   {
+                                pop
+                            } ifelse
+                        } forall
+                        dup { exit } if
+                    } forall
+                        {
+                    }   {
+                        extraItems 1 index 
+                        dup where not { //expandExternal } if
+                        1 index get
+                        put
+                    } ifelse
+                }   {
+                } ifelse
+            }   {
+            } ifelse
+        }   {
+            end     % expandExternal
+        } ifelse
+    } bind def
+    /nametype {
+        dup xcheck not {
+            (/) tprint
+            cvsprint
+        }   {
+            checkExternal
+            cvsprint
+        } ifelse
+    } bd
+    /stringtype {
+        dup 
+        doHexStrings {
+            <3C> tprint
+            fl exch writehexstring
+            <3E> tprint
+        }   {
+          <28> tprint
+          tprint
+          <29> tprint
+        } ifelse
+        % Might be better to record address of element and post-process array? 
+        % so as not to change the length and addresses of elements in the procedure? ############
+        dup xcheck {
+            % scan through to try to find unresolved external references
+                {
+                token not { exit } if
+                dup type /nametype eq 1 index xcheck and {
+                    checkExternal
+                } if
+                pop
+            } loop
+            
+            % now note as executable if it is
+            inArray 0 gt inLitArray inArray lt and {
+                ( cvx exec )
+            }   { 
+                ( cvx )
+            } ifelse
+        }   { 
+            pop
+            ( ) 
+        } ifelse
+        tprint
+    } bd
+    /arraytype {
+      /inArray dup load 1 add def
+      % some fonts define procedures then call cvlit - can't just record them as literal arrays
+      % because contents may then be executed whilst they load ...
+      dup xcheck not {
+        false
+        1 index {
+            dup xcheck 
+            exch type dup /arraytype ne exch /packedarraytype ne and 
+            and { pop true exit } if
+        } forall
+      } { false } ifelse
+      /exe2lit exch def
+      
+      /InLitArray 0 def
+      dup xcheck exe2lit or {
+        /in in 1 add def
+        ({ ) tprint
+        dup { typeprint } forall
+        (} ) tprint
+        
+        % check that it's not an executable array used to list a number of other
+        % executable arrays with nothing else in it - needed for Illustrator
+        % pattern fill fonts.
+        /exe2lit 1 index xcheck not def
+        dup length 0 gt exe2lit not and {
+            /exe2lit true def
+                {
+                dup type dup /arraytype ne exch /packedarraytype ne and
+                exch xcheck not or {
+                    /exe2lit false def
+                    exit
+                } if
+            } forall
+        }   { pop } ifelse
+        exe2lit { (cvlit ) tprint } if
+        /in in 1 sub def
+      } {
+        /inLitArray inArray def
+        ([ ) tprint
+        { typeprint } forall
+        (] ) tprint
+        /inLitArray 0 def
+      } ifelse
+      /inArray dup load 1 sub def
+    } bd
+    /packedarraytype /arraytype load def
+    
+    /IEName (______Hqn) def
+    /dicttype {
+
+      inArray 0 gt {
+        % Must be an immediately evaluated dictionary in an array ... 
+        % requires special handling to make sure that it's shared properly
+        IEDictList 1 index known {
+            IEDictList exch get
+        }   {
+            % test to see if it matches a dictionary within the existing tree
+            false
+            dictPtr 1 sub -1 0 {
+                % dict false i
+                dictList exch get
+                % dict false testdict
+                    {
+                    % dict false key val
+                    3 index eq {
+                        % yes, it's this one
+                        exch pop true
+                        exit
+                    }   {
+                        % no
+                        pop     % the key
+                    } ifelse
+                } forall
+            } for
+                {
+                % we found it
+                % dict key
+                exch pop
+                cvx     % so it's not put out as a name
+            }   {
+                % didn't find it - need a new name
+                % dict      
+                IEDicts //IEName cvs pop
+                //IEName cvn cvx
+                IEDictList 2 index 2 index put  % note - keyed on dictionary, value is name ...
+                extraItems //IEName 4 -1 roll put % keyed on name, value is dictionary
+                /IEDicts dup load 1 add def
+             } ifelse
+        } ifelse
+        nametype
+% ##########################
+%
+% NOTE: this writes out a dictionary which was originally immediately evaluated as a name
+% there are some obscure circumstances where changing from immediate evaluation to a look-up
+% might cause problems. There are two approaches to solving that, neither of which is thought
+% worthwhile at this point:
+%
+% A) Pass through the data twice, the first time analysing it to determine the order in which
+%  each dictionary needs to be written out in order to allow immediate evaluation in the output
+%  file.
+%
+% B) Record the path to the item (dictionary/sub-dictionary, item, element number (and possibly
+%   sub elements), and the path to the object which was originally immediately evaluated 
+%   (just dictionaries), then write out those paths after the top level font dictionary and add
+%   a procedure to post-patch the relevent procedures before calling definefont.
+%
+% ##########################
+      } {
+          dup /FID known 1 index /FontType known and {
+            dup /FontType get 111 eq
+            1 index /FontName known and
+          } { false } ifelse
+            {
+            % calling on subsidiary DLD font - just include it ...
+            /FontName get typeprint
+            (findfont ) tprint
+          }  {
+              /in in 1 add def
+
+              dup /FID known {
+                dup /FID get type /fonttype eq {
+                    in 1 gt { 
+                        (dup )tprint 
+                    } if
+                    dup maxlength dict begin
+                    { 1 index /FID eq { pop pop }{ def } ifelse } forall
+                    currentdict end
+                    true
+                } { false } ifelse
+              } { false } ifelse
+              //subFontList dictPtr 3 -1 roll put
+                
+              dictList dictPtr 2 index put
+              /dictPtr dup load 1 add def
+              NL tprint indent
+              dup maxlength 4 add typeprint (dict begin ) tprint NL tprint
+              /in in 1 add def
+              fpr {
+                % dict fprkey fprproc
+                2 index 2 index known {
+                  2 index 2 index get
+                  exch
+                  % dict fprkey thiskeyval fprproc
+                  exec
+                } {
+                  pop pop
+                } ifelse
+              } forall
+              /fpr 0 dict store
+              sortkeys { dup dictkeysort } if
+                {
+                sortkeys { dup 2 index exch get } if
+                fsb 2 index known {
+                  fsb 2 index get exec
+                } {
+                  indent exch typeprint typeprint (def) tprint NL tprint
+                } ifelse
+              } forall
+              sortkeys { pop } if
+
+              /in in 1 sub def
+              /dictPtr dup load 1 sub def
+              indent (currentdict end ) tprint 
+              //subFontList dictPtr get in 1 gt and {
+                (definefont )tprint
+                /SubFont false store
+              } if
+              
+              NL tprint
+              /in in 1 sub def
+              indent
+            } ifelse
+       } ifelse
+    } bd
+  end
+
+  /printfType {
+    //fprintfDict begin
+      /fl exch def
+      typeprint
+    end
+  } bd
+
+  /printf {
+    //fprintfDict begin
+      /fl exch def
+      indent
+      counttomark 1 sub -1 0 {
+        index 
+        dup type /stringtype 
+        ne { =string cvs} if
+        tprint
+      } for
+      cleartomark
+    end
+  } bd
+
+  /fprintf {
+    //fprintfDict begin
+      /fpr exch def
+      /fl  exch def
+      /fsb exch def
+      /in 0 def
+      /notType3 fnt /FontType get 3 ne def
+      /SubUDseen false def
+      /dictPtr 0 def
+      /extraItems 8 dict def
+      /inArray 0 def
+      /inLitArray 0 def
+      /IEDicts 0 def
+      /IEDictList 4 dict def
+      typeprint
+      NL tprint
+    end
+  } bd
+
+  /type1Todld1Dict 20 dict def
+  type1Todld1Dict begin
+
+    /HqnFontDebug true def
+    
+    /Core35 <<  {  
+    /AvantGarde-Book /AvantGarde-BookOblique  /AvantGarde-Demi  /AvantGarde-DemiOblique
+    /Bookman-Demi  /Bookman-DemiItalic  /Bookman-Light  /Bookman-LightItalic
+    /Courier  /Courier-Bold  /Courier-BoldOblique  /Courier-Oblique
+    /Helvetica  /Helvetica-Bold  /Helvetica-BoldOblique  /Helvetica-Oblique
+    /NewCenturySchlbk-Bold  /NewCenturySchlbk-BoldItalic  /NewCenturySchlbk-Italic  /NewCenturySchlbk-Roman
+    /Palatino-Bold  /Palatino-BoldItalic  /Palatino-Italic  /Palatino-Roman
+    /Symbol
+    /Times-Bold  /Times-BoldItalic  /Times-Italic  /Times-Roman
+    /ZapfChancery-MediumItalic /ZapfDingbats
+    }   { dup } forall
+    >> def
+
+    /arrayEq {
+      1 index length 1 index length eq {
+        /a2 exch def
+        /a1 exch def
+        /res true def
+        0 1 a1 length 1 sub {
+          a1 1 index get
+          a2 2 index get
+          ne exch pop {
+            /res false def
+            exit
+          } if
+        } for
+        res
+      } {
+        pop pop
+        false
+      } ifelse
+    } bd
+
+    /dictEq {
+      /mid exch def
+      /mjd exch def
+      /res true def
+
+      mid length mjd length eq {
+        mid {       % key val
+          pop mjd exch known not {
+            /res false def
+            exit
+          } if
+        } forall
+      } {
+        /res false def
+      } ifelse
+      res
+    } bd
+
+    /dumpFont {
+      /fsb 8 dict def
+      /fpr 4 dict def
+      fsb begin
+        /FID      { pop pop    } def
+        /CharStrings    { pop pop    } def
+        /Encoding   { dumpEncoding     } def
+        /Subrs      { dumpSubrs    } def
+        /FontType   { dumpFontType     } def
+      end
+      fpr begin
+        /CharStrings    { dumpCharStrings       } def
+      end
+      /doHexStrings false def
+      fnt fsb fl fpr fprintf
+    } bd
+    
+    /rawDumpFont {
+        /fsb 2 dict def
+        /fpr 1 dict def
+        fsb begin
+            % fsb procs amend how individual values are written out
+            /FID { pop pop } def
+            /Encoding { dumpEncoding } def
+        end
+        /doHexStrings true def
+        fnt fsb fl fpr { fprintf } 1183615869 internaldict /superexec get exec
+    } bd
+    
+    /dumpEncoding {
+      /ftenc false def
+      EncodingDirectory {
+        2 index arrayEq {
+          mark
+          (/Encoding /)
+          2 index
+          ( findencoding def\r)
+          fl printf
+          pop
+          /ftenc true def
+          exit
+        } if
+        pop
+      } forall
+      noPreLoadedResources {
+        ftenc not {
+          (*) {
+            dup cvn findencoding
+            2 index 1 index arrayEq {
+              mark
+              (/Encoding /)
+              3 index
+              ( findencoding def\r)
+              fl printf
+              pop pop
+              /ftenc true def
+              exit
+            } if
+            pop pop
+          } str /Encoding systemdict /resourceforall get exec
+        } if
+      } if
+      ftenc not {
+        indent
+        (/Encoding [ ) tprint
+        dup { 
+            =string cvs stringtype 
+            (cvn )tprint 
+        } forall
+        (] def\r) tprint
+      } if
+      pop pop
+    } bd
+
+    /dumpCharStrings {
+      /ftchr false def
+      /oldftchrdict 1 index store
+      CharStringsDirectory {
+        /ftchrdict exch store
+        ftchrdict
+        2 index dictEq {
+          mark
+          (/CharStrings /)
+          2 index
+          ( findcharstrings def\r)
+          fl printf
+          pop
+          /ftchr true def
+          exit
+        } if
+        pop
+      } forall
+      noPreLoadedResources {
+        ftchr not {
+          (*) {
+            dup cvn findcharstrings
+            /ftchrdict exch store
+            ftchrdict
+            2 index dictEq {
+              mark
+              (/CharStrings /)
+              2 index
+              ( findcharstrings def\r)
+              fl printf
+              pop
+              /ftchr true def
+              exit
+            } if
+            pop
+          } str /CharStrings systemdict /resourceforall get exec
+        } if
+      } if
+      ftchr not {
+        /ftchrdict oldftchrdict maxlength dict store
+         ftchrdict begin
+           oldftchrdict
+       sortkeys { dictkeysort } if
+           {
+             sortkeys not { pop } if
+             cpos def
+             /cpos cpos 1 add store
+           } forall
+         end
+         mark
+         (/CharStrings)
+         fl printf
+         ftchrdict fl printfType
+         /def cvx fl printfType
+         mark
+         (\r)
+         fl printf
+      } if
+      pop pop
+    } bd
+
+    /dumpSubrs {
+      % Dump out Subrs - as numbers.
+      mark
+      (/Subrs )
+      ftchrdict length str cvs
+      ( def\r)
+      fl printf   
+      /ftchrarray 1 index store
+      pop pop
+    } bd
+
+    /safefont {
+      fnt /Private get /OtherSubrs 2 copy
+      known {
+        get length 4 gt not
+      } {
+        pop pop true
+      } ifelse
+    } bd
+
+    /dumpFontType {
+      mark
+      (/FontType 111 def\r) 
+      subst54dld1 { pop
+    % There will be enough space in the dict for the two extra entries.
+        (/FontType 5 def  /CharOffsets <00 00> def  /CharData <00> def\r)
+      } if
+      fl printf
+      pop pop
+    } bd
+
+    /outword {
+      fl 1 index -8 bitshift 255 and write
+      fl 1 index  0 bitshift 255 and write
+      pop
+    } bd
+
+    /outlong {
+      fl 1 index -24 bitshift 255 and write
+      fl 1 index -16 bitshift 255 and write
+      fl 1 index  -8 bitshift 255 and write
+      fl 1 index   0 bitshift 255 and write
+      pop
+    } bd
+
+    /dumpCharData {
+      /ftchrdictlen  ftchrdict  length def
+      ftchrarray null eq {
+        /ftchrarraylen 0 def
+      } {
+        /ftchrarraylen ftchrarray length def
+      } ifelse
+      /invftchrdict ftchrdict maxlength dict def
+      invftchrdict begin
+        ftchrdict {
+          exch def
+        } forall
+      end
+
+      /flbspos fl fileposition def
+      
+      %       File type && Version number.
+      fl (hoff\000\002) writestring
+      
+      %       Number of chars/subrs.
+      /ftchrnumber ftchrdictlen def
+      0 1 ftchrarraylen 1 sub {
+        ftchrarray 1 index get type /stringtype eq {
+          /ftchrnumber ftchrnumber 1 add def
+        } if
+        pop
+      } for
+      ftchrnumber outword
+      
+      % Font Name - 32 NULL characters
+      fl 32 string writestring
+      
+      % Font Comment - 64 NULL characters
+      fl 64 string writestring
+      
+      % output CharStrings numbers and Subrs string entry numbers
+      0 1 ftchrdictlen 1 sub {
+        outword
+      } for
+      0 1 ftchrarraylen 1 sub {
+        ftchrarray 1 index get type /stringtype eq {
+          dup ftchrdictlen add outword
+        } if
+        pop
+      } for
+      
+      % offsets for chars/subrs - 4 byte numbers
+      /flchpos fl fileposition flbspos sub ftchrnumber 4 mul add def
+      0 1 ftchrdictlen  1 sub {
+        flchpos outlong
+        oldftchrdict invftchrdict 2 index get known {
+          oldftchrdict invftchrdict 2 index get get length
+          /flchpos exch flchpos add def
+          /flchpos flchpos 2 add def
+        } if
+        pop
+      } for
+      0 1 ftchrarraylen 1 sub {
+        ftchrarray 1 index get type /stringtype eq {
+          flchpos outlong
+          ftchrarray 1 index get length
+          /flchpos exch flchpos add def
+          /flchpos flchpos 2 add def
+        } if
+        pop
+      } for
+
+      % Now all that data...
+      0 1 ftchrdictlen  1 sub {
+        oldftchrdict invftchrdict 2 index get known {
+          oldftchrdict invftchrdict 2 index get get
+          dup length outword
+          fl exch writestring
+        } if
+        pop
+      } for
+      0 1 ftchrarraylen 1 sub {
+        ftchrarray 1 index get type /stringtype eq {
+          ftchrarray 1 index get
+          dup length outword
+          fl exch writestring
+        } if
+        pop
+      } for
+    } bd
+
+  end
+
+  /type1Todld1 {
+    //type1Todld1Dict begin
+      /dodel   exch def
+      /fnam    exch def
+      /flnam   exch def
+
+      /ftchrdict    null def
+      /oldftchrdict null def
+      /ftchrarray   null def
+      /cpos         0    def
+      /tfnam      (HQNTMP.PS) def
+
+      /fnt fnam findfont def
+      
+      Core35 fname known {
+    /InstallingCoreFonts dup where {
+        exch get true eq
+    } { pop false } ifelse
+        {
+        /SubstituteNotDefChar true def
+        /SubstituteBlankChar false def
+        /SubstituteType5forDLD1 false def
+    
+        /SortDictionaryKeys true def
+        
+        /SetBlueScale 0.0454545 def
+
+        % UVM(Installing core font '%s' - using core font installation options.)
+        (Installing core font ') print
+        fname str cvs print
+        (' - using core font installation options.\n) print flush
+    }   {
+        % UVM(%%%%[ Warning: installing core font '%s' without setting core font installation option. ]%%%%)
+        (%%[ Warning: installing core font ') print
+        fname str cvs print
+        (' without setting core font installation option. ]%%\n) print flush
+    } ifelse
+      } if
+
+    /substnotdef
+      /SubstituteNotDefChar dup where   % /substnotdef key [dict] bool
+    { exch get true eq }
+    { pop false } ifelse
+    def
+    /substblank
+      /SubstituteBlankChar dup where    % /substblank key [dict] bool
+    { exch get true eq }
+    { pop false } ifelse
+    def
+    /subst54dld1
+      /SubstituteType5forDLD1 dup where % /subst... key [dict] bool
+    { exch get true eq }
+    { pop false } ifelse
+    def
+    /substbluescale
+      /SetBlueScale dup where   % /subst... key [dict] bool
+    { exch get }
+    { pop -1.0 } ifelse
+    def
+    % Utility for fontsource below:
+    /stringconcat { % (a) (b) --stringconcat-- (ab)
+      2 copy length exch length dup 3 -1 roll add string
+      dup 0 6 -1 roll putinterval
+      dup 4 -2 roll exch putinterval
+    } bind def
+    /fontsource
+      /FontSource dup where % /FontSo... key [dict] bool
+    { exch get dup type /stringtype eq
+          { (\r%FontSource: ) exch stringconcat }
+          { pop () } ifelse
+        }
+    { pop () } ifelse
+    def
+
+      mark
+      fnt /CharStrings get
+      dup /space known
+      substnotdef substblank or and {
+        dup /space get
+        substnotdef { 2 copy /.notdef exch put } if
+        substblank  { 2 copy /blank   exch put } if
+      } if
+      cleartomark
+      
+      substbluescale dup 0 gt {
+          fnt /Private get
+          /BlueScale 3 -1 roll put
+      } { pop } ifelse
+
+%     dodel
+%     {  % Only delete original file once.
+%        flnam (fonts/) anchorsearch {
+%          pop pop
+%          { flnam deletefile } stopped pop
+%       } {
+%         pop
+%       } ifelse
+%     } if
+
+      /fl tfnam (w) file def
+
+      mark
+      (%!PS-HqnFont-1.0) 
+      % If there are no non-standard OtherSubrs entries in the font, then the 
+      % font is "safe" and so the DLD1 font can be loaded into global memory.
+      % The comment "%%VMlocation: global" flags this for the 
+      % resource font loader to use.
+      (\r%%VMlocation: )
+      safefont {
+        (global)
+      } {
+        (local)
+      } ifelse
+      % Indicate the origin of the font.  Needs to be set by hand at the head
+      % of this file under /FontSource.  
+      fontsource
+      fl printf
+
+      dumpFont
+
+      mark
+      ({ dup begin /FontFile currentfile def /FontOffset currentfile fileposition def end /)
+      fnam str cvs
+      ( exch definefont pop currentfile closefile}exec\n)
+      fl printf
+
+      dumpCharData
+
+      fl closefile
+      tfnam
+    end
+  } bd
+
+  /categoryname <<
+    /CMap (CMap)
+    /Font (font)
+    /CIDFont (CID font)
+    /FontSet (Font set)
+  >> def
+
+  /categoryname {
+    //categoryname exch get
+  } bd
+
+  /TempFontFile (tmp/tempfont) def
+
+  /MakeTempFile {
+        /o //TempFontFile (w)file def
+                {
+                dup //mytempstring readstring
+                o 3 -1 roll writestring
+                not { exit } if
+        } loop
+        o closefile
+        closefile
+  } bd
+
+  /OtherFontTypes <<
+    % We're probably processing a TrueType font or
+    % OpenType with TrueType tables
+    /TTF { % file --TTF--
+      definettfont pop
+    } bind
+
+    % CFF format OpenType font
+    /OTTO { % file --OTTO--
+      defineotffont pop
+      /FontSet FontList length 1 gt def
+    } bind
+
+    % Raw CFF format font (unlikely)
+    /CFF { % file --CFF--
+      definecfffont pop
+      /FontSet FontList length 1 gt def
+    } bind
+
+    % TrueType Collection (multiple TrueType fonts)
+    /TTCF { % file --TTCF--
+      definettfont pop
+      /FontSet FontList length 1 gt def
+    } bind
+  >> def % OtherFontTypes  
+
+  /convertfonts {
+    //type1Todld1Dict begin
+      % Useful defines...
+      /noPreLoadedResources false def
+      /str  2048 string def
+      /rstr 2048 string def
+      /ndicts countdictstack def
+
+      % Read in all those handly Resources...
+      noPreLoadedResources not {
+        (*) { mark exch cvn { /CharStrings findresource } stopped cleartomark }
+          str /CharStrings systemdict /resourceforall get exec
+
+        (*) { mark exch cvn { /Encoding findresource } stopped cleartomark } 
+          str /Encoding systemdict /resourceforall get exec
+      } if
+      
+      /oldFontDirectory FontDirectory FontDirectory maxlength dict copy def
+
+      /newcidcmap <<
+        /CIDFont 10 dict
+        /CMap 10 dict
+      >> def
+
+      /newfontset <<
+        /FontSet 10 dict
+      >> def
+
+      /FontList 6 dict def
+      /infindfont false def
+      <<
+        % findfont boils down to a findresource call
+        /findresource {
+          /infindfont true store
+          //findresource
+          /infindfont false store           
+        } bind
+        /definefont {
+          infindfont {
+            //definefont
+          }   {
+            FontList 3 -1 roll
+            dup
+            4 -1 roll
+            //definefont
+            dup 4 1 roll put
+          } ifelse
+        } bind
+        % Just in case of any wacky new Level-2-only fonts ...
+        /defineresource {
+          dup dup /Font eq exch /CIDFont eq or 1 index /CMap eq or
+          infindfont not and {
+            FontList 4 -1 roll 
+            dup
+            5 -2 roll
+            //defineresource
+            dup 4 1 roll put
+          }   {
+            //defineresource
+          } ifelse
+        } bind 
+        % protect against nasty nasty jobs
+        /clear {
+          {
+            count 0 le { exit } if
+            /markmarkmark eq { /markmarkmark exit } if
+          } loop
+        } bind
+
+      >> 1183615869 internaldict begin shadowop end
+
+      { % superexec
+        nulldevice   % Prevents any basic files from going into roam etc...
+        { % forall (input strings)
+          /sv1 save def
+          /nm exch def
+          /firstone true def
+          /baseusedtfnam false def
+          /FontSet false def
+          /FontSetName null def
+
+          /dictcount countdictstack def
+
+          mark /markmarkmark
+          { nm (r@) file
+            dup 1183615869 internaldict /fontfiletype get exec
+            //OtherFontTypes 1 index known {
+              //OtherFontTypes exch get exec
+            } { pop cvx exec } ifelse
+          } stopped   
+          % Loads up all the fonts for this conversion
+          {
+            handleerror
+            % UVM(%%%%[ Error: font '%s' did not load -\n           it may be an invalid font, require a font downloader or be of an unsupported type ]%%%%)
+            (%%[ Error: font ') print
+            { //type1Todld1Dict /nm get print } stopped
+            { (<unknown>) print } if
+            (' did not load -\n           it may be an invalid font or require a font downloader or be of an unsupported type ]%%\n) print flush
+
+            % cautiously clear down the dict stack to "as it should be."
+            { countdictstack //type1Todld1Dict /dictcount get sub 
+              dup 0 lt
+              { //converterdict begin //type1Todld1Dict begin pop 0 } if
+              { end } repeat
+            } stopped
+
+            % cautiously clearto-MY-mark, and the following mark.
+            {   count 0 le { exit } if
+                /markmarkmark eq { pop exit } if
+            } loop
+
+          }  {
+            % cautiously clear down the dict stack to "as it should be."
+            { countdictstack //type1Todld1Dict /dictcount get sub 
+              dup 0 lt
+              { //converterdict begin //type1Todld1Dict begin pop 0 } if
+              { end } repeat
+            } stopped
+
+            % cautiously clearto-MY-mark, and the following mark.
+            {   count 0 le { exit } if
+                /markmarkmark eq { pop exit } if
+            } loop
+      % here is the incautious version of the above
+      %     cleartomark
+      %     countdictstack dictcount sub { end } repeat
+
+            FontList length 0 eq {
+              % UVM(%%%%[ Warning: file '%s' did not include any font definitions. ]%%%%)
+              (%%[ Warning: file ') print
+              nm print
+              (' did not include any font definitions. ]%%\n) print flush 
+            } if
+
+            FontList length 1 gt {
+              FontSet {
+        % Generate a font set resource name. We want to make this repeatable,
+        % so that multiple installations don't install again, so pick the
+        % first lexographically and add "FontSet" to the end of it.
+                /FontSetName
+                  rstr mark (FontSet) FontList dictkeysort 0 get
+                  1183615869 internaldict /concattomark get exec
+                  dup length string copy
+                def
+                mark /FontSet /Category findresource begin
+                  FontSetName rstr ResourceFileName
+                end status /fontexistsondisk exch def cleartomark
+                % UVM(Installing multiple fonts as FontSet resource '%s')
+                (Installing multiple fonts as FontSet resource ') print
+                FontSetName print ('\n)print flush
+                fontexistsondisk {
+                  % UVM(%%%%[ Warning: Font set '%s' already exists on disk. ]%%%%)
+                  (%%[ Warning: Font set ')print
+                  FontSetName print
+                  (' already exists on disk. ]%%\n) print flush
+                } {
+                  newfontset /FontSet get FontSetName
+                  FontList dup length dict begin
+                    { /CIDFontType known def } forall
+                    currentdict
+                  end put
+      
+                  /sv2 save def
+                  {
+                    /FontSet /Category findresource begin
+                      FontSetName rstr ResourceFileName
+                    end
+                    (w) file nm (r@) file exch
+                    % Stack: <source-file> <dest.-file>
+                    % See PLRM3, p.344, example 5.7:
+                    dup (%!PS-Adobe-3.0 Resource-FontSet\n) writestring
+                    dup (%%DocumentNeededResources: ProcSet (FontSetInit)\n) writestring
+                    dup (%%EndComments\n) writestring
+                    dup (%%IncludeResource: ProcSet (FontSetInit)\n) writestring
+                    dup (%%BeginResource: FontSet \() writestring
+                    dup FontSetName writestring
+                    dup (\)\n) writestring
+                    dup (/FontSetInit /ProcSet findresource begin\n) writestring
+                    % need to know how much to add for name
+                    str mark
+                     ( StartData ) 4 index bytesavailable ( ) FontSetName (/)
+                    1183615869 internaldict /concattomark get exec
+
+                    % source-file dest-file startdatastring
+
+                    //mytempstring mark 3 2 roll
+                    ( Binary Bytes\n)
+                    1 index length 6 index bytesavailable add
+                    (%%BeginData: ) 
+                    1183615869 internaldict /concattomark get exec
+
+                    % source-file dest-file begindatastring
+                    1 index (% Pad to start data on 4-byte offset: X) writestring
+                    2 copy length 1 index fileposition add 3 and
+                    (XXX\n) exch 4 1 index sub getinterval writestring
+            
+                    % source-file dest-file begindatastring
+                    1 index exch writestring
+                    % src dest
+                    {
+                      1 index //mytempstring readstring exch
+                      % src dest bool str
+                      2 index exch writestring
+                      % src dest bool
+                      not { exit } if
+                    } loop
+                    dup (\n%%EndData\n%%EndResource\n%%EOF\n) writestring
+                    closefile closefile
+
+                    % UVM(Installed Font set '%s'.)
+                    (Installed Font set ')print
+                    FontSetName print
+                    ('.\n) print flush
+                  } stopped {
+                    % UVM(%%%%[ Error: Font set '%s', file '%s' could not be installed ]%%%%)
+                    (%%[ Error: Font set ')print
+                    FontSetName print
+                    (', file ') print
+                    nm print
+                    (' could not be installed ]%%\n) print flush
+                  } if
+                  clear
+                  countdictstack //type1Todld1Dict /ndicts get sub { end } repeat
+                  sv2 restore
+                } ifelse
+              } {
+                % UVM(%%%%[ Warning: file '%s' defined multiple fonts: %s ]%%%%)
+                (%%[ Warning: file ') print
+                nm print
+                (' defined multiple fonts: ) print
+                FontList {
+                  pop =print ( ) print
+                } forall
+                ( ]%%\n) print flush 
+              } ifelse
+            } if
+
+            % Find which font was newly defined...save CIDFont/CMap
+            % systeminfo to update CID Font Stubs
+            FontList {     % key val
+              /fdict exch def
+              /fname exch def
+
+              /category fdict /CIDFontType known { /CIDFont } {
+                fdict /CMapType known { /CMap } { /Font } ifelse
+              } ifelse def
+
+              % If the file is in the fonts folder already, do NOT install it
+              mark fname rstr category
+                /Category findresource begin ResourceFileName end
+                status /fontexistsondisk exch def cleartomark
+
+              category /CMap eq category /CIDFont eq or
+              fontexistsondisk not and {
+                newcidcmap category get fname fdict /CIDSystemInfo get put
+              } if
+
+              FontSet not {
+                /sv2 save def
+      
+                fontexistsondisk
+                true exch % do install the font, unless it exists already...
+                {
+                  % UVM(%%%%[ Warning: %(CMap%|font%|CID font%) '%s' already exists on disk. ]%%%%)
+                  (%%[ Warning: )print
+                  category categoryname print ( ') print
+                  fname str cvs print
+                  (' already exists on disk. ]%%\n) print flush
+                  
+                  % font exists, but shall we overwrite it anyway?
+                  statusdict /HqnOverwriteFontOnDisk 2 copy known{
+                    get % optionally overwrite
+                    dup type /booleantype ne{
+                      pop false % if not boolean, then false
+                    }if
+                  }{
+                    pop pop false % don't overwrite
+                  }ifelse
+                  {
+                    % UVM(%%%%[ Warning: %(CMap%|font%|CID font%) '%s' has been overwritten on disk. ]%%%%)
+                    (%%[ Warning: )print
+                    category categoryname print ( ') print
+                    fname str cvs print
+                    (' has been overwritten on disk. ]%%\n) print flush
+                  }{
+                    pop false % font exists, so don't install
+                  }ifelse
+                }if
+                { % install the font, usually.
+                  oldFontDirectory fname known category /CMap ne and {
+                    % UVM(%%%%[ Warning: font '%s' already exists in memory - must reboot to complete installation !! ]%%%%)
+                    (%%[ Warning: font ') print
+                    fname str cvs print
+                    (' already exists in memory - must reboot to complete installation !! ]%%\n) print flush
+                  } if
+            
+                  fdict /FontInfo 2 copy known % FontInfo is optional - take care
+                  {get /BlendAxisTypes known} {pop pop false} ifelse {
+                    % UVM(%%%%[ Error: font '%s' is a Multiple Master font - use a font installer to download it ]%%%%)
+                    (%%[ Error: font ') print
+                    fname str cvs print
+                    (' is a Multiple Master font - use a font installer to download it ]%%\n) print flush
+                  } {
+                    /usedtfnam baseusedtfnam def
+                    category /Font eq {fdict /FontType get 1 eq} {false} ifelse {
+                      {
+                        nm fname firstone type1Todld1 false
+                        /usedtfnam true def
+                      } stopped {
+                        % UVM(%%%%[ Error: font '%s', file '%s' will not convert to DLD1 format ]%%%%)
+                        (%%[ Error: font ') print
+                        fname str cvs print
+                        (', file ') print
+                        nm print
+                        (' will not convert to DLD1 format) print
+                        ( ]%%\n) print flush
+            
+                        % If type1Todld1 fails, then go on to copy the original font
+                        nm true
+                      } {
+                        % UVM(Converted font '%s' to DLD1 format.)
+                        (Converted font ') print
+                        fname str cvs print
+                        (' to DLD1 format.\n) print flush
+                      } ifelse
+                    } {
+                      nm true
+                    } ifelse
+                    { % stopped
+                      exch   % Stack: <not-Type1> <src.-filename>
+                      fname rstr category /Category
+                      findresource begin ResourceFileName end
+            
+                      % Stack: boolean <source-filename> <dest.-filename>
+                      2 copy
+                      ne 4 -1 roll and 3 1 roll   
+                      % Stack: <not-Type1 and changedname> <src.-filename>
+                      %     <dest.-filename>
+                      usedtfnam { renamefile } { hqncopyfile } ifelse
+                      {
+                        % UVM(Installed %(font%|CMap%|CID font%) '%s' in %(Type %|CIDFontType %|CMapType %|TrueType%)%s format.)
+                        (Installed )print
+                        category categoryname print ( ')print
+                        fname str cvs print
+                        category /CMap eq {
+                          (' in CMapType ) print
+                          fdict /CMapType get str cvs print
+                        } if
+                        category /CIDFont eq {
+                          (' in CIDFontType ) print
+                          fdict /CIDFontType get str cvs print
+                        } if
+                        category /Font eq {
+                          fdict /FontType get dup 42 eq dup {
+                            fdict /sfnts get type /filetype eq and
+                          } if
+                          {
+                            (' in TrueType) print pop
+                          } {
+                            (' in Type ) print str cvs print
+                          } ifelse
+                        } if
+                        ( format.\n) print flush
+                      } if
+                      /firstone false def
+                    } stopped {
+                      % UVM(%%%%[ Error: %(font%|CMap%|CID font%) '%s', file '%s' will not rename correctly ]%%%%)
+                      (%%[ Error: )print category categoryname print ( ') print
+                      fname str cvs print
+                      (', file ') print
+                      nm print
+                      (' will not rename correctly) print
+                      ( ]%%\n) print flush
+                    } if
+                  } ifelse
+                } if
+                clear
+                countdictstack //type1Todld1Dict /ndicts get sub { end } repeat
+                firstone
+                sv2 restore
+                /firstone exch def
+              } if
+            } forall
+
+          } ifelse
+
+          % If any new CIDFonts, CMaps or FontSets have been installed, write
+          % font stubs for them. This would be better outside the sv1 restore,
+          % but can't be because newcidcmap/newfontset is cleared by the
+          % restore
+          newcidcmap /CMap get length 0 ne
+          newcidcmap /CIDFont get length 0 ne or
+          newfontset /FontSet get length 0 ne or {
+            //FontConvWorkSpace begin
+              readfontstubcache % existing
+              newfontset /FontSet get length 0 ne {
+                newfontset            % add
+                << /FontSet 1 dict >> % delete
+                makefontsetstubs
+              } if
+              newcidcmap /CMap get length 0 ne
+              newcidcmap /CIDFont get length 0 ne or {
+                newcidcmap         % add
+                << /CMap 1 dict /CIDFont 1 dict >> % delete
+                makecidfontstubs
+              } if
+              writefontstubcache
+            end
+          } if
+
+          sv1 restore
+        } forall
+
+      } 1183615869 internaldict /superexec get exec
+    end % type1Todld1Dict
+  } bd
+  
+  /BuildChar { null stopped { defaulthandleerror stop } if } def  % NOT bound
+  /DumpFontAsIs {
+      /HqnFontConverter /ProcSet findresource begin
+      //type1Todld1Dict begin
+
+      % use this for dumping as T1, T3, T42
+      % <outputfile> <fontname> <fontdict> -> rawDumpFont -> <outputfile>
+
+      dup length dict copy
+      /fnt exch def
+      /fname exch def
+      /fl 1 index def
+
+      /noPreLoadedResources false def
+
+      dup (%!FontType)writestring
+      fnt /FontType get dup 4 string cvs 2 index exch writestring
+      1 eq {
+          dup (-1.0) writestring
+      } if
+      dup (: )writestring
+      dup fname writestring
+      % don't know font version ...
+      (\r)writestring
+
+      % a number of Type 3 fonts rely on external references which are not
+      % accessible when BuildChar is run if they are defined inside the font dictionary ...
+      fnt /FontType get 3 eq fnt /HqnBuildChar known not and {
+          fnt begin
+          /HqnBuildChar /BuildChar load def
+          /BuildChar { 1 index begin HqnTempDict begin HqnBuildChar end end } def
+          HqnFontDebug {
+              /BuildChar //FontConvWorkSpace /BuildChar get
+              dup 0 /BuildChar load put
+              def
+          } if
+          /HqnTempDict 4 dict def
+          currentdict /FontName known not {
+              /FontName fname def
+          } if
+          end     % fnt
+      } if
+
+      rawDumpFont
+
+      //fprintfDict begin     
+
+      % loop to pick up new external references raised from first generation ones ...
+      /dictPtr 1 def
+      /doneItems extraItems length dict def
+          {
+          /newItems 0 def
+          extraItems {
+              doneItems 2 index known {
+                  pop pop
+              }   {
+                  doneItems 2 index null put
+                  /newItems dup load 1 add def
+                  /in 0 def
+                  (dup ) tprint
+                  exch cvlit 
+                  typeprint typeprint
+                  ( put) tprint NL tprint
+              } ifelse
+          } forall
+          newItems 0 eq { exit } if
+      } loop
+      end
+
+      fl
+      dup (\r\() writestring
+      dup fname writestring
+      dup (\) cvn exch definefont pop\r\r%%EOF\r) writestring
+
+      end end
+  } bd
+
+  /fontstubcachename (Config/ComposedFontsCache) def
+
+  /readfontstubcache <<
+    /CMap 100
+    /CIDFont 50
+    /FontSet 50
+  >> def
+  
+  /readfontstubcache { % --readfontstubcache-- dict
+    <<
+      //fontstubcachename dup status {
+        pop pop pop pop (r) file cvx exec
+      } {
+        pop
+      } ifelse
+    >>
+    //readfontstubcache { % create default dictionaries
+      3 copy pop known not {
+        dict 3 copy put
+      } if
+      pop pop
+    } forall
+  } bd
+
+  /writefontstubcache { % dict --writefontstubcache--
+    mark exch { % no errors reported from opening cache
+      //fontstubcachename (w) file exch
+    } stopped not { % no errors reported from writing cache
+      {
+        1 index (/CMap ) writestring
+        2 copy /CMap get emit
+        1 index (\n/CIDFont ) writestring
+        2 copy /CIDFont get emit
+        1 index (\n/FontSet ) writestring
+        2 copy /FontSet get emit
+        pop dup (\n) writestring
+        closefile
+      } stopped { % delete malformed cache file
+        counttomark 1 sub index closefile
+        //fontstubcachename deletefile
+      } if
+    } if
+    cleartomark
+  } bd
+
+  /checkprefix { % bool string match --checkprefix-- bool post
+    anchorsearch { pop } { exch pop false exch } ifelse
+  } bd
+
+  % Ignore CMaps named Registry-Ordering-Supplement and array CIDSystemInfo
+  /checkcmap { % name cidsysteminfo --checkcmap-- name cidsysteminfo bool
+    dup type /dicttype eq dup {
+      2 index //mytempstring cvs
+      2 index /Registry get checkprefix
+      (-) checkprefix
+      2 index /Ordering get checkprefix
+      (-) checkprefix
+      2 index /Supplement get =string cvs checkprefix
+      () eq and not
+    } if
+%dup not { (Ignoring CMap )print 2 index = } if
+  } bd
+
+  % Font stub scratch string must be as long as two names plus the separator
+  /fontstubstring 256 string def
+
+  /fontstubname (-) def % CIDFont/CMap separator in routine below
+  /fontstubname { % CMap CIDFont --fontstubname-- CIDFont-CMap
+    //fontstubstring cvs length
+    //fontstubstring 2 copy length 1 index sub getinterval
+    //fontstubname exch copy length add
+    //fontstubstring 2 copy length 1 index sub getinterval
+    3 -1 roll exch cvs length add
+    //fontstubstring 0 3 -1 roll getinterval
+%(Font stub filename )print dup =
+  } bd
+
+  /writefontstub { % CMap CIDFont --writefontstub--
+    /Font /Category findresource begin
+      2 copy fontstubname dup //mytempstring ResourceFileName
+    end
+    dup status {
+%(Skipping existing font stub - )print 4 index =
+      pop pop pop pop pop pop
+    } {
+%(Making new font stub - )print dup =
+      (w) file
+      dup (%!PS-Adobe-3.0 Resource-Font\n/) writestring
+      dup 3 -1 roll writestring
+      dup ( )writestring
+      dup 3 index emit
+      dup ( [ )writestring
+      dup 2 index emit
+      dup ( ] composefont pop\n)writestring
+      closefile
+    } ifelse
+    pop pop
+  } bd
+
+  /makecidfontstubs { % olddict adddict rmdict --makecidfontstubs-- dict
+    3 dict begin
+      /cidname null def
+      /cmapname null def
+      /composefont { % fontname cmap [ cidfont ] composefont pop
+        {
+          cidname eq {
+            currentfile dup closefile
+            //filenamebuffer //statusdict /filename get exec pop
+%(Deleting file )print dup =
+            deletefile exit
+          } if
+        } forall
+        stop
+      } def
+      dup /CIDFont get { % Remove these CIDFonts
+        % UVM(Removing composed fonts for missing CID font '%s')
+        (Removing composed fonts for missing CID font ')print
+        1 index =string cvs print
+        ('\n)print
+        pop /cidname 1 index store
+        /Font /Category findresource begin
+          (*) exch fontstubname //mytempstring ResourceFileName
+        end
+        {
+          save mark 3 -1 roll
+          { run } stopped
+          cleartomark restore
+        } =string filenameforall
+      } forall
+
+      /composefont { % fontname cmap [ cidfont ] composefont pop
+        pop cmapname eq {
+          currentfile dup closefile
+          //filenamebuffer //statusdict /filename get exec pop
+%(Deleting file )print dup =
+          deletefile
+        } if
+        stop
+      } def
+      dup /CMap get { % Remove these CMaps
+        % UVM(Removing composed fonts for missing CMap '%s')
+        (Removing composed fonts for missing CMap ')print
+        1 index =string cvs print
+        ('\n)print
+        pop /cmapname 1 index store
+        /Font /Category findresource begin
+          (*) fontstubname //mytempstring ResourceFileName
+        end
+        {
+          save mark 3 -1 roll
+          { run } stopped
+          cleartomark restore
+        } =string filenameforall
+      } forall
+    end
+    {
+      3 index 3 -1 roll get exch {
+%(Removing stub resource from cache )print 1 index =
+        pop 2 copy undef pop
+      } forall
+      pop
+    } forall
+    dup { % Add all new resources to old dict
+      3 index 3 -1 roll get exch {
+%(Adding stub resource to cache )print 1 index ==
+        3 copy put pop pop
+      } forall
+      pop
+    } forall
+    5 dict begin % R-O to CMap lookup. Not many registries expected
+      1 index /CMap get {
+        checkcmap {
+          currentdict 1 index /Registry get 2 copy known not {
+            2 copy 25 dict put % Ordering lookup dictionary
+          } if
+          get begin
+            currentdict 1 index /Ordering get 2 copy known not {
+              2 copy 25 dict put % CMap lookup dictionary
+            } if
+            get begin
+              /Supplement get def % CMap->Supplement lookup in R-O hierarchy
+            end
+          end
+        } {
+          pop pop
+        } ifelse
+      } forall
+%(%stdout) (w) file currentdict emit (\n)print
+      dup /CIDFont get { % Check stubs for all new CIDFonts
+        % UVM(Creating composed fonts for new CID font '%s')
+        (Creating composed fonts for new CID font ')print
+        1 index =string cvs print
+        ('\n)print
+        currentdict 1 index /Registry get known {
+          dup /Registry get load begin
+            currentdict 1 index /Ordering get known {
+              dup /Ordering get load { % CID-Name CID-Info CMap-Name CMap-Supplement
+                pop % Ignore Supplement when making stubs
+                2 index writefontstub
+              } forall
+            } if
+          end
+        } if
+        pop pop
+      } forall
+    end
+    5 dict begin % R-O to CIDFont lookup. Not many registries expected
+      1 index /CIDFont get {
+        currentdict 1 index /Registry get 2 copy known not {
+          2 copy 25 dict put % Ordering lookup dictionary
+        } if
+        get begin
+          currentdict 1 index /Ordering get 2 copy known not {
+            2 copy 25 dict put % CIDFont lookup dictionary
+          } if
+          get begin
+            /Supplement get def % CIDFont->Supplement lookup in R-O hierarchy
+          end
+        end
+      } forall
+%(%stdout) (w) file currentdict emit (\n)print
+      dup /CMap get { % Check stubs for all new CMaps
+        checkcmap {
+          % UVM(Creating composed fonts for new CMap '%s')
+          (Creating composed fonts for new CMap ')print
+          1 index =string cvs print
+          ('\n)print
+          currentdict 1 index /Registry get known {
+            dup /Registry get load begin
+              currentdict 1 index /Ordering get known {
+                dup /Ordering get load { % CMap-Name CMap-Info CID-Name CID-Supplement
+                  pop % Ignore Supplement when making stubs
+                  2 index exch writefontstub
+                } forall
+              } if
+            end
+          } if
+        } if
+        pop pop
+      } forall
+    end
+    pop
+  } bd
+
+  /makefontsetstubs { % olddict adddict rmdict --makefontsetstubs-- dict
+    /FontSetInit /ProcSet findresource begin
+      /FontSet get { % Remove these FontSets
+        % UVM(Removing %%fontset%% files for missing FontSet '%s')
+        (Removing %fontset% files for missing FontSet ')print
+        1 index =string cvs print
+        ('\n)print
+        pop 2 index /FontSet get exch 2 copy known {
+          2 copy get { % name bool
+            mark 3 1 roll { FontSetFileName deletefile } stopped cleartomark
+          } forall
+          undef
+        } {
+          pop pop
+        } ifelse
+      } forall
+      /FontSet get { % Add these FontSets
+        2 index /FontSet get 2 index 3 -1 roll put
+        mark { 1 index /FontSet findresource FontSetInit } stopped cleartomark
+        % UVM(Installed %%fontset%% files for new FontSet '%s'.)
+        (Installed %fontset% files for new FontSet ')print
+        =string cvs print
+        ('.\n) print flush
+      } forall
+    end
+  } bd
+
+  % [ (Name1) (Name2)... ] --deletefonts--
+  % Deletes CIDFont/Font/FontSet resources, and cleans up CID and FontSet stubs
+  /deletefonts {
+    //FontConvWorkSpace begin
+      save exch
+        2 dict begin
+          /CIDFont 10 dict def
+          /FontSet 10 dict def
+          {
+            dup /Font resourcestatus {
+              pop pop /Font true
+            } {
+              dup /CIDFont resourcestatus {
+                pop pop
+                CIDFont 1 index cvn true put
+                /CIDFont true
+              } {
+                dup /FontSet resourcestatus {
+                  pop pop
+                  FontSet 1 index cvn true put
+                  /FontSet true
+                } {
+                  % UVM(Did not delete '%s' - not a Font, CIDFont nor FontSet)
+                  (Did not delete ')print
+                  print (' - not a Font, CIDFont nor FontSet)=
+                  false
+                } ifelse
+              } ifelse
+            } ifelse
+            {
+              2 copy /Category findresource begin
+                //mytempstring ResourceFileName deletefile
+              end
+              % UVM(Deleted %(CIDFont%|Font%|FontSet%) '%s')
+              (Deleted )print =string cvs print ( ')print print (')=
+            } if
+          } forall
+          FontSet length 0 ne CIDFont length 0 ne or {
+            readfontstubcache       % got
+            % FontSets may contain CIDFonts, so mark deleted CID sub-fonts too
+            FontSet {
+              pop 1 index /FontSet get exch 2 copy known {
+                get { % subfontname is-cid?
+                  { CIDFont exch true put } { pop } ifelse
+                } forall
+              } {
+                pop pop
+              } ifelse
+            } forall
+            FontSet length 0 ne {
+              << /FontSet 1 dict >>  % add
+              << /FontSet FontSet >> % delete
+              makefontsetstubs
+            } if
+            CIDFont length 0 ne {
+              << /CIDFont 1 dict /CMap 1 dict >>  % add
+              << /CIDFont CIDFont /CMap 1 dict >> % delete
+              makecidfontstubs
+            } if
+            writefontstubcache
+          } if
+        end
+      restore
+    end
+  } bd
+
+  currentdict
+end
+
+userdict /FontConvWorkSpace undef
+
+/HqnFontConverter exch /ProcSet defineresource
+dup /packingstate get setpacking
+/globalness get setglobal
+
+%%EndProcSet

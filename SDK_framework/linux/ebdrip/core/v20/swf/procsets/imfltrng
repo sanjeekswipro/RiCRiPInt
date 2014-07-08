@@ -1,0 +1,63 @@
+%!PS-Adobe-3.0
+%%Title: ImageFiltering
+%%Creator: Global Graphics Software Limited
+%%CreationDate: May 4, 2001
+%%Copyright: Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+%%BeginResource: procset ImageFiltering 1.0
+% $HopeName: SWv20!swf:procsets:imfltrng(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+
+currentglobal false setglobal
+
+/ImageFiltering 10 dict dup begin
+
+/ProcDict 5 dict def
+/ProcParams 10 dict def
+
+/SetImageInterpolateController {
+  //ProcDict begin
+    /ImageInterpolateController exch def
+  end
+} bind def
+
+/SetImageResampleController {
+  //ProcDict begin
+    /ImageResampleController exch def
+  end
+} bind def
+
+/SetMaskScaleController {
+  //ProcDict begin
+    /MaskScaleController exch def
+  end
+} bind def
+
+/RunImageFilterController {
+  % We get called with a name on the top of the stack
+  //ProcDict begin
+  /ProcName exch def
+  //ProcDict ProcName known {
+    {
+      //ProcDict ProcName get //ProcParams exch exec 
+    } stopped
+    {
+      % Error occured
+      (%stderr)(w)file
+      dup (Error encountered running Image Filter Controller ") writestring
+      dup ProcName 128 string cvs writestring
+      ("\n) writestring
+      stop
+    } if
+  } if
+  end
+} bind def
+
+end
+
+/ProcSet defineresource pop
+
+setglobal
+

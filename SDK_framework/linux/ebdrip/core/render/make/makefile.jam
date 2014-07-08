@@ -1,0 +1,129 @@
+# Copyright (C) 2003-2014 Global Graphics Software Ltd. All rights reserved.
+# Global Graphics Software Ltd. Confidential Information.
+#
+# Jam makefile for CORErender
+#
+# $HopeName: CORErender!make:makefile.jam(EBDSDK_P.1) $
+#
+
+RequiresVariant warning_level : high ;
+RequiresVariant 64bit_warnings ;
+ImplementsVariant blits blit_1 blit_2 blit_4 blit_8 blit_16 blit_24 blit_32 blit_N blit_rle blit_rlecolor blit_rletrans blit_backdrop security blit_mht ;
+
+# If no blits are set, or the variant is set to "all", require them all
+if ! $(Variant_blits) || $(Variant_blits) = all {
+    RequiresVariant blits : 1 2 4 8 16 24 32 N rle rlecolor rletrans backdrop mht ;
+}
+
+# Require the named variants
+local i ; for i in $(Variant_blits) {
+    RequiresVariant blit_$(i) ;
+}
+
+if $(Variant_blit_rletrans) {
+    RequiresVariant blit_rlecolor blit_backdrop ;
+}
+
+AddToVar Local : C-Defines : BLIT_HALFTONE_1 : Variant blit_1 ;
+AddToVar Local : C-Defines : BLIT_HALFTONE_2 : Variant blit_2 ;
+AddToVar Local : C-Defines : BLIT_HALFTONE_4 : Variant blit_4 ;
+AddToVar Local : C-Defines : BLIT_HALFTONE_MODULAR : Variant blit_mht ;
+AddToVar Local : C-Defines : BLIT_CONTONE_8 : Variant blit_8 ;
+AddToVar Local : C-Defines : BLIT_CONTONE_16 : Variant blit_16 ;
+AddToVar Local : C-Defines : BLIT_CONTONE_24 : Variant blit_24 ;
+AddToVar Local : C-Defines : BLIT_CONTONE_32 : Variant blit_32 ;
+AddToVar Local : C-Defines : BLIT_CONTONE_N : Variant blit_N ;
+AddToVar Local : C-Defines : BLIT_RLE_MONO : Variant blit_rle ;
+AddToVar Local : C-Defines : BLIT_RLE_COLOR : Variant blit_rlecolor ;
+AddToVar Local : C-Defines : BLIT_RLE_TRANSPARENCY : Variant blit_rletrans ;
+AddToVar Local : C-Defines : BLIT_BACKDROP : Variant blit_backdrop ;
+
+# Compilation rules
+
+    DependsOn all : render ;
+
+    IncludeExportDirectories Inherited Local :
+        backdrop
+        cce
+        gstate
+        halftone
+        imstore
+        mm
+        multi
+        objects
+        tables
+        trapping
+        v20
+    : .. ;
+
+    ReplaceVar Local : CFILES :
+        bandtable.c
+        bitblts.c
+        blitcolors.c
+        blkblts.c
+        blttables.c
+        charblts.c
+        chardevim.c
+        clipblts.c
+        diamondfill.c
+        intersectblts.c
+        maskimageblts.c
+        patternrender.c
+        patternreplicators.c
+        pcl5Blit.c
+        pclPatternBlit.c
+        renderbd.c
+        renderfn.c
+        renderim.c
+        renderinit.c
+        renderloop.c
+        rendersh.c
+        rop.c
+        scabut.c
+        scadobe.c
+        scband.c
+        scbresin.c
+        sccenter.c
+        scchar.c
+        sccompat.c
+        spanlist.c
+        stubs.c
+        surface.c
+        toneblt.c
+    ;
+
+    ReplaceVar Local : HALFFILES :
+        converge.c
+        halftoneblts.c
+        halftoneblks.c
+        halftoneimg.c
+        halftonechar.c
+        halftoneinit.c
+    ;
+
+    AddToVar Local : CFILES : $(HALFFILES) : Variant blit_1 ;
+    AddToVar Local : CFILES : $(HALFFILES) : Variant blit_2 ;
+    AddToVar Local : CFILES : $(HALFFILES) : Variant blit_4 ;
+
+    AddToVar Local : CFILES : $(HALFFILES) toneblt1.c : Variant blit_mht ;
+
+    AddToVar Local : CFILES : toneblt8.c : Variant blit_8 ;
+    AddToVar Local : CFILES : toneblt8.c : Variant blit_mht ;
+
+    AddToVar Local : CFILES : toneblt16.c : Variant blit_16 ;
+    AddToVar Local : CFILES : toneblt16.c : Variant blit_mht ;
+
+    AddToVar Local : CFILES : toneblt24.c : Variant blit_24 ;
+
+    AddToVar Local : CFILES : toneblt32.c : Variant blit_32 ;
+
+    AddToVar Local : CFILES : tonebltn.c : Variant blit_N ;
+
+    AddToVar Local : CFILES : rleblt.c : Variant blit_rle ;
+    AddToVar Local : CFILES : rleblt.c : Variant blit_rlecolor ;
+
+    AddToVar Local : CFILES : backdropblt.c : Variant blit_backdrop ;
+
+    Library render : $(CFILES) ;
+
+# Log stripped

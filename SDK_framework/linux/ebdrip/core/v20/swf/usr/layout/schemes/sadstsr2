@@ -1,0 +1,366 @@
+%!PS-Adobe-3.0
+%%Title: SaddleStitch_S&R_2
+%%Creator: Global Graphics Software Limited
+%%CreationDate: April 2005
+% Copyright (C) 2005 Global Graphics Software Limited. All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+% $Revision: 1.5.10.1.1.1 $
+%%EndComments
+
+% $HopeName: SWv20!swf:usr:layout:schemes:sadstsr2(EBDSDK_P.1) $
+
+
+
+% This file defines the Saddle-Stitch, stepped and repeated, imposition scheme for use with the 
+% HqnLayout procset. 
+% Copyright (C) 2005 Global Graphics Software Limited. All Rights Reserved.
+
+	<<
+
+	/Name  (SaddleStitch_SR_2)
+
+	/UserName (Step and repeat, saddle-stitched)
+	
+	/SchemeVersion	(1.1.0)
+
+	/Sides 2
+
+	/CheckDivisor 4
+
+	% Any values that differ from those in Validate
+	/LocalValidate <<
+		/SpineFold <<
+			/default	/Horizontal
+			/override	{ SpineFold dup /None eq { pop /Auto } if } bind
+		>>
+	>>
+	
+	/LocalValues [
+	]
+	
+	% SetOnce should be a boolean or a procedure that returns a boolean
+	% If true, a single layout is used for all surfaces, 
+	% if false the layout is recalculated for every sheet
+	/SetOnce false
+	
+	/FixedPageCount true
+	/UsePageRotate false
+	
+	% Called at the start of the job to set anything that might be useful
+	% later in SetLayout
+	/Initialize {
+		/SSSR2Dict 6 dict def
+		/SSSR2Hor 4 dict def
+		/SSSR2Vert 4 dict def
+	
+		/SSSR2PageArray <<
+			/Horizontal <<
+				/Left	[
+						[ % front
+						[<< /PN 0 /PO 90 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN -1 /PO 90 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+						[ % back
+						[<< /PN 1 /PO 270 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN -2 /PO 270 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+				]
+				/Right	[
+						[ % front
+						[<< /PN -1 /PO 90 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 0 /PO 90 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+						[ % back
+						[<< /PN -2 /PO 270 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 1 /PO 270 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+				]
+				/TopA	[
+						[ % front
+						[<< /PN -1 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 0 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+						[ % back
+						[<< /PN -2 /PO 180 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 1 /PO 180 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+				]
+				/TopB	[
+						[ % front
+						[<< /PN -1 /PO 180 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 0 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+						[ % back
+						[<< /PN -2 /PO 180 /CX 0 /CY 0 /SCX 0 /SCY -1 >>]
+						[<< /PN 1 /PO 0 /CX 0 /CY 0 /SCX 0 /SCY 1 >>]
+					]
+				]
+				/TopC 1 index
+			>>
+			/Vertical <<
+				/Left	[
+						[ % front
+						[<< /PN -1 /PO 0 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN 0 /PO 0 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+						[ % back
+						[<< /PN 1 /PO 0 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN -2 /PO 0 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+				]
+				/Right	[
+						[ % front
+						[<< /PN 0 /PO 0 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN -1 /PO 0 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+						[ % back
+						[<< /PN -2 /PO 0 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN 1 /PO 0 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+				]
+				/TopA	[
+						[ % front
+						[<< /PN -1 /PO 90 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN 0 /PO 90 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+						[ % back
+						[<< /PN 1 /PO 90 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN -2 /PO 90 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+				]
+				/TopB	[
+						[ % front
+						[<< /PN -1 /PO 270 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN 0 /PO 90 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+						[ % back
+						[<< /PN 1 /PO 270 /CX 0 /CY 0 /SCX 1 /SCY 0 >>
+							<< /PN -2 /PO 90 /CX 0 /CY 0 /SCX -1 /SCY 0 >>]
+					]
+				]
+				/TopC 1 index
+			>>
+		>> def
+		
+		% Procedures to select SpineFold and Geometry from Auto SpineFold selections
+		/SSSR2Auto <<
+			/Left [
+					<<
+					/name /Horiz
+					/getwidth { ph MinGutterB add }
+					/getheight { pw 2 mul GA add GB add }
+					/result <<
+						/SpineFold /Horizontal
+						/PageCountUp 2
+						/PageCountAcross 1
+					>>
+				>>
+					<<
+					/name /Vert
+					/getwidth { pw 2 mul GA add GB add }
+					/getheight { ph MinGutterB add }
+					/result <<
+						/SpineFold /Vertical
+						/PageCountUp 1
+						/PageCountAcross 2
+					>>
+				>>
+			]
+			/Right 1 index
+			/TopA [
+					<<
+					/name /Horiz
+					/getwidth { pw MinGutterB add }
+					/getheight { ph 2 mul GA add GB add }
+					/result <<
+						/SpineFold /Horizontal
+						/PageCountUp 2
+						/PageCountAcross 1
+					>>
+				>>
+					<<
+					/name /Vert
+					/getwidth { ph 2 mul GA add GB add }
+					/getheight { pw MinGutterB add }
+					/result <<
+						/SpineFold /Vertical
+						/PageCountUp 1
+						/PageCountAcross 2
+					>>
+				>>
+			]
+			/TopB 1 index
+			/TopC 1 index
+		>> def
+
+		/SSSR2Copies {
+			PagesAcross 0 eq {
+				% Automatic calculation
+				/SpaceAcross MaxWidth FilmLeft sub FilmRight sub 
+					currentpagedevice /Scaling get 0 get 
+					currentpagedevice /ResamplingFactor get div 
+					div def
+				/SpaceUp MaxHeight FilmBottom sub FilmTop sub 
+					currentpagedevice /Scaling get 1 get 
+					currentpagedevice /ResamplingFactor get div 
+					div def
+				WorkTurn /None ne {
+					TurnTopBottom {
+						/SpaceUp SpaceUp WTMinGutter sub 2 div def
+					}	{
+						/SpaceAcross SpaceAcross WTMinGutter sub 2 div def
+					} ifelse
+				} if
+				SpineFold /Horizontal eq {
+					/CopiesAcross SpaceAcross MinGutterB add ph MinGutterB add div cvi
+						dup 0 le { pop 1 } if
+						def
+					/CopiesUp SpaceUp GB add pw 2 mul GA add GB add div cvi
+						dup 0 le { pop 1 } if
+						def
+				}	{
+					/CopiesAcross SpaceAcross GB add pw 2 mul GA add GB add div cvi
+						dup 0 le { pop 1 } if
+						def
+					/CopiesUp SpaceUp MinGutterB add pw 2 mul MinGutterB add div cvi
+						dup 0 le { pop 1 } if
+						def
+				} ifelse
+			}	{
+				/CopiesAcross PagesAcross def
+				/CopiesUp PagesUp def
+			} ifelse
+% { SpaceAcross SpaceUp pw ph GA GB GutterB CopiesAcross CopiesUp }{ dup =print (   )print load == } forall (^^^^^^^^^^^^^)=
+		} bind def
+	} bind
+	
+	/TableInitialize {	
+			<<
+			/PageCountAcross <<
+				/Horizontal [ 1 2 ]
+				/Vertical [ 2 1 ]
+			>> SpineFold dup /Auto eq { pop /Vertical } if get 
+				aload pop
+			/PageCountUp exch
+			/PageFlow BindingEdge /TopC eq { /TopC }{ /JobSaddle } ifelse
+		>>
+	} bind
+
+	% No SetLayout, because Initialize has called TableBasedInit_2. Instead, we have GetAutoSpine
+	% and GetPageArray
+
+	/GetAutoSpine {
+		% Make sure we know how many copies across and down
+		SSSR2Hor begin
+		/SpineFold /Horizontal def
+		SSSR2Copies
+		end
+		SSSR2Vert begin
+		/SpineFold /Vertical def
+		SSSR2Copies
+		end
+		
+		% Get the 1-up Auto array
+		SSSR2Auto BindingEdge get
+		
+		% Massage to give S&R version. Don't change the original, we may need to
+		% re-calculate from that again later
+		[ exch {	% forall dicts
+			begin
+			result /SpineFold get /Horizontal eq { SSSR2Hor }{ SSSR2Vert } ifelse begin
+				<<
+				/name name
+				/getwidth [ getwidth CopiesAcross mul SpineFold /Horizontal eq { MinGutterB }{ GB } ifelse sub ] cvx
+				/getheight [ getheight CopiesUp mul SpineFold /Vertical eq { MinGutterB }{ GB } ifelse sub ] cvx
+				result begin
+				/result <<
+					/SpineFold SpineFold
+					/PageCountUp PageCountUp CopiesUp mul
+					/PageCountAcross PageCountAcross CopiesAcross mul
+				>>
+				end	% result
+			>>
+			end	% SSSR2Hor/Vert
+			end	% original dict
+		} forall ]
+	} bind
+	
+	/GetPageArray {
+		Surface 0 eq {
+			% SpineFold is set by this point, i.e. not Auto
+			SSSR2Dict begin
+			
+			% Make sure we know how many copies across and down
+			SSSR2Copies
+			
+			% Get baseline Page Array
+			SSSR2PageArray SpineFold get BindingEdge get
+	
+			% Adjust for TopA binding
+			Surface 0 eq BindingEdge /TopA eq and {
+				% Special case rotate the last page
+				% Only mess with the front array, though, otherwise
+				% inversion for the back of non-W&T will be lost.
+				[ exch aload pop exch
+				[ exch {
+					[ exch {
+						% dict
+							dup /PN get -1 eq {
+							dup length dict copy
+							dup begin
+							/PO PO 180 add 360 mod def
+							end
+						} if
+					} forall ] 	% row
+				} forall ] % surface
+					exch		% use the pre-existing back array
+				 ]	% array
+			} if
+			
+			% Replicate for copies across and down
+			% 1-copy Page Array on the stack already
+			CopiesAcross CopiesUp mul 1 ne {
+					[ 
+					exch {		% forall surfaces
+						/ThisSurface exch def
+							[ 
+							CopiesUp {
+								ThisSurface {	% forall rows
+									/ThisRow exch def
+										[ 
+										CopiesAcross {
+											ThisRow {	% forall cols
+												% just leave the dict on the stack
+											} forall 
+										} repeat 
+									]
+								} forall 
+							} repeat 
+						]
+					} forall 
+				]
+			} if
+		
+			end		% SSSR2Dict
+		}	{
+			PagesArray
+		} ifelse
+
+		/PageCountUp 1 index 0 get length store
+		/PageCountAcross 1 index 0 get 0 get length store
+		/PagesPerSignature 4 store
+	} bind
+			
+	% PageSequence is called on each sheet to obtain the page indices to run 
+	% on this page
+	% It's set automatically as part of TableBasedLayout
+	
+	% SurfaceCount defaults automatically when PageCountUp/Across are defined.
+	
+	/FoldMarks [ true true ]
+	
+	% No CutMarks
+
+>>
+
+%%EOF

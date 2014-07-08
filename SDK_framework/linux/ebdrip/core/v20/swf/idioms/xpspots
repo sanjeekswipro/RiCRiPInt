@@ -1,0 +1,586 @@
+%!PS-Adobe-3.0
+%%Title: XPressSpotGrads
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Thu, Feb 5, 1998
+% Copyright (C) 1998-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% $HopeName: SWv20!swf:idioms:xpspots(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% This will force QuarkXPress(tm) spot gradient fills to come out on the spot color
+% separation when auto-separating in ScriptWorks, instead of being converted to 
+% process colors.
+%
+% QuarkXPress is a trademark of Quark, Inc.
+
+%%BeginResource: IdiomSet XPressSpotGrads
+
+currentglobal false setglobal
+
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+15 dict begin
+
+% currentglobal true setglobal
+
+/HqnSetSpot {
+	% For consistency with flat tints of spot colors in XPress jobs we
+	% use the L1 spot color operators here rather than calling 
+	% setcolorspace directly.
+	1 setcustomcolor
+} bind def
+
+/FourZeros {
+	aload pop add add add 0.001 le
+} bind def
+
+/HqnSetSpotShadow << /setgray { sepgr } >> def
+/HqnSetSpotShadow {
+  //HqnSetSpotShadow 1183615869 internaldict /shadowop get exec
+} bind def
+
+/HqnSetColor1 {
+  /sepgr { HqnColor1 exch setcustomcolor } def
+	//HqnSetSpotShadow exec
+} bind def
+
+/HqnSetColor2 {
+  /sepgr { HqnColor2 exch setcustomcolor } def
+	//HqnSetSpotShadow exec
+} bind def
+
+/HqnTestColorspace
+{
+  % spotname colorspace
+  % Checks if colorspace is a Separation space with a spot color of
+  % spotname, or a Device N with a single spot color of spotname
+  dup type /arraytype eq dup
+  {
+    % spotname colorspace true, colorspace == [ ... ]
+    pop dup length 4 eq dup
+    {
+      % spotname colorspace true, colorspace == [ X X X X ]
+      pop dup 0 get /Separation eq
+      {
+        % spotname colorspace, colorspace == [ /Separation X X X ]
+        dup 1 get
+        dup type /nametype ne { cvn } if
+        2 index eq
+      }
+      {
+        % spotname colorspace
+        dup 0 get
+        /DeviceN eq dup
+        {
+          % spotname colorspace true, colorspace == [ /DeviceN X X X ]
+          pop dup
+          1 get % spotname colorspace array
+          length 1 eq dup
+          {
+            % spotname colorspace true, colorspace == [ /DeviceN [ X ] X X ]
+            pop dup 1 get 0 get
+            dup type /nametype ne { cvn } if
+            2 index eq
+          } if
+        } if
+      } ifelse
+    } if
+  } if
+  % spotname colorspace bool
+  3 1 roll pop pop
+} bind def
+
+/HqnTestColorspace1
+{
+  save
+  HqnColor1 //HqnSetSpot exec
+  //HqnSetColor1 exec
+  HqnColor1 4 get cvn
+  currentcolorspace
+  % save spotname colorspace
+  //HqnTestColorspace exec
+  exch
+  % bool save
+  restore
+} bind def
+
+/HqnTestColorspace2
+{
+  save
+  HqnColor2 //HqnSetSpot exec
+  //HqnSetColor2 exec
+  HqnColor2 4 get cvn
+  currentcolorspace
+  % save spotname colorspace
+  //HqnTestColorspace exec
+  exch
+  % bool save
+  restore
+} bind def
+
+/HqnTestSpot /HqnSpots /ProcSet findresource /FullTestSpot get def
+
+/HqnCheckSpots {
+	HqnTint1 0 ge {
+    % Determine if the spot is defined by the device
+    % and if a suitable colorspace can be setup
+		HqnColor1 4 get 
+		dup //HqnTestSpot exec 
+		% oldname newname true | oldname false
+			{
+			2 copy ne {
+				HqnColor1 dup length array copy
+				dup 4 3 index dup length string cvs put
+				/HqnColor1 exch def
+			} if
+			pop pop
+			true
+		}	{
+			pop
+			false
+		} ifelse
+		//HqnTestColorspace1 exec 
+		and
+	}	{
+		HqnColor1 //FourZeros exec
+	} ifelse
+
+	HqnTint2 0 ge {
+  % Determine if the spot is defined by the device
+  % and if a suitable colorspace can be setup
+		HqnColor2 4 get 
+		dup //HqnTestSpot exec
+		% oldname newname true | oldname false
+			{
+			2 copy ne {
+				HqnColor2 dup length array copy
+				dup 4 3 index dup length string cvs put
+				/HqnColor2 exch def
+			} if
+			pop pop
+			true
+		}	{
+			pop
+			false
+		} ifelse
+		//HqnTestColorspace2 exec and
+	}	{
+		HqnColor2 //FourZeros exec
+	} ifelse
+	or
+} bind def
+
+/RegColorspace [ 1. 1. 1. 1. (All) ] def
+
+/T /true load def
+/F /false load def
+	
+/XPressSpotGrads <<
+
+	% color1 tint1 color2 tint2 custblnd
+	% colors are arrays, tints numbers
+	% tint = -2, color = registration, with tint in last slot of color
+	% tint = -1, color = process, cmyk elements in array
+	% 0 <= tint <= 1, color = spot, array is [ c m y k (name) ]
+
+	/custblnd [
+		% template --------------------------------------------------------
+			{
+			dup -2 eq{
+				doregblnd{
+					exch dup length 1 sub get 1 exch sub exch T F
+				}	{
+					pop dup length 6 eq{
+						dup 0 5 getinterval exch 5 get
+					}	{
+						0 4 getinterval -1
+					}ifelse 
+					T
+				}ifelse
+			}{T}ifelse
+				{
+				dup -1 eq{F}{
+					1 index docust exch pop
+				}ifelse
+			}if
+			5 -2 roll dup -2 eq{
+				doregblnd{
+					exch dup length 1 sub get 1 exch sub exch T F
+				}	{
+					pop dup length 6 eq{
+						dup 0 5 getinterval exch 5 get
+					}	{
+						0 4 getinterval -1
+					}ifelse 
+					T
+				}ifelse
+			}{T}ifelse
+				{
+				dup -1 eq{F}{
+					1 index docust exch pop
+				}ifelse
+			}if 
+			6 -3 roll 4 -1 roll or
+				{
+				dup -2 eq{pop}{
+					setsepval
+				}ifelse 
+				3 1 roll dup -2 eq{pop}{
+					setsepval
+				}ifelse 
+				exch 1 blnd
+			}	{
+				setcompval 6 -2 roll setcompval 8 -4 roll 2 blnd
+			}ifelse
+		} bind
+
+		% replacement --------------------------------------------------------
+			{
+% (CUSTBLND: )print dup ==
+			% Convert Registration color to /All spot color
+			dup -2 eq {
+				pop
+				dup length 1 sub get
+				//RegColorspace exch
+			} if
+			/HqnTint2 exch def
+			/HqnColor2 exch def
+			dup -2 eq {
+				pop
+				dup length 1 sub get
+				//RegColorspace exch
+			} if
+			/HqnTint1 exch def
+			/HqnColor1 exch def
+
+			HqnTint1 0 ge HqnTint2 0 ge or 
+			% and not (gray output and not separating)
+			currentpagedevice dup /Separations get not
+			exch /ProcessColorModel get /DeviceGray eq and not
+			and	{
+				% at least one end is a spot color, are they the same?
+				HqnColor1 length HqnColor2 length eq dup {
+					0 1 HqnColor1 length 1 sub {
+						% true i
+						HqnColor1 1 index get HqnColor2 3 -1 roll get
+						ne {
+							pop false
+							exit
+						} if
+					} for
+				} if
+					{
+					% same spot both ends
+					save
+					HqnColor1 //HqnSetSpot exec
+					//HqnSetColor1 exec
+					HqnTint1 HqnTint2 1 blnd
+					restore
+				}	{
+					% nope - may need two calls to blnd
+
+					% spot to spot - at least one must be generated
+					% spot to process - spot must be generated, or process must be 0000.
+					% spot to registration or process to registration - Do All sep first, should
+					%		really adjust other colorant to include All component ...
+
+					//HqnCheckSpots exec
+					% true if following 2 pass ...
+						{
+						% If one end is an All separation then we must do that one first.
+						HqnColor2 //RegColorspace eq {
+							save
+							HqnColor2 //HqnSetSpot exec
+							//HqnSetColor2 exec
+							0. HqnTint2 1 blnd
+							restore
+
+							currentoverprint true setoverprint
+						} if
+
+						HqnTint1 0 ge {
+							save
+							HqnColor1 //HqnSetSpot exec
+							//HqnSetColor1 exec
+							HqnTint1
+							HqnColor2 //RegColorspace eq { HqnTint2 }{ 0. } ifelse
+							1 blnd
+							restore
+						}	{
+							% it's process, or registration
+							HqnColor1 dup //FourZeros exec {
+								pop
+							}	{
+								aload pop
+								HqnColor2 //RegColorspace eq { HqnTint2 }{ 0. } ifelse
+								dup dup dup 
+								2 blnd
+							} ifelse
+						} ifelse
+
+						currentoverprint true setoverprint
+
+						HqnTint2 0 ge {
+							HqnColor2 4 get
+							dup type /nametype ne { cvn } if
+							/All eq {
+								pop		% second currentoverprint
+							}	{
+								save
+								HqnColor2 //HqnSetSpot exec
+								//HqnSetColor2 exec
+								HqnColor1 //RegColorspace eq { HqnTint1 }{ 0. } ifelse
+								HqnTint2 1 blnd
+								restore
+							} ifelse
+						}	{
+							% it's process
+							HqnColor2 dup //FourZeros exec {
+								pop
+							}	{
+								HqnColor1 //RegColorspace eq { HqnTint1 }{ 0. } ifelse
+								dup dup dup
+								5 -1 roll
+								aload pop
+								2 blnd
+							} ifelse
+						} ifelse
+
+						setoverprint
+					}	{
+						% Convert to process
+						/HqnColor1 load 0 4 getinterval aload pop
+						HqnTint1 0 ge HqnTint1 1 ne and {
+						  4 { HqnTint1 mul 4 1 roll } repeat
+						} if
+						/HqnColor2 load 0 4 getinterval aload pop
+						HqnTint2 0 ge HqnTint2 1 ne and {
+						  4 { HqnTint2 mul 4 1 roll } repeat
+						} if
+						2 blnd
+					} ifelse
+				} ifelse
+			}	{
+				% both process (what IS -2 here?)
+				HqnColor1 HqnTint1 0 ge {
+					0 4 getinterval { HqnTint1 mul } forall
+				} { aload length 5 eq { pop } if } ifelse
+				HqnColor2 HqnTint2 0 ge {
+					0 4 getinterval { HqnTint2 mul } forall
+				} { aload length 5 eq { pop } if } ifelse
+				2 blnd
+			} ifelse
+		} bind
+	]	% custblnd
+
+	% color1 tint1 color2 tint2 blendtype xcustblnd
+	% colors are arrays, tints numbers
+	% tint = -2, color = registration, with tint in last slot of color
+	% tint = -1, color = process, cmyk elements in array
+	% 0 <= tint <= 1, color = spot, array is [ c m y k (name) ]
+
+	/xcustblnd [
+		% template --------------------------------------------------------
+			{
+			5 1 roll dup -2 eq {
+				doregblnd {
+					exch dup length 1 sub get 1 exch sub exch T F
+				}	{
+					pop dup length 6 eq {
+						dup 0 5 getinterval exch 5 get
+					}	{
+						0 4 getinterval -1
+					}ifelse 
+					T
+				}ifelse
+			}{T}ifelse
+				{
+				dup -1 eq{F}{
+					1 index docust exch pop
+				}ifelse
+			}if
+			5 -2 roll dup -2 eq{
+				doregblnd{
+					exch dup length 1 sub get 1 exch sub exch T F
+				}	{
+					pop dup length 6 eq{
+						dup 0 5 getinterval exch 5 get
+					}	{
+						0 4 getinterval -1
+					}ifelse 
+					T
+				}ifelse
+			}{T}ifelse
+				{
+				dup -1 eq{F}{
+					1 index docust exch pop
+				}ifelse
+			}if 
+			6 -3 roll 4 -1 roll or
+				{
+				dup -2 eq{pop}{
+					setsepval
+				}ifelse 
+				3 1 roll dup -2 eq{pop}{
+					setsepval
+				}ifelse 
+				exch 3 -1 roll 1 xblnd
+			}	{
+				setcompval 6 -2 roll 
+				setcompval 8 -4 roll 
+				9 -1 roll 2 xblnd
+			}ifelse
+		} bind
+		% replacement --------------------------------------------------------
+			{
+			% color1array tint1 color2array tint2 filltype
+			/HqnFillType exch def
+			% Convert Registration color to /All spot color
+			dup -2 eq {
+				pop
+				dup length 1 sub get
+			//RegColorspace exch
+			} if
+			/HqnTint2 exch def
+			/HqnColor2 exch def
+			dup -2 eq {
+				pop
+				dup length 1 sub get
+				//RegColorspace exch
+			} if
+			/HqnTint1 exch def
+			/HqnColor1 exch def
+
+			HqnTint1 0 ge HqnTint2 0 ge or 
+			% and not (gray output and not separating)
+			currentpagedevice dup /Separations get not
+			exch /ProcessColorModel get /DeviceGray eq and not
+			and	{
+				% at least one end is a spot color, are they the same?
+				HqnColor1 length HqnColor2 length eq dup {
+					0 1 HqnColor1 length 1 sub {
+						% true i
+						HqnColor1 1 index get HqnColor2 3 -1 roll get
+						ne {
+							pop false
+							exit
+						} if
+					} for
+				} if
+					{
+					% same spot both ends
+					
+					save
+					HqnColor1 //HqnSetSpot exec
+					//HqnSetColor1 exec
+					HqnTint1 HqnTint2 HqnFillType 1 xblnd
+					restore
+				}	{
+					% nope - needs two calls to blnd
+					% spot to spot - at least one must be generated
+					% spot to process - spot must be generated, or process must be 0000.
+
+					//HqnCheckSpots exec
+					% true if following 2 pass ...
+						{
+						% If one end is an All separation then we must do that one first.
+						HqnColor2 //RegColorspace eq {
+							save
+							HqnColor2 //HqnSetSpot exec
+							//HqnSetColor2 exec
+							0. HqnTint2 HqnFillType 1 xblnd
+							restore
+
+							currentoverprint true setoverprint
+						} if
+
+						HqnTint1 0 ge {
+							save
+							HqnColor1 //HqnSetSpot exec
+							//HqnSetColor1 exec
+							HqnTint1
+							HqnColor2 //RegColorspace eq { HqnTint2 }{ 0. } ifelse
+							HqnFillType 1 xblnd
+							restore
+						}	{
+							% it's process
+							HqnColor1 dup //FourZeros exec {
+								pop
+							}	{
+								aload pop
+								HqnColor2 //RegColorspace eq { HqnTint2 }{ 0. } ifelse
+								dup dup dup 
+								HqnFillType 2 xblnd
+							} ifelse
+						} ifelse
+
+						currentoverprint true setoverprint
+
+						HqnTint2 0 ge {
+							HqnColor2 4 get
+							dup type /nametype ne { cvn } if
+							/All eq {
+								% Done this one already
+								pop		% second currentoverprint
+							}	{
+								save
+								HqnColor2 //HqnSetSpot exec
+								//HqnSetColor2 exec
+								HqnColor1 //RegColorspace eq { HqnTint1 }{ 0. } ifelse
+								HqnTint2 HqnFillType 1 xblnd
+								restore
+							} ifelse
+						}	{
+							% it's process
+							HqnColor2 dup //FourZeros exec {
+								pop
+							}	{
+								HqnColor1 //RegColorspace eq { HqnTint1 }{ 0. } ifelse
+								dup dup dup
+								5 -1 roll
+								aload pop
+								HqnFillType 2 xblnd
+							} ifelse
+						} ifelse
+
+						setoverprint
+					}	{
+						% Convert to process
+						/HqnColor1 load 0 4 getinterval aload pop
+						HqnTint1 0 ge HqnTint1 1 ne and {
+						  4 { HqnTint1 mul 4 1 roll } repeat
+						} if
+						/HqnColor2 load 0 4 getinterval aload pop
+						HqnTint2 0 ge HqnTint2 1 ne and {
+						  4 { HqnTint2 mul 4 1 roll } repeat
+						} if
+						HqnFillType 2 xblnd
+					} ifelse
+				} ifelse
+			}	{
+				% both process (what IS -2 here?)
+				HqnColor1 HqnTint1 0 ge {
+					0 4 getinterval { HqnTint1 mul } forall
+				} { aload length 5 eq { pop } if } ifelse
+				HqnColor2 HqnTint2 0 ge {
+					0 4 getinterval { HqnTint2 mul } forall
+				} { aload length 5 eq { pop } if } ifelse
+				HqnFillType 2 xblnd
+			} ifelse
+		} bind
+	]	% xcustblnd
+
+>> /IdiomSet defineresource pop
+
+end		% temp dict
+
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+setglobal
+
+%%EndResource
+
+%%EOF

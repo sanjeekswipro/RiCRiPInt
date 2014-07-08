@@ -1,0 +1,476 @@
+%!PS-Adobe-3.0
+%%Title: HqnPDFPages
+%%Creator: Global Graphics Software Limited
+%%CreationDate: 2003
+% Copyright (c) Global Graphics Software Limited, 2003 All Rights Reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%%EndComments
+%%BeginProcSet: (HqnPDFPages) 1 0
+
+%
+% $HopeName: SWpdf!swf:procsets:pdfpages(EBDSDK_P.1) $
+%
+
+% This procset includes procedures to extract bounding boxes etc from PDF files.
+
+
+currentglobal false setglobal
+
+20 dict begin
+
+/globalness exch def
+
+/workspace currentdict def
+
+/PageStack 20 dict def  % Dict rather than array to allow expansion if the tree is very large.
+/PageStackA 20 array def
+/PageStackDepth 0 def
+
+/PI 0 def
+/C null def
+/Found false def
+
+/ResolvePDFContext /HqnPDFContextManager /ProcSet findresource /ResolvePDFContext get def
+
+/setContext {
+  dup 0 lt //ResolvePDFContext if
+  /C 1 index def
+} bind def
+
+/gettrail 1183615869 internaldict /getPDFtrailer get def
+/getobj 1183615869 internaldict /getPDFobject get def
+/getstream 1183615869 internaldict /getPDFstreamdict
+  2 copy known { get }{ pop pop null } ifelse def
+/setstderr statusdict /setstderr get def
+
+/pso {
+  dup type /pdfobjtype eq {
+    C exch getobj
+  } if
+} bind def
+
+% obj key -> go -> [ val true ] | false
+/go {
+  2 copy known {
+    get //pso exec
+    true
+  } {
+    pop pop
+    false
+  } ifelse
+} bind def
+
+% We have a compound object that may include pdfobjects - expand the whole structure
+/Expand <<
+  /arraytype {
+    % expand all contents
+    dup
+    % a a
+    0 1 2 index length 1 sub {
+      % a a i
+      2 copy get
+      % a a i a[i]
+      Expand
+      put dup
+      % a a
+    } for
+    pop
+    % a
+  } bind
+  /packedarraytype 1 index
+  /dicttype {
+    % expand all contents
+    dup begin
+    {
+      % name val
+      Expand def
+    } forall
+    currentdict end
+  } bind
+  /pdfobjtype {
+    //pso exec
+    Expand
+  } bind
+>> def
+/Expand {
+  //Expand 1 index type
+  2 copy known {
+    get exec
+  } { pop pop } ifelse
+} bind def
+
+/SaveDict {
+  //PageStack PageStackDepth 2 index put
+  /PageStackDepth PageStackDepth 1 add def
+  % (SAVE: )print PageStackDepth ==
+} bind def
+
+/RecursePages {
+  % (RECURSE: )print PI =
+  % Pages dict on stack - drill down to find page PI
+  dup
+  /Kids go {
+    % Still in the Pages objects
+    % thisdict kidsarray
+    % (Pages: )print 1 index /Count get ==
+    1 index /Count go not { 1 } if PI le {
+      % (Step across)=
+      % Nope - try next one
+      pop             % kidsarray
+      /PI PI 3 -1 roll /Count go not { 1 } if sub def
+    } {
+      % (Drill down)=
+      % It's below this one - try each Kids array entry in turn
+      exch SaveDict pop
+      % kidsarray
+      {
+        % (In Kids: )print PI =
+        pso
+        RecursePages
+        PI 0 lt Found or { exit } if
+      } forall
+      % (Out: )print PI =print (   )print Found ==
+    } ifelse
+  } {
+    % (Leaf node)=
+    % thisdict
+    % Must have hit a leaf object
+    PI 0 eq {
+      % (Final leaf)=
+      % Yeah - we have it!
+      SaveDict
+      /Found true def
+    } {
+      % Nope - but continue with the recursion
+      /PI PI 1 sub def
+    } ifelse
+    pop             % thisdict
+  } ifelse
+} bind def
+
+% pageindex contextid GetPageStack pagearray
+% pagearray is an array of dictionaries, starting with the Catalog, then leading down
+% through Pages objects, ending with a Page object.
+% Contents of each dictionary are not expanded - they may still contain pdfobjects
+/GetPageStack {
+  //workspace begin
+  setContext pop
+  /PI exch def
+  
+  /PageStackDepth 0 def
+  /Found false def
+  
+  C gettrail
+  /Root go {
+    SaveDict
+    /Pages go {
+      RecursePages
+    } if
+  } if
+        
+  PageStackDepth PageStackA length gt {
+    //workspace /PageStackA PageStackDepth 2 add array put
+  } if
+  0 1 PageStackDepth 1 sub {
+    PageStackA exch PageStack 1 index get put
+  } for
+  PageStackA 0 PageStackDepth getinterval
+  
+  end             % workspace
+} bind def
+
+% GetBoxDict boxdict
+% boxdict is a dictionary containing all bounding boxes defined for the current page
+/GetBoxDictA [ /MediaBox /BleedBox /TrimBox /ArtBox /CropBox /Rotate ] def
+/GetBoxDict {
+  //workspace begin
+  5 dict begin
+  0 1 PageStackDepth 1 sub {
+    //PageStack exch get
+    pso
+    
+    //GetBoxDictA {
+      % dict key
+      2 copy go {
+        Expand          % flatten to real PS objects rather than PDF object references
+        def
+      } { pop } ifelse
+      % dict
+    } forall
+    
+    pop             % this page dict
+  } for
+  currentdict /Rotate known not { 
+    /Rotate 0 def 
+  } if
+  currentdict end
+  end             % workspace
+} bind def
+
+/rangebbdict 5 dict def
+/rangebbwalk {
+  //rangebbdict begin
+  {
+    /PI exch def
+    //GetBoxDictA { //rangebbdict exch undef } forall
+    
+    Root /Pages go { 
+      RecursePages
+      0 1 PageStackDepth 1 sub {
+        //PageStack exch get
+        pso
+        
+        //GetBoxDictA {
+          % dict key
+          2 copy go {
+            Expand          % flatten to real PS objects rather than PDF object references
+            def
+          } { pop } ifelse
+          % dict
+        } forall
+        
+        pop             % this page dict
+      } for
+      
+      currentdict /Rotate known not { 
+        /Rotate 0 def 
+      } if
+      
+      Rotation null eq {
+        /Rotation Rotate store
+      }       {
+        Rotation Rotate ne {
+          ErrorProc
+        } if
+      } ifelse
+      
+      //rangebbdict PageBBox 2 copy known not {
+        /CropBox eq { /MediaBox }{ 
+          /CropBox
+          2 copy known not {
+            pop /MediaBox
+          } if
+        } ifelse
+      } if get
+      aload pop 3 -1 roll sub abs 3 1 roll sub abs exch
+      PageSize null eq {
+        2 array astore /PageSize exch store
+      } {
+        % w1 h1
+        PageSize aload pop
+        % w1 h1 w2 h2
+        3 -1 roll sub abs 5 gt 3 1 roll sub abs 5 gt or {
+          ErrorProc
+        } if
+      } ifelse
+    } if
+  } for
+  end
+} bind def
+
+
+/HqnPDFPages 10 dict begin
+
+  % pageindex contextid getpagestack pagearray
+  % pagearray is an array of dictionaries, starting with the Catalog, then leading down
+  % through Pages objects, ending with a Page object.
+  /getpagestack {
+    count 2 lt {
+      /getpagestack errordict /stackunderflow get exec
+    } if
+    dup type /integertype ne 2 index type /integertype ne or {
+      /getpagestack errordict /typecheck get exec
+    } if
+    //GetPageStack exec
+  } bind def
+
+  % - currentpagestack pagearray
+  % pagearray is an array of dictionaries, starting with the Catalog, then leading down
+  % through Pages objects, ending with a Page object.
+  /currentpagestack {
+    { currentpdfcontext } stopped {
+      /currentpagestack errordict /undefinedresult get exec
+    } if
+    dup /PageIndex get 1 sub                % convert 1 to 0 based
+    dup 0 lt { pop 0 } if                  % can be 0 at start of job - assume 1st page
+    exch /ContextID get
+    //GetPageStack exec
+  } bind def
+
+  % pageindex contextid getboundingboxes boxdict
+  % boxdict is a dictionary containing all bounding boxes defined for the current page
+  /getboundingboxes {
+    count 2 lt {
+      /getboundingboxes errordict /stackunderflow get exec
+    } if
+    dup type /integertype ne 2 index type /integertype ne or {
+      /getboundingboxes errordict /typecheck get exec
+    } if
+    //GetPageStack exec pop
+    //GetBoxDict exec
+  } bind def
+
+  % - currentboundingboxes boxdict
+  % boxdict is a dictionary containing all bounding boxes defined for the current page
+  /currentboundingboxes {
+    { currentpdfcontext } stopped {
+      /currentpagestack errordict /undefinedresult get exec
+    } if
+    dup /PageIndex get 1 sub                % convert 1 to 0 based
+    dup 0 lt { pop 0 } if                  % can be 0 at start of job - assume 1st page
+    exch /ContextID get
+    //GetPageStack exec pop
+    //GetBoxDict exec
+  } bind def
+
+  % PageRange Error pagebbox contextid -> rangeboundingboxes -> pagesize rotation true | false
+  % Error is a procedure to be called if any of the pages don't have the same size or rotation.
+  % pagebbox must be MediaBox, TrimBox etc and defines which box to check.
+  % PageRange shows which pages to check
+  % contextid defines which PDF context to check
+  /rangeboundingbox [[1]] def
+  /rangeboundingbox {
+    //workspace begin
+    /CurrContext 1 index def
+    getpagecount                    % sets the context, returns # pages
+    /LastPage exch def
+    /PageBBox exch def
+    /ErrorProc exch def
+    /PageRange exch def
+    
+    /PageSize null def
+    /Rotation null def
+    
+    /PageStackDepth 0 def
+    /Found false def
+    
+    % REMEMBER: PageRange is 1-based, recursepages is 0-based.
+    
+    C gettrail
+    /Root go {
+      SaveDict
+      /Root exch def
+      
+      PageRange dup length 0 eq {
+        pop //rangeboundingbox
+      } if {
+        dup type /arraytype eq {
+          dup length 1 eq {
+            % from X to end
+            0 get 
+            dup LastPage le {
+              1 sub 1 LastPage 1 sub //rangebbwalk exec
+            } { pop } ifelse
+          } {
+            % from X to Y
+            aload pop
+            2 copy gt {    % Deal with reverse page range
+              exch
+            } if
+            
+            1 index LastPage gt {
+              pop pop
+            } {
+              dup LastPage gt { pop LastPage } if
+              1 sub exch 1 sub exch
+              1 exch //rangebbwalk exec
+            } ifelse
+          } ifelse
+        } {
+          % single page
+          dup 0 le not 1 index LastPage le and {  % only deal with  pages > 0 and <= LastPage
+            1 sub 1 1 index //rangebbwalk exec
+          } { pop } ifelse
+        } ifelse
+      } forall
+      
+      Rotation null ne {
+        PageSize Rotation
+        true
+      } { false } ifelse
+    } {
+      false
+    } ifelse        
+    
+    end                     % workspace
+  } bind def
+
+  /getpagecount {
+    count 1 lt {
+      /getpagecount errordict /stackunderflow get exec
+    } if
+    dup type /integertype ne {
+      /getpagecount errordict /typecheck get exec
+    } if
+    //workspace begin
+    
+    setContext
+    
+    { gettrail } stopped {
+      pop -1
+    } {
+      /Root go {
+        /Pages go {
+          /Count go not { 1 } if
+        } { 0 } ifelse
+      } { 0 } ifelse
+    } ifelse
+    end
+  } bind def
+
+  % - currentrotation pagerotation
+  % pagerotation is the rotation of the current page
+  /currentrotation {
+    { currentpdfcontext } stopped {
+      /currentpagestack errordict /undefinedresult get exec
+    } if
+    dup /PageIndex get 
+    1 sub                                           % convert 1 to 0 based
+    dup 0 lt { pop 0 } if                   % can be 0 at start of job - assume 1st page
+    exch /ContextID get
+    
+    //workspace begin
+    
+    //GetPageStack exec
+    0       % Default is 0 rotate
+    exch
+    {
+      /Rotate go {
+        exch pop
+      } if
+    } forall
+    
+    end             % workspace
+  } bind def
+
+  % pageno contextid currentrotation pagerotation
+  % pagerotation is the rotation of the selected page
+  /getrotation {
+    count 2 lt {
+      /getrotation errordict /stackunderflow get exec
+    } if
+    dup type /integertype ne 2 index type /integertype ne or {
+      /getrotation errordict /typecheck get exec
+    } if
+    
+    //workspace begin
+    
+    //GetPageStack exec
+    0       % Default is 0 rotate
+    exch
+    {
+      /Rotate go {
+        exch pop
+      } if
+    } forall
+    
+    end             % workspace
+  } bind def
+
+  /procsetversion ($Revision: 1.5.1.1.1.1 $) 11 1 index length 13 sub getinterval def
+
+  currentdict end /ProcSet defineresource pop
+
+globalness end setglobal
+
+%%EOF

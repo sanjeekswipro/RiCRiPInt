@@ -1,0 +1,221 @@
+% /* $HopeName: SWv20!src:gstatpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+% set up any graphics state required
+
+1183615869 internaldict /EraseColor {
+  null setinterceptcolorspace
+
+  % Note that as this erasecolor can happen before a halftone screen has
+  % been set so we must use 0 for the color value which is treated as
+  % a special case.
+  {/Separation /All /DeviceCMYK {pop 0 0 0 0}} cvlit setcolorspace 0 setcolor
+} bind put
+
+1183615869 internaldict /OverprintBlack {
+  null setinterceptcolorspace
+} bind put
+
+false setoverprint
+{} settransfer
+53 45 $printerdict /switchscreens get /Euclidean get setscreen
+{} setblackgeneration
+{} setundercolorremoval
+1183615869 internaldict begin
+ {} setcalibration
+ % Dictionary for use in setting parameters on the FONTDecode filter
+ % for font decryption...
+ /FONTDecodeParams <<
+   /Strategy 1
+ >> def
+end
+1.0 setflat
+systemdict /settrapintent known { true settrapintent } if
+% currentfont is set in start procedure
+<< % setcolorrendering
+  /ColorRenderingType 1
+  /XUID [124 0 1 743576 54831 0 0 0]
+
+  % This is the inverse of the matrix for the calibrated RGB space on page 189
+  % of RB2 (example 4.10), giving RGB results. For CMYK device color space, we
+  % let the normal conversion procedure happen downstream (including undercolor
+  % removal and black generation). Section 6.6 (page 135) of Hunt gives a good
+  % description of how these coefficients are derived (and how to compute them
+  % for a particular device), but not why you need the { 0.45 exp }, which is
+  % the opposite of RB2s { 1 0.45 div exp }. The matrix gives very 
+  % undersaturated colors on a typical Mac monitor.
+
+  /MatrixLMN {
+       3.240625 -0.968931  0.055710 
+      -1.537208  1.875756 -0.204021 
+      -0.498629  0.041518  1.056996 
+  } cvlit
+
+  /EncodeLMN { % gives RGB; avoid creating a new array every time
+    { 0.45 /exp load stopped { pop pop 0 } if }
+    0 0 
+  }
+  dup 0 get
+  1 index 1 2 index put
+  1 index 2 2 index put
+  pop
+  bind
+
+  % install a null rendering table so that we stay in RGB
+  /RenderTable { 0 0 0 {} 3 {}{}{} } cvlit
+
+  % The chromatic adaptation procedure is derived from Hunt pages 70-71 (his
+  % second option). However, instead of a simple scaling, to match the two
+  % white points, the procedures below take black points into account too,
+  % mapping the source black-white range onto the desinations black-white 
+  % range. The PQR space is actually supposed to represent the cone responses
+  % of the eye, what Hunt calls rho,gamma,beta, and the matrix is supposed to
+  % go from XYZ to PQR.
+
+  /MatrixPQR {
+    0.40024 -0.22630  0.0
+    0.70760  1.16532  0.0
+   -0.08081  0.04570  0.91822
+  } cvlit
+
+  /TransformPQR {
+    % Do a linear scaling to match white points & black points in PQR space
+    {4 index 3 get div 2 index 3 get mul 4 {exch pop} repeat}
+
+    {4 index 4 get div 2 index 4 get mul 4 {exch pop} repeat}
+
+    {4 index 5 get div 2 index 5 get mul 4 {exch pop} repeat}
+  } bind cvlit
+
+  /WhitePoint { 0.9505 1 1.0890 } cvlit
+>> /DefaultColorRendering exch /ColorRendering defineresource setcolorrendering
+
+% Set the default ICC profiles used for rendering at the back end. These exist
+% to avoid using CRDs which call the interpreter. CRDs can only be invoked in
+% the front end.
+<<
+  /DefaultGray  [ /ICCBased (%os%/iccprofiles/Gray_Gamma_22.icc) (r) file ]
+  /DefaultRGB   [ /ICCBased (%os%/iccprofiles/sRGB_IEC61966-2-1_withBPC.icc) (r) file ]
+  /DefaultCMYK  [ /ICCBased (%os%/iccprofiles/ECI_USWebCoatedSWOP.icc) (r) file ]
+>> setinterceptcolorspace
+
+systemdict readonly pop
+
+1183615869 internaldict begin
+  /DeviceGray [ /DeviceGray ] def
+  /DeviceRGB  [ /DeviceRGB  ] def
+  /DeviceCMYK [ /DeviceCMYK ] def
+  /DeviceCMY  [ /DeviceCMY  ] def
+  /DeviceRGBK [ /DeviceRGBK ] def
+  /DeviceLab  [ /DeviceLab  ] def
+  /DeviceN    [ /DeviceN    ] def
+  /Pattern    [ /Pattern    ] def
+
+  % DetectSeparation is used when setcmykcolor is redefined. It probes
+  % what it actually does to see if it can determine which separation
+  % a pre-separated job is attempting to reproduce
+  /DetectSeparation << /Cyan 0 /Magenta 1 /Yellow 2 /Black 3 >> def
+  /DetectSeparation {
+    save
+      count countdictstack
+      % |- saveobj #opstack #dictstack
+      //$hqndict begin
+        /DetectSeparation true def
+        /DetectSeparationDicts exch def
+        /DetectSeparationStack exch def
+      end
+      {
+        % Check that a redefinition of setcmykcolor is in force
+        % by comparing against the original in systemdict.
+        /setcmykcolor load systemdict /setcmykcolor get eq {
+          % (Not really a redefinition in place; setcmykcolor eq to systemdict op) =
+          stop
+        } if
+        
+        % if we are overprinting, the redefined setcmykcolor may do nothing 
+        % at all, so set to a known state first of all
+        %
+        % First check the current colorspace as the incoming job may
+        % be making assumptions about it and initialize things differently
+        % for DeviceGray and Separation spaces.
+        currentcolorspace 0 get /DeviceGray eq {
+          1 setgray              % the original in systemdict (by bind)  
+        } {
+          currentcolorspace 0 get /Separation eq {
+            0 setcolor           % the original in systemdict (by bind)
+          } {
+            0 0 0 0 setcmykcolor % the original in systemdict (by bind)
+          } ifelse
+        } ifelse
+
+        % We check for a final call to setcmykcolor or setrgbcolor
+        % If this happens, then we are not really separating.
+        <<
+           /setrgbcolor {
+             % (Not really separating; setrgbcolor called) =
+             pop pop pop //$hqndict /DetectSeparation false put
+           } bind
+           /setcmykcolor {
+             % (Not really separating; setcmykcolor called) =
+             pop pop pop pop //$hqndict /DetectSeparation false put
+           } bind
+        >> 1183615869 internaldict /shadowop get exec
+        
+        % probe each of the color components in turn; if we are doing the
+        % separation corresponding to the 1, then currentcmykcolor will
+        % return a non-zero black (but ensure not more than one does, otherwise
+        % the answer is ambiguous).
+
+        /Separation % the default return - no specific color detected,
+                    % maybe a spot color or maybe some other unrelated
+                    % redefinition
+        0 % count of number of probes yielding black (only)
+        //DetectSeparation {
+          % |- saveobj /Separation count colorname rollvalue
+          % use the redefined setcmykcolor
+          1 0 0 0  4 6 -1 roll roll /setcmykcolor load exec
+          % |- saveobj /Separation count colorname
+          currentcmykcolor % the original in systemdict (by bind)
+          0.0 gt 4 1 roll 3 { 0.0 eq 4 1 roll } repeat and and and
+          % |- saveobj /Separation count colorname probe-result
+          {
+            % |- saveobj /Separation count colorname
+            exch 1 add 3 -1 roll
+            % |- saveobj colorname count+1 /Separation
+          } if
+          pop
+          % |- saveobj colorname(or /Separation) count
+        } forall
+        % |- saveobj colorname count
+
+        % Did more than one colorant yield black?
+        1 ne { pop /Separation } if
+        
+        % Check for call to color operator that means not separating
+        //$hqndict /DetectSeparation get not {
+          pop /Separation
+        } if
+        
+        % |- saveobj colorname
+      } stopped {
+        % |- saveobj junk...
+        count //$hqndict /DetectSeparationStack get sub { pop } repeat
+        % |- saveobj
+        countdictstack //$hqndict /DetectSeparationDicts get sub { end } repeat
+        /Separation
+        % |- saveobj /Separation
+      } if
+    exch restore
+    % |- colorname
+  } bind def
+
+end
+
+false setglobal
+
+% end of gstatpss

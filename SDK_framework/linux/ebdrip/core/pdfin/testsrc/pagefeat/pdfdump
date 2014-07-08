@@ -1,0 +1,378 @@
+%!PS- etc.
+% Copyright (C) 1998-2011 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Dump PDF file info. Fonts, contents, XObjects, etc are all dumped into
+% separate files.
+%
+% Use as a Page Feature and print a PDF file.  Files created appear in a new SW
+% folder called PDF.
+%
+% Derived from page feature by jonw Mar 98
+%
+% $HopeName: SWpdf!testsrc:pagefeat:pdfdump(EBDSDK_P.1) $
+%
+
+/HqnErrorHandler /ProcSet findresource /QuickErrorHandler get exec
+
+userdict begin
+
+/getPDFobject 1183615869 internaldict /getPDFobject get def
+
+/resolve { % Resolve object in current context
+  dup type /pdfobjtype eq {HqnPDFID exch //getPDFobject} if
+} bind def
+
+/getPDFstreamdict 1183615869 internaldict /getPDFstreamdict get def
+
+/knownget {
+  3 copy pop known { pop get } {3 1 roll pop pop} ifelse
+} bind def
+
+/object {
+  dup print pagewrite
+  ( ) dup print pagewrite
+  dup type /pdfobjtype eq {
+    dup =string cvs dup print pagewrite
+  } if
+  (\n) dup print pagewrite
+} bind def
+
+/sprintf { % object... deststring format --sprintf-- substring
+  0 exch
+  { % o... ds len format
+    (%) search { % ... o ds len post match pre
+      3 1 roll pop 4 1 roll
+      % ... o post ds len pre
+      3 copy putinterval length add
+      % ... o post ds len
+      2 copy exch length exch sub
+      % ... o post ds len dslen-len
+      3 copy getinterval
+      % ... o post ds len dslen-len dsend
+      exch pop 5 -1 roll exch cvs
+      % ... post ds len end-str
+      3 copy putinterval length add
+      % ... post ds len
+      3 2 roll
+      % ... ds len post
+    } { % ds len str
+      3 copy putinterval length add
+      exit
+    } ifelse
+  } loop
+  % ds len
+  0 exch getinterval
+} bind def
+
+% CR->LF filter: make new instance with separate parameters for each filter
+/crlf { % file  --crlf--  file
+  << /File 3 2 roll /String 256 string >> % make arg dict
+  { % string bool
+    null     % replaced with arguments in instantiated target
+    exch pop % don't use bool
+    exch dup {
+      (\r) search { pop 0 10 put } { exit } ifelse
+    } loop pop
+    1 index /File get exch writestring
+    /String get
+  } dup length array copy
+  dup 0 4 -1 roll put % insert arguments
+  cvx <<
+    /CloseTarget false
+  >> /NullEncode filter
+} bind def
+
+% Indentation filter. This is less than ideal, because of the behaviour of
+% ScriptWorks; flushfile on a procedure filter created with NullEncode does
+% NOT flush the procedure output, only the NullEncode layer. In trunk, I
+% could use a (%procedureEncode) filter, but that doesn't work in SW_I or
+% earlier. There is no way of getting access to the underlying file of a
+% filter either, so I can't directly flush it, and the (%procedure) filter
+% template in SW_I is marked as READ_ONLY, so can't be used for encoding.
+% The ONLY way of ensuring data is delivered is to close the filter, which
+% won't help. Instead, I use a single character buffer for the output,
+% ruining any possible performance from the filter.
+/indentfilter <<
+  /File null   % replaced with real file on instantiation
+  /Self null   % replaced with filter on instantiation
+  /NL   true   % Has a newline just been done?
+  /Indent 0    % Current indentation level
+  /Prefix ( )  % indentation prefix
+>> def
+/indentstring 1 string def
+
+/currentindent { % --currentindent-- integer
+  //indentfilter /Indent get
+} bind def
+/setindent { % integer --setindent--
+  //indentfilter /Self get flushfile
+  //indentfilter /Indent 3 2 roll put
+} bind def
+/setnewline { % bool --setnewline--
+  //indentfilter /Self get flushfile
+  //indentfilter /NL 3 2 roll put
+} bind def
+
+/indentfilter { % file (prefix)  --indentfilter--  file
+  //indentfilter /Prefix 3 2 roll put
+  //indentfilter /File 3 2 roll put
+  { % string bool
+    exch
+    { % not-eof string
+      dup length 0 gt {
+        //indentfilter /NL get {
+          //indentfilter /File get currentindent {
+            dup //indentfilter /Prefix get writestring
+          } repeat pop
+          //indentfilter /NL false put
+        } if
+      } if
+      (\n) search { % args post match pre
+        //indentfilter /File get exch writestring
+        //indentfilter /File get exch writestring
+        //indentfilter /NL true put
+      } {
+        //indentfilter /File get exch writestring
+        exit
+      } ifelse
+    } loop
+    not { % EOF? Implement CloseTarget
+      //indentfilter /File get closefile
+    } if
+    //indentstring % string to fill
+  } <<
+    /CloseTarget true
+  >> /NullEncode filter
+  //indentfilter /Self 2 index put
+  true setnewline
+  0 setindent
+} bind def
+
+% Big string used for writing out PDF objects
+/pdfwritestring 65535 string def
+
+/pdfwriteid { % file alternate object --pdfwriteid--
+  dup type /pdfobjtype eq {
+    2 index ( % ) writestring
+    2 index exch //pdfwritestring cvs writestring
+    pop (\n) writestring
+  } {
+    pop writestring
+  } ifelse
+} bind def
+
+/pdfwrite 10 dict begin
+  /arraytype { % ref file array
+    dup xcheck {
+      1 index dup ({) writestring
+      ( ) 5 -1 roll pdfwriteid
+      currentindent 1 add setindent
+      { % file element
+        1 index exch pdfwrite
+        dup ( ) writestring
+      } forall
+      currentindent 1 sub setindent
+      (})writestring
+    } {
+      1 index dup ([) writestring
+      ( ) 5 -1 roll pdfwriteid
+      currentindent 1 add setindent
+      { % file element
+        1 index exch pdfwrite
+        dup ( ) writestring
+      } forall
+      currentindent 1 sub setindent
+      (])writestring
+    } ifelse
+  } bind def
+
+  /dicttype { % ref file dict
+    1 index dup (<<) writestring
+    (\n) 5 -1 roll pdfwriteid
+    currentindent 1 add setindent
+    { % file key value
+      2 index 3 2 roll pdfwrite
+      1 index ( ) writestring
+      1 index exch pdfwrite
+      dup (\n)writestring
+    } forall
+    currentindent 1 sub setindent
+    (>>)writestring
+  } bind def
+
+  /nametype { % ref file name
+    dup xcheck not {
+      1 index (/) writestring
+    } if
+    //pdfwritestring cvs writestring pop
+  } bind def
+
+  /nulltype { % ref file null
+    pop (null) writestring pop
+  } bind def
+
+  % private string for reference naming
+  /filetype 256 string def
+
+  % helper proc to replace page output with output to another file
+  /filetype { % ref file stream dict file template
+    5 index //filetype 3 2 roll sprintf
+    (File )print dup print (\n)print
+    % ref file stream dict file filename
+    1 index (% See file ) writestring
+    2 copy writestring
+    exch (\n) writestring
+    % ref file stream dict filename
+    (w) file
+    % ref file stream dict file
+  } bind def
+
+  % stream type filter dictionary. If all elements in a key dictionary are
+  % matched, then the procedure will be run with the output file on the
+  % stack. It should create a new file or filter based on the output file,
+  % and leave that in place of the output file. CloseTarget should be false
+  % for directly layered for filters, since closefile will be used. A null
+  % value for a match will match any value.
+  /filetype <<
+    << /Subtype /Form >> % Form XObject
+      { (PDF/Form %) //filetype exec crlf }
+    << /Subtype /PS >> % PostScript XObject
+      { crlf }
+    << /Subtype /Image >> % Image XObject
+      { (PDF/Image %) //filetype exec
+        <</CloseTarget true>> /ASCIIHexEncode filter }
+
+    << /FunctionType 0 >> % Sampled Function
+      { <</CloseTarget false>> /ASCIIHexEncode filter }
+
+    << /Length1 null >> % Type 1 or TrueType font
+      { (PDF/Font %) //filetype exec }
+    << /Subtype /Type1C >> % CFF font
+      { (PDF/Font %) //filetype exec }
+    << /Subtype /CIDFontType0C >> % CID CFF font
+      { (PDF/Font %) //filetype exec }
+    << /Subtype /OpenType >> % OpenType font
+      { (PDF/Font %) //filetype exec }
+
+    << /ShadingType 4 >> % Gouraud shadings
+      { <</CloseTarget false>> /ASCIIHexEncode filter }
+    << /ShadingType 5 >> % Gouraud shadings
+      { <</CloseTarget false>> /ASCIIHexEncode filter }
+    << /ShadingType 6 >> % Gouraud shadings
+      { <</CloseTarget false>> /ASCIIHexEncode filter }
+    << /ShadingType 7 >> % Gouraud shadings
+      { <</CloseTarget false>> /ASCIIHexEncode filter }
+
+    << /N null >> % ICC profiles
+      { (PDF/ICCDecode %) //filetype exec }
+    << /Alternate null >> % ICC profiles
+      { (PDF/ICCDecode %) //filetype exec }
+  >> def
+
+  /filetype { % ref file stream
+    3 copy getPDFstreamdict //dicttype exec
+    1 index ( stream\n) writestring
+    2 copy getPDFstreamdict exch //filetype { % ref file stream dict file match proc
+      % Test if all subkeys in match dictionary are the same
+      true 3 2 roll { % ref file stream dict file proc true key value
+        5 index 2 index known {
+          dup null eq { % null value matches anything
+            pop pop
+          } { % Could swap AND for: not { pop false exit } if
+            5 index 3 2 roll get eq and
+          } ifelse
+        } {
+          pop pop pop false exit
+        } ifelse
+      } forall
+      % ref file stream dict file proc bool
+      { exec exit } if % matched all subkeys
+      pop % drop proc ready for next try
+    } forall
+    % ref file stream dict file
+    dup 4 index eq { % default to NullEncode if file not changed
+      <</CloseTarget false>> /NullEncode filter
+    } if
+    3 1 roll pop
+    % ref file file stream
+    { % ref file file stream
+      2 copy //pdfwritestring readstring 3 1 roll writestring not { exit } if
+    } loop closefile closefile
+    (endstream) writestring pop
+  } bind def
+
+  currentdict
+end def
+
+/pdfwrite { % file object  --pdfwrite--
+  dup type /pdfobjtype eq {
+    dup 3 1 roll resolve               % object file *object
+  } {
+    null 3 1 roll
+  } ifelse
+  dup type //pdfwrite exch known {
+    dup type //pdfwrite exch get exec
+  } { % simple objects never use PDF object reference
+    //pdfwritestring cvs writestring pop
+  } ifelse
+} bind def
+
+/bigstring 65535 string def
+/pagewrite {pagefile exch writestring} bind def
+
+/pagerecurse {
+  dup resolve /Kids known {
+    resolve /Kids get resolve { pagerecurse } forall
+  } {
+    (Dumping page )print
+    /pageno pageno 1 add dup == def
+    /pagefile
+      (PDF/Page XXXX) dup 9 4 getinterval pageno exch cvs length
+      9 add 0 exch getinterval (w) file (  ) indentfilter def
+
+    (% Page object) object resolve
+    dup /Resources 3 index /Resources << >> knownget knownget
+    (% Resources:) object resolve pagefile exch pdfwrite (\n)pagewrite
+    dup /Contents get (% Contents:) object resolve dup type /filetype eq {
+      {
+        dup //bigstring readstring exch pagewrite not { exit } if
+      } loop pop
+      (\n)pagewrite
+    } { % Multiple content streams in array
+      {
+        (% Sub-Contents:) object resolve
+        {
+          dup //bigstring readstring exch pagewrite not { exit } if
+        } loop pop
+        (\n)pagewrite
+      } forall
+    } ifelse
+    pop
+    pagefile closefile
+  } ifelse
+} bind def
+
+% The backdrop selector procset messes around re-defining pdfexec, and
+% defines it back to its original value if the file is not PDF, so we have to
+% do an end-run around it. We do that by re-defining the procedure the RIP
+% runs when it detects a PDF file to avoid pdfexec altogether.
+  //serverdict /switchexecmode get 2
+  {
+    << >> pdfopen
+
+    % Starting at the trailer, recurse through the Pages
+    dup /HqnPDFID exch def 1183615869 internaldict /getPDFtrailer get exec
+
+    /pageno 0 def
+    /fontno 0 def
+
+    /Root get resolve
+    /Pages get resolve dup
+    /Kids get resolve { pagerecurse } forall
+    pop % Pages
+
+    HqnPDFID pdfclose
+  } bind put
+end
+

@@ -1,0 +1,100 @@
+%!PS-Adobe
+%%Title: FontNameMapping
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Jun 16, 1992
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(FontNameMapping)" 1 1
+
+
+% this file replaces the ResourceFileName procedure for the Font 
+% resource (findfont etc), to replace names which are too long
+% for the filing system in use.
+
+currentglobal true setglobal
+
+10 dict dup begin
+  /mapfile (Usr/fontmap.ps) def
+
+  /FontNameDict << 
+    { //mapfile run } stopped { true setglobal cleartomark mark } if
+    /$$a (0) /$$b 0 % used to mark an out of date dictionary
+  >> def
+
+  /maxlength 31 def
+  /tmpstring 256 string def
+
+  /mapfontname { % font-name font-name-string -> -
+    % requires mapping
+    0 //maxlength getinterval
+    1000 1 1999 {
+      (    ) cvs 1 3 getinterval % gives 3-digits with leading zeros
+      1 index //maxlength 3 sub 3 -1 roll putinterval
+      true
+      //FontNameDict {
+        exch pop 2 index cvn eq { pop false exit } if
+      } forall { exit } if
+    } for
+    //FontNameDict 3 1 roll cvn put
+
+    % rewrite the dictionary onto disk
+    //mapfile (w) file
+    //FontNameDict {
+      exch
+      dup /$$a ne 1 index /$$b ne and {
+        2 index (/) writestring
+        2 index exch //tmpstring cvs writestring
+        1 index ( /) writestring
+        1 index exch //tmpstring cvs writestring
+        dup (\r) writestring
+      }{
+        pop pop
+      } ifelse
+    } forall
+    closefile
+
+    //FontNameDict /$$a get 0 (1) 0 get put
+  } bind def
+
+  /ResourceFileName /Font /Category findresource /ResourceFileName get def
+
+  /ResourceFileName { % implementation-dict font-name scratch-string
+    2 copy cvs length //maxlength ge {
+      //FontNameDict 2 index known not {
+        //FontNameDict begin $$a (0) ne $$b 0 eq and end {
+          mark
+          { //mapfile run } stopped { true setglobal cleartomark mark } if
+          /$$b 1
+          { dup mark eq { pop exit } if //FontNameDict 3 1 roll put } loop
+        } if
+        2 copy //mapfontname exec
+      } if
+      exch //FontNameDict exch get exch
+    } if
+    //ResourceFileName exec
+  } bind def
+
+  /Install {
+    currentglobal true setglobal
+    /Font /Category findresource
+    /ResourceFileName //ResourceFileName { put } 1183615869 internaldict /superexec get exec
+    setglobal
+  } bind def
+
+  % Remove working entries from resource dict
+  [
+    /maxlength
+    /FontNameDict
+    /tmpstring
+    /mapfile
+    /mapfontname
+    /ResourceFileName
+  ]
+  { currentdict exch undef } forall
+end
+
+/FontNameMapping exch /ProcSet defineresource pop
+
+setglobal
+
+%%EndProcSet

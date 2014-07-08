@@ -1,0 +1,105 @@
+%!PS-Adobe-3.0
+%%Title: IllPatternStroke
+%%Creator: Global Graphics Software Limited
+%%CreationDate: April 2000
+% Copyright (C) 2000-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+
+% Adobe Illustrator makes some rash assumptions about the path returned
+% by strokepath, which are not valid in Harlequin RIPs. This idiom
+% set corrects the output of patterned strokes.
+
+% $HopeName: SWv20!swf:idioms:ilpatstr(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+%%BeginResource: IdiomSet IllPatternStroke
+
+currentuserparams /IdiomRecognition get
+<< /IdiomRecognition false >> setuserparams
+
+currentglobal false setglobal
+
+/IllPatternStroke <<
+
+	/patternstroke [
+		{		% template
+		dup type /dicttype eq
+		{
+			Adobe_pattern_AI5 /patternmatrix get
+		} if
+		gsave
+		patternstrokepath
+		true
+		{
+			{
+				{
+					newpath
+					moveto
+				}
+				{
+					lineto
+				}
+				{
+					curveto
+				}
+				{
+					closepath
+					3 copy
+					Adobe_pattern_AI5 /patternfill get exec
+				} pathforall
+				3 npop
+			} stopped
+			{
+				5 npop
+				patternclip
+				Adobe_pattern_AI5 /patternfill get exec
+			} if
+		}
+		{
+			patternclip
+			Adobe_pattern_AI5 /patternfill get exec
+		} ifelse
+		grestore
+		newpath
+	} bind
+
+		{	% replacement
+		dup type /dicttype eq
+		{
+			Adobe_pattern_AI5 /patternmatrix get
+		} if
+		gsave
+		patternstrokepath
+		clip
+		Adobe_pattern_AI5 /patternfill get exec
+
+		grestore
+		newpath
+	} bind
+
+		{		
+		% Harlequin extension - poke the new definition back 
+		% into the dictionary
+		%
+		% /patternstroke original 0 template subst
+		4 index /patternstroke eq {
+			4 1 roll pop pop pop
+			2 copy { def } 1183615869 internaldict /superexec get exec
+			% /patternstroke subst
+		}	{
+			pop pop pop
+		} ifelse
+	}
+
+]
+
+>> /IdiomSet defineresource pop
+
+setglobal
+<< /IdiomRecognition 3 -1 roll >> setuserparams
+
+%%EndResource
+
+%%EOF

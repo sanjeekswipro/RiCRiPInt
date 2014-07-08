@@ -1,0 +1,2254 @@
+%!PS-Adobe-3.0
+%%Title: HqnXPSPrintTicket
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Februrary 13, 2006
+% Copyright (C) 2006-2012 Global Graphics Software Ltd. All rights reserved.
+% $HopeName: SWptdev!swf:procsets:prnttckt(EBDSDK_P.1) $
+%%EndComments
+%%BeginProcSet: (HqnXPSPrintTicket) 1 0
+
+%
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+%
+
+currentglobal false setglobal
+
+80 dict begin
+
+/globalness exch def
+/PrintTicketWS currentdict def
+
+% Display message when procset is loaded
+/ProcSetVersion ($Revision: 1.111.1.1.1.1 $) 11 1 index length 13 sub getinterval def
+save
+(%stderr)(w) file
+dup (Loading in-RIP PrintTicket support v) writestring
+dup ProcSetVersion writestring
+( - Copyright (c) 2006-2007 Global Graphics Software Ltd. All Rights Reserved.\n) writestring
+restore
+
+% Change to true to switch on debug features. See /PTDebug.
+/HqnPTDebug false def
+/HqnPTDebugMarkup false def
+
+% When debug features are enabled, load an error handling procset
+HqnPTDebug {
+  /HqnErrorHandler /ProcSet findresource /FullErrorHandler get exec
+}if
+
+% Global dictionary containing settings obtained by parsing the PostScript
+% PrintTicket dictionary from the RIP.
+/EmptyState <<
+  /PageSize [ 0 0 ] % PS points
+  /PreviousPageSize [ 0 0 ]
+  /PageImageableArea [ 0 0 0 0 ] % PS points
+  /DefaultPageResolution [ 0 0 ]
+  /PagesPerSheet 1
+
+  % Allows the output to be rotated anti-clockwise by 90 degrees (I.e. to satisfy
+  % a LEF/SEF request).
+  /RotateOutput false
+
+  /InputBinFeedDirection <<
+    /Job      /Unknown
+    /Document /Unknown
+    /Page     /Unknown
+  >>
+  /UsingJobNUp false
+  /UsingDocumentNUp false
+
+  /PosterX 1  % 'Pages across'
+  /PosterY 1  % 'Pages down'
+
+  /JobXPSPTProcessing true
+
+  /dump_indent 0
+>> def
+/InternalState EmptyState def
+
+
+% A dictionary populated by external PrintTicket modules.
+%
+% Key: PrintTicket Schema keyword
+% Value: External code to call
+/PrintTicketKeywordProcs 1 dict def
+
+% Scratch buffer used to dump PS things.
+/DumpScratch 1024 string def
+
+% Output indent spaces
+/DumpIndent {
+  //InternalState /dump_indent get { (  ) print } repeat
+} bind def
+
+% Modify indent by number of levels (can be +ve or -ve)
+/DumpIndentAdd {
+  //InternalState begin
+    /dump_indent exch dump_indent add def
+  end
+} bind def
+
+% dict of procedures for writing out more complex objects based on their types
+/DumpDict <<
+  /arraytype {
+    dup xcheck { (}\n) ({ ) }{ (]\n) ([ ) } ifelse
+    print exch    % |- <string> <array>
+    {
+      DumpObject ( ) print
+    } forall
+    print
+  } bind
+
+  /dicttype {
+    (<<\n) print
+    1 //DumpIndentAdd exec
+    {
+      //DumpIndent exec
+      % Deal with key ...
+      exch DumpObject ( ) print
+      % Deal with value ...
+      DumpObject (\n) print
+    } forall
+    -1 //DumpIndentAdd exec
+    //DumpIndent exec
+    (>>) print
+  } bind
+
+  /stringtype {
+    (\() print
+    print
+    (\)) print
+  } bind
+
+  /nametype {
+    dup xcheck not { (/) print } if
+    //DumpScratch cvs print
+  } bind
+
+  /nulltype {
+    pop
+    (null) print
+  } bind
+>> def
+
+% any DumpObject -
+% Display the specified object in a manner appropriate to its type.
+/DumpObject {
+  //PrintTicketWS begin
+    dup type //DumpDict exch 2 copy known {
+      get exec
+    } {
+      pop pop
+      //DumpScratch cvs print
+    } ifelse
+    //InternalState /dump_indent get 0 eq {
+      (\n) print
+      flush
+    } if
+  end
+} bind def
+
+% Generate a logging message if debugging is enabled, otherwise do nothing.
+%
+% There is a procset-global flag called HqnPTDebug. If this is set to true,
+% the message argument is written, otherwise the argument is popped and no
+% further action is taken.
+%
+% any PTDebug -
+/PTDebug
+{
+  //HqnPTDebug {
+    (PT Debug: ) print //DumpObject exec
+  }{
+    pop
+  } ifelse
+} bind def
+
+/showwarning true def
+
+% pt_option_dict [subkey1 subkey2 ...] default GetPTValueWithDefault pt_option_dict final_value
+% pt_option_dict [subkey1 subkey2 ...] warn default GetPTValueWithDefault pt_option_dict final_value
+% Check a dictionary contains an option located under a series of subkey
+% values. If no option is found then a default value is used and a warning is issued.
+/GetPTValueWithDefault {
+  1 index type /booleantype eq {
+    /showwarning 3 -1 roll store
+  }{
+    /showwarning true store
+  }ifelse
+  mark 3 index
+  4 -1 roll % pt_option_dict default mark pt_option_dict [subkey1 subkey2 ...]
+
+  % Copy name of first subkey for possible use in warning message
+  dup 0 get 4 1 roll % pt_option_dict default subkey1 mark pt_option_dict [subkey1 subkey2 ...]
+
+  % Check each subkey exists
+  { 2 copy known { get }{ cleartomark mark exit }ifelse } forall
+  counttomark 0 eq { % pt_option_dict default subkey1 mark
+    % A required subkey was missing - Use default value
+    pop
+    showwarning {
+      (%%[ Warning: Missing/badly formed PT key: ) print 64 string cvs print
+      (; Using: ) print dup 64 string cvs print
+      ( ]%%) =
+    } { pop } ifelse
+  }{ % pt_option_dict default subkey1 mark subkey_value
+
+    % All subkeys were found.  Use subkey_value and ignore default
+    4 1 roll pop pop pop
+  }ifelse
+
+  % pt_option_dict subkey_value
+} bind def
+
+% dict key default GetDictValueWithDefault value
+% Check a dictionary contains an option located under a single subkey value.
+% If no key is found then a default value is used.
+/GetDictValueWithDefault {
+  3 1 roll
+  2 copy known {
+    % Key found so use it
+    get exch pop
+  }{
+    % Key not found - Use default value
+    pop pop
+  }ifelse
+} bind def
+
+% Check 'any' against each entry in the array.
+%
+% any [foo1 foo2 ...] IsOneOf bool
+/IsOneOf {
+  false 3 1 roll
+  {
+    1 index eq {
+      true 3 1 roll exch pop
+      exit
+    }if
+  }forall
+  pop
+} bind def
+
+% /ON -> true /OFF -> false
+/OnOff2Boolean
+<<
+   /ON   true
+   /OFF  false
+>> def
+
+/drawbox {
+  1 dict begin
+    gsave
+
+    /fontsize 32 def
+    /str exch def
+    /rect exch def
+
+    3 setlinewidth
+    0 0 1 setrgbcolor
+    rect aload pop rectstroke
+
+    1 0 0 setrgbcolor
+    /Courier findfont fontsize scalefont setfont
+    rect aload pop 4 2 roll moveto rmoveto
+    str show
+
+    grestore
+  end
+} bind def
+
+% arr growClipRect arr
+/growClipRect {
+  1 dict begin
+    aload pop
+    /h exch def /w exch def
+    /y exch def /x exch def
+    x 1 sub y 1 sub w 2 add h 2 add
+    4 array astore
+  end
+} bind def
+
+% ps_units PSToXPSPoint xps_units
+/PSToXPSPoint {
+  96.0 mul 72.0 div
+} bind def
+
+% microns micronTo72DPI dpi
+/micronTo72DPI {
+  cvr 72.0 mul 25400.0 div
+} bind def
+
+% microns micronTo96DPI dpi
+/micronTo96DPI {
+  cvr 96.0 mul 25400.0 div
+} bind def
+
+% Apply a PostScript clipping region to contain an area defined in PS coords.
+%
+% [x y w h] clipToArea -
+/clipToArea {
+  1 dict begin
+    /clipBox
+      exch { //PSToXPSPoint exec }forall 4 array astore
+      //growClipRect exec
+    def
+
+    //HqnPTDebugMarkup { clipBox (CB) //drawbox exec }if
+    clipBox aload pop rectclip
+  end
+} bind def
+
+% Conditionally clip the source page to the content box (depending on
+% how /ClipRegion is set).
+%
+% - clipSourcePageToContentBox -
+/clipSourcePageToContentBox {
+  //InternalState begin
+    % Conditionally clip to the ContentBox.
+    <<
+      /GGClipNone {
+        (Not clipping source page.) //PTDebug exec
+      } bind
+      /GGClipToContentBox {
+        (Clipping source page to ContentBox.) //PTDebug exec
+        ContentBox //clipToArea exec
+      } bind
+    >>
+    currentdict /ClipRegion [/GGClipNone] //GetDictValueWithDefault exec
+    get exec
+  end
+} bind def
+
+% - usingNUp bool
+/usingNUp {
+  //InternalState begin
+    UsingJobNUp UsingDocumentNUp or
+  end
+} bind def
+
+% Conditionally clip the source page to the PageImageableArea.
+% Note that this clipping should be performed before any page
+% scaling takes place, as scaling should not affect the physical
+% imageable area of a device.
+%
+% Note: This is a no-op when N-Up is active as it's the N-Up sheet which
+% needs to be clipped, not the source page(s).
+%
+% - clipSourcePageToImageableArea -
+/clipSourcePageToImageableArea {
+ //InternalState begin
+    //usingNUp exec not {
+      % Trim/clip to the PageImageableArea if width and height are non-zero.
+      PageImageableArea dup 2 get exch 3 get mul 0 gt {
+        TrimToImageableArea {
+          % Trim top/left edges.
+          (Trimming source page to PageImageableArea.) //PTDebug exec
+
+          % Offsets to translate FixedPage to media origin.
+          1 dict begin
+            /TranslateSourceOrigin
+              <<
+                /Portrait [0 0]
+                /ReversePortrait [
+                  PageSize 0 get PageImageableArea 2 get sub
+                  0
+                ]
+                /Landscape [0 0]
+                /ReverseLandscape [
+                  PageSize 1 get PageImageableArea 2 get sub
+                  PageSize 0 get PageImageableArea 3 get sub neg
+                ]
+              >> PageOrientation get
+            def
+
+            % x
+            PageImageableArea 0 get neg TranslateSourceOrigin 0 get add
+
+            % y
+            PageImageableArea 1 get TranslateSourceOrigin 1 get add
+            PageOrientation [/Landscape /ReverseLandscape /ReversePortrait] //IsOneOf exec { neg }if
+
+            1 1 2 { pop //PSToXPSPoint exec exch }for
+            translate
+          end
+        }{
+          (Clipping source page to PageImageableArea.) //PTDebug exec
+          PageImageableArea //clipToArea exec
+        }ifelse
+      }if
+    }if
+  end
+} bind def
+
+% Return true if both page dimension arrays are equal (within a small tolerance).
+%
+% [x1 y1] [x2 y2] tolerance EqualPageDimensions bool
+/EqualPageDimensions {
+  1 dict begin
+    /delta exch def /a2 exch def /a1 exch def
+    [0 1] {
+      a1 1 index get
+      a2 3 -1 roll get
+      cvr sub abs delta le
+    } forall
+    and
+  end
+} bind def
+
+% dict ProcessJobXPSPTOption -
+/ProcessJobXPSPTOption {
+  statusdict /GuiRIPEnablePTProcessing known {
+    % GUI RIP
+    statusdict /GuiRIPEnablePTProcessing get
+    {
+      % GUI allows PT processing.
+      % Enable it unless PT's /JobXPSPTProcessing key says not to.
+      dup /JobXPSPTProcessing known {
+        [/JobXPSPTProcessing /Value] /ON //GetPTValueWithDefault exec
+        //OnOff2Boolean exch get
+        //InternalState /JobXPSPTProcessing 3 -1 roll put
+      } {
+        //InternalState /JobXPSPTProcessing true put
+      } ifelse
+    } {
+      % GUI disallows PT processing, so disable it.
+      //InternalState /JobXPSPTProcessing false put
+    } ifelse
+  } {
+    % Non-GUI RIP.  Honor any PT /JobXPSPTProcessing key.
+    dup /JobXPSPTProcessing known {
+      [/JobXPSPTProcessing /Value] /ON //GetPTValueWithDefault exec
+      //OnOff2Boolean exch get
+      //InternalState /JobXPSPTProcessing 3 -1 roll put
+    }if
+  }ifelse
+
+  pop
+} bind def
+
+% bool PerformSecurityAction -
+% where bool is true iff the job's digital signature is known
+% to be valid (or the job is known to be unsigned).
+% If bool is false, the signature was not validated at the start of the job.
+% It might therefore need to be validated in flight, but only if the Print
+% Ticket requires any validation.
+/PerformSecurityAction {
+  not {
+    % The digital signature was not validated pre-flight. If
+    % JobDigitalSignatureProcessing is defined in the print ticket, and its
+    % value is PrintOnlyValidSignatures, we need to perform an in-flight
+    % validation.
+    //InternalState /JobDigitalSignatureProcessing 2 copy known
+    {
+      get /PrintOnlyValidSignatures eq {
+        % An in-flight validation is needed, but it may have already been performed. Only
+        % initiate the check if /DigitalSignatureStatus has not been stored in the
+        % internal state.
+        //InternalState /DigitalSignatureStatus known not
+        {
+          % Initiate an in-flight check of the signature. Do this by using the
+          % special devparam of the PT device. Set to "CheckNow", which will
+          % prompt the device to call out to external code to check the signature.
+          (%xpspt%) dup << /DigitalSignatureStatus (CheckNow) >> setdevparams
+
+          % Now get the new value of the devparam, which will hold the result of
+          % the check. It will be a string. We convert it to a name for convenience.
+          currentdevparams /DigitalSignatureStatus get cvn
+
+          % And cache the result so we don't check again.
+          //InternalState /DigitalSignatureStatus 2 index put
+
+          % A PS name will now be at the top of the stack. It should match one of
+          % the entries in the dictionary below. Each has a corresponding action
+          % that should be taken. Just lookup the correct procedure and execute it.
+          <<
+             /NotChecked
+             {
+               (%%[ Error: The digital signature was not checked, but requires validation - Aborting job... ]%%) =
+               userdict begin quit
+             }
+
+             /NoFacility
+             {
+               (%%[ Error: Digital signature requires validation, but there is no facility for doing so - Aborting job... ]%%) =
+               userdict begin quit
+             }
+
+             /NotSigned
+             {
+             }
+
+             /SignedValid
+             {
+             }
+
+             /SignedInvalid
+             {
+               (%%[ Error: Invalid digital signature - Aborting job... ]%%) =
+               userdict begin quit
+             }
+
+             /CheckingError
+             {
+               (%%[ Error: Error in attempt to check digital signature - Aborting job... ]%%) =
+               userdict begin quit
+             }
+          >>
+
+          exch get exec
+        } if
+      } if
+    }{
+      pop pop
+    }ifelse
+  }if
+} bind def
+
+% xres yres SetPageResolution -
+/SetPageResolution {
+  //InternalState begin
+    2 array astore /PageResolution exch def
+  end
+} bind def
+
+% bool SetOverprintPreview -
+/SetOverprintPreview {
+  dup currentinterceptcolorspace /OverprintPreview get ne {
+    << /OverprintPreview 3 -1 roll >> setinterceptcolorspace << >> setpagedevice
+  }{
+    % No change required.
+    pop
+  }ifelse
+} bind def
+
+% Enable OverprintPreview (if it's not already active).
+%
+% This can be called by PrintTicket modules if they know they require
+% compositing, potentially overriding a JobGGTransparency option.
+/RequiresOverprintPreview {
+  (OverprintPreview enabled) //PTDebug exec
+  true //SetOverprintPreview exec
+
+  //InternalState /OverprintPreviewForced true put
+} bind def
+
+% dict ProcessJobTransparency -
+% where dict holds job-level PrintTicket features.
+%
+% Conditionally disable OverprintPreview to improve performance.
+/ProcessJobTransparency {
+  dup /JobGGTransparency known {
+    [/JobGGTransparency /Value] /ON //GetPTValueWithDefault exec /ON eq
+    //SetOverprintPreview exec
+  }{
+    pop
+  }ifelse
+} bind def
+/ProcessPageTransparency {
+  dup /PageGGTransparency known {
+    [/PageGGTransparency /Value] /ON //GetPTValueWithDefault exec /ON eq
+
+    % If OverprintPreview is required for PT processing, ignore page-level
+    % reqests to disable it.
+    //InternalState /OverprintPreviewForced get or
+
+    //SetOverprintPreview exec
+  }{
+    pop
+  }ifelse
+} bind def
+
+% dict ProcessPageResolution -
+% Record PT's PageResolution value, if found
+/ProcessPageResolution {
+  statusdict /GuiRIPXPSOverrides known {
+    % GUI RIP
+    dup
+    statusdict /GuiRIPXPSOverrides get
+    dup /PageResolution known
+    {
+      % GUI RIP overrides /PageResolution
+      /PageResolution get /PageResolution exch put
+      (GUI RIP overriding any PT resolution) //PTDebug exec
+    } {
+      pop pop
+      (GUI RIP honoring any PT resolution) //PTDebug exec
+    } ifelse
+  } if
+
+  //InternalState /DefaultPageResolution get aload pop add 0 eq {
+    % Store default resolution
+    currentpagedevice /HWResolution get
+    //InternalState /DefaultPageResolution 3 -1 roll put
+  }if
+  /PageResolution 2 copy known
+  {
+    get
+    dup /ResolutionX get /Value get cvr
+    exch /ResolutionY get /Value get cvr
+    //SetPageResolution exec
+  }{
+    //InternalState /DefaultPageResolution get aload pop //SetPageResolution exec
+    pop pop
+  }ifelse
+} bind def
+
+% pt_dict ProcessPageImageableSize -
+% Record PT's ProcessPageImageableSize value.
+/ProcessPageImageableSize {
+  % Get values from PrintTicket.
+  dup /PageImageableSize known {
+    //InternalState /PageImageableArea
+      3 -1 roll /PageImageableSize get begin
+        currentdict /ImageableArea known {
+          % Imageable size is specified as an area.
+          [
+            ImageableArea [/OriginWidth  /Value] 0 //GetPTValueWithDefault exec exch pop
+            ImageableArea [/OriginHeight /Value] 0 //GetPTValueWithDefault exec exch pop
+            ImageableArea [/ExtentWidth  /Value] 0 //GetPTValueWithDefault exec exch pop
+            ImageableArea [/ExtentHeight /Value] 0 //GetPTValueWithDefault exec exch pop
+          ]
+        }{
+          % Imageable size is specified as width and height from origin.
+          [
+            0
+            0
+            currentdict [/ImageableSizeWidth /Value] 0 //GetPTValueWithDefault exec exch pop
+            currentdict [/ImageableSizeHeight /Value] 0 //GetPTValueWithDefault exec exch pop
+          ]
+        }ifelse
+
+        //InternalState /TrimToImageableArea
+          currentdict [/TrimOrClip /Value] false (Clip) //GetPTValueWithDefault exec exch pop (Trim) eq
+        put
+      end
+
+      % PT has values in microns, so convert to PS points.
+      { //micronTo72DPI exec }forall 4 array astore
+    put % Note: A zero 'extent' will be replaced with a PageMediaSize dimension.
+  }{
+    pop
+  }ifelse
+} bind def
+
+% [a b] SwapArrayCoords [b a]
+/SwapArrayCoords {
+  aload pop exch 2 array astore
+} bind def
+
+% Create a matrix to translate page content (the FixedPage) onto the media.
+%
+% [pagemediaw pagemediah] -> matrix
+/PageOrientationDict <<
+  /Portrait {
+    % Translate FixedPage upwards by media height.
+    1 get 0 exch matrix translate
+  } bind
+
+  /ReversePortrait {
+    % Rotate FixedPage 180 degrees around and translate-right
+    % by media width.
+    180 matrix rotate
+    exch 0 get 0 matrix translate
+    matrix concatmatrix
+  } bind
+
+  /Landscape {
+    % Rotate FixedPage 90 degrees anticlockwise
+    pop 90 matrix rotate
+  } bind
+
+  /ReverseLandscape {
+    % Rotate FixedPage -90 degrees and translate to
+    % top-right of media.
+    -90 matrix rotate
+    exch aload pop matrix translate
+    matrix concatmatrix
+  } bind
+>> def
+
+% Determine whether the media orientation (governed by both PageMediaSize
+% and FeedDirection) defines a portrait page.
+%
+% - IsMediaPortrait bool
+/IsMediaPortrait {
+  //InternalState /PageSize get
+  //InternalState /RotateOutput get { //SwapArrayCoords exec }if
+  aload pop lt
+} bind def
+
+% Determine whether the media orientation (governed by both PageMediaSize
+% and FeedDirection) defines a landscape page.
+%
+% - IsMediaLandscape bool
+/IsMediaLandscape {
+  //InternalState /PageSize get
+  //InternalState /RotateOutput get { //SwapArrayCoords exec }if
+  aload pop gt
+} bind def
+
+% - GetPageContentToMediaMatrix matrix
+/GetPageContentToMediaMatrix {
+
+  % Any orientation specified by PSCustomMediaSize takes precedence.
+  //InternalState /PSCustomOrient known {
+    (PageMediaSizePSOrientation takes precedence over PageOrientation)  //PTDebug exec
+    //InternalState /PSCustomOrient get
+    % Ensure the main InternalState key reflects this orientation
+    dup //InternalState /PageOrientation 3 -1 roll put
+  }{
+    //InternalState /PageOrientation /Auto //GetDictValueWithDefault exec
+  }ifelse
+
+  dup /Auto eq {
+    pop
+
+
+    % Auto-rotate the page content onto the media
+    //InternalState /FixedPageSize get aload pop lt //IsMediaPortrait exec ne {
+      (Auto-rotating page content onto media) //PTDebug exec
+      /Landscape
+    }{
+      % No rotation required
+      /Portrait
+    }ifelse
+
+    dup //InternalState /PageOrientation 3 -1 roll put
+  }if
+
+  //InternalState /PageSize get //PageOrientationDict 3 -1 roll get exec
+} bind def
+
+% Modify the translation part of the CTM so the XPS origin is aligned to
+% a PostScript device pixel.
+%
+% - alignCTMOriginToDevicePixels -
+/alignCTMOriginToDevicePixels {
+  1 dict begin
+    /ctm matrix currentmatrix def
+    [4 5] { ctm exch 2 copy get floor put }forall % Round the x,y translation part of the CTM.
+    ctm setmatrix
+  end
+} bind def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% - isFixedPageOutputRotated bool
+%
+% Return true if the FixedPage is being rotated for output. Note that rotating the FixedPage
+% to satisfy a Landscape orientation request can be cancelled out if /RotateOutput is
+% also applied (I.e. to satisfy LEF/SEF).
+/isFixedPageOutputRotated {
+  //InternalState /PageOrientation get [/Landscape /ReverseLandscape] //IsOneOf exec
+  //InternalState /RotateOutput get xor
+} bind def
+
+% - ScaledFixedPageSize [width height]
+%
+% Return an array containing the FixedPageSize scaled by PageScaleXY
+/ScaledFixedPageSize {
+  //InternalState begin
+    FixedPageSize aload pop
+    PageScaleXY 1 get mul exch
+    PageScaleXY 0 get mul exch
+    2 array astore
+  end
+} bind def
+
+% - ImageablePageSize [extentwidth extentheight]
+%
+% Return an array containing the PageImageable width and height, falling back on
+% the current PageSize if none is set or N-Up is active.
+/ImageablePageSize {
+  //InternalState begin
+    //usingNUp exec {
+      PageSize
+    }{
+      [
+        PageImageableArea 2 get dup 0 eq { pop PageSize 0 get }if
+        PageImageableArea 3 get dup 0 eq { pop PageSize 1 get }if
+      ]
+    }ifelse
+  end
+} bind def
+
+% xalign ProcessPageXAlignment -
+% where xalign can be -1 (left), 0 (center), or 1 (right)
+%
+% Translate the page image in the X direction.
+% Should be called after the pagedevice scale has been set.
+/ProcessPageXAlignment {
+  //InternalState begin
+    1 dict begin
+      /Alignment exch def
+
+      /Landscape PageOrientation [/Landscape /ReverseLandscape] //IsOneOf exec def
+
+      % Get scaled width of the FixedPage
+      /XScaleFactor PageScaleXY 0 get def
+      /ScaledFixedPageWidth //ScaledFixedPageSize exec 0 get def
+
+      % Calc excess space on media
+      % If FixedPage is rotated onto media (i.e. Landscape) then use alternate media dimension
+      /SignificantMediaDimension //ImageablePageSize exec //isFixedPageOutputRotated exec { 1 }{ 0 }ifelse get def
+      /ExcessSpace SignificantMediaDimension ScaledFixedPageWidth sub def
+
+      % Calculate offset to apply to the FixedPage
+      ExcessSpace
+      <<
+        -1 { % No offset required (Left align)
+          pop 0
+        } bind
+        0  { % Center FixedPage by halving ExcessSpace
+          2 div
+        } bind
+        1  { % Use ExcessSpace as-is (Right align)
+        } bind
+      >>
+      Alignment get exec
+
+      % Position relevant poster section.
+      PageSize //isFixedPageOutputRotated exec { 1 }{ 0 }ifelse get % Media width in PS points
+      PosterX div % PS width of one section
+      PosterPageIndex PosterX mod mul % PS offset to move section to origin
+      CustomPageScaling not { XScaleFactor mul }if
+      sub % Apply the offset
+
+      XScaleFactor div % pagedevice axis has already been scaled, so compensate
+      //PSToXPSPoint exec
+
+      % Translate the page in the direction of the X FixedPage axis.
+      % Stack: xshift
+      RotateOutput Landscape and {
+        % Special case if landscape and media rotated (e.g. LEF), as media
+        % rotation is performed in the opposite direction.
+        0
+        exch
+      }{
+        0
+        RotateOutput { exch neg }if
+      }ifelse
+      translate
+    end
+  end
+} bind def
+
+% yalign ProcessPageYAlignment -
+% where yalign can be -1 (top), 0 (center), or 1 (bottom)
+%
+% Translate the page image in the Y direction.
+% Should be called after the pagedevice scale has been set.
+/ProcessPageYAlignment {
+  //InternalState begin
+    1 dict begin
+      /Alignment exch def
+
+      /Landscape PageOrientation [/Landscape /ReverseLandscape] //IsOneOf exec def
+
+      % Get scaled width of the FixedPage
+      /YScaleFactor PageScaleXY 1 get def
+      /ScaledFixedPageHeight FixedPageSize 1 get YScaleFactor mul def
+
+      % Calc excess space on media
+      % If FixedPage is rotated onto media (i.e. Landscape) then use alternate media dimension
+      /SignificantMediaDimension //ImageablePageSize exec //isFixedPageOutputRotated exec { 0 }{ 1 }ifelse get def
+      /ExcessSpace SignificantMediaDimension ScaledFixedPageHeight sub def
+
+      % Calculate offset to apply to the FixedPage
+      ExcessSpace
+      <<
+        -1 { % No offset required (Left align)
+          pop 0
+        } bind
+        0  { % Center FixedPage by halving ExcessSpace
+          2 div
+        } bind
+        1  { % Use ExcessSpace as-is (Right align)
+        } bind
+      >>
+      Alignment get exec
+
+      % Position relevant poster section.
+      PageSize //isFixedPageOutputRotated exec { 0 }{ 1 }ifelse get % Media height in PS points
+      PosterY div % PS height of one section
+      PosterPageIndex PosterY div truncate mul % PS offset to move section to origin
+      CustomPageScaling not { YScaleFactor mul }if
+      sub % Apply the offset
+
+      YScaleFactor div % pagedevice axis has already been scaled, so compensate
+      //PSToXPSPoint exec
+
+      % Translate the page in the direction of the Y FixedPage axis.
+      % Stack: yshift
+      RotateOutput Landscape and {
+        % Special case if landscape and media rotated (e.g. LEF), as media
+        % rotation is performed in the opposite direction.
+        neg
+        0
+      }{
+        0 exch
+        RotateOutput { exch }if
+      }ifelse
+      translate
+    end
+  end
+} bind def
+
+% - ProcessPageAlignment -
+% Use the page alignment settings in InternalState to adjust the
+% page offsets.
+/ProcessPageAlignment {
+  //InternalState /PageAlignment null //GetDictValueWithDefault exec dup null eq {
+    pop [0 0]
+  }if
+  aload pop % xalign yalign
+  //ProcessPageYAlignment exec
+  //ProcessPageXAlignment exec
+} bind def
+
+% [areax areay areaw areah] FitAreaToPageMediaSize -
+% Scale the specified area such that it fits the page media.
+/FitAreaToPageMediaSize { % - -> -
+  mark exch
+  //InternalState begin
+
+    PageSize aload
+%    (Media: ) print dup == % DEBUG
+    pop % [areax areay areaw areah] mediasizex mediasizey
+
+    3 -1 roll aload
+%    ( Area: ) print dup == % DEBUG
+    pop % mediasizex mediasizey areax areay areaw areah
+
+    % Effective page dimensions should match area being printed
+    2 copy 2 array astore /FixedPageSize exch def
+    RotateOutput { exch }if
+
+    4 2 roll 6 2 roll % areax areay mediasizex mediasizey areaw areah
+
+    % Find scalar to fit area to media (keeping aspect ratio)
+    3 -1 roll exch div 3 1 roll div % areax areay scaley scalex
+    2 copy gt { exch }if pop % areax areay scalemin
+
+    % Set page offsets (in XPS units)
+    3 1 roll % scalemin areax areay
+    PageOffsetXY aload
+    pop 3 -1 roll sub 3 1 roll exch sub exch
+
+    2 index //PSToXPSPoint exec % scalemin newox newoy scalar
+    dup 3 1 roll mul 3 1 roll mul exch
+    2 array astore
+%    (New offset: ) print dup == % DEBUG
+    /PageOffsetXY exch def
+
+    % Set page scale factors
+    PageScaleXY aload pop % scalemin sx sy
+    2 index mul 3 1 roll mul exch % new_sx new_sy
+    2 array astore
+%    (New scalar: ) print dup == % DEBUG
+    /PageScaleXY exch def
+
+  end
+  cleartomark
+} bind def
+
+% [areax areay areaw areah] FitAreaToPageImageableSize -
+% Scale the specified area such that it fits the page imageable size.
+/FitAreaToPageImageableSize { % - -> -
+  mark exch
+  //InternalState begin
+    % Get PageImageableSize (falling back on media size if necessary)
+    //ImageablePageSize exec aload pop
+    RotateOutput { exch }if
+
+%    (  Dest size: ) print 2 copy 2 array astore == % DEBUG
+    % [areax areay areaw areah] destsizex destsizey
+
+    3 -1 roll aload
+%    (Source area: ) print dup == % DEBUG
+    pop % destsizex destsizey areax areay areaw areah
+
+    % Effective page dimensions should match area being printed
+    2 copy 2 array astore /FixedPageSize exch def
+
+    4 2 roll 6 2 roll % areax areay destsizex destsizey areaw areah
+
+    % Find scalar to fit area to media (keeping aspect ratio)
+    3 -1 roll exch div 3 1 roll div % areax areay scaley scalex
+    2 copy gt { exch }if pop % areax areay scalemin
+
+    % Set page offsets (in XPS units)
+    3 1 roll % scalemin areax areay
+    PageOffsetXY aload pop
+    3 -1 roll sub 3 1 roll exch sub exch
+
+    2 index //PSToXPSPoint exec
+    dup 3 1 roll mul 3 1 roll mul exch % scalemin ox oy
+
+    % Include offsets from dest area
+    PageImageableArea 0 get //PSToXPSPoint exec
+    PageImageableArea 1 get //PSToXPSPoint exec
+    exch 3 1 roll add 3 1 roll add exch
+
+    2 array astore
+%    (New offset: ) print dup == % DEBUG
+    /PageOffsetXY exch def
+
+    % Set page scale factors
+    PageScaleXY aload pop % scalemin sx sy
+    2 index mul 3 1 roll mul exch % new_sx new_sy
+    2 array astore
+%    (New scalar: ) print dup == % DEBUG
+    /PageScaleXY exch def
+  end
+
+  cleartomark
+} bind def
+
+/ProcessPageFitApplicationScalingOption <<
+  /FitApplicationBleedSizeToPageImageableSize { % - -> -
+    //InternalState /BleedBox get
+    //FitAreaToPageImageableSize exec
+  } bind
+
+  /FitApplicationContentSizeToPageImageableSize { % - -> -
+    //InternalState /ContentBox get
+    //FitAreaToPageImageableSize exec
+  } bind
+
+  /FitApplicationMediaSizeToPageImageableSize { % - -> -
+    0.0 0.0
+    //InternalState /FixedPageSize get aload pop % 0.0 0.0 pagesizex pagesizey
+    4 array astore
+
+    //FitAreaToPageImageableSize exec
+  } bind
+
+  /FitApplicationMediaSizeToPageMediaSize { % - -> -
+    0.0 0.0
+    //InternalState /FixedPageSize get aload pop % 0.0 0.0 pagesizex pagesizey
+    4 array astore
+
+    //FitAreaToPageMediaSize exec
+  } bind
+
+>> def
+
+% - ProcessPageFitToApplicationScaling -
+% Process PT's PageScaling 'FitApplication..To..Size' settings
+/ProcessPageFitToApplicationScaling {
+  mark
+  //InternalState /PageScaling 2 copy known
+  {
+    get dup /Value get % scalingtype
+
+    //ProcessPageFitApplicationScalingOption exch 2 copy known
+    {
+      get exec
+    }if
+
+  }{
+    % No PageScaling option specified
+  }ifelse
+
+  cleartomark
+
+} bind def
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Dictionary of colorspace configurations
+/PageDeviceCSSDict <<
+  /RGB {
+    /InterleavingStyle 2
+    /ProcessColorModel /DeviceRGB
+    /SeparationDetails
+    <<
+      /SeparationStyle 4
+      /CompositeColorNames [ /Red /Green /Blue ]
+      /CompositeOrder [ /Red /Green /Blue ]
+    >>
+
+    currentdict /PageBufferType null //GetDictValueWithDefault exec /RLE eq {
+      /ValuesPerComponent 1024
+    }{
+      /ValuesPerComponent 256
+    } ifelse
+    /Halftone false
+  } bind
+
+  /GRAY {
+    /InterleavingStyle 1
+    /ProcessColorModel /DeviceGray
+    /SeparationDetails
+    <<
+      /SeparationStyle 0
+      /CompositeColorNames [ /Black ]
+      /CompositeOrder [ /Black ]
+    >>
+
+    currentdict /PageBufferType null //GetDictValueWithDefault exec /RLE eq {
+      /ValuesPerComponent 1024
+    }{
+      /ValuesPerComponent 256
+    } ifelse
+    /Halftone false
+  } bind
+
+  /MONOCHROME {
+    /InterleavingStyle 1
+    /ProcessColorModel /DeviceGray
+    /SeparationDetails
+    <<
+      /SeparationStyle 0
+      /CompositeColorNames [ /Black ]
+      /CompositeOrder [ /Black ]
+    >>
+    /ValuesPerComponent 2
+    /Halftone true
+
+    % Load halftone settings from a file if present
+    (OEMConfig/GGHalftone1.ps) dup status {
+      pop pop pop pop
+      run
+    }{
+      pop
+      (%%[ Warning: Using default halftone screening settings ]%%) =
+    } ifelse
+
+    currentdict /PageBufferType null //GetDictValueWithDefault exec /RLE eq {
+      (%%[ Error: /RLE not supported in this colorspace ]%%) =
+      quit
+    }if
+  } bind
+
+  /CMYK {
+    /InterleavingStyle 2
+    /ProcessColorModel /DeviceCMYK
+    /SeparationDetails
+    <<
+      /SeparationStyle 4
+      /CompositeColorNames [ /Cyan /Magenta /Yellow /Black ]
+      /CompositeOrder [ /Cyan /Magenta /Yellow /Black ]
+    >>
+
+    currentdict /PageBufferType null //GetDictValueWithDefault exec /RLE eq {
+      /ValuesPerComponent 1024
+    }{
+      /ValuesPerComponent 256
+    } ifelse
+    /Halftone false
+  } bind
+>> def
+
+% dict name DoGetPageDeviceCSSDict dict
+%
+% Get page setup details for the colorspace 'name' (E.g. '/RGB') and add them
+% to the 'dict' for use with setpagedevice.
+/DoGetPageDeviceCSSDict {
+  //PageDeviceCSSDict exch 2 copy known not {
+    pop /RGB
+    (%%[ Warning: Unknown color space specified; Using /RGB ]%%) =
+  } if
+
+  % Merge PageDeviceCSSDict dictionary entry with the one passed into the function.
+  <<
+    3 1 roll
+    get
+    exec
+  >>
+  exch copy
+
+} bind def
+
+% setup_dict DoFillPGBParamDict setup_dict
+%
+% Using parsed PrintTicket settings found in the global InternalState
+% dictionary, update setup_dict's /PGBParamDict entry with settings
+% to use with setdevparams (for the pagebuffer device).
+/DoFillPGBParamDict {
+  begin
+    scope /Page eq {
+      % Set Page-level pagebuffer device parameters
+      PGBParamDict /PtfPageFaceUp
+      //InternalState [/DuplexState /FaceUp] false false //GetPTValueWithDefault exec exch pop
+      put
+    }if
+
+    currentdict
+  end
+} bind def
+
+% setup_dict DoSetPageBufferParams setup_dict
+%
+% Set pagebuffer device parameters according to the settings stored in the
+% /PGBParamDict entry in the specified setup_dict dictionary.
+/DoSetPageBufferParams {
+  (->DoSetPageBufferParams) //PTDebug exec
+
+  begin
+    % Set page buffer parameters (if there are any specified)
+    PGBParamDict
+    dup //PTDebug exec
+    length 0 gt { (%pagebuffer%) PGBParamDict setdevparams }if
+
+    currentdict
+  end
+
+  (<-DoSetPageBufferParams) //PTDebug exec
+} bind def
+
+% [w h] InterceptPageSize [new_w new_h]
+%
+% Conditionally adjust the specified page size to match the imageable size
+% if one is defined and we need to trim output to it.
+/InterceptPageSize {
+  1 dict begin
+    /LocalPageSize exch def
+    /OriententedImageableArea
+      InternalState /PageImageableArea get
+      InternalState /PageOrientation /Landscape //GetDictValueWithDefault exec [/Landscape /ReverseLandscape] //IsOneOf exec {
+        % Swap x,y and w,h.
+        aload pop
+        exch 4 2 roll exch 4 2 roll
+        4 array astore
+      }if
+    def
+    /ImageableSize [2 3] { OriententedImageableArea exch get }forall 2 array astore def
+
+    % When page trimming make page size equal imageable area (if set).
+    //InternalState /TrimToImageableArea false //GetDictValueWithDefault exec {
+      ImageableSize aload pop mul 0 gt {
+        LocalPageSize ImageableSize 0.5 //EqualPageDimensions exec not {
+          /LocalPageSize ImageableSize store
+        }if
+      }if
+    }if
+    LocalPageSize
+  end
+} bind def
+
+% setup_dict DoFillDeviceDict setup_dict
+%
+% Using parsed PrintTicket settings found in the global InternalState
+% dictionary, update setup_dict's /DeviceDict entry with settings
+% to use with setpagedevice.
+/DoFillDeviceDict {
+  (->DoFillDeviceDict) //PTDebug exec
+
+  begin
+    userdict /HqnPTInternalState InternalState put
+
+    scope /Job eq {
+      InternalState begin
+        % Set Job-level pagedevice parameters
+
+        % Always configure the page buffer type
+        currentdict /PageBufferType known {
+          DeviceDict /PageBufferType PageBufferType put
+        } if
+
+        % Configure ColorSpace
+        currentdict /JobGGColorSpace 2 copy known {
+          get DeviceDict exch //DoGetPageDeviceCSSDict exec
+        }{
+          pop pop
+          statusdict /RefRIPDefaultSettings 2 copy known {
+            get /ColorSpace 2 copy known {
+              get DeviceDict exch //DoGetPageDeviceCSSDict exec
+            }{
+              pop pop
+            }ifelse
+          }{
+            pop pop
+          }ifelse
+        }ifelse
+
+      end
+    }if
+
+    scope /Document eq {
+      InternalState begin
+        % Set Document-level pagedevice parameters
+      end
+    }if
+
+    scope /Page eq {
+      InternalState begin
+        % Set Page-level pagedevice parameters
+
+        % Set paper size and (conditionally) echo setting in /InputAttributes
+        currentdict /PageSize known {
+          % When N-Up is used DestPageSize corresponds to the HqnImpose2 page
+          % size, and is sized to the FixedPage. For normal printing
+          % DestPageSize corresponds to the destination page size, and is the
+          % media size (which is the FixedPage size if PageMediaSize isn't
+          % specified).
+          /DestPageSize
+            //usingNUp exec PagesPerSheet 1 gt and {
+              CustomPageScaling OverridePageMediaSize not and { FixedPageSize }{ //ScaledFixedPageSize exec }ifelse
+              RotateOutput { //SwapArrayCoords exec }if
+
+              % If new page size differs from the old one (within a tolerance), flush the N-Up film
+              dup
+              PreviousPageSize 1 get 0 gt {
+                PreviousPageSize 10.0 //EqualPageDimensions exec not {
+                  (Flushing N-Up film due to differing page size) //PTDebug exec
+                  /HqnImpose2 /ProcSet findresource /HqnFlushFilm get exec
+                }if
+              }{
+                pop
+              }ifelse
+            }{
+              PageSize
+            }ifelse
+          def
+
+          DeviceDict /PageSize DestPageSize put
+          /PreviousPageSize DestPageSize def
+
+          statusdict /XPSPTUsePredefinedInputAttributes true //GetDictValueWithDefault exec not {
+            % We set /InputAtributes to ensure that our output 'device' has a tray containing
+            % the required media size - Without this the RIP may decide to rotate our output.
+            % When a real output device is being used /InputAttributes may already be configured
+            % (according to what media is actually available), hence the
+            % /XPSPTUsePredefinedInputAttributes flag.
+            DeviceDict /InputAttributes <<
+              currentpagedevice /Private get /InputAttributes get <<
+                /PageSize PageSize
+              >>
+            >> put
+          }if
+
+          % Used by HqnImpose2 as film size (I.e. The size of the output.)
+          userdict /HqnPTFilmSize PageSize //InterceptPageSize exec put
+
+          currentdict /DestPageSize undef
+        }if
+
+        % Set resolution if different to current value
+        currentdict /PageResolution known {
+          currentpagedevice /HWResolution get aload pop PageResolution aload pop
+          3 -1 roll ne 3 1 roll ne or {
+            DeviceDict /HWResolution PageResolution put
+          } if
+        }if
+
+        % Set any margins arising from PSCustomMediaSize
+        % We use the PS pagedevice key /Margins to implement this, although the
+        % PPD spec. says /PageOffset should be used rather than /Margins, but
+        % the RIP doesn't support the /PageOffset key.
+
+        currentdict /PSPageOffset known {
+          DeviceDict /Margins
+          currentdict /PageResolution known { PageResolution }{currentpagedevice /HWResolution get}ifelse
+          aload pop exch PSPageOffset 0 get 72 div mul exch PSPageOffset 0 get 72 div mul
+          2 array astore
+          put
+        }if
+      end  % InternalState
+    }if
+
+    currentdict
+  end
+
+  (<-DoFillDeviceDict) //PTDebug exec
+} bind def
+
+% setup_dict DoSetPagedevice -
+%
+% Configure the page device according to the settings stored in the /DeviceDict
+% entry in the specified setup_dict dictionary.
+/DoSetPagedevice {
+  (->DoSetPagedevice) //PTDebug exec
+
+  begin
+    % Apply device parameters
+    DeviceDict length 0 gt {
+      DeviceDict
+
+      % Allow page size to match imageable area if one is defined and we're
+      % not doing N-Up. (If we are doing N-Up the output page size is
+      % governed by HqnPTFilmSize and setting PageSize here governs the
+      % size of each panel.)
+      dup /PageSize known //usingNUp exec not and {
+        dup length dict copy
+        dup /PageSize 2 copy get //InterceptPageSize exec put
+      }if
+
+      dup //PTDebug exec setpagedevice
+    }if
+
+    InternalState /JobXPSPTProcessing get not {
+      % PrintTicket processing is disabled.
+
+      % Set page device based on default color space.
+      statusdict /RefRIPDefaultSettings 2 copy known {
+        get /ColorSpace 2 copy known {
+          get 1 dict exch //DoGetPageDeviceCSSDict exec setpagedevice
+        }{
+          pop pop
+        } ifelse
+      }{
+        pop pop
+      } ifelse
+    } if
+
+    currentdict
+  end
+
+  (<-DoSetPagedevice) //PTDebug exec
+} bind def
+
+% key dict ModuleEnabled bool
+%
+% key is name of PrintTicket feature.
+% dict is an external module dict.
+%
+% Determines if an external module is enabled.
+/ModuleEnabled {
+  //InternalState /JobXPSPTProcessing get {
+    % All modules are enabled when /JobXPSPTProcessing is true
+    true
+  }{
+    % Consult module as to whether it is enabled when /JobXPSPTProcessing is false
+    dup /AlwaysEnabled known {
+      dup /AlwaysEnabled get
+    }{
+      false
+    } ifelse
+  } ifelse
+
+  dup
+  {
+    statusdict /GuiRIPEnabledPTFeatures known
+    {
+      2 index statusdict /GuiRIPEnabledPTFeatures get //IsOneOf exec
+      exch pop
+      dup not {
+        (GUI RIP is ignoring:) //PTDebug exec
+        2 index //PTDebug exec
+      } if
+    } if
+  } if
+
+  3 1 roll pop pop
+} bind def
+
+/resetDuplexState {
+  //InternalState /DuplexState <<
+    /OutputCount 0
+    /FaceUp true
+  >>
+  put
+} bind def
+
+% Update the duplex face up/down state.
+% This is triggered each time a page is printed.
+/ToggleDuplexState {
+  //InternalState begin
+    currentdict /JobDuplex known {
+      JobDuplex
+    }{
+      currentdict /DocumentDuplex known {
+        DocumentDuplex
+      }{
+        (OneSided)
+      }ifelse
+    }ifelse
+
+    % Update duplex state
+    DuplexState /OutputCount 2 copy get 1 add put
+
+    (OneSided) eq {
+      % Single sided output - FaceUp always true
+      DuplexState /FaceUp true put
+    }{
+      % Two sided output - Toggle FaceUp every 'x' pages.
+      % 'x' is governed by poster printing and N-Up options.
+      DuplexState /OutputCount get
+      PagesPerSheet PosterX PosterY mul mul
+      gt {
+        DuplexState /FaceUp 2 copy get not put
+        DuplexState /OutputCount 1 put
+      }if
+    }ifelse
+  end
+} bind def
+
+% - IsFaceUp bool
+/IsFaceUp {
+  //InternalState [/DuplexState /FaceUp] false false //GetPTValueWithDefault exec exch pop
+} bind def
+
+% dict level ProcessTicket setup_dict
+%
+% dict is the PS dict version of the Print Ticket sent from the RIP, and level
+% (one of /Job, /Document, /Page) defines the level scope at which we're
+% processing.
+%
+% Processes the specified PrintTicket, storing the results in setup_dict. This
+% dictionary is passed to external PostScript modules, and contains:
+%   /RIPPrintTicket - The PrintTicket settings which we obtained from the RIP.
+%   /scope          - The scope at which we're currently processing (/Job, /Document, /Page).
+%   /DeviceDict     - A dictionary of settings which will eventually be used
+%                     in calls to setpagedevice.
+%   /PGBParamDict   - A dictionary of settings which will eventually be used
+%                     in calls to setdevparams for the pagebuffer device.
+%   /pt_key         - The name of the PrintTicket option which triggered this callback.
+%   /pt_value       - Contains the data for the PrintTicket option which triggered this callback.
+%   /InternalState  - Holds state used by the procset to configure the RIP.
+%
+%   /GetPTValueWithDefault   - See GetPTValueWithDefault procedure.
+%   /GetDictValueWithDefault - See GetDictValueWithDefault procedure.
+%   /PTDebug        - Can be used to emit information in debug mode. See PTDebug.
+%   /DumpObject     - Similar to PTDebug, but can be used in non-debug mode. See DumpObject.
+%   /RequiresOverprintPreview - Enables OverprintPreview.
+%
+/ProcessTicket {
+  mark 3 1 roll
+  (->ProcessTicket) //PTDebug exec
+
+  /PTScope exch def
+  /RIPPrintTicket exch def
+  /setup_dict <<
+    % Setup/PT information
+    /RIPPrintTicket RIPPrintTicket
+    /DeviceDict     << >>
+    /PGBParamDict   << >>
+    /scope          PTScope
+
+    % Internal state
+    /InternalState  //InternalState
+
+    % Procedures
+    /DumpObject                //DumpObject
+    /GetDictValueWithDefault   //GetDictValueWithDefault
+    /GetPTValueWithDefault     //GetPTValueWithDefault
+    /IsOneOf                   //IsOneOf
+    /PTDebug                   //PTDebug
+    /IsFaceUp                  //IsFaceUp
+    /micronTo72DPI             //micronTo72DPI
+    /resetDuplexState          //resetDuplexState
+    /ToggleDuplexState         //ToggleDuplexState
+    /isFixedPageOutputRotated  //isFixedPageOutputRotated
+    /RequiresOverprintPreview  //RequiresOverprintPreview
+  >> def
+
+  (PrintTicket \(without defaults\)) //PTDebug exec
+  RIPPrintTicket //PTDebug exec  % Dump PrintTicket
+
+  % Setup device/RIP params according to PT parameters
+  RIPPrintTicket begin
+    PTScope /Job eq
+    {
+      currentdict //ProcessJobXPSPTOption exec
+
+      //InternalState /JobXPSPTProcessing get {
+        currentdict //ProcessJobTransparency exec
+      }if
+    }if
+
+    % Page device options
+
+    % Use override / default values specified in PrintTicket modules
+    //PrintTicketKeywordProcs {
+
+      % Is this module enabled?
+      2 copy //ModuleEnabled exec {
+
+        % Does key have an override?
+        dup /Override known {
+          % Is key for the current scope?
+          1 index 64 string cvs
+          PTScope 16 string cvs
+          anchorsearch {
+            pop pop
+
+            % Configure the setup_dict dictionary
+            % pt_key pt_value proc
+            setup_dict /pt_key 3 index put
+            setup_dict /pt_value currentdict 4 index << >> //GetDictValueWithDefault exec put
+
+            % Call override procedure passing: setup_dict
+            dup /Override get
+            mark exch setup_dict exch exec {
+              % Write override value into current PrintTicket
+              counttomark 0 eq {
+                (%%[ Warning: External override proc did not return value. ]%%) =
+              } {
+                counttomark 1 gt {
+                  (%%[ Warning: External override proc left operand\(s\) on the stack. ]%%) =
+                }if
+                (PrintTicket module is overriding value of:) //PTDebug exec
+                3 index //PTDebug exec
+                dup null eq {
+                  % /Override value of null means delete entry from PrintTicket
+                  pop
+                  currentdict 3 index undef
+                }{
+                  % Otherwise save value in PrintTicket
+                  currentdict 4 index 3 -1 roll put
+                } ifelse
+              } ifelse
+            }{
+              counttomark 0 ne {
+                (%%[ Warning: External override proc left operand\(s\) on the stack. ]%%) =
+              }if
+            }ifelse
+            cleartomark
+          }{
+            pop
+          }ifelse
+        }if
+
+        % Does key have a default?
+        dup /Default known {
+          % Skip if PrintTicket already contains the key
+          currentdict 2 index known not {
+            % Is key for the current scope?
+            1 index 64 string cvs
+            PTScope 16 string cvs
+            anchorsearch {
+              pop pop
+
+              % Merge default value with current PrintTicket
+              currentdict 2 index 2 index /Default get put
+            }{
+              pop
+            }ifelse
+          }if
+        }if
+
+      }{
+        (Ignoring value for disabled external module:) //PTDebug exec
+        1 index //PTDebug exec
+      }ifelse
+
+      pop pop
+    }forall
+
+    (PrintTicket \(with defaults and overrides\)) //PTDebug exec
+    RIPPrintTicket //PTDebug exec  % Dump PrintTicket
+
+    //InternalState /JobXPSPTProcessing get {
+      % Page-level settings
+      PTScope /Page eq {
+        currentdict //ProcessPageTransparency exec
+        currentdict //ProcessPageResolution exec
+        currentdict //ProcessPageImageableSize exec
+      }if
+    }if
+
+    %
+    % Allow external modules to handle the PrintTicket
+    %
+
+    % For each key in the RIPPrintTicket see if there is enabled external code
+    % which has registered an interest in handling it.
+    [ /Action /PostAction ] {
+      /ActionType exch def
+
+      currentdict {
+        //PrintTicketKeywordProcs 2 index null //GetDictValueWithDefault exec dup null ne {
+
+          % Should we process this PT key?
+          dup 3 index exch //ModuleEnabled exec {
+            dup ActionType known {
+              ActionType get
+
+              % Configure the setup_dict dictionary
+              % pt_key pt_key_dict proc
+              setup_dict /pt_key 5 -1 roll put
+              setup_dict /pt_value 4 -1 roll put
+
+              % Call procedure passing: setup_dict
+              mark exch setup_dict exch exec
+              counttomark 0 ne {
+                (%%[ Warning: External handler left operand\(s\) on the stack. ]%%) =
+              }if
+              cleartomark
+            }{
+              pop
+            }ifelse
+          }{
+            pop
+          }ifelse
+
+        }{
+          % PrintTicket keyword should not be handled externally
+          pop pop pop
+        }ifelse
+      }forall
+    }forall
+  end
+
+  % Check stack
+  counttomark 0 gt { (%%[ Warning: ProcessTicket has left too many operands on the stack. ]%%) = }
+  cleartomark
+
+  setup_dict
+  [ /PTScope /RIPPrintTicket /setup_dict ] { currentdict exch undef }forall
+
+  (<-ProcessTicket) //PTDebug exec
+} bind def
+
+% - getInputBinFeedDirection feeddirection
+/getInputBinFeedDirection {
+  //InternalState /InputBinFeedDirection get begin
+    Job
+    Document dup /Unknown ne { exch } if pop
+    Page dup /Unknown ne { exch } if pop
+  end
+} bind def
+
+% Create the matrix to transform the PostScript coordinate space to the XPS
+% coordinate space.
+%
+% - XPSToPSMatrix matrix
+/XPSToPSMatrix {
+  .75 dup neg matrix scale
+} bind def
+
+% Calculate the matrix needed to rotate the media (and content) 90 degrees.
+% The rotation will be anti-clockwise for a Portrait page orientation, otherwise
+% it will be clockwise.
+%
+% - GetRotateMediaMatrix matrix
+/GetRotateMediaMatrix {
+  //InternalState begin
+    % Rotate coordinate system
+    <<
+      /Portrait         -90
+      /ReversePortrait  -90
+      /Landscape         90
+      /ReverseLandscape  90
+    >>
+    PageOrientation get
+    matrix rotate
+
+    % Apply translation matrix
+    PageSize aload pop exch pop neg
+    4.0 3.0 div mul % Compensate for 72dpi vs 96dpi
+    PageScaleXY
+    //isFixedPageOutputRotated exec { 0 }{ 1 }ifelse
+    get div % Compensate for previously applied page scaling
+    0
+    PageOrientation [/Landscape /ReverseLandscape] //IsOneOf exec { exch }if
+    matrix translate
+    exch matrix concatmatrix
+  end
+} bind def
+
+% Return a matrix such that the page is (conditionally) flipped along the
+% media X or Y axis.
+%
+% - GetPageMirrorMatrix matrix
+/GetPageMirrorMatrix {
+  //InternalState begin
+    matrix identmatrix
+
+    <<
+      /None  { } bind
+
+      /MirrorImageWidth {
+        PageOrientation [/Landscape /ReverseLandscape] //IsOneOf exec {
+          % Handle Landscape orientations
+          1 -1 matrix scale
+          matrix concatmatrix
+          0
+          PageSize 0 get neg
+        }{
+          % Handle Portrait orientations
+          -1 1 matrix scale
+          matrix concatmatrix
+          PageSize 0 get
+          0
+        }ifelse
+
+        matrix translate
+        matrix concatmatrix
+      } bind
+
+      /MirrorImageHeight {
+        PageOrientation [/Landscape /ReverseLandscape] //IsOneOf exec {
+          % Handle Landscape orientations
+          -1 1 matrix scale
+          matrix concatmatrix
+          PageSize 1 get
+          0
+        }{
+          % Handle Portrait orientations
+          1 -1 matrix scale
+          matrix concatmatrix
+          0
+          PageSize 1 get neg
+        }ifelse
+
+        matrix translate
+        matrix concatmatrix
+      } bind
+    >>
+    MirrorPrint get exec
+  end
+} bind def
+
+% Perform an additional Y translation when performing N-Up where the source
+% page (FixedPageSize) and destination panel (PageSize) are different sizes.
+% Page scaling is applied to the page device CTM before calling this function.
+/applyNUpYTranslation {
+  //InternalState begin
+    PagesPerSheet 1 gt
+    {
+      PageSize
+      CustomPageScaling OverridePageMediaSize not and { FixedPageSize }{ //ScaledFixedPageSize exec }ifelse
+      RotateOutput { //SwapArrayCoords exec }if
+      0.5 //EqualPageDimensions exec not
+      {
+        PageSize 1 get
+        CustomPageScaling OverridePageMediaSize not and { FixedPageSize }{ //ScaledFixedPageSize exec }ifelse
+        1 get sub
+        PageScaleXY 1 get div
+        0 exch //PSToXPSPoint exec translate
+      }if
+    }if
+  end
+} bind def
+
+/applyPageScalingToCTM {
+  % Apply PageScaling options
+  currentdict /PageOffsetXY null //GetDictValueWithDefault exec dup null eq {
+    % No value found - Perhaps PrintTicket processing is disabled
+    pop [0 0] /PageOffsetXY 1 index def
+  }if
+  aload pop translate
+
+  //InternalState begin
+    currentdict /PageScaleXY null //GetDictValueWithDefault exec dup null eq {
+      % No value found - Perhaps PrintTicket processing is disabled
+      pop [1.0 1.0] /PageScaleXY 1 index def
+    }if
+
+    % Increase scale for poster output.
+    dup 0 get PosterX mul
+    exch 1 get PosterY mul
+
+    RotateOutput { exch }if
+  end
+  scale
+  //ProcessPageAlignment exec
+} bind def
+
+% Emit a blank page using the current graphics state, flagging
+% it as an 'InsertSheet'.
+/InsertSeparatorSheet {
+  (->InsertSeparatorSheet) //PTDebug exec
+
+  gsave
+    << /InsertSheet true >> setpagedevice
+    (%pagebuffer%) << /InsertSheet true >> setdevparams
+    showpage
+  grestore
+
+  (<-InsertSeparatorSheet) //PTDebug exec
+} bind def
+
+% Called prior to the first page being RIPped.
+/OnBeforeFirstPage {
+  (->OnBeforeFirstPage) //PTDebug exec
+
+  //InternalState /PrintStartSheet get { //InsertSeparatorSheet exec }if
+
+  (<-OnBeforeFirstPage) //PTDebug exec
+} bind def
+
+% Called after the last page is RIPped.
+/OnAfterLastPage {
+  (->OnAfterLastPage) //PTDebug exec
+
+  //InternalState /PrintEndSheet get { //InsertSeparatorSheet exec }if
+
+  (<-OnAfterLastPage) //PTDebug exec
+} bind def
+
+% Search the Usr/XPSPTExtensions/ folders for modules to handle PrintTicket keys.
+% Any files under the 'inactive' or 'overrides' folders are ignored.
+% Modules in SW/Usr overrride those from the plugin.
+/LoadPTModule {
+  /CustomCode 1 index def
+
+  % Ignore inactive modules
+  CustomCode (/inactive/) search { pop pop pop true }{ pop false }ifelse
+  CustomCode (/overrides/) search { pop pop pop true }{ pop false }ifelse
+  or not
+  {
+    mark exch { run } stopped {
+      (%%[ Error: Extension ') print CustomCode print (' cound not be installed. ]%%) =
+    }{
+      counttomark 1 ne {
+        (%%[ Error: Extension ') print CustomCode print (' left stack incorrect. ]%%) =
+      }{
+        dup type /dicttype ne {
+          (%%[ Error: Extension ') print CustomCode print (' should leave a dictionary on the stack. ]%%) =
+        }{
+          CustomCode //PTDebug exec
+
+          % Extension loaded - Store keywords in PrintTicketKeywordProcs
+          {
+            1 index //PTDebug exec
+            //PrintTicketKeywordProcs 3 1 roll put
+          } forall
+        }ifelse
+      }ifelse
+    }ifelse
+    cleartomark
+  }if
+} bind def
+
+% Run and install a PrintTicket key overrides file
+%
+% Override file must leave a dictionary on the stack, where the key is a
+% PrintTicket keyword and the value is a procedure (or null).  If null
+% is specified the PrintTicket keyword will be removed from the PrintTicket.
+%
+% The procedure will become the override procedure for that key, unless
+% an override procedure has already been defined for that key.
+/LoadPTOverride {
+  /CustomCode 1 index def
+
+  % Ignore inactive overrides
+  CustomCode (/inactive/) search { pop pop pop true }{ pop false }ifelse
+  not
+  {
+    mark exch { run } stopped {
+      (%%[ Error: Override ') print CustomCode print (' cound not be installed. ]%%) =
+    }{
+      counttomark 1 ne {
+        (%%[ Error: Override ') print CustomCode print (' left stack incorrect. ]%%) =
+      }{
+        dup type /dicttype ne {
+          (%%[ Error: Override ') print CustomCode print (' should leave a dictionary on the stack. ]%%) =
+        }{
+          CustomCode //PTDebug exec
+
+          {
+            //PrintTicketKeywordProcs 2 index 2 copy known {
+              get % The PT keyword is known to us
+              dup /Override known {
+                % Override already defined
+                pop % keyword procs dict
+                (Override already defined:) //PTDebug exec 1 index //PTDebug exec
+                pop pop % key & override
+              }{
+                /Override 2 index put  % Define the new override proc
+                1 index //PTDebug exec
+                pop pop % key & override
+              }ifelse
+            }{
+              pop pop
+              (PT key not recognised:) //PTDebug exec
+              1 index //PTDebug exec
+              pop pop % key and override
+            }ifelse
+          } forall
+        }ifelse
+      }ifelse
+    }ifelse
+    cleartomark
+  }if
+} bind def
+
+% From http://www.postscript.org/FAQs/language/node68.html
+%% string1 string2 append string
+% Function: Concatenates two strings together.
+/append {
+  2 copy length exch length add  % find the length of the new.
+  string dup                     % string1 string2 string string
+  4 2 roll                       % string string string1 string2
+  2 index 0 3 index              % string string string1 string2 string 0 string1
+  putinterval                    % stuff the first string in.
+                                 % string string string1 string2
+  exch length exch putinterval
+} bind def
+
+(Loading custom extensions...) //PTDebug exec
+[
+  (%os%Extensions/PSDevices/xpsptdev/Usr/XPSPTExtensions)  % First load from plugin's location
+  (%os%Usr/XPSPTExtensions)                                % Then from SW/Usr
+]
+{
+  (/*.ps) //append exec
+  {
+    //LoadPTModule exec
+  } 256 string filenameforall
+} forall
+
+% Find any override handlers that need to be hooked up.
+% In this case, for the SW/Usr ones to take precedence, we have to run then
+% last instead of first.
+(Loading custom overrides...) //PTDebug exec
+[
+  (%os%Usr/XPSPTExtensions/overrides)                                % First from SW/Usr
+  (%os%Extensions/PSDevices/xpsptdev/Usr/XPSPTExtensions/overrides)  % Then from plugin's location
+]
+{
+  (/*.ps) //append exec
+  {
+    //LoadPTOverride exec
+  } 256 string filenameforall
+}forall
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The ProcSet Resource                                                           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/HqnXPSPrintTicket
+<<
+  % ptdict StartJob -
+  % Called at the start of a job.  ptdict represents a job-level PrintTicket.
+  /StartJob {
+    mark exch
+    (->StartJob) //PTDebug exec
+
+    % Reset state
+    /InternalState //EmptyState def
+    //resetDuplexState exec
+    //InternalState begin
+      /PreJobOverprintPreview currentinterceptcolorspace /OverprintPreview get def
+      /OverprintPreviewForced false def
+    end
+
+    % Process the PrintTicket
+    /Job //ProcessTicket exec
+
+    % Configure the job-level pagebuffer and page device parameters
+
+    % setup_dict
+    //DoFillPGBParamDict exec
+    //DoSetPageBufferParams exec
+    //DoFillDeviceDict exec
+    //DoSetPagedevice exec
+
+    % Check stack
+    counttomark 0 gt { (%%[ Warning: StartJob has left operands on the stack. ]%%) = }
+    cleartomark
+
+    (<-StartJob) //PTDebug exec
+  } bind
+
+
+  % - EndJob -
+  % Called at the end of job processing.
+  /EndJob {
+    (->EndJob) //PTDebug exec
+
+    %% Reset the OverprintPreview to its original setting.
+    //InternalState /PreJobOverprintPreview get //SetOverprintPreview exec
+
+    (<-EndJob) //PTDebug exec
+  } bind
+
+
+  % ptdict StartDocument -
+  % Called at the start of a document. ptdict represents a document-level PrintTicket.
+  /StartDocument {
+    mark exch
+    (->StartDocument) //PTDebug exec
+
+    % Reset state
+    //InternalState begin
+      InputBinFeedDirection /Document /Unknown put
+      InputBinFeedDirection /Page /Unknown put
+      /UsingDocumentNUp false def
+      /PrintingFirstPage true def
+      /PrintStartSheet false def
+      /PrintEndSheet false def
+      /PosterPageIndex 0 def
+    end
+
+    % Process the PrintTicket
+    /Document //ProcessTicket exec
+
+    % Conditionally reset duplex state
+    //InternalState begin
+      currentdict /JobDuplex known not {
+        currentdict /DocumentDuplex known {
+          DocumentDuplex [(None) (OneSided)] //IsOneOf exec not {
+            //resetDuplexState exec
+          }if
+        }if
+      }if
+    end
+
+    % Configure the document-level pagebuffer and page device parameters
+
+    % setup_dict
+    //DoFillPGBParamDict exec
+    //DoSetPageBufferParams exec
+    //DoFillDeviceDict exec
+    //DoSetPagedevice exec
+
+    % Check stack
+    counttomark 0 gt { (%%[ Warning: StartDocument has left operands on the stack. ]%%) = }
+    cleartomark
+
+    (<-StartDocument) //PTDebug exec
+  } bind
+
+
+  % - EndDocument -
+  % Called at the end of document processing.
+  /EndDocument {
+    (->EndDocument) //PTDebug exec
+
+      % Trigger a callback after the last document page is being printed.
+      //OnAfterLastPage exec
+
+    (<-EndDocument) //PTDebug exec
+  } bind
+
+
+  % Reset the initial graphics state for an XPS page.
+  %
+  % areaDict bValid ptdict StartPage -
+  % where
+  %  areaDict contains keys referencing page area arrays (in PS points):
+  %    /FixedPage      [w,h]
+  %    /BleedBox       [x,y,w,h]
+  %    /ContentBox     [x,y,w,h]
+  %    /ImageableArea  [x,y,w,h]
+  %    /TrimToImageableArea  bool  (Whether to set up a clipping region or
+  %      actually trim the size of the output raster.)
+  %  bDigSigValid:  true iff the job's digital signature is known to be valid.
+  %  ptdict:        Represents a page-level PrintTicket.
+  %
+  % Note colorspace is set up in the RIP since we need to set both stroke and
+  % fill colorspaces which cannot be done from PS.
+  /StartPage {
+    mark 4 1 roll
+    (->StartPage) //PTDebug exec
+
+    /setup_dict null def
+
+    1 dict begin
+      /ptDict exch def
+      /bDigSigValid exch def
+      /areaDict exch def
+
+      % The default page size is from the FixedPage.
+      //InternalState begin
+        /FixedPageSize areaDict /FixedPage get def
+        /BleedBox areaDict /BleedBox get def
+        /ContentBox areaDict /ContentBox get def
+        /PageImageableArea areaDict /ImageableArea get def
+        /TrimToImageableArea areaDict /TrimToImageableArea get def
+        /ClipRegion /GGClipNone def
+        /PageSize FixedPageSize 2 array copy def
+        /RotateOutput false def
+        /MirrorPrint /None def
+        /CustomPageScaling false def
+        /OverridePageMediaSize false def
+        /PrePageOverprintPreview currentinterceptcolorspace /OverprintPreview get def
+      end
+
+      % Reset state
+      //InternalState /InputBinFeedDirection get /Page /Unknown put
+
+      % Update duplex state
+      //ToggleDuplexState exec
+
+      % Process the PrintTicket
+      /setup_dict
+        ptDict /Page //ProcessTicket exec
+      store
+
+      bDigSigValid % Push onto stack for consumption below.
+    end
+
+    //InternalState begin
+      //PerformSecurityAction exec
+
+      % Decide whether to rotate the media to match the InputBin FeedDirection
+      /RotateOutput
+        <<
+          (ShortEdgeFirst) //IsMediaLandscape
+          (LongEdgeFirst)  //IsMediaPortrait
+          /Unknown         { false } bind
+        >>
+        //getInputBinFeedDirection exec get exec
+      def
+
+      % Ensure PageSize orientation matches the desired FeedDirection
+      RotateOutput { /PageSize PageSize //SwapArrayCoords exec def }if
+
+      % Calculate any 'Fit to Page' scalars
+      //ProcessPageFitToApplicationScaling exec
+
+      % Configure the page-level pagebuffer and page device parameters
+      setup_dict
+      //DoFillPGBParamDict exec
+      //DoSetPageBufferParams exec
+      //DoFillDeviceDict exec
+      //DoSetPagedevice exec
+
+      % Configure CTM for XPS coords (and set page content orientation)
+      //GetPageContentToMediaMatrix exec concat
+      //XPSToPSMatrix exec //GetPageMirrorMatrix exec matrix concatmatrix
+      concat
+
+      % Clip to imageable area (before any page scaling occurs).
+      //clipSourcePageToImageableArea exec
+
+      % Apply PageScaling options
+      //applyPageScalingToCTM exec
+
+      RotateOutput {
+        % Rotate the output
+        //GetRotateMediaMatrix exec concat
+      }if
+
+      //applyNUpYTranslation exec
+      //alignCTMOriginToDevicePixels exec
+      //clipSourcePageToContentBox exec
+
+      % Trigger a callback when the first document page is being printed.
+      PrintingFirstPage {
+        /PrintingFirstPage false def
+        //OnBeforeFirstPage exec
+      }if
+
+      % Advance poster page index.
+      /PosterPageIndex PosterPageIndex 1 add PosterX PosterY mul mod def
+    end
+
+    % Check stack
+    counttomark 0 gt { (%%[ Warning: StartPage has left operands on the stack. ]%%) = }
+    cleartomark
+
+    currentdict /setup_dict undef
+
+    (<-StartPage) //PTDebug exec
+  } bind
+
+
+  % - EndPage -
+  % Called at the end of page processing.
+  /EndPage {
+    (->EndPage) //PTDebug exec
+
+    %% Reset the OverprintPreview to its previous setting.
+    //InternalState /PrePageOverprintPreview get //SetOverprintPreview exec
+
+    (<-EndPage) //PTDebug exec
+  } bind
+
+>> /ProcSet defineresource pop
+
+globalness
+end   % PrintTicketWS
+setglobal
+
+%%EndProcSet

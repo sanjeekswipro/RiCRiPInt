@@ -1,0 +1,38 @@
+% Copyright (C) 2007 Global Graphics Software Ltd. All rights reserved.
+
+% $HopeName: SWebd_OIL_example_gg!swf:usr:hqnebd:extdevic(EBDSDK_P.1) $
+
+% This example is provided on an "as is" basis and without
+% warranty of any kind. Global Graphics Software Ltd. does not
+% warrant or make any representations regarding the use or results
+% of use of this example.
+
+% This file is loaded very early on in the RIP bootup, and it describes the devices
+% that need to be initialized in order for the RIP to run.
+
+%!PS-Adobe
+%%Title: Usr/HqnEmbedded/ExtraDevices
+%%Creator: Global Graphics Software Limited
+%%EndComments
+
+statusdict begin
+mark { 
+(%embedded%) dup devmount pop    
+<< /Password 0                   
+   /DeviceType 16#ffff000e       
+   /SearchOrder -1               
+   /Enable true                  
+   /JobTiming false              
+>> setdevparams                  
+} stopped cleartomark
+
+mark {
+(%pdfspool%) dup devmount pop
+<<
+  /Password 0
+  /DeviceType 16#ffff1000
+  /Enable true
+>> setdevparams
+} stopped cleartomark
+
+end

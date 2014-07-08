@@ -1,0 +1,840 @@
+% /* $HopeName: SWv20!src:jobpss.pss(EBDSDK_P.1) $
+%
+% Copyright (C) 1991-2012 Global Graphics Software Ltd. All rights reserved.
+% Global Graphics Software Ltd. Confidential Information.
+%
+% Log stripped
+
+% ----------------------------------------------------------------------
+% job handling
+
+statusdict begin
+  serverdict begin
+
+    /secretdict 10 $ldict def
+    secretdict begin
+      /startjob  false def   % Previous server loop ended with startjob?
+      /newjob    true  def   % Next server loop reads from %config% device
+      /doend     false def   % Do EndJob hooks?
+      /savelevel     0 def
+      /exitcontext false def % In unencapsulated job context
+      /eojresetsystemparams  % (used to be called /disableaccuratescreens)
+      <<
+        /AccurateScreens false
+        /OverrideFrequency 0.0
+        /OverrideSpotFunction -1
+        /OverrideSpotFunctionName null
+        /OverrideAngle -1.0
+        /ScreenAngles [15 75 0 45]
+        /Separation ()  % essential, to clear pointers into namecache held by spdetect [22312]
+        /Password 0
+      >> def
+      /eojunshadow <<
+        /setscreen null
+      >> def
+      /stdiodevdict <<
+        /Password 0
+        /CurInputDeviceBuf 2048 string
+        /CurInputDevice 1 index 0 0 getinterval
+        /CurOutputDeviceBuf 256 string
+        /CurOutputDevice 1 index 0 0 getinterval
+      >> def
+    end % in serverdict, undeffed later
+
+    /setsccstreams {
+      //serverdict begin
+        /transparent exchdef
+        /parity25 exchdef
+        /baud25 exchdef
+        //statusdict /debugmode get 0 ne
+          { /baud25 0 def }
+        if
+        /parity9 exchdef
+        /baud9 exchdef
+        baud9 baud25 or 0 eq
+          { /baud9 1200 def /baud25 1200 def }
+        if
+        /altflag baud9 0 ne baud25 0 ne and def
+        baud9 0 ne
+          { 9 sccfiles status exch status and }
+        if
+        baud25 0 ne
+          { 25 sccfiles status exch status and }
+        if
+        /sccok exchdef
+        9 baud9 0 ne
+        {
+          sccok
+          { sccfiles }
+          { baud9 parity9 transparent openscc exch dup resetfile exch }
+          ifelse
+          (serial9)
+        }
+        { closescc }
+        ifelse
+        /stdname exchdef /stdout exchdef /stdin exchdef
+        25 baud25 0 ne
+        {
+          sccok
+          { sccfiles }
+          { baud25 parity25 transparent openscc exch dup resetfile exch }
+          ifelse
+          (serial25)
+        }
+        { closescc }
+        ifelse
+        altflag
+        { /altname exchdef /altout exchdef /altin exchdef }
+        if
+        stdin stdout statusdict begin setstdio end
+      end % serverdict
+    } bd % in serverdict
+
+    /transparent false def
+    /stdname (AppleTalk) def
+    /stdout  (%stdout) (w) file def
+    /stdin   (%stdin)  (r) file def
+    /altname null def
+    /altout  0 def
+    /altin   0 def
+    /baud9   9600 def
+    /baud25  9600 def
+    /parity9  0 def
+    /parity25 0 def
+    /firstjob true def
+    /firstjobfile () def
+    /firstjobdone (0) def
+    /altflag true def
+    /sccok false def
+    /setnulldevice { matrix currentmatrix nulldevice setmatrix } bd
+    % ajcd 2011-04-18: Removed activation of this procedure:
+    /cleanupjob { } def
+    /exchdef { exch def } bd
+    /dexch { dup load exch 2 index load store store } bd
+
+    /setstreams {
+      //statusdict /jobsource null put
+      { //serverdict begin
+      % This will close the stdin & stdout even on postscript errors
+      % and set them to %invalidfile
+          //statusdict begin /jobname null def /jobstate (idle) def /jobsource null def sendprinterstate end
+          /stdout load dup status { dup closefile } if pop
+          /stdout (%invalidfile) (w) file store
+          /stdin  load dup status { dup closefile } if pop
+          /stdin  (%invalidfile) (r) file store
+
+          % Reopen stdout if necessary to allow the config device to output to the
+          % monitor, eg. if the old one was above (as happens after startjob!)
+          % NB. giving stdin similar treatment is not necessary since both will be
+          %     reassigned later.
+          % NB2. This must be done here since the file structure will get reused
+          %      in the C world since the new file is a _base_ file.
+          (%stdout) (w) file status not {
+            (%stdin) (r) file (%stderr) (w) file setstdio
+          } if
+
+          /configin (%config%) (r&) file cvx def
+
+          { //serverdict /configin get bytesavailable 0 ne }
+          //serverdict /doidle known {
+            UseIdleTime
+          }{
+            { dup exec { exit } if } loop pop % wait until bytes available
+          } ifelse
+
+          /configin load
+        end
+        1183615869 internaldict /configjobinternal get exec
+        stopped           % execute the config file
+        {
+          //serverdict /configin get closefile
+          clear cleardictstack
+          (%stderr) (w) file UVS(ERROR IN CONFIG FILE\n) writestring
+          $error /failjob true put
+          true //errordict /senderrorevent get exec % always send event
+          true 1183615869 internaldict /endjobinternal get exec % stopped job
+        } {
+          % config will have left "in out true" or "false"
+          % If true in and out are the files for a job, so set stdin
+          % and stdout to them and break out the loop to execute the job
+          % The other case presumably means that some configuration has
+          % happened but no job is waiting so go round again
+          {
+            //serverdict begin
+              /stdout exch cvlit def
+              /stdin  exch cvlit def
+
+              //secretdict /stdiodevdict get begin
+                /CurInputDevice stdin CurInputDeviceBuf //statusdict /filename get exec
+                not { (%Unknown Device%) } if def
+                /CurOutputDevice stdout CurOutputDeviceBuf //statusdict /filename get exec
+                not { (%Unknown Device%) } if def
+                currentdict
+              end
+              setsystemparams
+            end
+            2 vmreclaim % global+local GC
+            % Note that this is a real job, not a config job
+            1183615869 internaldict /realjobinternal get exec
+            exit
+          } {
+            false 1183615869 internaldict /endjobinternal get exec
+          } ifelse
+        } ifelse
+      } loop
+    } bd % in serverdict
+
+    /s1 100 string def      % tmp name - gets overridden
+    /s2 100 string def      % tmp name - gets overridden
+    /altprint {
+      //serverdict begin
+        //statusdict begin
+          altflag {
+            altout //s1 filename pop stdout //s2 filename pop ne {
+              altout 1 index writestring altout flushfile
+            } if
+          } if
+          stdout exch writestring % stdout flushfile
+        end % statusdict
+      end % serverdict
+    } bd % in serverdict
+    currentdict /s1 undef
+    currentdict /s2 undef
+
+    /initprinter {
+      1 1 4 {
+        4 ne
+        { 67 sendpcmd 0 ge { exit } if }
+        { //printerstatus exec pop }
+        ifelse
+      } for
+    } bd % in serverdict
+
+    /harlequininit {
+    } bd
+
+    /execstartupfile 4 $ldict def
+
+    /execstartupfile { % filename to exec in stopped context & close & error report on
+      dup status {
+        pop pop pop pop
+        //execstartupfile begin
+          /runfilename exch def
+          /runglobal currentglobal def
+          count $larray astore /ostack exch def
+          countdictstack $larray dictstack /dstack exch def
+        end
+        clear
+        cleardictstack
+
+        //execstartupfile /runfilename get (r&) {
+          file
+          dup //execstartupfile exch /runfile exch put
+          cvx
+          exec
+        } stopped {
+          //execstartupfile begin
+            % UVM(%%%%[ Warning: Error in running Startup File "%s" ]%%%%)
+            (%%[ Warning: Error in running Startup File ") print
+            runfilename print
+            (" ]%%\n\n) print
+          end
+        } if
+
+        count 0 gt {
+          % UVM(%%%%[ Warning: Startup File "%s" left objects on operand stack ]%%%%)
+          (%%[ Warning: Startup File ")print
+          //execstartupfile /runfilename get print
+          (" left objects on operand stack ]%%\n) print
+        } if
+        clear
+
+        countdictstack 3 gt {
+          % UVM(%%%%[ Warning: Startup File "%s" left dictionaries open ]%%%%)
+          (%%[ Warning: Startup File ")print
+          //execstartupfile /runfilename get print
+          (" left dictionaries open ]%%\n) print
+        } if
+        cleardictstack
+
+        //execstartupfile /dstack get 3 1 index length 3 sub getinterval { begin } forall   % includes execstartupfile
+          ostack aload pop
+          runglobal setglobal
+          mark { runfile closefile } stopped cleartomark
+        end
+      } {
+        pop
+      } ifelse
+    } bd
+
+    % Run boot files in Sys then any files whose names - in () - are
+    % listed in Sys/Bootlist or if non-existent, Sys/Start.
+    % Ignore any errors
+    /startupfiles {
+#ifdef WATERMARK
+      {
+        (Sys/HqnWMS) 1183615869 internaldict /_hqxrun get exec
+      }
+      stopped {
+        $printerdict /superstop dup put systemdict /quit get exec
+      }
+      if
+#endif
+      (Sys/HqnStart)    serverdict /execstartupfile get exec
+      (Sys/HqnProduct)  serverdict /execstartupfile get exec
+      (Sys/HqnPlatform) serverdict /execstartupfile get exec
+
+      % Build list of ExtraStart files
+      [ (%os%/Sys/ExtraStart/*) { dup length string copy } =string filenameforall
+
+      1 $ldict begin
+      % bubble sort
+      {
+        /done true def
+        counttomark 1 sub {
+          2 copy lt {
+            exch
+            /done false def
+          } if
+          counttomark 1 roll
+        } repeat
+        counttomark 1 roll
+        done { exit } if
+      } loop
+      end
+
+      % Now run all the files with safety checks and reporting
+      counttomark {
+        serverdict /execstartupfile get exec
+      } repeat
+      pop   % mark
+
+      (Sys/HqnOEM)      serverdict /execstartupfile get exec
+
+      {
+        (Sys/Bootlist) status
+        {
+          pop pop pop pop
+          //serverdict /sysbootlist (Sys/Bootlist) (r) file put
+          {
+            //serverdict /sysbootlist get token
+            {
+              serverdict /execstartupfile get exec
+            }
+            {
+              exit
+            }
+            ifelse
+          } loop
+        } {
+          (Sys/Start) serverdict /execstartupfile get exec
+          (Usr/Start) serverdict /execstartupfile get exec
+        } ifelse
+      } stopped clear
+    } bd % startupfiles in serverdict
+
+    /productinit {
+      //statusdict begin
+        (%font%) devmount
+      end pop
+      1 setblink
+      initprinter
+    } bd % in serverdict
+
+    /prepareexec {
+      % common code for execpostscriptbatch, execpdfbatch, execepsbatch
+      //serverdict begin
+        stdin stdout statusdict begin setstdio end
+      end
+      % only load it inside the server loop (not outside or
+      % becomes permanent & crashes)
+      vmstatus pop pop 0 gt {
+        //serverdict /setrealdevice get exec
+        % force load of user setup according to published printername
+      } if
+      //serverdict begin
+        //execdict begin
+          % this is commented out because it breaks things elsewhere at present
+          % /print /altprint load def
+          /execdepth 0 def
+        end % execdict
+        protect
+        //statusdict begin
+          /jobstate (busy) def
+          sendprinterstate
+        end % statusdict
+        defaulttimeouts settimeouts
+        stdin dup stdout statusdict begin setstdio end
+      end % serverdict
+    } bd % in serverdict
+
+    /execpostscriptbatch {
+      cvx exec
+    } bd % in serverdict
+
+    /execpostscriptinteractive {
+      pop  % stdin
+      executive
+    } bd % in serverdict
+
+    /execpdfbatch {
+      % HqnOPI does not always exist (it's not present in LE for example).
+      /HqnOPI /ProcSet resourcestatus {
+        pop pop
+        /HqnOPI /ProcSet findresource pop
+      } if
+      <<>> pdfexec
+    } bd % in serverdict
+
+    /execepsbatch {
+      << /Encapsulated false >> epsexec
+    } bd % in serverdict
+
+    /superstoppedwithreserve { % proc superstoppedwithreserve -
+      % disallow use of final reserve, since a failure here is survivable
+      1183615869 internaldict /resetreservememory get exec
+      superstopped
+      % allow use of final reserve in the server loop
+      1183615869 internaldict /releasereservememory get exec
+    } bd % in serverdict
+
+    /fontname {
+      //statusdict begin
+        dup ROMnames length ge
+        { pop 0 }
+        if
+        ROMnames exch get
+      end
+    } bd % in serverdict
+
+    /setrealdevice << >> def
+    /setrealdevice {
+      //setrealdevice setpagedevice
+    } bd % in serverdict
+
+    /switchexecmode [
+      //execpostscriptbatch
+      //execpostscriptinteractive
+      //execpdfbatch
+      //execepsbatch
+    ] def % in serverdict
+
+    /terminatejobnow {
+      % callable from a job, or more likely a callback within a job,
+      % to simply stop what it is doing in a way that does not give an error
+      $error begin
+        /newerror false def
+        /errorname /terminatejobnow def
+        /terminatejobnow true def
+      end
+      superstop
+    } bd % in serverdict
+
+    /abortjobnow {
+      % callable from a job, or more likely a callback within a job,
+      % to simply stop what it is doing in a way that reports the job
+      % as not completed
+      $error begin
+        /newerror false def
+        /errorname /abortjobnow def
+        /terminatejobnow false def
+      end
+      superstop
+    } bd % in serverdict
+
+    /execjob {
+      % Interrupts should be disabled and clear on entry. We enable interrupts
+      % whenever we're going to run user-supplied code, because it could go
+      % into an infinite loop. superstopped leaves interrupts disabled on exit,
+      % so we use it to run the user code, with interrupt enabling inside
+      % the superstopped procedure.
+      $error begin
+        /terminatejobnow false def
+        /failjob false def
+      end
+      { % This proc is run superstopped because of the StartJob hooks and
+        % the main user job stream execution.
+        //serverdict begin
+          0 setblink
+        end
+        1 setblink
+        initgraphics
+        erasepage
+        clearinterrupt enableinterrupt
+        //prepareexec exec
+        % Only do StartJob hook in encapsulated contexts
+        //secretdict /exitcontext get not {
+          currentpagedevice /StartJob 1183615869 internaldict /runhooks get exec
+        } if
+        % Pick the routine to run the PDL type and execute it:
+        //switchexecmode softwareiomode get exec
+      }
+      { % This proc is run superstopped because of the EndJob hooks.
+        //superstoppedwithreserve exec
+
+        % Reset memory allocation mode to local since the following
+        % setpagedevice call fails if the job ends leaving allocations in global VM
+        false setglobal
+
+        % The following setpagedevice is used to deactivate the previous page, causing
+        % a missing showpage to be done IF the user has selected /AutoShowpage (AC).
+        {} settransfer  % Done to make sure we can settransfer the background color
+        {} setblackgeneration
+        {} setundercolorremoval
+        newpath     % in case we are low on memory and e.g. current path was not empty
+        initclip    % Ditto for the clip path et al
+
+        % Set a simple screen because setpagedevice is about to cause
+        % the current screen to be re-run, and this can cause problems
+        % after some jobs, because names in the spot function may now
+        % have gone out of scope.
+        10 30 { pop abs 1 exch sub } setscreen
+
+        % test previous superstopped:
+        dup not {
+          pop
+          % A shadow on setpagedevice must be removed to ensure the deactivate
+          % works when an impertinent job completely overrides setpagedevice.
+          % A shadow set outside of the server-loop will be reset by the restore.
+          { % Superstopped because setpagedevice may run user StartRender hooks.
+            << /setpagedevice null >> 1183615869 internaldict /shadowop get exec
+            clearinterrupt enableinterrupt
+            << /Deactivate -1 >> //systemdict /setpagedevice get exec
+          } //superstoppedwithreserve exec
+        } if
+
+        //secretdict /doend get {
+          clearinterrupt enableinterrupt
+          currentpagedevice /EndJob 1183615869 internaldict /runhooks get exec
+        } if
+
+        % superstopped left false on stack if OK, so this re-throws any error:
+        { stop } if
+      } //superstoppedwithreserve exec
+      cleardictstack
+
+      % Skip the cleanup code if the job ran without stopping, or we hit
+      % an exitserver, startjob or CTRL-D without a subsequent error. Leave
+      % the failure boolean on the stack for the endjobinternal call later.
+      //secretdict /newjob get $error /newerror get or and dup
+      { clear
+        % All cases in this if statement need to flush the job, so mark this
+        % as needing a new job from the %config% device afterward.
+        //secretdict /newjob true put
+
+        //serverdict begin
+          //execdict begin
+            $error begin
+              % Leave failed job boolean on stack
+              terminatejobnow not
+              % We cannot terminate the job cleanly if in error state.
+              newerror { pop true } if
+              % This job counts as a fail if it was not deliberately and
+              % cleanly terminated using terminatejobnow. If the skin tries
+              % to override the failure, we avoid reporting it as an error.
+              dup { /failjob true def } if
+              % Send the error event explicitly, in case the error handler
+              % is overridden, and not with one of ours. Do this before
+              % clearing interrupts, so it is guaranteed to be sent.
+              false //errordict /senderrorevent get exec
+              % The error event must be sent before calling the error handler,
+              % both because it may suppress the error reporting, and also
+              % because the error handler clears out some of the error
+              % information when it runs.
+              newerror {
+                { % This proc is run superstopped because the error handler
+                  % can be replaced by the user. This is also why we reset the
+                  % timeouts. Nevertheless, run it with the final reserve
+                  % released, because it's important to output the error.
+                  defaulttimeouts settimeouts
+                  clearinterrupt enableinterrupt
+                  % \todo ajcd 2011-04-18: Why the original $error dict here?
+                  //$error /default get { defaulthandleerror } { handleerror } ifelse
+                } superstopped { clear true } if
+              } if
+              % We are not continuing with the same input stream, either
+              % because of an error or a clean termination, so flush it.
+              % Flushing may close the input stream, which signals to input
+              % plugins that they are done, so sending the error event has
+              % to be done before this point.
+              stdin bytesavailable 0 ge {
+                {
+                  UVS(%%[ Flushing: rest of job (to end of file) will be ignored ]%%)
+                  =
+                  flush
+                } stopped { clear true } if
+                { stdin flushfile } stopped { clear true } if
+                % allow use of final reserve (an error above would reset it)
+                1183615869 internaldict /releasereservememory get exec
+              } if
+            end % $error
+          end % execdict
+        end % serverdict
+        flush
+      } if % Job cleanup condition
+
+      % Comments above by Andy indicate that the Deactivate -1 should trigger
+      % the auto showpage. This is too late for AutoShowpage, because any
+      % error has been issued already. The following comment is historical,
+      % but hopefully not accurate:
+      % [Make sure EPS(F) files get their showpage added at the end.] -
+      { % This proc is run superstopped because the setpagedevice might call
+        % user hooks.
+
+        % A shadow on setpagedevice must be removed to ensure the deactivate
+        % works when an impertinent job completely overrides setpagedevice.
+        % A shadow set outside of the server-loop will be reset by the restore.
+        << /setpagedevice null >> 1183615869 internaldict /shadowop get exec
+
+        clearinterrupt enableinterrupt
+        % This forces device deactivation, regardless of all overrides.
+        << /Deactivate -2 >> //systemdict /setpagedevice get exec
+      } //superstoppedwithreserve exec { clear true } if
+
+      { % This proc is run superstopped because the setpagedevice might call
+        % user hooks.
+
+        clearinterrupt enableinterrupt
+        % Ensure that if job is unencapsulated, Deactivate -2 will not be
+        % inherited by next job. This is important, to ensure resetpagedevice
+        % will be called appropriately for changes to raster size etc. due to
+        % PageSize or ImagingBBox changes.
+        << /Deactivate null >> //systemdict /setpagedevice get exec
+      } //superstoppedwithreserve exec { clear true } if
+
+      % That's the last superstopped in execjob, clear the interrupts now until
+      % the next job starts.
+      clearinterrupt
+
+      //secretdict /newjob get {
+        % Consume job failed boolean:
+        1183615869 internaldict /endjobinternal get exec
+      } { % if not starting a new job, reset the timeouts for the next sub-job
+        defaulttimeouts //serverdict begin settimeouts end
+      } ifelse
+
+      clear cleardictstack % initgraphics erasepage -
+                           % now done by setpagedevice in setrealdevice
+    } bd % execjob in serverdict
+
+    /warmedup {
+      //printerstatus exec
+      dup 0 lt exch 134217728 and 0 eq or
+    } bd % in serverdict
+
+    /settimeouts {
+      //statusdict begin
+        /waittimeout exchdef
+        /manualfeedtimeout exchdef
+        setjobtimeout
+      end
+    } bd % in serverdict
+
+    /printstartpage {
+      userdict begin
+        (1) xs copy pop
+      end
+      statusdict begin
+        userdict begin
+          (2) xs copy pop
+        end
+        userdict begin
+          (2) xs copy pop
+        end
+        printerstatus 1 ne {
+        userdict begin
+          (3) xs copy pop
+        end
+        statusdict /printererror /stop load put
+        userdict begin
+          (4) xs copy pop
+        end
+        userdict begin
+          setrealdevice
+          (5) xs copy pop
+        end
+        /wtimeout usertime 180000 add def
+        userdict begin
+          (6) xs copy pop
+        end
+        userdict begin
+          a4
+          startpage
+        end
+        { warmedup usertime wtimeout gt or } UseIdleTime
+
+        usertime wtimeout le {
+          userdict begin
+            (0) xt copy pop
+          end
+          showpage
+          userdict begin
+            (1) xt copy pop
+          end
+        } if
+      } if
+    } bd % in serverdict
+
+    /exitserver {
+      checkpassword {
+        //execdict begin
+          % \todo ajcd 2011-04-17: PLRM3 3.7.7 (p.72) says this message is
+          % suppressed if /binary is true in $error:
+          UVS(%%[ exitserver: permanent state may be changed ]%%) = flush
+        end
+        //secretdict  begin
+          /startjob false def % job not bounded by /startjob
+          /newjob false def % don't start a new job - keep reading from stdin
+          /exitcontext true def % continue with unencapsulated job
+        end
+        $error /newerror false put
+        //serverdict begin
+          firstjob {
+            firstjobdone 0 48 put
+          } if
+        end
+        % \todo ajcd 2011-04-18: Should this *really* be quit? This should pick
+        % up the userdict version from edpdpss.pss, which is really just a stop.
+        % If you put systemdict on the stack before calling startjob, you'll
+        % get the internal quit operator, and it'll reboot the RIP regardless
+        % of what you wanted done.
+        quit
+      } {
+        /exitserver /invalidaccess .error
+      } ifelse
+    } bind executeonly def % in serverdict
+
+    systemdict /startjob {
+      count 2 lt {
+        /startjob /stackunderflow .error
+      } if
+      1 index type /booleantype ne
+      1 index type dup /integertype ne
+      exch /stringtype  ne and
+      or {
+        /startjob /typecheck .error
+      } if
+      dup type /stringtype eq
+      { { cvi } stopped { /startjob /invalidaccess .error } if } if
+      checkpassword
+      vmstatus pop pop //secretdict /savelevel get le and {
+        //secretdict begin
+          /startjob true def % job was bounded by /startjob
+          /newjob false def % don't start a new job - keep reading from stdin
+          /exitcontext exch def % encapsulated/unencapsulated
+        end
+        $error /newerror false put
+        //serverdict begin
+          firstjob {
+            firstjobdone 0 48 put
+          } if
+        end
+        % \todo ajcd 2011-04-18: Should this *really* be quit? This should pick
+        % up the userdict version from edpdpss.pss, which is really just a stop.
+        % If you put systemdict on the stack before calling startjob, you'll
+        % get the internal quit operator, and it'll reboot the RIP regardless
+        % of what you wanted done.
+        quit
+      } {
+        pop false
+      } ifelse
+    } bind executeonly put % in systemdict
+
+    % The main server loop procedure.
+    %
+    % The server loop is called at the end of the /start bootup procedure
+    % from execupss.pss. The interpreter repeats the server loop forever. The
+    % only way out of the server loop is by calling the systemdict version of
+    % /quit, which will tear down the execution stack and then either exit
+    % the RIP, or re-boot by re-running the start procedure. /quit is called
+    % by startjob and by exitserver.
+    /server {
+      vmstatus pop pop 0 gt {
+        systemdict /quit get exec
+      } if
+      <<>> setpagedevice % ensure we are in a pagedevice so it deactivates ok
+      { % loop
+        % normal memory settings: disallow use of final reserve
+        1183615869 internaldict /resetreservememory get exec
+        $error /newerror false put
+        //statusdict begin
+          /jobstate (idle) def
+          /jobname  null   def
+        end
+        //secretdict /newjob get {
+          //secretdict /exitcontext false put
+          % This is the procedure that goes to the %config% device, gets an
+          % input and output stream, and sets them up as the job stream:
+          //setstreams stopped pop
+          % //setnulldevice exec  % dont do this: otherwise the pagedevice
+                                  % doesnt get deactivated
+        } if
+        clear cleardictstack
+        //secretdict /exitcontext get not {
+          //secretdict /svlv save put
+          //serverdict
+          /protect {
+            //serverdict readonly pop
+            save pop
+          } put
+        } {
+          //secretdict /svlv 0 put
+          //serverdict /protect {} put
+        } ifelse
+
+        //secretdict begin
+          /savelevel
+            vmstatus pop pop
+            exitcontext not { 1 add } if
+          def
+          /doend exitcontext not def % EndJob hook for unencapsulated jobs only
+          /newjob true def % Unless told otherwise, get next job from %config%
+          startjob % if previous job used "startjob", leave true on stack
+          /startjob false def
+          { true } if
+        end
+
+        //serverdict /execjob get stopped pop
+        clear cleardictstack
+        % allow use of final reserve now
+        1183615869 internaldict /releasereservememory get exec
+
+        //secretdict /svlv get type /savetype eq {
+          $printerdict /new_sf_defined get /new_sf_defined known
+          //secretdict begin % Push values on stack to reload later:
+            newjob
+            exitcontext
+            startjob
+            svlv
+          end
+          % Install a bogus screen so the interpreter survives - #21757
+          % This may fail cos of bad systemparams - if so we retry after
+          % we reset the systemparams
+          % and one other thing - undo any shadow on setscreen (and anything else in the
+          % eojunshadow) for similar reasons
+          1183615869 internaldict /shadowproc get length 0 gt {
+            //secretdict /eojunshadow get 1183615869 internaldict /shadowop get exec
+          } if
+          { 10 30 { pop abs 1 exch sub } setscreen } stopped
+          //secretdict /eojresetsystemparams get setsystemparams
+          { 10 30 { pop abs 1 exch sub } setscreen } if
+
+          restore
+          //secretdict begin
+            /startjob exch def
+            /exitcontext exch def
+            /newjob exch def
+          end
+         { $printerdict /rebuild_switchscreens get exec } if
+        } if
+      } loop
+    } bind executeonly def % in serverdict
+
+    currentdict /secretdict undef % from serverdict
+
+  end % serverdict
+end % statusdict
+
+0 statusdict /setsoftwareiomode get exec
+
+% end of jobpss

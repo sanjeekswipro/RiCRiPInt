@@ -1,0 +1,510 @@
+%!PS-Adobe-3.0
+%%Title: HqnTrap
+%%Creator: Global Graphics Software Limited
+%%CreationDate: Sep 8, 1992
+%{HqnTrap version #1 1
+% Copyright (C) 1992-2007 Global Graphics Software Ltd. All rights reserved.
+%%EndComments
+%%BeginProcSet: "(HqnTrap)" 1 2
+
+% $HopeName: SWv20!swf:procsets:hqntrap(EBDSDK_P.1) $
+%
+% Global Graphics Software Ltd. Confidential Information.
+%
+
+% (Loading Harlequin ProcSet for Quark trapping...) print flush
+
+currentglobal false setglobal
+
+50 dict begin
+  /globalness exch def
+  /TrapDict 6 dict def
+  true setglobal /TrapGlobal 1 dict def false setglobal
+  TrapGlobal /nextfid 0 put
+
+  % /TrapTextWidth 2 def % twice the trapping width
+  % /TrapArtWidth  2 def
+  % /TrapGray    0.3 def
+
+  % Default settings
+  TrapDict begin
+    /TrapTextWidth 0 def
+    /TrapArtWidth  0 def
+    /TrapTextGray .5 def
+    /TrapArtGray  .5 def
+  end		% TrapDict
+
+  /donttrap {
+    % dont do any trapping if (a) the color is white, (b) the color is black
+    % and we're overprinting 100% black
+    currentcmykcolor dup 1 eq {
+      pop pop pop pop
+      currentuserparams /OverprintBlack get
+    }{
+      add add add 0 eq
+    } ifelse
+  } bind def
+
+  /othersetoverprint /setoverprint load type /operatortype eq {
+    { setoverprint } bind
+  }{
+    { //setoverprint exec } bind
+  } ifelse def
+
+  /SpreadFonts 10 dict def
+  /ChokeFonts  10 dict def
+
+  /m1 matrix     def
+  /m2 matrix     def
+  /c  ( )        def
+
+  /SpreadBuildChar { % fontdict charindex
+    exch begin
+          % stash the character required in a string. note: this procedure
+          % will always be used in an overprinting context
+      //c exch 0 exch put
+          % remember the default user coordinate system for later
+      //m1 defaultmatrix pop
+          % use the font on which this one is based for drawing our character
+      OriginalFont setfont
+          % work with a clean graphics state, but round line caps are 
+          % better for trap
+      1 setlinecap 1 setlinejoin { } 0 setdash .3 setflat
+          % compute the cachedevice parameters. because we are spreading, the
+          % box must be made a bit bigger, but we want the adjustment to
+          % be in the default coordinate system
+      //c stringwidth
+      0 0 moveto //c true charpath
+      pathbbox 
+      TrapTextWidth 2 div dup dtransform exch .5 add round exch .5 add round 
+      //m1 defaultmatrix idtransform
+      abs exch abs exch      % CTM may be inverted wrt device space
+     2 { dup 4 -1 roll add 3 1 roll 5 -1 roll exch sub 4 1 roll } repeat
+      setcachedevice
+          % get the outline of the character
+      newpath 0 0 moveto //c true charpath
+          % trace round it, but in default coordinates so we get a constant
+          % thickness of spread around the character, even if scaled etc.
+      //m1 setmatrix
+      TrapTextWidth setlinewidth
+      stroke
+    end
+  } bind def
+
+  /ChokeBuildChar {
+    exch begin
+          % make the character into a string, switch to the original font 
+          % and set the graphics state to a known state. note: this 
+          % procedure will never be used in an overprinting context.
+      //c exch 0 exch put
+      OriginalFont setfont
+      1 setlinecap 1 setlinejoin { } 0 setdash .3 setflat
+          % work out the cachedevice parameters
+      //c stringwidth
+      0 0 moveto //c true charpath 
+      pathbbox newpath
+      currentfont /FontType get 3 eq {
+        pop pop pop pop setcharwidth
+      } {
+        setcachedevice
+      } ifelse
+          % clip first to the original character
+      0 0 moveto //c true charpath clip
+          % and now etch a boundary away from around the character boundary
+          % but in the default coordinate system so that it is 
+          % constant thickness
+      //m1 currentmatrix pop
+      //m2 defaultmatrix setmatrix
+      TrapTextWidth setlinewidth
+      strokepath 1183615869 internaldict /iclip get exec newpath
+          % draw the character with respect to this clipping, but back in the
+          % adjusted coordinate system to get the choked part
+      //m1 setmatrix
+      0 0 moveto //c show
+    end
+  } bind def
+
+  /settrapfont { % abuildchar afontdirectory
+    dup currentfont known dup { % note use of dictionary as *key*
+      pop dup currentfont get /TrapTextWidth get 
+      //TrapDict /TrapTextWidth get eq
+    } if
+    {
+      exch pop currentfont get
+    }{
+      currentfont <<
+        /BuildChar 5 -1 roll
+        /FontType 3
+        /FontMatrix {1 0 0 1 0 0}
+        /FontName //TrapGlobal begin /nextfid nextfid 1 add def nextfid end
+          //=string cvs cvn
+        /LanguageLevel 2
+        /Encoding currentfont /Encoding get
+        /FontBBox currentfont /FontBBox get
+        /OriginalFont currentfont
+        /TrapTextWidth //TrapDict /TrapTextWidth get
+        /FID 1 % make it big enough for this to be added
+      >> 
+      dup /FID undef
+      dup 4 1 roll put
+      dup /FontName get exch definefont
+    } ifelse 
+    setfont
+  } bind def
+
+  /UntrapableFont <<
+	{ 0 3 9 10 11 14 32 }{ null } forall
+  >> def
+  /UntrapableFont {
+	//UntrapableFont currentfont /FontType get known
+  } bind def
+
+  /spreadshow {
+    //donttrap exec
+    //UntrapableFont exec
+    or {
+      exec
+    }{
+      gsave
+        true //othersetoverprint exec
+        //SpreadBuildChar //SpreadFonts //settrapfont exec
+        % preserve the operand stack so we can do the operation twice
+        //TrapDict /stack count 2 sub put
+        count dup 8 gt { pop 8 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave
+        false //othersetoverprint exec
+        exec
+        currentpoint
+      grestore
+      moveto
+    } ifelse
+  } bind def
+
+  /chokeshow {
+    //donttrap exec
+    //UntrapableFont exec
+    or {
+      exec
+    }{
+      gsave
+        true //othersetoverprint exec
+        % preserve the operand stack so we can do the operation twice
+        //TrapDict /stack count 2 sub put
+        count dup 8 gt { pop 8 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave  
+        //ChokeBuildChar //ChokeFonts //settrapfont exec
+        false //othersetoverprint exec
+        exec
+        currentpoint
+      grestore
+      moveto
+    } ifelse
+  } bind def
+
+  /fillspreads <<
+    systemdict begin
+      % a list of the strokes required to spread a fill. 
+      % note: this dictionary is keyed by *operators*
+      /fill     load /stroke     load
+      /eofill   load /stroke     load 
+      /rectfill load /rectstroke load
+      /ufill    load /ustroke    load
+      /ueofill  load /ustroke    load
+    end % systemdict
+  >> def
+
+  /spreadfill { % op
+    //donttrap exec {
+      exec
+    }{
+      gsave
+        false //othersetoverprint exec
+        //TrapDict /stack count 2 sub put
+        count dup 5 gt { pop 5 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave
+        true //othersetoverprint exec
+        1 setlinecap 1 setlinejoin {} 0 setdash
+        //m1 defaultmatrix setmatrix
+        //TrapDict /TrapArtWidth get setlinewidth
+        //fillspreads exch get exec
+      grestore
+      newpath
+    } ifelse
+  } bind def
+
+  /fillchokes <<
+    systemdict begin
+      % clips to the original and leaves the path of the original in the gstate
+      % note: this dictionary is keyed by *operators*
+      /fill     load /clip load
+      /eofill   load /eoclip load
+      /rectfill load { 5 copy pop rectclip newpath 
+                       4 index 4 index moveto
+                       2 index 0 rlineto
+                       0 2 index rlineto
+                       2 index neg 0 rlineto
+                       closepath } bind
+      /ufill    load { newpath 1 index uappend clip } bind
+      /ueofill  load 1 index
+    end % systemdict
+  >> def
+
+  /chokefill { % op
+    //donttrap exec {
+      exec
+    }{
+      gsave
+        true //othersetoverprint exec
+        //TrapDict /stack count 2 sub put
+        count dup 5 gt { pop 5 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave
+        //TrapDict begin
+          false //othersetoverprint exec
+          1 setlinecap 1 setlinejoin {} 0 setdash
+          //fillchokes 1 index get exec
+          //m1 currentmatrix pop
+          //m2 defaultmatrix setmatrix
+          TrapArtWidth setlinewidth
+          strokepath 1183615869 internaldict /iclip get exec newpath
+          //m1 setmatrix
+          1183615869 internaldict /gpath get exec
+          exec
+        end
+      grestore
+      newpath
+    } ifelse
+  } bind def
+
+  /strokespreads <<
+    systemdict begin
+      % a list of the strokes required to spread or choke a stroke. 
+      % note: this dictionary is keyed by *operators*
+      /stroke     load /strokepath load
+      /ustroke    load /ustrokepath load
+      /rectstroke load { newpath 
+                         3 index 3 index moveto
+                         1 index 0 rlineto
+                         0 1 index rlineto
+                         1 index neg 0 rlineto
+                         closepath strokepath } bind
+    end % systemdict
+  >> def
+
+  /spreadstroke { % op
+    //donttrap exec {
+      exec
+    }{
+      gsave
+        false //othersetoverprint exec
+        //TrapDict /stack count 2 sub put
+        count dup 5 gt { pop 5 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave
+        true //othersetoverprint exec
+        //strokespreads exch get exec 
+        //m1 defaultmatrix setmatrix
+        //TrapDict /TrapArtWidth get setlinewidth
+%        0 setlinecap 0 setlinejoin 
+	{} 0 setdash
+        stroke
+      grestore
+      newpath
+    } ifelse
+  } bind def
+
+  /strokechokes <<
+    systemdict begin
+      % clips to the original and leaves the path of the original in the gstate
+      % note: this dictionary is keyed by *operators*
+      /stroke     load { strokepath clip } bind
+      /ustroke    load % { newpath 1 index ustrokepath clip } bind
+                       { newpath 1 index uappend strokepath clip } bind
+      /rectstroke load { newpath 
+                         4 index 4 index moveto
+                         2 index 0 rlineto
+                         0 2 index rlineto
+                         2 index neg 0 rlineto
+                         closepath strokepath clip } bind
+    end % systemdict
+  >> def
+
+  /chokestroke { % op
+    //donttrap exec {
+      exec
+    }{
+      gsave
+        true //othersetoverprint exec
+        //TrapDict /stack count 2 sub put
+        count dup 5 gt { pop 5 } if copy
+        exec
+        count //TrapDict /stack get sub { pop } repeat
+      grestore
+      gsave
+        //TrapDict begin
+          false //othersetoverprint exec
+          //m2 defaultmatrix setmatrix
+	  currentlinewidth
+	  TrapArtWidth sub setlinewidth
+         exec
+        end
+      grestore
+      newpath
+    } ifelse
+  } bind def
+
+  /allshowops [ 
+    /show /ashow /widthshow /awidthshow /kshow /xshow /yshow /xyshow
+  ] def
+  /allfillops [ 
+    /fill /eofill /rectfill /ufill /ueofill
+  ] def
+  /allstrokeops [ 
+    /stroke /ustroke /rectstroke
+  ] def
+
+  /disables-text <<
+    allshowops   { null } forall
+  >> def
+
+  /disables-art <<
+    allfillops   { null } forall
+    allstrokeops { null } forall
+  >> def
+
+  /spreads-text <<
+    allshowops { 
+      [ /systemdict load 2 index /get load /spreadshow load /exec load ] cvx bind
+    } forall
+  >> def
+
+  /spreads-art <<
+    allstrokeops {
+      [ /systemdict load 2 index /get load /spreadstroke load /exec load ] cvx bind
+    } forall
+    allfillops {
+      [ /systemdict load 2 index /get load /spreadfill load /exec load ] cvx bind
+    } forall
+  >> def
+
+  /chokes-text <<
+    allshowops { 
+      [ /systemdict load 2 index /get load /chokeshow load /exec load ] cvx bind
+    } forall
+  >> def
+
+  /chokes-art <<
+    allstrokeops {
+      [ /systemdict load 2 index /get load /chokestroke load /exec load ] cvx bind
+    } forall
+    allfillops {
+      [ /systemdict load 2 index /get load /chokefill load /exec load ] cvx bind
+    } forall
+  >> def
+
+  /spreadsnchokes-text <<
+    allshowops {
+      [ 
+        /currentgray load 
+        //TrapDict /TrapTextGray /get load /le load 
+        { //spreads-text } { //chokes-text } 
+        /ifelse load 9 index /get load /exec load
+      ] cvx
+    } forall
+  >> def
+
+  /spreadsnchokes-art <<
+    [ allfillops aload pop allstrokeops aload pop ] {
+      [ 
+        /currentgray load 
+        //TrapDict /TrapArtGray /get load /le load
+        { //spreads-art } { //chokes-art } 
+        /ifelse load 9 index /get load /exec load
+      ] cvx bind
+    } forall
+  >> def
+
+  /settrap {
+    //TrapDict begin
+      dup type /dicttype eq {
+        % Heuristic version
+        { def } forall
+        /TrapTextWidth TrapTextWidth 2 mul def
+        /TrapArtWidth TrapArtWidth 2 mul def
+
+        TrapTextWidth 0 eq {
+          //disables-text
+        }{
+          TrapTextGray 0 eq {
+            //chokes-text
+          }{
+            TrapTextGray 1 eq {
+              //spreads-text
+            }{
+              //spreadsnchokes-text
+            } ifelse
+          } ifelse
+        } ifelse
+
+        TrapArtWidth 0 eq {
+          //disables-art
+        }{
+          TrapArtGray 0 eq {
+            //chokes-art
+          }{
+            TrapArtGray 1 eq {
+              //spreads-art
+            }{
+              //spreadsnchokes-art
+            } ifelse
+          } ifelse
+        } ifelse
+      }{
+        % Quark version
+        /TrapTextWidth exch 2 mul def
+        TrapTextWidth 0 eq { 
+          //disables-text //disables-art
+        }{ 
+          TrapTextWidth 0 gt {
+            //spreads-text //spreads-art
+          }{
+            /TrapTextWidth TrapTextWidth neg def
+            //chokes-text //chokes-art
+          } ifelse
+        } ifelse
+        /TrapArtWidth TrapTextWidth def
+      } ifelse
+
+      % replace relevant operators
+      1183615869 internaldict /shadowop get 
+      2 copy exec exch pop exec
+    end
+  } bind def
+
+  currentdict /othersetoverprint undef
+  currentdict
+end
+
+/HqnTrap exch /ProcSet defineresource
+/globalness get setglobal
+
+% (done\n) print
+
+
+%%EndProcSet
+
+
+
